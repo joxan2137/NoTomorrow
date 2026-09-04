@@ -871,13 +871,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Back to workout"
+            "value": "Resume"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wróć do treningu"
+            "value": "Wznów"
           }
         }
       }
@@ -8374,6 +8374,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyślij do: %@"
+          }
+        }
+      }
+    },
+    "progress.firstSessionHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One session logged. The trend line starts with your second."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden trening zapisany. Linia trendu pojawi się po drugim."
           }
         }
       }

@@ -22,7 +22,8 @@ enum RecordService {
             if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax { return lhs.estimatedOneRepMax < rhs.estimatedOneRepMax }
             return lhs.weightKg < rhs.weightKg
         }
-        guard !previous.isEmpty else { return (false, false, nil) }
+        // The first logged working set of an exercise is its first record.
+        guard !previous.isEmpty else { return (true, false, nil) }
 
         let maxE1RM = previous.map(\.estimatedOneRepMax).max() ?? 0
         let maxWeight = previous.map(\.weightKg).max() ?? 0

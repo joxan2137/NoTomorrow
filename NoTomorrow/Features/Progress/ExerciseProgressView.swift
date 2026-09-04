@@ -111,7 +111,7 @@ struct ExerciseProgressView: View {
             E1RMChart(points: points, unit: model.unit)
                 .frame(height: 172)
         } else {
-            Text("progress.noSessionsInRange")
+            Text(points.count == 1 ? "progress.firstSessionHint" : "progress.noSessionsInRange")
                 .font(NT.Fonts.footnote)
                 .foregroundStyle(NT.Colors.ink2)
                 .frame(maxWidth: .infinity)
