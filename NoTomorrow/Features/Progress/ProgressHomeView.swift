@@ -49,10 +49,12 @@ struct ProgressHomeView: View {
         HStack(alignment: .bottom) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
-                    Text("progress.lastPR")
                     if let date = model.lastPRDate {
+                        Text("progress.lastPR")
                         Text(" · ")
                         Text(ProgressPhrase.eyebrowDate(date))
+                    } else {
+                        Text("progress.noPRYet")
                     }
                 }
                 .eyebrow()
