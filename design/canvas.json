@@ -1,0 +1,38 @@
+{
+  "artboards": [
+    { "file": "Welcome.dc.html", "title": "Welcome", "x": 0, "y": 0, "w": 393, "h": 852 },
+    { "file": "SetupYou.dc.html", "title": "Setup 1 · You", "x": 473, "y": 0, "w": 393, "h": 852 },
+    { "file": "SetupSchedule.dc.html", "title": "Setup 2 · Gym days", "x": 946, "y": 0, "w": 393, "h": 852 },
+    { "file": "SetupPair.dc.html", "title": "Setup 3 · Bro pairing", "x": 1419, "y": 0, "w": 393, "h": 852 },
+    { "file": "Main.dc.html", "title": "Dashboard", "x": 1892, "y": 0, "w": 393, "h": 852 },
+    { "file": "DashboardPL.dc.html", "title": "Dashboard · Polski", "x": 2365, "y": 0, "w": 393, "h": 852 },
+    { "file": "WelcomePL.dc.html", "title": "Welcome · Polski", "x": 2838, "y": 0, "w": 393, "h": 852 },
+
+    { "file": "Workout.dc.html", "title": "Workout · logging sets", "x": 0, "y": 972, "w": 393, "h": 852 },
+    { "file": "RestTimer.dc.html", "title": "Rest timer", "x": 473, "y": 972, "w": 393, "h": 852 },
+    { "file": "WorkoutDone.dc.html", "title": "Workout done", "x": 946, "y": 972, "w": 393, "h": 852 },
+    { "file": "Exercises.dc.html", "title": "Exercise picker", "x": 1419, "y": 972, "w": 393, "h": 852 },
+    { "file": "ProgressHome.dc.html", "title": "Progress · all lifts", "x": 1892, "y": 972, "w": 393, "h": 852 },
+    { "file": "Progress.dc.html", "title": "Progress · Bench Press", "x": 2365, "y": 972, "w": 393, "h": 852 },
+
+    { "file": "Bro.dc.html", "title": "Gym bro", "x": 0, "y": 1944, "w": 393, "h": 852 },
+    { "file": "CantMakeIt.dc.html", "title": "Gym bro · Can't make it", "x": 473, "y": 1944, "w": 393, "h": 852 },
+    { "file": "Nutrition.dc.html", "title": "Fuel · daily", "x": 946, "y": 1944, "w": 393, "h": 852 },
+    { "file": "AIScan.dc.html", "title": "Fuel · AI photo estimate", "x": 1419, "y": 1944, "w": 393, "h": 852 },
+    { "file": "FoodSearch.dc.html", "title": "Fuel · product finder", "x": 1892, "y": 1944, "w": 393, "h": 852 },
+    { "file": "Settings.dc.html", "title": "Settings", "x": 2365, "y": 1944, "w": 393, "h": 852 },
+
+    { "file": "DirectionB.dc.html", "title": "Alt B · Iron (native iOS)", "x": 473, "y": 2916, "w": 393, "h": 852 },
+    { "file": "DirectionC.dc.html", "title": "Alt C · Hazard (brutalist)", "x": 946, "y": 2916, "w": 393, "h": 852 }
+  ],
+  "annotations": [
+    { "id": "flow-onboarding", "x": 0, "y": -170, "w": 440, "text": "FIRST OPEN\nWelcome → who's lifting (name, weight, goal → suggested calories) → gym days + usual time → pair with your bro by code. Three screens, nothing else asked. Everything the dashboard shows comes from here." },
+    { "id": "flow-dashboard", "x": 1892, "y": -170, "w": 440, "text": "DASHBOARD\nWeek strip: ember dot = gym day, ember check = attended, white = today. Next-session card: time, countdown, who's in. Before you confirm, the primary button is \"I'm in\"; once both are in (shown) it becomes \"Start workout\". Same screen in Polish on the right." },
+    { "id": "flow-train", "x": 0, "y": 830, "w": 440, "text": "TRAINING\nSet rows carry last session's numbers as ghost values. Ticking a set auto-starts the rest timer (pill at the bottom, full screen on tap, Live Activity on the Lock Screen). The PR hint appears the moment a set beats your best. Finish → summary with volume delta, PRs and set records." },
+    { "id": "flow-progress", "x": 1892, "y": 830, "w": 440, "text": "PROGRESS\nRoot lists every lift with its estimated 1RM sparkline and delta; tap for the detail: e1RM chart with PR markers, weekly volume, records. Body weight uses a smoothed trend line over raw weigh-ins." },
+    { "id": "flow-bro", "x": 0, "y": 1800, "w": 440, "text": "GYM BRO\nOne shared week for both, today's status, canned heads-ups (Can't make it / 15 min late) plus a short note. Can't make it → reason + proposed make-up day → logged as missed on both phones. Log shows who showed up." },
+    { "id": "flow-fuel", "x": 946, "y": 1800, "w": 440, "text": "FUEL\nThree ways in: AI photo (editable list, confidence shown, guesses tagged, disclaimer), barcode, or product search backed by Open Food Facts with Polish products. Portion sheet does the math." },
+    { "id": "directions", "x": 0, "y": 2916, "w": 393, "text": "DIRECTION A (all screens above): near-black, white primary actions, ember reserved for progress and the next session. Two alternates beside for comparison — B is the safe native-iOS look (blue, grouped cards), C is loud brutalist hazard-yellow. Pick one; A is the recommendation." }
+  ],
+  "launch": { "view": "canvas" }
+}

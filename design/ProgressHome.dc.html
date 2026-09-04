@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:800; letter-spacing:-0.01em; line-height:0.9; }
+    .num { font-variant-numeric:tabular-nums; }
+    .lt { font-size:34px; line-height:41px; font-weight:700; letter-spacing:-0.4px; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .lift { display:flex; align-items:center; gap:12px; height:64px; border-bottom:1px solid rgba(255,255,255,0.12); }
+    .seg { flex:1; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <!-- header -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px;flex:none">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span class="eyebrow ink2">Last PR · Wednesday</span>
+      <span class="lt">Progress</span>
+    </div>
+    <div style="display:flex;background:#1C1C1E;border-radius:14px;padding:3px;width:150px;margin-bottom:4px">
+      <div class="seg" style="background:#38383C"><span class="sub" style="font-weight:600">Lifts</span></div>
+      <div class="seg"><span class="sub ink2">Body</span></div>
+    </div>
+  </div>
+
+  <!-- body weight card -->
+  <div style="margin:18px 20px 0;background:#1C1C1E;border-radius:22px;padding:16px 18px;display:flex;align-items:center;gap:16px;flex:none">
+    <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+      <span class="eyebrow ink2">Body weight · trend</span>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="display num" style="font-size:40px">82.4</span>
+        <span class="sub ink2">kg</span>
+      </div>
+      <span class="fn num ink2"><span class="ember">+0.4 kg</span> over 4 weeks · logged 21 of 28 days</span>
+    </div>
+    <svg width="120" height="48" viewBox="0 0 120 48">
+      <path d="M0,30 L10,33 L20,28 L30,31 L40,26 L50,29 L60,24 L70,27 L80,22 L90,25 L100,20 L110,22 L120,18" fill="none" stroke="rgba(235,235,245,0.25)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path>
+      <path d="M0,31 L20,29.5 L40,27.5 L60,25.5 L80,23.5 L100,21.5 L120,19.5" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+      <circle cx="120" cy="19.5" r="3.5" fill="#FF6A2B" stroke="#1C1C1E" stroke-width="2"></circle>
+    </svg>
+  </div>
+
+  <!-- lifts -->
+  <div style="display:flex;flex-direction:column;padding:22px 20px 0;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:4px">
+      <span class="hl">Estimated 1RM</span>
+      <span class="fn ink2">3 months</span>
+    </div>
+
+    <div class="lift">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl">Bench Press</span>
+        <span class="fn ink2">Push A · PR 2 days ago</span>
+      </div>
+      <svg width="72" height="24" viewBox="0 0 72 24"><path d="M0,20 L12,18 L24,13 L36,11 L48,8 L60,6 L72,3" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="72" cy="3" r="2.5" fill="#FF6A2B"></circle></svg>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:64px">
+        <span class="hl num">105 kg</span>
+        <span class="fn num ember">+17</span>
+      </div>
+    </div>
+
+    <div class="lift">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl">Deadlift</span>
+        <span class="fn ink2">Pull A · PR Wednesday</span>
+      </div>
+      <svg width="72" height="24" viewBox="0 0 72 24"><path d="M0,21 L12,19 L24,17 L36,12 L48,10 L60,7 L72,4" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="72" cy="4" r="2.5" fill="#FF6A2B"></circle></svg>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:64px">
+        <span class="hl num">175 kg</span>
+        <span class="fn num ember">+15</span>
+      </div>
+    </div>
+
+    <div class="lift">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl">Squat</span>
+        <span class="fn ink2">Pull A · 3 weeks since PR</span>
+      </div>
+      <svg width="72" height="24" viewBox="0 0 72 24"><path d="M0,18 L12,15 L24,14 L36,10 L48,9 L60,9 L72,9" fill="none" stroke="rgba(235,235,245,0.45)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="72" cy="9" r="2.5" fill="rgba(235,235,245,0.6)"></circle></svg>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:64px">
+        <span class="hl num">140 kg</span>
+        <span class="fn num ink2">+8</span>
+      </div>
+    </div>
+
+    <div class="lift">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl">Barbell Row</span>
+        <span class="fn ink2">Pull A · PR Wednesday</span>
+      </div>
+      <svg width="72" height="24" viewBox="0 0 72 24"><path d="M0,19 L12,17 L24,16 L36,13 L48,11 L60,8 L72,5" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="72" cy="5" r="2.5" fill="#FF6A2B"></circle></svg>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:64px">
+        <span class="hl num">114 kg</span>
+        <span class="fn num ember">+6</span>
+      </div>
+    </div>
+
+    <div class="lift" style="border-bottom:none">
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl">Overhead Press</span>
+        <span class="fn ink2">Push A · stalled 5 weeks</span>
+      </div>
+      <svg width="72" height="24" viewBox="0 0 72 24"><path d="M0,16 L12,14 L24,12 L36,12 L48,13 L60,12 L72,12" fill="none" stroke="rgba(235,235,245,0.45)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="72" cy="12" r="2.5" fill="rgba(235,235,245,0.6)"></circle></svg>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;width:64px">
+        <span class="hl num">63 kg</span>
+        <span class="fn num ink2">+0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:rgba(22,22,24,0.97);border-top:1px solid rgba(255,255,255,0.12);display:flex;align-items:flex-start;justify-content:space-around;padding:8px 8px 0;box-sizing:border-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      <span class="cap">Today</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="3" height="6" rx="1"></rect><rect x="5" y="7" width="3" height="10" rx="1"></rect><rect x="16" y="7" width="3" height="10" rx="1"></rect><rect x="19" y="9" width="3" height="6" rx="1"></rect><path d="M8 12h8"></path></svg>
+      <span class="cap">Train</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path></svg>
+      <span class="cap">Fuel</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#F2F2F4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5l-5-5L2 17M16 7h6v6"></path></svg>
+      <span class="cap">Progress</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <span class="cap">Bro</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

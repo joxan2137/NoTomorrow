@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:800; letter-spacing:-0.01em; line-height:0.9; }
+    .num { font-variant-numeric:tabular-nums; }
+    .t1 { font-size:28px; line-height:34px; font-weight:700; letter-spacing:-0.3px; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .day { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .dot { width:44px; height:44px; border-radius:22px; background:#1C1C1E; display:flex; align-items:center; justify-content:center; box-sizing:border-box; }
+    .on { background:#F2F2F4; }
+    .switch { width:51px; height:31px; border-radius:16px; background:#F2F2F4; position:relative; flex:none; }
+    .knob { position:absolute; top:2px; right:2px; width:27px; height:27px; border-radius:14px; background:#0A0A0B; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <!-- nav + progress -->
+  <div style="display:flex;align-items:center;gap:16px;padding:0 20px;height:44px;flex:none">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>
+    <div style="flex:1;display:flex;gap:6px">
+      <div style="flex:1;height:4px;border-radius:2px;background:#F2F2F4"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:#F2F2F4"></div>
+      <div style="flex:1;height:4px;border-radius:2px;background:#2A2A2E"></div>
+    </div>
+    <span class="fn num ink2">2 / 3</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:8px;padding:28px 20px 0;flex:none">
+    <span class="t1" style="text-wrap:balance">When do you train?</span>
+    <span class="sub ink2">Your gym days show up on the calendar and your bro sees the same schedule.</span>
+  </div>
+
+  <!-- day picker -->
+  <div style="display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));gap:4px;padding:28px 20px 0;flex:none">
+    <div class="day"><div class="dot on"><span class="hl" style="color:#0A0A0B">M</span></div><span class="cap ink2">Mon</span></div>
+    <div class="day"><div class="dot"><span class="hl ink2">T</span></div><span class="cap ink2">Tue</span></div>
+    <div class="day"><div class="dot on"><span class="hl" style="color:#0A0A0B">W</span></div><span class="cap ink2">Wed</span></div>
+    <div class="day"><div class="dot"><span class="hl ink2">T</span></div><span class="cap ink2">Thu</span></div>
+    <div class="day"><div class="dot on"><span class="hl" style="color:#0A0A0B">F</span></div><span class="cap ink2">Fri</span></div>
+    <div class="day"><div class="dot"><span class="hl ink2">S</span></div><span class="cap ink2">Sat</span></div>
+    <div class="day"><div class="dot"><span class="hl ink2">S</span></div><span class="cap ink2">Sun</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:4px;padding:12px 20px 0;flex:none">
+    <span class="fn ember" style="font-weight:600">3 days a week · Use the Push / Pull split</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+  </div>
+
+  <!-- time -->
+  <div style="display:flex;flex-direction:column;gap:14px;padding:32px 20px 0;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="hl">Usual time</span>
+      <span class="fn ink2">Hold a day for a different time</span>
+    </div>
+    <div style="background:#1C1C1E;border-radius:22px;padding:6px 0;display:flex;flex-direction:column;align-items:center">
+      <span class="display num" style="font-size:36px;color:rgba(235,235,245,0.18);height:44px;display:flex;align-items:center">17:30</span>
+      <div style="width:calc(100% - 24px);height:64px;border-radius:14px;background:#38383C;display:flex;align-items:center;justify-content:center">
+        <span class="display num" style="font-size:56px">18:00</span>
+      </div>
+      <span class="display num" style="font-size:36px;color:rgba(235,235,245,0.18);height:44px;display:flex;align-items:center">18:30</span>
+    </div>
+  </div>
+
+  <!-- reminders -->
+  <div style="display:flex;flex-direction:column;padding:24px 20px 0;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-bottom:1px solid rgba(255,255,255,0.12)">
+      <div style="display:flex;flex-direction:column;gap:1px">
+        <span class="body">Remind me an hour before</span>
+      </div>
+      <div class="switch"><div class="knob"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;height:52px">
+      <div style="display:flex;flex-direction:column;gap:1px">
+        <span class="body">Ask me at 21:00 if I skipped</span>
+        <span class="fn ink2">Logs the miss and pings your bro</span>
+      </div>
+      <div class="switch"><div class="knob"></div></div>
+    </div>
+  </div>
+
+  <!-- continue -->
+  <div style="position:absolute;left:20px;right:20px;bottom:34px;height:56px;border-radius:28px;background:#F2F2F4;display:flex;align-items:center;justify-content:center">
+    <span class="hl" style="color:#0A0A0B">Continue</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

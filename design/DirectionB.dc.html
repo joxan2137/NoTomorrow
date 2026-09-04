@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin:0; background:#000000; color:#FFFFFF; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#0A84FF; } a:hover { color:#409CFF; }
+    .rounded { font-family:ui-rounded,-apple-system,system-ui,sans-serif; font-weight:700; }
+    .num { font-variant-numeric:tabular-nums; }
+    .lt { font-size:34px; line-height:41px; font-weight:700; letter-spacing:-0.4px; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; }
+    .sub { font-size:15px; line-height:20px; }
+    .fn { font-size:13px; line-height:18px; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.3); }
+    .blue { color:#0A84FF; }
+    svg { display:block; flex:none; }
+    .card { background:#1C1C1E; border-radius:12px; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#000000;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+  <div style="height:59px;flex:none"></div>
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 16px;flex:none">
+    <span class="lt">Today</span>
+    <div style="width:36px;height:36px;border-radius:18px;background:#2C2C2E;display:flex;align-items:center;justify-content:center;margin-bottom:4px"><span class="hl">K</span></div>
+  </div>
+
+  <!-- week strip -->
+  <div class="card" style="margin:16px 16px 0;padding:12px 8px;display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));flex:none">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Mon</span><div style="width:34px;height:34px;border-radius:17px;background:#2C2C2E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Tue</span><div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center"><span class="sub num ink2">1</span></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Wed</span><div style="width:34px;height:34px;border-radius:17px;background:#2C2C2E;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Thu</span><div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center"><span class="sub num ink2">3</span></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap blue">Fri</span><div style="width:34px;height:34px;border-radius:17px;background:#0A84FF;display:flex;align-items:center;justify-content:center"><span class="sub num" style="font-weight:700">4</span></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Sat</span><div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center"><span class="sub num ink2">5</span></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span class="cap ink2">Sun</span><div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center"><span class="sub num ink2">6</span></div></div>
+  </div>
+
+  <!-- next session -->
+  <div class="card" style="margin:12px 16px 0;padding:16px;display:flex;flex-direction:column;gap:12px;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="fn ink2">NEXT SESSION</span>
+      <span class="fn blue">Push A</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="rounded num" style="font-size:44px;line-height:50px">18:00</span>
+      <span class="body ink2">Today · in 4 h 12 min</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:24px;height:24px;border-radius:12px;background:#2C2C2E;display:flex;align-items:center;justify-content:center"><span class="cap">T</span></div>
+      <span class="sub" style="flex:1">Tomek is in</span>
+      <span class="fn" style="color:#30D158">Confirmed</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;height:50px;border-radius:12px;background:#0A84FF;display:flex;align-items:center;justify-content:center"><span class="hl">Start Workout</span></div>
+      <div style="height:50px;padding:0 16px;border-radius:12px;background:#2C2C2E;display:flex;align-items:center;justify-content:center"><span class="hl blue">Can't make it</span></div>
+    </div>
+  </div>
+
+  <!-- calories -->
+  <div class="card" style="margin:12px 16px 0;padding:16px;display:flex;align-items:center;gap:16px;flex:none">
+    <svg width="60" height="60" viewBox="0 0 60 60">
+      <circle cx="30" cy="30" r="25" fill="none" stroke="#2C2C2E" stroke-width="7"></circle>
+      <circle cx="30" cy="30" r="25" fill="none" stroke="#0A84FF" stroke-width="7" stroke-linecap="round" stroke-dasharray="99 157" transform="rotate(-90 30 30)"></circle>
+    </svg>
+    <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+      <span class="hl">Calories</span>
+      <span class="sub num ink2">1,640 eaten · 960 left</span>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+  </div>
+
+  <!-- last workout -->
+  <div class="card" style="margin:12px 16px 0;padding:16px;display:flex;flex-direction:column;gap:8px;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="hl">Last Workout</span>
+      <span class="fn ink2">Wed · 58 min</span>
+    </div>
+    <span class="sub ink2">Pull A · 2 new records</span>
+  </div>
+
+  <!-- tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:#161616;border-top:1px solid rgba(255,255,255,0.1);display:flex;align-items:flex-start;justify-content:space-around;padding:8px 8px 0;box-sizing:border-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#0A84FF"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg><span class="cap">Today</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#8E8E93"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="9" width="3" height="6" rx="1"></rect><rect x="5" y="7" width="3" height="10" rx="1"></rect><rect x="16" y="7" width="3" height="10" rx="1"></rect><rect x="19" y="9" width="3" height="6" rx="1"></rect><rect x="8" y="11" width="8" height="2"></rect></svg><span class="cap">Workout</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#8E8E93"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"></circle></svg><span class="cap">Food</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#8E8E93"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4" height="9"></rect><rect x="10" y="7" width="4" height="14"></rect><rect x="17" y="3" width="4" height="18"></rect></svg><span class="cap">Progress</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#8E8E93"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="8" r="4"></circle><path d="M1 20a8 8 0 0 1 16 0z"></path><circle cx="17" cy="9" r="3"></circle></svg><span class="cap">Bro</span></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .num { font-variant-numeric:tabular-nums; }
+    .lt { font-size:34px; line-height:41px; font-weight:700; letter-spacing:-0.4px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .group { background:#1C1C1E; border-radius:16px; display:flex; flex-direction:column; padding:0 16px; }
+    .item { display:flex; align-items:center; gap:12px; height:44px; border-bottom:1px solid rgba(255,255,255,0.12); }
+    .item.last { border-bottom:none; }
+    .val { display:flex; align-items:center; gap:6px; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <div style="display:flex;align-items:center;gap:12px;padding:0 20px;height:44px;flex:none">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>
+    <span class="lt">Settings</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;padding:12px 20px 0;flex:none">
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="eyebrow ink2" style="padding-left:16px">You</span>
+      <div class="group">
+        <div class="item"><span class="body" style="flex:1">Name</span><div class="val"><span class="body ink2">Kuba</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item"><span class="body" style="flex:1">Body weight</span><div class="val"><span class="body num ink2">82.4 kg</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item last"><span class="body" style="flex:1">Daily target</span><div class="val"><span class="body num ink2">2,600 kcal · 180 g protein</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="eyebrow ink2" style="padding-left:16px">Training</span>
+      <div class="group">
+        <div class="item"><span class="body" style="flex:1">Gym days</span><div class="val"><span class="body ink2">Mon · Wed · Fri · 18:00</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item"><span class="body" style="flex:1">Rest timer</span><div class="val"><span class="body num ink2">1:30 · auto-start</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item last"><span class="body" style="flex:1">Units</span><div class="val"><span class="body ink2">kg</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="eyebrow ink2" style="padding-left:16px">App</span>
+      <div class="group">
+        <div class="item"><span class="body" style="flex:1">Language</span><div class="val"><span class="body ink2">English</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item"><span class="body" style="flex:1">Notifications</span><div class="val"><span class="body ink2">2 on</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item"><span class="body" style="flex:1">Health app</span><div class="val"><div style="width:8px;height:8px;border-radius:4px;background:#30D158"></div><span class="body ink2">Connected</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item last"><span class="body" style="flex:1">Export my data</span><div class="val"><span class="body ink2">CSV</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="eyebrow ink2" style="padding-left:16px">Gym bro</span>
+      <div class="group">
+        <div class="item"><span class="body" style="flex:1">Tomek</span><div class="val"><span class="body ink2">Paired 12 Aug</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.42)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+        <div class="item last"><span class="body" style="flex:1">Your code</span><div class="val"><span class="body num ink2">NT-7K4Q</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"></path></svg></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="eyebrow ink2" style="padding-left:16px">Account</span>
+      <div class="group">
+        <div class="item last"><span class="body" style="color:#FF375F">Delete account and data</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .num { font-variant-numeric:tabular-nums; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .chip { height:40px; padding:0 14px; border-radius:20px; background:#1C1C1E; display:flex; align-items:center; flex:none; }
+    .row { display:flex; align-items:center; gap:12px; height:64px; border-bottom:1px solid rgba(255,255,255,0.12); }
+    .row .name { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .row .name span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ring { width:26px; height:26px; border-radius:13px; border:1.5px solid rgba(235,235,245,0.42); box-sizing:border-box; flex:none; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <!-- header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:44px;flex:none">
+    <span class="t2">Add exercise</span>
+    <span class="body ink2">Cancel</span>
+  </div>
+
+  <!-- search -->
+  <div style="margin:12px 20px 0;height:44px;border-radius:12px;background:#1C1C1E;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box;flex:none">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.6)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    <span class="body" style="flex:1">bench</span>
+    <div style="width:20px;height:20px;border-radius:10px;background:rgba(235,235,245,0.42);display:flex;align-items:center;justify-content:center">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0A0B" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+    </div>
+  </div>
+
+  <!-- muscle chips: bleed to the screen edge so the cut reads as a scroller -->
+  <div style="display:flex;gap:8px;padding:12px 20px 0;overflow:hidden;flex:none">
+    <div class="chip" style="background:#F2F2F4"><span class="sub" style="font-weight:600;color:#0A0A0B">All</span></div>
+    <div class="chip"><span class="sub">Chest</span></div>
+    <div class="chip"><span class="sub">Back</span></div>
+    <div class="chip"><span class="sub">Legs</span></div>
+    <div class="chip"><span class="sub">Shoulders</span></div>
+    <div class="chip"><span class="sub">Arms</span></div>
+    <div class="chip"><span class="sub">Core</span></div>
+  </div>
+
+  <!-- results -->
+  <div style="display:flex;flex-direction:column;padding:18px 20px 0;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:6px">
+      <span class="eyebrow ink2">7 results</span>
+      <span class="eyebrow ink2" style="padding-right:38px">Last</span>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Bench Press (Barbell)</span>
+        <span class="fn ink2">Chest · Triceps, front delts</span>
+      </div>
+      <span class="fn num ink2">80 × 8</span>
+      <span class="fn ink3" style="width:26px;text-align:center;flex:none">In</span>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Incline Bench Press (Barbell)</span>
+        <span class="fn ink2">Chest · Upper chest, front delts</span>
+      </div>
+      <span class="fn num ink2">60 × 10</span>
+      <div class="ring"></div>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Bench Press (Dumbbell)</span>
+        <span class="fn ink2">Chest · Triceps</span>
+      </div>
+      <span class="fn num ink2">32 × 10</span>
+      <div class="ring"></div>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Close-Grip Bench Press</span>
+        <span class="fn ink2">Triceps · Chest</span>
+      </div>
+      <span class="fn ink2">Never done</span>
+      <div class="ring" style="background:#F2F2F4;border-color:#F2F2F4;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0A0B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Decline Bench Press (Barbell)</span>
+        <span class="fn ink2">Chest · Lower chest</span>
+      </div>
+      <span class="fn ink2">Never done</span>
+      <div class="ring"></div>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Bench Press (Smith Machine)</span>
+        <span class="fn ink2">Chest · Machine</span>
+      </div>
+      <span class="fn ink2">Never done</span>
+      <div class="ring"></div>
+    </div>
+
+    <div class="row">
+      <div class="name">
+        <span class="hl">Floor Press (Barbell)</span>
+        <span class="fn ink2">Chest · Triceps</span>
+      </div>
+      <span class="fn ink2">Never done</span>
+      <div class="ring"></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;height:48px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(235,235,245,0.6)" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"></path></svg>
+      <span class="sub ink2">Create "bench" as a new exercise</span>
+    </div>
+  </div>
+
+  <!-- add bar -->
+  <div style="position:absolute;left:20px;right:20px;bottom:34px;height:56px;border-radius:28px;background:#F2F2F4;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span class="hl" style="color:#0A0A0B">Add 1 exercise</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

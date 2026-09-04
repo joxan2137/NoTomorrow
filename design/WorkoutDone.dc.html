@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:800; letter-spacing:-0.01em; line-height:0.9; }
+    .num { font-variant-numeric:tabular-nums; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .tile { background:#1C1C1E; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; }
+    .rec { display:flex; align-items:center; gap:12px; height:60px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:44px;flex:none">
+    <span class="eyebrow ember">Push A · Friday 18:04</span>
+    <span class="body ink2">Share</span>
+  </div>
+
+  <!-- hero -->
+  <div style="display:flex;flex-direction:column;gap:6px;padding:24px 20px 0;flex:none">
+    <span class="display" style="font-size:72px">DONE.</span>
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <span class="display num" style="font-size:56px">6,310</span>
+      <span class="t2 ink2">kg moved</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;background:rgba(255,106,43,0.12);align-self:flex-start">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+      <span class="fn num ember" style="font-weight:600">380 kg more than last Push A</span>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px;padding:22px 20px 0;flex:none">
+    <div class="tile"><span class="eyebrow ink2">Time</span><span class="hl num">52 min</span></div>
+    <div class="tile"><span class="eyebrow ink2">Sets</span><span class="hl num">16</span></div>
+    <div class="tile"><span class="eyebrow ink2">Exercises</span><span class="hl num">5</span></div>
+  </div>
+
+  <!-- records -->
+  <div style="display:flex;flex-direction:column;padding:22px 20px 0;flex:none">
+    <span class="hl" style="padding-bottom:4px">Records tonight</span>
+    <div class="rec">
+      <div style="width:36px;height:36px;border-radius:18px;background:rgba(255,106,43,0.14);display:flex;align-items:center;justify-content:center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 15v2a2 2 0 0 1-3 4M14 15v2a2 2 0 0 0 3 4M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl num">Bench Press · 85 × 7</span>
+        <span class="fn ink2">New best set · e1RM 105 kg, up from 102</span>
+      </div>
+      <span class="eyebrow ember">PR</span>
+    </div>
+    <div class="rec" style="border-bottom:none">
+      <div style="width:36px;height:36px;border-radius:18px;background:#2A2A2E;display:flex;align-items:center;justify-content:center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"></path></svg>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <span class="hl num">Overhead Press · 50 × 10</span>
+        <span class="fn ink2">Set record · most reps at 50 kg</span>
+      </div>
+      <span class="eyebrow ink2">Set</span>
+    </div>
+  </div>
+
+  <!-- bro -->
+  <div style="margin:18px 20px 0;background:#1C1C1E;border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex:none">
+    <div style="width:32px;height:32px;border-radius:16px;background:#38383C;display:flex;align-items:center;justify-content:center"><span class="cap">T</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+      <span class="sub" style="font-weight:600">Tomek finished 6 min ago</span>
+      <span class="fn ink2">Your PR is on his Bro tab already</span>
+    </div>
+    <div style="width:8px;height:8px;border-radius:4px;background:#30D158"></div>
+  </div>
+
+  <div style="flex:1"></div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;padding:0 20px 34px;flex:none">
+    <div style="height:56px;border-radius:28px;background:#F2F2F4;display:flex;align-items:center;justify-content:center">
+      <span class="hl" style="color:#0A0A0B">Done</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;height:24px"><span class="sub ink2">Edit sets</span></div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

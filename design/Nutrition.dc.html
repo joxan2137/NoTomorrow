@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:800; letter-spacing:-0.01em; line-height:0.9; }
+    .num { font-variant-numeric:tabular-nums; }
+    .lt { font-size:34px; line-height:41px; font-weight:700; letter-spacing:-0.4px; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .meal { display:flex; flex-direction:column; gap:4px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.12); }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <!-- header -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px;flex:none">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span class="eyebrow ink2">Friday, 4 September</span>
+      <span class="lt">Fuel</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;background:#1C1C1E;margin-bottom:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+      <span class="fn num">Protein hit 11 days straight</span>
+    </div>
+  </div>
+
+  <!-- hero ring + macros -->
+  <div style="display:flex;align-items:center;gap:22px;padding:20px 20px 0;flex:none">
+    <div style="position:relative;width:132px;height:132px;flex:none">
+      <svg width="132" height="132" viewBox="0 0 132 132" style="position:absolute;left:0;top:0">
+        <circle cx="66" cy="66" r="58" fill="none" stroke="#1C1C1E" stroke-width="10"></circle>
+        <circle cx="66" cy="66" r="58" fill="none" stroke="#FF6A2B" stroke-width="10" stroke-linecap="round" stroke-dasharray="230 365" transform="rotate(-90 66 66)"></circle>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+        <span class="display num" style="font-size:44px">960</span>
+        <span class="cap ink2">kcal left</span>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between"><span class="fn ink2">Protein</span><span class="fn num">128 / 180 g</span></div>
+        <div style="height:5px;border-radius:3px;background:#2A2A2E;overflow:hidden"><div style="width:71%;height:5px;border-radius:3px;background:#F2F2F4"></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between"><span class="fn ink2">Carbs</span><span class="fn num">174 / 300 g</span></div>
+        <div style="height:5px;border-radius:3px;background:#2A2A2E;overflow:hidden"><div style="width:58%;height:5px;border-radius:3px;background:rgba(235,235,245,0.6)"></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between"><span class="fn ink2">Fat</span><span class="fn num">48 / 80 g</span></div>
+        <div style="height:5px;border-radius:3px;background:#2A2A2E;overflow:hidden"><div style="width:60%;height:5px;border-radius:3px;background:rgba(235,235,245,0.6)"></div></div>
+      </div>
+      <span class="fn num ink2">1,640 eaten · 2,600 goal</span>
+    </div>
+  </div>
+
+  <!-- meals -->
+  <div style="display:flex;flex-direction:column;padding:16px 20px 0;flex:none">
+    <div class="meal">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hl">Breakfast</span>
+        <span class="sub num">540 <span class="ink2">kcal</span></span>
+      </div>
+      <span class="fn ink2">Skyr naturalny 250 g · Oats 60 g · Banana</span>
+    </div>
+    <div class="meal">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hl">Lunch</span>
+        <span class="sub num">720 <span class="ink2">kcal</span></span>
+      </div>
+      <span class="fn ink2">Chicken rice bowl 420 g · Olive oil 1 tbsp</span>
+    </div>
+    <div class="meal">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hl">Snack</span>
+        <span class="sub num">380 <span class="ink2">kcal</span></span>
+      </div>
+      <span class="fn ink2">Whey shake 1 scoop · Apple · Rice cakes ×3</span>
+    </div>
+    <div class="meal" style="border-bottom:none">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hl">Dinner</span>
+        <span class="sub ink3">Nothing yet</span>
+      </div>
+      <span class="fn ember" style="font-weight:600">Post-workout · 52 g protein to go</span>
+    </div>
+  </div>
+
+  <!-- add bar -->
+  <div style="position:absolute;left:20px;right:20px;bottom:97px;display:flex;gap:10px">
+    <div style="flex:1;height:56px;border-radius:18px;background:#F2F2F4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+      <span class="cap" style="color:#0A0A0B;font-weight:600">AI photo</span>
+    </div>
+    <div style="flex:1;height:56px;border-radius:18px;background:#1C1C1E;border:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 8v8M12 8v8M16 8v8"></path></svg>
+      <span class="cap" style="font-weight:600">Barcode</span>
+    </div>
+    <div style="flex:1;height:56px;border-radius:18px;background:#1C1C1E;border:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+      <span class="cap" style="font-weight:600">Search</span>
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:rgba(22,22,24,0.97);border-top:1px solid rgba(255,255,255,0.12);display:flex;align-items:flex-start;justify-content:space-around;padding:8px 8px 0;box-sizing:border-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      <span class="cap">Today</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="3" height="6" rx="1"></rect><rect x="5" y="7" width="3" height="10" rx="1"></rect><rect x="16" y="7" width="3" height="10" rx="1"></rect><rect x="19" y="9" width="3" height="6" rx="1"></rect><path d="M8 12h8"></path></svg>
+      <span class="cap">Train</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#F2F2F4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path></svg>
+      <span class="cap">Fuel</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5l-5-5L2 17M16 7h6v6"></path></svg>
+      <span class="cap">Progress</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <span class="cap">Bro</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

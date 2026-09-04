@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+  <style>
+    body { margin:0; background:#0A0A0B; color:#F2F2F4; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#FF6A2B; } a:hover { color:#FF8A55; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:800; letter-spacing:-0.01em; line-height:0.9; }
+    .num { font-variant-numeric:tabular-nums; }
+    .t2 { font-size:22px; line-height:28px; font-weight:700; letter-spacing:-0.2px; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .body { font-size:17px; line-height:22px; font-weight:400; }
+    .sub { font-size:15px; line-height:20px; font-weight:400; }
+    .fn { font-size:13px; line-height:18px; font-weight:400; }
+    .cap { font-size:12px; line-height:16px; font-weight:500; }
+    .eyebrow { font-size:11px; line-height:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+    .ink2 { color:rgba(235,235,245,0.6); }
+    .ink3 { color:rgba(235,235,245,0.42); }
+    .ember { color:#FF6A2B; }
+    svg { display:block; flex:none; }
+    .seg { flex:1; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0A0A0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+
+  <div style="height:59px;flex:none"></div>
+
+  <!-- header -->
+  <div style="display:flex;align-items:center;gap:12px;padding:0 20px;height:44px;flex:none">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2F2F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>
+    <span class="t2" style="flex:1">Bench Press</span>
+    <div style="display:flex;background:#1C1C1E;border-radius:10px;padding:2px;width:168px">
+      <div class="seg"><span class="cap ink2">1M</span></div>
+      <div class="seg" style="background:#38383C"><span class="cap">3M</span></div>
+      <div class="seg"><span class="cap ink2">1Y</span></div>
+      <div class="seg"><span class="cap ink2">All</span></div>
+    </div>
+  </div>
+
+  <!-- hero -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:18px 20px 0;flex:none">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span class="eyebrow ink2">Estimated 1RM</span>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="display num" style="font-size:64px">102</span>
+        <span class="t2 ink2">kg</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;background:rgba(255,106,43,0.12);margin-bottom:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+      <span class="fn num ember" style="font-weight:600">14 kg in 3 months</span>
+    </div>
+  </div>
+
+  <!-- e1RM chart -->
+  <div style="padding:12px 20px 0;flex:none">
+    <svg width="353" height="172" viewBox="0 0 353 172">
+      <defs>
+        <linearGradient id="fillEmber" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FF6A2B" stop-opacity="0.22"></stop>
+          <stop offset="1" stop-color="#FF6A2B" stop-opacity="0"></stop>
+        </linearGradient>
+      </defs>
+      <!-- grid -->
+      <line x1="0" y1="10" x2="330" y2="10" stroke="rgba(255,255,255,0.06)" stroke-width="1"></line>
+      <line x1="0" y1="80" x2="330" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="1"></line>
+      <line x1="0" y1="150" x2="330" y2="150" stroke="rgba(255,255,255,0.10)" stroke-width="1"></line>
+      <text x="353" y="14" text-anchor="end" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">105</text>
+      <text x="353" y="84" text-anchor="end" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">95</text>
+      <text x="353" y="154" text-anchor="end" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">85</text>
+      <!-- area + line -->
+      <path d="M0,129 L30,122 L60,108 L90,115 L120,94 L150,80 L180,80 L210,66 L240,52 L270,59 L300,38 L330,31 L330,150 L0,150 Z" fill="url(#fillEmber)"></path>
+      <path d="M0,129 L30,122 L60,108 L90,115 L120,94 L150,80 L180,80 L210,66 L240,52 L270,59 L300,38 L330,31" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+      <!-- PR markers -->
+      <circle cx="240" cy="52" r="3" fill="#0A0A0B" stroke="#FF6A2B" stroke-width="2"></circle>
+      <circle cx="330" cy="31" r="5" fill="#FF6A2B" stroke="#0A0A0B" stroke-width="2"></circle>
+      <!-- x labels -->
+      <text x="0" y="168" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">Jun</text>
+      <text x="110" y="168" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">Jul</text>
+      <text x="220" y="168" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">Aug</text>
+      <text x="330" y="168" fill="rgba(235,235,245,0.6)" font-size="12" text-anchor="end" font-family="-apple-system, system-ui, sans-serif">Sep</text>
+    </svg>
+  </div>
+
+  <!-- stats -->
+  <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px;padding:14px 20px 0;flex:none">
+    <div style="background:#1C1C1E;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow ink2">Last PR</span>
+      <span class="hl num">9 days ago</span>
+    </div>
+    <div style="background:#1C1C1E;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow ink2">This week</span>
+      <span class="hl num">2,520 kg</span>
+    </div>
+    <div style="background:#1C1C1E;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow ink2">Sessions · 3M</span>
+      <span class="hl num">13</span>
+    </div>
+  </div>
+
+  <!-- weekly volume -->
+  <div style="display:flex;flex-direction:column;gap:10px;padding:22px 20px 0;flex:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span class="hl">All lifts · weekly</span>
+      <span class="fn num ink2">12,450 kg · <span class="ember">+5% vs last week</span></span>
+    </div>
+    <svg width="353" height="86" viewBox="0 0 353 86">
+      <rect x="4" y="25" width="30" height="47" rx="3" fill="#2A2A2E"></rect>
+      <rect x="49" y="22" width="30" height="50" rx="3" fill="#2A2A2E"></rect>
+      <rect x="94" y="19" width="30" height="53" rx="3" fill="#2A2A2E"></rect>
+      <rect x="139" y="23" width="30" height="49" rx="3" fill="#2A2A2E"></rect>
+      <rect x="184" y="15" width="30" height="57" rx="3" fill="#2A2A2E"></rect>
+      <rect x="229" y="13" width="30" height="59" rx="3" fill="#2A2A2E"></rect>
+      <rect x="274" y="15" width="30" height="57" rx="3" fill="#2A2A2E"></rect>
+      <rect x="319" y="12" width="30" height="60" rx="3" fill="#FF6A2B"></rect>
+      <line x1="0" y1="72" x2="353" y2="72" stroke="rgba(255,255,255,0.10)" stroke-width="1"></line>
+      <text x="4" y="85" fill="rgba(235,235,245,0.6)" font-size="12" font-family="-apple-system, system-ui, sans-serif">13 Jul</text>
+      <text x="349" y="85" fill="rgba(235,235,245,0.6)" font-size="12" text-anchor="end" font-family="-apple-system, system-ui, sans-serif">This week</text>
+    </svg>
+  </div>
+
+  <!-- records -->
+  <div style="display:flex;flex-direction:column;padding:18px 20px 0;flex:none">
+    <span class="hl" style="padding-bottom:4px">Records</span>
+    <div style="display:flex;align-items:center;gap:12px;height:52px;border-bottom:1px solid rgba(255,255,255,0.12)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 15v2a2 2 0 0 1-3 4M14 15v2a2 2 0 0 0 3 4M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+      <span class="sub" style="flex:1">Heaviest set</span>
+      <span class="sub num">85 kg × 6</span>
+      <span class="fn ink2" style="width:52px;text-align:right">26 Aug</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;height:52px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6A2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 15v2a2 2 0 0 1-3 4M14 15v2a2 2 0 0 0 3 4M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+      <span class="sub" style="flex:1">Most reps</span>
+      <span class="sub num">60 kg × 20</span>
+      <span class="fn ink2" style="width:52px;text-align:right">10 Jul</span>
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:rgba(22,22,24,0.97);border-top:1px solid rgba(255,255,255,0.12);display:flex;align-items:flex-start;justify-content:space-around;padding:8px 8px 0;box-sizing:border-box">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>
+      <span class="cap">Today</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="3" height="6" rx="1"></rect><rect x="5" y="7" width="3" height="10" rx="1"></rect><rect x="16" y="7" width="3" height="10" rx="1"></rect><rect x="19" y="9" width="3" height="6" rx="1"></rect><path d="M8 12h8"></path></svg>
+      <span class="cap">Train</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path></svg>
+      <span class="cap">Fuel</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:#F2F2F4">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5l-5-5L2 17M16 7h6v6"></path></svg>
+      <span class="cap">Progress</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;color:rgba(235,235,245,0.6)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <span class="cap">Bro</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

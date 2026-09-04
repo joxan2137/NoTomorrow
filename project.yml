@@ -1,0 +1,112 @@
+name: NoTomorrow
+options:
+  bundleIdPrefix: app.notomorrow
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    DEVELOPMENT_LANGUAGE: en
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  NoTomorrow:
+    type: application
+    platform: iOS
+    sources:
+      - path: NoTomorrow
+        excludes:
+          - "Resources/Info.plist"
+      - path: Shared
+    info:
+      path: NoTomorrow/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: No Tomorrow
+        CFBundleName: No Tomorrow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, pl]
+        CFBundleDevelopmentRegion: en
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIUserInterfaceStyle: Dark
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: false
+        UIAppFonts:
+          - BigShouldersDisplay-ExtraBold.ttf
+        NSCameraUsageDescription: "No Tomorrow uses the camera to scan food barcodes and to estimate calories from a photo of your meal."
+        NSPhotoLibraryUsageDescription: "No Tomorrow lets you pick a meal photo to estimate its calories."
+        NSHealthShareUsageDescription: "No Tomorrow reads your body weight to chart your progress."
+        NSHealthUpdateUsageDescription: "No Tomorrow writes the meals and gym sessions you log so they appear in the Health app."
+        NSUserNotificationsUsageDescription: "Reminders before your gym session, rest-timer alerts and heads-ups from your gym bro."
+        ITSAppUsesNonExemptEncryption: false
+        UIBackgroundModes: [remote-notification]
+    dependencies:
+      - target: NoTomorrowWidgets
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+    preBuildScripts: []
+
+  NoTomorrowWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NoTomorrowWidgets
+        excludes:
+          - "Info.plist"
+      - path: Shared
+    info:
+      path: NoTomorrowWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: No Tomorrow Timer
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios.widgets
+        SKIP_INSTALL: YES
+
+  NoTomorrowTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NoTomorrowTests
+    dependencies:
+      - target: NoTomorrow
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios.tests
+
+schemes:
+  NoTomorrow:
+    build:
+      targets:
+        NoTomorrow: all
+        NoTomorrowWidgets: all
+        NoTomorrowTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [NoTomorrowTests]

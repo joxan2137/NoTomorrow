@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+  <style>
+    body { margin:0; background:#0B0B0B; color:#F5F5F0; font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased; }
+    a { color:#E8FF3D; } a:hover { color:#F2FF80; }
+    .display { font-family:"Big Shoulders Display","Arial Narrow","Helvetica Neue",sans-serif; font-weight:900; text-transform:uppercase; line-height:0.86; }
+    .num { font-variant-numeric:tabular-nums; }
+    .hl { font-size:17px; line-height:22px; font-weight:600; }
+    .sub { font-size:15px; line-height:20px; }
+    .fn { font-size:13px; line-height:18px; }
+    .cap { font-size:12px; line-height:16px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+    .ink2 { color:rgba(245,245,240,0.6); }
+    .ink3 { color:rgba(245,245,240,0.3); }
+    .yel { color:#E8FF3D; }
+    svg { display:block; flex:none; }
+    .tape { background:repeating-linear-gradient(135deg,#E8FF3D 0 14px,#0B0B0B 14px 28px); height:10px; }
+    .block { border:2px solid #F5F5F0; }
+  </style>
+</helmet>
+
+<div style="width:393px;height:852px;background:#0B0B0B;position:relative;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box">
+  <div style="height:59px;flex:none"></div>
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:0 16px;flex:none">
+    <div style="display:flex;flex-direction:column">
+      <span class="cap yel">Fri 04.09</span>
+      <span class="display" style="font-size:64px">Today</span>
+    </div>
+    <div style="width:40px;height:40px;background:#E8FF3D;display:flex;align-items:center;justify-content:center;margin-bottom:6px"><span class="display" style="font-size:24px;color:#0B0B0B">K</span></div>
+  </div>
+
+  <div class="tape" style="margin:14px 0 0;flex:none"></div>
+
+  <!-- week strip -->
+  <div style="display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));border-bottom:2px solid #F5F5F0;flex:none">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0;background:#1A1A1A"><span class="cap ink2">Mon</span><span class="display num" style="font-size:28px;color:#E8FF3D">31</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0"><span class="cap ink3">Tue</span><span class="display num ink3" style="font-size:28px">01</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0;background:#1A1A1A"><span class="cap ink2">Wed</span><span class="display num" style="font-size:28px;color:#E8FF3D">02</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0"><span class="cap ink3">Thu</span><span class="display num ink3" style="font-size:28px">03</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0;background:#E8FF3D"><span class="cap" style="color:#0B0B0B">Fri</span><span class="display num" style="font-size:28px;color:#0B0B0B">04</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;border-right:2px solid #F5F5F0"><span class="cap ink3">Sat</span><span class="display num ink3" style="font-size:28px">05</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0"><span class="cap ink3">Sun</span><span class="display num ink3" style="font-size:28px">06</span></div>
+  </div>
+
+  <!-- next session -->
+  <div style="margin:20px 16px 0;display:flex;flex-direction:column;gap:6px;flex:none">
+    <span class="cap yel">Next session · Push A</span>
+    <div style="display:flex;align-items:flex-end;gap:14px">
+      <span class="display num" style="font-size:120px">18:00</span>
+      <div style="display:flex;flex-direction:column;padding-bottom:10px">
+        <span class="display" style="font-size:28px">Today</span>
+        <span class="sub ink2">in 4 h 12 min</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding-top:6px">
+      <div style="width:10px;height:10px;background:#E8FF3D"></div>
+      <span class="hl">TOMEK IS IN</span>
+    </div>
+    <div style="display:flex;gap:0;padding-top:12px">
+      <div style="flex:1;height:56px;background:#E8FF3D;display:flex;align-items:center;justify-content:center"><span class="display" style="font-size:26px;color:#0B0B0B">Start workout</span></div>
+      <div class="block" style="height:56px;padding:0 18px;display:flex;align-items:center;justify-content:center;box-sizing:border-box"><span class="display" style="font-size:22px">Bail</span></div>
+    </div>
+  </div>
+
+  <!-- fuel + last -->
+  <div style="margin:22px 16px 0;display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:0;flex:none">
+    <div class="block" style="padding:12px;display:flex;flex-direction:column;gap:2px;border-right:none">
+      <span class="cap ink2">Fuel left</span>
+      <span class="display num" style="font-size:48px">960</span>
+      <span class="fn ink2">of 2,600 kcal</span>
+    </div>
+    <div class="block" style="padding:12px;display:flex;flex-direction:column;gap:2px">
+      <span class="cap ink2">Last · Wed</span>
+      <span class="display num" style="font-size:48px;color:#E8FF3D">2 PRs</span>
+      <span class="fn ink2">Deadlift 150 × 5</span>
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div style="position:absolute;left:0;right:0;bottom:0;height:83px;background:#0B0B0B;border-top:2px solid #F5F5F0;display:flex;align-items:flex-start;justify-content:space-around;padding:12px 8px 0;box-sizing:border-box">
+    <span class="display yel" style="font-size:18px">Today</span>
+    <span class="display ink3" style="font-size:18px">Train</span>
+    <span class="display ink3" style="font-size:18px">Fuel</span>
+    <span class="display ink3" style="font-size:18px">Gains</span>
+    <span class="display ink3" style="font-size:18px">Bro</span>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
