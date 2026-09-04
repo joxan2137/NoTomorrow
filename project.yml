@@ -56,6 +56,11 @@ targets:
         NSUserNotificationsUsageDescription: "Reminders before your gym session, rest-timer alerts and heads-ups from your gym bro."
         ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes: [remote-notification]
+    entitlements:
+      path: NoTomorrow/NoTomorrow.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     dependencies:
       - target: NoTomorrowWidgets
         embed: true

@@ -56,6 +56,11 @@ enum Fmt {
         date.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 
+    /// "Fri, 4 Sep" / "pt., 4 wrz"
+    static func shortDay(_ date: Date) -> String {
+        date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+    }
+
     /// "Wed" / "śr."
     static func weekdayShort(_ date: Date) -> String {
         date.formatted(.dateTime.weekday(.abbreviated))

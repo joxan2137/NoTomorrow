@@ -13,8 +13,10 @@ struct RootView: View {
                 OnboardingFlow()
             }
         }
+        .environment(\.locale, AppLocale.effective(languageOverride: appState.languageOverride))
         .task {
             await ExerciseLibrary.shared.importIfNeeded(into: modelContext)
+            RoutineSeeder.seedIfNeeded(context: modelContext)
         }
     }
 }
@@ -39,13 +41,25 @@ struct MainTabView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 
+    @Environment(WorkoutSessionController.self) private var session
+    @Environment(\.modelContext) private var modelContext
+
     var body: some View {
         @Bindable var appState = appState
+        @Bindable var session = session
         TabView(selection: $appState.selectedTab) {
             ForEach(AppTab.allCases) { tab in
                 tabContent(tab)
                     .tabItem { Label(tab.titleKey, systemImage: tab.symbol) }
                     .tag(tab)
+            }
+        }
+        // Presented from the tab shell (a stable ancestor) so starting a workout from any tab opens it reliably.
+        .fullScreenCover(isPresented: $session.showsActiveWorkout) {
+            if let workout = session.activeWorkout(in: modelContext) {
+                ActiveWorkoutView(workout: workout)
+            } else {
+                NT.Colors.ground.ignoresSafeArea().onAppear { session.showsActiveWorkout = false }
             }
         }
     }

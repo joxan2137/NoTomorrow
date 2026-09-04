@@ -26,19 +26,28 @@ actor ExerciseLibrary {
         guard !didRun else { return }
         didRun = true
 
-        let count = (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
-        guard count == 0 else { return }
-
-        guard let url = Bundle.main.url(forResource: "exercises", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let records = try? JSONDecoder().decode([Record].self, from: data) else { return }
-
         let polish: [String: String] = {
             guard let url = Bundle.main.url(forResource: "exercises_pl", withExtension: "json"),
                   let data = try? Data(contentsOf: url),
                   let map = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
             return map
         }()
+
+        let count = (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
+        if count > 0 {
+            // Already imported: backfill Polish names added in a later build.
+            var missing = FetchDescriptor<Exercise>(predicate: #Predicate { $0.namePL == nil && !$0.isCustom })
+            missing.fetchLimit = 2000
+            if !polish.isEmpty, let rows = try? context.fetch(missing), !rows.isEmpty {
+                for row in rows { row.namePL = polish[row.id] }
+                try? context.save()
+            }
+            return
+        }
+
+        guard let url = Bundle.main.url(forResource: "exercises", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let records = try? JSONDecoder().decode([Record].self, from: data) else { return }
 
         for r in records {
             let exercise = Exercise(
