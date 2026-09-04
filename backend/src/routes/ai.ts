@@ -76,6 +76,9 @@ export function aiRoutes(deps: AppDeps): Hono<AppEnv> {
       await releaseQuota(userId, day).catch((e) => log.warn({ err: e }, 'ai quota release failed'));
       if (err instanceof GeminiError) {
         log.warn({ status: err.status, message: err.message }, 'gemini request failed');
+        if (err.status === 429 || (err.status !== undefined && err.status >= 500)) {
+          throw new HttpError(503, 'ai_busy', 'The AI is busy right now; try again in a minute');
+        }
         throw new HttpError(502, 'ai_upstream_error', 'The AI provider did not answer; try again');
       }
       if (err instanceof AIParseError) {

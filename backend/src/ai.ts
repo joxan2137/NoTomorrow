@@ -196,7 +196,7 @@ export function extractText(json: unknown): string | null {
     if (typeof node !== 'object') return;
     const o = node as Record<string, unknown>;
     if (typeof o.text === 'string' && (o.type === undefined || o.type === 'text')) texts.push(o.text);
-    for (const key of ['outputs', 'output', 'candidates', 'content', 'parts']) if (key in o) visit(o[key], depth + 1);
+    for (const key of ['steps', 'outputs', 'output', 'candidates', 'content', 'parts']) if (key in o) visit(o[key], depth + 1);
   };
   visit(root, 0);
   return texts.length > 0 ? texts.join('') : null;
@@ -240,26 +240,44 @@ export interface EstimateInput {
 export async function estimateFood(config: GeminiConfig, input: EstimateInput, fetchImpl: typeof fetch = fetch): Promise<AIEstimate> {
   const prompt = buildPrompt(input.locale, input.meal);
   const headers = { 'content-type': 'application/json', 'x-goog-api-key': config.apiKey };
-  const first = await fetchImpl(`${GEMINI_BASE_URL}/v1beta/interactions`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(interactionsRequest(config.model, prompt, input.imageBase64)),
-  });
-  let json: unknown;
-  if (first.status === 404) {
-    const second = await fetchImpl(`${GEMINI_BASE_URL}/v1beta/models/${encodeURIComponent(config.model)}:generateContent`, {
+  const models = [config.model, ...(config.fallbackModels ?? [])];
+  let lastError: GeminiError | null = null;
+
+  for (const model of models) {
+    let json: unknown;
+    const first = await fetchImpl(`${GEMINI_BASE_URL}/v1beta/interactions`, {
       method: 'POST',
       headers,
-      body: JSON.stringify(generateContentRequest(prompt, input.imageBase64)),
+      body: JSON.stringify(interactionsRequest(model, prompt, input.imageBase64)),
     });
-    if (!second.ok) throw new GeminiError(`generateContent failed with HTTP ${second.status}`, second.status);
-    json = await second.json();
-  } else if (!first.ok) {
-    throw new GeminiError(`interactions failed with HTTP ${first.status}`, first.status);
-  } else {
-    json = await first.json();
+    if (first.ok) {
+      json = await first.json();
+    } else if (first.status === 404) {
+      const second = await fetchImpl(`${GEMINI_BASE_URL}/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(generateContentRequest(prompt, input.imageBase64)),
+      });
+      if (!second.ok) {
+        lastError = new GeminiError(`generateContent failed with HTTP ${second.status} (${model})`, second.status);
+        if (isRetryable(second.status)) continue;
+        throw lastError;
+      }
+      json = await second.json();
+    } else {
+      lastError = new GeminiError(`interactions failed with HTTP ${first.status} (${model})`, first.status);
+      // Overloaded or rate-limited: fall through to the next model in the chain.
+      if (isRetryable(first.status)) continue;
+      throw lastError;
+    }
+    const text = extractText(json);
+    if (!text) throw new GeminiError(`Gemini response contained no text (${model})`);
+    return parseEstimate(text);
   }
-  const text = extractText(json);
-  if (!text) throw new GeminiError('Gemini response contained no text');
-  return parseEstimate(text);
+  throw lastError ?? new GeminiError('no Gemini model configured');
+}
+
+/** 429 (quota) and 5xx (overloaded / internal) are worth trying on a sibling model. */
+function isRetryable(status: number): boolean {
+  return status === 429 || status >= 500;
 }

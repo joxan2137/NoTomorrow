@@ -34,6 +34,7 @@ const rawSchema = z.object({
   APNS_PRODUCTION: optBool,
   GEMINI_API_KEY: optStr,
   GEMINI_MODEL: withDefault(z.string().trim().default('gemini-3.1-flash-lite')),
+  GEMINI_FALLBACK_MODELS: withDefault(z.string().trim().default('gemini-3.5-flash,gemini-3.1-flash-lite')),
   AI_DAILY_LIMIT: withDefault(z.coerce.number().int().min(0).default(30)),
   JOBS_ENABLED: optBool,
 });
@@ -57,6 +58,8 @@ export interface ApnsConfig {
 export interface GeminiConfig {
   apiKey: string;
   model: string;
+  /** Tried in order when the primary model is rate-limited or overloaded (429/5xx). */
+  fallbackModels: string[];
 }
 
 export interface Env {
@@ -167,7 +170,10 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   }
 
   let gemini: GeminiConfig | null = null;
-  if (r.GEMINI_API_KEY) gemini = { apiKey: r.GEMINI_API_KEY, model: r.GEMINI_MODEL };
+  if (r.GEMINI_API_KEY) {
+    const fallbackModels = r.GEMINI_FALLBACK_MODELS.split(',').map((m) => m.trim()).filter((m) => m && m !== r.GEMINI_MODEL);
+    gemini = { apiKey: r.GEMINI_API_KEY, model: r.GEMINI_MODEL, fallbackModels };
+  }
   else warnings.push('Gemini AI proxy disabled (not configured)');
 
   if (problems.length > 0) throw new EnvError(problems);
