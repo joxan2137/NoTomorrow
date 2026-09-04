@@ -8,7 +8,7 @@ import UserNotifications
 @Observable
 @MainActor
 final class SettingsModel {
-    let auth = AuthStore()
+    let auth = AuthStore.shared
     let health = HealthKitService()
     let bro = BroShared.service
 
@@ -29,6 +29,17 @@ final class SettingsModel {
     // Account flows
     var isDeleting = false
     var isUnpairing = false
+    var isSigningOut = false
+
+    /// "Use demo data (offline)": swaps the backend for the in-memory mock and forgets account-bound bro state.
+    var useDemoData: Bool {
+        get { AppConfig.shared.useMockBackend }
+        set {
+            guard newValue != AppConfig.shared.useMockBackend else { return }
+            AppConfig.shared.useMockBackend = newValue
+            bro.resetSession()
+        }
+    }
 
     init() {
         let defaults = UserDefaults.standard
@@ -102,8 +113,19 @@ final class SettingsModel {
 
     // MARK: Account
 
-    func signOut() {
-        auth.clear()
+    /// Server-side revoke (best effort), Keychain cleared, local data kept.
+    func signOut() async {
+        isSigningOut = true
+        await SignInModel.signOut()
+        isSigningOut = false
+    }
+
+    /// Username, or the display name for accounts without one (Apple/Google).
+    var accountName: String {
+        if let me = bro.me {
+            return me.username.isEmpty ? me.displayName : me.username
+        }
+        return String(localized: "settings.signedIn")
     }
 
     /// Backend first (best effort), then every user-owned SwiftData object, then the Keychain, then back to onboarding.
@@ -131,6 +153,7 @@ final class SettingsModel {
 
         auth.clear()
         auth.removeAnthropicKey()
+        bro.resetSession()
         UserDefaults.standard.removeObject(forKey: Self.restAutoStartKey)
         appState.hasOnboarded = false
     }

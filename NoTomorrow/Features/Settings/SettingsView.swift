@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var model = SettingsModel()
     @State private var path: [SettingsRoute] = []
     @State private var showsSignOut = false
+    @State private var showsSignIn = false
     @State private var showsDelete = false
 
     var body: some View {
@@ -45,8 +46,11 @@ struct SettingsView: View {
         .preferredColorScheme(.dark)
         .task { await model.refreshNotificationStatus() }
         .task { await model.loadBro(in: modelContext) }
+        .sheet(isPresented: $showsSignIn) {
+            SignInView { Task { await model.loadBro(in: modelContext) } }
+        }
         .confirmationDialog("settings.signOut.confirm", isPresented: $showsSignOut, titleVisibility: .visible) {
-            Button("settings.signOut", role: .destructive) { model.signOut() }
+            Button("settings.signOut", role: .destructive) { Task { await model.signOut() } }
             Button("common.cancel", role: .cancel) {}
         } message: {
             Text("settings.signOut.message")
@@ -131,9 +135,12 @@ struct SettingsView: View {
 
     private var accountGroup: some View {
         STGroup(title: "settings.account") {
-            STActionRow(label: "settings.signOut",
-                        value: String(localized: model.auth.isSignedIn ? "settings.signedIn" : "settings.notSignedIn")) {
-                showsSignOut = true
+            if model.auth.isSignedIn {
+                STInfoRow(label: "settings.account.user", value: model.accountName, dot: NT.Colors.good)
+                STActionRow(label: "settings.signOut", isBusy: model.isSigningOut) { showsSignOut = true }
+            } else {
+                STActionRow(label: "settings.signIn", value: String(localized: "settings.notSignedIn")) { showsSignIn = true }
+                STInfoRow(label: "auth.google", value: "").opacity(0.4)
             }
             STActionRow(label: "settings.deleteAccount", color: NT.Colors.bad, isBusy: model.isDeleting) {
                 showsDelete = true

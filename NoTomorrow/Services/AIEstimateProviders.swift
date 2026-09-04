@@ -2,91 +2,37 @@ import Foundation
 
 // MARK: - Backend (Fly.io) provider
 
-/// POSTs multipart `image` + `meal` + `locale` to `<baseURL>/ai/estimate`. The backend runs Gemini by default; when the
-/// user stored their own Claude key we forward it as `X-Anthropic-Key` and the backend calls Claude instead.
+/// Sends the photo through `BackendClient.estimate` (multipart `image` + `meal` + `locale`, Bearer session,
+/// refresh-on-401) and maps the server's error codes to user-facing `AIEstimateError`s. The user's own Claude key
+/// never goes through the backend; `DirectAnthropicEstimateService` handles that path.
 struct BackendAIEstimateService: AIEstimateService {
-    let baseURL: URL
-    let authToken: () async -> String?
-    let anthropicKey: () -> String?
-    var session: URLSession = .shared
+    let client: any BackendClient
 
-    init(baseURL: URL, authToken: @escaping () async -> String?, anthropicKey: @escaping () -> String? = { nil },
-         session: URLSession = .shared) {
-        self.baseURL = baseURL
-        self.authToken = authToken
-        self.anthropicKey = anthropicKey
-        self.session = session
+    init(client: any BackendClient = AppConfig.shared.makeBackendClient()) {
+        self.client = client
     }
 
     func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
-        let boundary = "NoTomorrow-\(UUID().uuidString)"
-        var request = URLRequest(url: baseURL.appendingPathComponent("ai/estimate"))
-        request.httpMethod = "POST"
-        request.timeoutInterval = 60
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        if let token = await authToken() { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        if let key = anthropicKey(), !key.isEmpty { request.setValue(key, forHTTPHeaderField: "X-Anthropic-Key") }
-        request.httpBody = MultipartBody(boundary: boundary)
-            .field("meal", meal.rawValue)
-            .field("locale", locale)
-            .file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG)
-            .encoded()
-
-        let (data, response): (Data, URLResponse)
-        do { (data, response) = try await session.data(for: request) } catch { throw AIEstimateError.network }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        switch status {
-        case 200..<300:
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            if let estimate = try? decoder.decode(AIEstimate.self, from: data) { return estimate }
-            return try AIEstimateWire.decode(data)
-        case 401, 403: throw AIEstimateError.unauthorized
-        default: throw AIEstimateError.badResponse(status, String(data: data, encoding: .utf8))
+        do {
+            return try await client.estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: nil)
+        } catch {
+            throw Self.map(BackendError.wrap(error))
         }
     }
-}
 
-/// Minimal multipart/form-data writer.
-struct MultipartBody {
-    let boundary: String
-    private var parts: [Data] = []
-
-    init(boundary: String) { self.boundary = boundary }
-
-    func field(_ name: String, _ value: String) -> MultipartBody {
-        var copy = self
-        var d = Data()
-        d.append("--\(boundary)\r\n")
-        d.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
-        d.append("\(value)\r\n")
-        copy.parts.append(d)
-        return copy
+    /// 429/502/503 (and any `ai_*` code) → "busy, try again in a minute"; `ai_daily_limit` gets its own line.
+    static func map(_ error: BackendError) -> AIEstimateError {
+        switch error {
+        case .unauthorized: return .signedOut
+        case .network: return .network
+        case .decoding: return .invalidJSON
+        case .server(let message): return .badResponse(0, message)
+        case .http(let status, let code, let message):
+            if code == "ai_daily_limit" { return .dailyLimit }
+            if [429, 502, 503].contains(status) || code.hasPrefix("ai_") { return .busy }
+            return .badResponse(status, message)
+        }
     }
-
-    func file(_ name: String, filename: String, mimeType: String, data: Data) -> MultipartBody {
-        var copy = self
-        var d = Data()
-        d.append("--\(boundary)\r\n")
-        d.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n")
-        d.append("Content-Type: \(mimeType)\r\n\r\n")
-        d.append(data)
-        d.append("\r\n")
-        copy.parts.append(d)
-        return copy
-    }
-
-    func encoded() -> Data {
-        var out = Data()
-        parts.forEach { out.append($0) }
-        out.append("--\(boundary)--\r\n")
-        return out
-    }
-}
-
-private extension Data {
-    mutating func append(_ string: String) { append(Data(string.utf8)) }
 }
 
 // MARK: - Direct Claude provider (bring your own key)

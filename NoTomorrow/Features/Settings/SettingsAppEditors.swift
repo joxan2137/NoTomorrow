@@ -128,8 +128,16 @@ struct AIProviderEditor: View {
             if model.aiProvider == .claudeBYOK {
                 keySection
             }
+
+            STGroup(title: "settings.developer") {
+                STToggleRow(title: "settings.demoData", detail: "settings.demoData.detail", isOn: demoData)
+            }
         }
         .animation(.easeOut(duration: 0.2), value: model.aiProvider)
+    }
+
+    private var demoData: Binding<Bool> {
+        Binding(get: { model.useDemoData }, set: { model.useDemoData = $0 })
     }
 
     private var keySection: some View {

@@ -8,18 +8,24 @@ import SwiftData
 @Observable
 @MainActor
 final class BroService {
-    let client: any BackendClient
+    private let injectedClient: (any BackendClient)?
 
+    /// Resolved on every use so flipping "Use demo data" in Settings takes effect without a relaunch.
+    var client: any BackendClient { injectedClient ?? AppConfig.shared.makeBackendClient() }
+
+    private(set) var me: Me?
     private(set) var partner: Partner?
     private(set) var partnerState: PartnerState?
     private(set) var myCode: String?
     private(set) var isLoading = false
+    /// The backend refused us and the session could not be refreshed: the views show "Sign in", not an error.
+    private(set) var isSignedOut = false
     var lastError: BackendError?
 
     var isPaired: Bool { partner != nil }
 
-    init(client: any BackendClient = AppConfig.shared.makeBackendClient()) {
-        self.client = client
+    init(client: (any BackendClient)? = nil) {
+        injectedClient = client
     }
 
     // MARK: Refresh
@@ -30,10 +36,14 @@ final class BroService {
         defer { isLoading = false }
         do {
             let me = try await client.me()
+            self.me = me
+            isSignedOut = false
             partner = me.partner
             if let code = me.pairCode { myCode = code }
             if partner == nil {
                 partnerState = nil
+                clearPairing(in: context)
+                lastError = nil
                 return
             }
             let state = try await client.partnerState()
@@ -42,8 +52,42 @@ final class BroService {
             upsertPairing(in: context)
             lastError = nil
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
         }
+    }
+
+    /// `unauthorized` is a state (signed out), everything else is an error worth surfacing.
+    private func handle(_ error: Error) {
+        let wrapped = BackendError.wrap(error)
+        if wrapped == .unauthorized {
+            resetSession()
+        } else {
+            lastError = wrapped
+        }
+    }
+
+    /// Forgets everything that belongs to the account (partner, code, week). Local SwiftData rows stay.
+    /// Called after sign-out, after an unrecoverable 401 and when the demo switch flips.
+    func resetSession() {
+        me = nil
+        partner = nil
+        partnerState = nil
+        myCode = nil
+        lastError = nil
+        isSignedOut = true
+    }
+
+    /// After a sign-in: push the local schedule and locale/time zone, then load who we are paired with.
+    func didSignIn(in context: ModelContext) async {
+        isSignedOut = false
+        let client = client
+        if let schedule = try? context.fetch(FetchDescriptor<GymSchedule>()).first {
+            try? await client.pushSchedule(ScheduleDTO(schedule))
+        }
+        let language = Locale.current.language.languageCode?.identifier ?? "en"
+        try? await client.updateMe(locale: language, timeZone: TimeZone.current.identifier)
+        await refresh(in: context)
+        if myCode == nil, !isSignedOut { _ = await createCode() }
     }
 
     // MARK: Pairing
@@ -55,7 +99,7 @@ final class BroService {
             lastError = nil
             return code
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
             return nil
         }
     }
@@ -85,7 +129,7 @@ final class BroService {
             return true
         } catch {
             isLoading = false
-            lastError = BackendError.wrap(error)
+            handle(error)
             return false
         }
     }
@@ -98,7 +142,7 @@ final class BroService {
             lastError = nil
             for pairing in (try? context.fetch(FetchDescriptor<BroPairing>())) ?? [] { context.delete(pairing) }
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
         }
     }
 
@@ -112,7 +156,7 @@ final class BroService {
             try await client.setAttendance(day: today, status: .confirmed, reason: nil, note: nil, makeUpDay: nil)
             lastError = nil
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
         }
     }
 
@@ -129,7 +173,7 @@ final class BroService {
             }
             lastError = nil
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
         }
     }
 
@@ -140,7 +184,7 @@ final class BroService {
             try await client.sendHeadsUp(kind: kind, text: text, sessionDay: Calendar.current.startOfDay(for: sessionDay))
             lastError = nil
         } catch {
-            lastError = BackendError.wrap(error)
+            handle(error)
         }
     }
 
@@ -221,6 +265,14 @@ final class BroService {
     private func scheduledMinute(for day: Date, in context: ModelContext) -> Int {
         let schedule = try? context.fetch(FetchDescriptor<GymSchedule>()).first
         return schedule?.minuteOfDay(for: Calendar.current.isoWeekday(for: day)) ?? 18 * 60
+    }
+
+    /// The server says we are not paired: drop the cached pairing so the tabs do not show a stale partner.
+    private func clearPairing(in context: ModelContext) {
+        let rows = (try? context.fetch(FetchDescriptor<BroPairing>())) ?? []
+        guard !rows.isEmpty else { return }
+        rows.forEach { context.delete($0) }
+        try? context.save()
     }
 
     private func upsertPairing(in context: ModelContext) {

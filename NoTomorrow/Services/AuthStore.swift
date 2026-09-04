@@ -3,14 +3,22 @@ import Observation
 import Security
 
 /// Session and the optional Anthropic key, both in the Keychain (never iCloud-synchronised).
+/// One instance per process (`shared`): the sign-in sheet, Settings, the Bro tab and the AI flow all observe it.
 @Observable
+@MainActor
 final class AuthStore {
+    static let shared = AuthStore()
+
     private(set) var session: Session?
     /// Masked Anthropic key for display, e.g. "sk-ant-…1234". `nil` when no key is stored.
     private(set) var maskedAnthropicKey: String?
 
     var isSignedIn: Bool { session != nil }
     var hasAnthropicKey: Bool { maskedAnthropicKey != nil }
+
+    /// `true` when the real backend is in use and there is no session: Bro pairing and AI estimates
+    /// show their "Sign in" state instead of calling the network. The demo backend never needs an account.
+    var needsSignIn: Bool { !AppConfig.shared.useMockBackend && session == nil }
 
     init() {
         session = KeychainHelper.readSession()
@@ -25,6 +33,11 @@ final class AuthStore {
     func clear() {
         KeychainHelper.delete(account: KeychainHelper.Account.session)
         session = nil
+    }
+
+    /// Re-reads the Keychain after the transport rotated (or dropped) the session off the main actor.
+    func reload() {
+        session = KeychainHelper.readSession()
     }
 
     // MARK: Anthropic key (BYOK)

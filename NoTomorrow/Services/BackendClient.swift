@@ -12,7 +12,11 @@ protocol BackendClient: Sendable {
     func signIn(google idToken: String) async throws -> Session
     func signIn(username: String, password: String) async throws -> Session
     func register(username: String, password: String, email: String?) async throws -> Session
+    /// Best-effort server-side revoke of the refresh token; the caller clears the Keychain regardless.
+    func logout(refreshToken: String) async throws
     func me() async throws -> Me
+    /// Locale/time zone the server uses for push copy and for "day" instants in replies.
+    func updateMe(locale: String?, timeZone: String?) async throws
 
     func createPairCode() async throws -> String
     func pair(withCode: String) async throws -> Partner
@@ -58,22 +62,29 @@ struct ScheduleDTO: Codable, Sendable, Equatable {
     var defaultMinuteOfDay: Int
     /// Per-weekday overrides keyed by ISO weekday.
     var overrides: [Int: Int]
+    /// Job toggles the server's reminder / 21:00 cron reads. `nil` leaves the server value untouched.
+    var remindHourBefore: Bool?
+    var askIfSkippedAt21: Bool?
 
-    init(weekdays: [Int], defaultMinuteOfDay: Int, overrides: [Int: Int] = [:]) {
+    init(weekdays: [Int], defaultMinuteOfDay: Int, overrides: [Int: Int] = [:],
+         remindHourBefore: Bool? = nil, askIfSkippedAt21: Bool? = nil) {
         self.weekdays = weekdays.sorted()
         self.defaultMinuteOfDay = defaultMinuteOfDay
         self.overrides = overrides
+        self.remindHourBefore = remindHourBefore
+        self.askIfSkippedAt21 = askIfSkippedAt21
     }
 
     init(_ schedule: GymSchedule) {
-        self.init(weekdays: schedule.weekdays, defaultMinuteOfDay: schedule.defaultMinuteOfDay, overrides: schedule.overrides)
+        self.init(weekdays: schedule.weekdays, defaultMinuteOfDay: schedule.defaultMinuteOfDay, overrides: schedule.overrides,
+                  remindHourBefore: schedule.remindHourBefore, askIfSkippedAt21: schedule.askIfSkippedAt21)
     }
 
     func minuteOfDay(for isoWeekday: Int) -> Int { overrides[isoWeekday] ?? defaultMinuteOfDay }
     func isGymDay(_ isoWeekday: Int) -> Bool { weekdays.contains(isoWeekday) }
 
     // JSON objects need string keys; `[Int: Int]` would otherwise encode as a flat array.
-    private enum CodingKeys: String, CodingKey { case weekdays, defaultMinuteOfDay, overrides }
+    private enum CodingKeys: String, CodingKey { case weekdays, defaultMinuteOfDay, overrides, remindHourBefore, askIfSkippedAt21 }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -81,6 +92,8 @@ struct ScheduleDTO: Codable, Sendable, Equatable {
         defaultMinuteOfDay = try c.decode(Int.self, forKey: .defaultMinuteOfDay)
         let raw = try c.decodeIfPresent([String: Int].self, forKey: .overrides) ?? [:]
         overrides = Dictionary(uniqueKeysWithValues: raw.compactMap { k, v in Int(k).map { ($0, v) } })
+        remindHourBefore = try c.decodeIfPresent(Bool.self, forKey: .remindHourBefore)
+        askIfSkippedAt21 = try c.decodeIfPresent(Bool.self, forKey: .askIfSkippedAt21)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -88,6 +101,8 @@ struct ScheduleDTO: Codable, Sendable, Equatable {
         try c.encode(weekdays, forKey: .weekdays)
         try c.encode(defaultMinuteOfDay, forKey: .defaultMinuteOfDay)
         try c.encode(Dictionary(uniqueKeysWithValues: overrides.map { (String($0.key), $0.value) }), forKey: .overrides)
+        try c.encodeIfPresent(remindHourBefore, forKey: .remindHourBefore)
+        try c.encodeIfPresent(askIfSkippedAt21, forKey: .askIfSkippedAt21)
     }
 }
 
@@ -208,9 +223,12 @@ struct AIEstimate: Codable, Sendable, Equatable {
 // MARK: - Errors
 
 enum BackendError: Error, Sendable, Equatable, LocalizedError {
+    /// No session, or the session could not be refreshed. The UI shows its signed-out state, not a banner.
     case unauthorized
     case network
     case server(String)
+    /// Any other non-2xx reply, with the server's `{error, message}` envelope (`code` is e.g. "username_taken").
+    case http(status: Int, code: String, message: String)
     case decoding
 
     var errorDescription: String? {
@@ -218,8 +236,20 @@ enum BackendError: Error, Sendable, Equatable, LocalizedError {
         case .unauthorized: String(localized: "error.unauthorized")
         case .network: String(localized: "error.network")
         case .server(let message): String(format: String(localized: "error.server"), message)
+        case .http(_, _, let message): String(format: String(localized: "error.server"), message)
         case .decoding: String(localized: "error.decoding")
         }
+    }
+
+    /// Server error code when the reply carried one ("not_paired", "ai_busy", …).
+    var code: String? {
+        if case .http(_, let code, _) = self { return code }
+        return nil
+    }
+
+    var status: Int? {
+        if case .http(let status, _, _) = self { return status }
+        return nil
     }
 
     /// Normalises any thrown error into a `BackendError` for display.

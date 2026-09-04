@@ -166,6 +166,8 @@ struct SetupPairView: View {
         Group {
             if let partner = model.partnerName {
                 Text("onboarding.pair.paired \(partner)")
+            } else if AuthStore.shared.needsSignIn {
+                Text("onboarding.pair.signInLater")
             } else {
                 Text("onboarding.pair.helper")
             }

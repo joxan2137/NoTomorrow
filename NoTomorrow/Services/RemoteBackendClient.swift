@@ -1,148 +1,109 @@
 import Foundation
 
-/// JSON-over-HTTPS implementation of `BackendClient` for the Fly.io backend.
-/// Bearer token comes from `accessToken()` on every call so a refreshed session is picked up automatically.
+/// JSON-over-HTTPS implementation of `BackendClient` for the Fly.io backend (`backend/src/routes/*.ts` is the
+/// source of truth for paths and shapes). The Bearer token is read from `SessionStorage` on every call; a 401
+/// triggers one refresh + retry (see `RemoteTransport`). Without a session every authenticated call throws
+/// `BackendError.unauthorized` before touching the network, so the UI can show its signed-out state.
 final class RemoteBackendClient: BackendClient, @unchecked Sendable {
     let baseURL: URL
-    private let accessToken: @Sendable () -> String?
-    private let urlSession: URLSession
-    private let encoder: JSONEncoder
-    private let decoder: JSONDecoder
+    private let transport: RemoteTransport
 
-    init(baseURL: URL, accessToken: @escaping @Sendable () -> String?, urlSession: URLSession = .shared) {
+    init(baseURL: URL, storage: SessionStorage, urlSession: URLSession = .shared) {
         self.baseURL = baseURL
-        self.accessToken = accessToken
-        self.urlSession = urlSession
-        encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        transport = RemoteTransport(baseURL: baseURL, storage: storage, urlSession: urlSession)
     }
 
-    // MARK: Auth
+    // MARK: Auth (public routes)
 
     func signIn(apple identityToken: String, authorizationCode: String) async throws -> Session {
-        try await send("POST", "auth/apple", body: ["identityToken": identityToken, "authorizationCode": authorizationCode])
+        try await transport.send("POST", "auth/apple", auth: .none,
+                                 json: ["identityToken": identityToken, "authorizationCode": authorizationCode])
     }
 
     func signIn(google idToken: String) async throws -> Session {
-        try await send("POST", "auth/google", body: ["idToken": idToken])
+        try await transport.send("POST", "auth/google", auth: .none, json: ["idToken": idToken])
     }
 
     func signIn(username: String, password: String) async throws -> Session {
-        try await send("POST", "auth/password", body: ["username": username, "password": password])
+        try await transport.send("POST", "auth/login", auth: .none, json: ["username": username, "password": password])
     }
 
     func register(username: String, password: String, email: String?) async throws -> Session {
-        try await send("POST", "auth/register", body: ["username": username, "password": password, "email": email])
+        struct Body: Encodable { var username: String; var password: String; var email: String? }
+        return try await transport.send("POST", "auth/register", auth: .none,
+                                        json: Body(username: username, password: password, email: email))
     }
 
-    func me() async throws -> Me { try await send("GET", "me") }
+    func logout(refreshToken: String) async throws {
+        try await transport.sendVoid("POST", "auth/logout", auth: .none, json: ["refreshToken": refreshToken])
+    }
 
-    // MARK: Pairing & attendance
+    // MARK: Account
+
+    func me() async throws -> Me { try await transport.send("GET", "me") }
+
+    func updateMe(locale: String?, timeZone: String?) async throws {
+        struct Body: Encodable { var locale: String?; var tz: String? }
+        try await transport.sendVoid("PATCH", "me", json: Body(locale: locale, tz: timeZone))
+    }
+
+    func deleteAccount() async throws { try await transport.sendVoid("DELETE", "me") }
+
+    // MARK: Pairing
 
     func createPairCode() async throws -> String {
         struct Reply: Decodable { var code: String }
-        let reply: Reply = try await send("POST", "pair/code")
+        let reply: Reply = try await transport.send("POST", "pair/code")
         return reply.code
     }
 
+    /// The reply carries the partner both at the top level and under `partner`; `Partner` decodes the top level.
     func pair(withCode code: String) async throws -> Partner {
-        try await send("POST", "pair", body: ["code": code])
+        try await transport.send("POST", "pair", json: ["code": code])
     }
 
-    func unpair() async throws { try await sendVoid("DELETE", "pair") }
+    func unpair() async throws { try await transport.sendVoid("DELETE", "pair") }
 
-    func pushSchedule(_ s: ScheduleDTO) async throws { try await sendVoid("PUT", "schedule", body: s) }
+    // MARK: Schedule, attendance, heads-ups
 
-    func partnerState() async throws -> PartnerState { try await send("GET", "partner/state") }
+    func pushSchedule(_ s: ScheduleDTO) async throws { try await transport.sendVoid("PUT", "schedule", json: s) }
+
+    /// `/partner/state` merges partner and own rows into one `attendance` list tagged with `participant`.
+    func partnerState() async throws -> PartnerState { try await transport.send("GET", "partner/state") }
 
     func setAttendance(day: Date, status: AttendanceStatus, reason: String?, note: String?, makeUpDay: Date?) async throws {
-        struct Body: Encodable { var day: Date; var status: AttendanceStatus; var reason: String?; var note: String?; var makeUpDay: Date? }
-        try await sendVoid("PUT", "attendance", body: Body(day: day, status: status, reason: reason, note: note, makeUpDay: makeUpDay))
+        struct Body: Encodable { var status: AttendanceStatus; var reason: String?; var note: String?; var makeUpDay: String? }
+        let body = Body(status: status, reason: reason, note: note, makeUpDay: makeUpDay.map { WireDay.string($0) })
+        try await transport.sendVoid("PUT", "attendance/\(WireDay.string(day))", json: body)
     }
 
     func sendHeadsUp(kind: HeadsUpKind, text: String, sessionDay: Date) async throws {
-        struct Body: Encodable { var kind: HeadsUpKind; var text: String; var sessionDay: Date }
-        try await sendVoid("POST", "headsup", body: Body(kind: kind, text: text, sessionDay: sessionDay))
+        struct Body: Encodable { var kind: HeadsUpKind; var text: String; var sessionDay: String }
+        try await transport.sendVoid("POST", "headsups", json: Body(kind: kind, text: text, sessionDay: WireDay.string(sessionDay)))
     }
 
+    // MARK: Push
+
+    /// APNs token as lowercase hex; the server picks the environment its provider targets.
     func registerPushToken(_ token: Data) async throws {
         let hex = token.map { String(format: "%02x", $0) }.joined()
-        try await sendVoid("POST", "push/token", body: ["token": hex])
+        try await transport.sendVoid("POST", "push/token", json: ["token": hex])
     }
 
     // MARK: AI
 
+    /// Multipart `image` + `meal` + `locale`. The server answers `{foods, overallConfidence}` with `proteinG`-style
+    /// keys, which `AIFood`'s tolerant decoder accepts. Errors surface as `BackendError.http` with the server code
+    /// (`ai_daily_limit`, `ai_upstream_error`, `ai_unavailable`, …) for the AI service to map.
     func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
-        var request = makeRequest("POST", "ai/estimate")
-        let boundary = "nt-\(UUID().uuidString)"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        if let anthropicKey { request.setValue(anthropicKey, forHTTPHeaderField: "X-Anthropic-Key") }
-        var body = Data()
-        func field(_ name: String, _ value: String) {
-            body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
-        }
-        field("meal", meal.rawValue)
-        field("locale", locale)
-        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"image\"; filename=\"plate.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageJPEG)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        request.httpBody = body
-        return try await perform(request)
-    }
-
-    func deleteAccount() async throws { try await sendVoid("DELETE", "account") }
-
-    // MARK: Plumbing
-
-    private func makeRequest(_ method: String, _ path: String) -> URLRequest {
-        var request = URLRequest(url: baseURL.appending(path: path))
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("NoTomorrow/0.1 iOS", forHTTPHeaderField: "User-Agent")
-        if let token = accessToken() { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        return request
-    }
-
-    private func send<T: Decodable>(_ method: String, _ path: String) async throws -> T {
-        try await perform(makeRequest(method, path))
-    }
-
-    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B) async throws -> T {
-        var request = makeRequest(method, path)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(body)
-        return try await perform(request)
-    }
-
-    private func sendVoid(_ method: String, _ path: String) async throws {
-        _ = try await data(for: makeRequest(method, path))
-    }
-
-    private func sendVoid<B: Encodable>(_ method: String, _ path: String, body: B) async throws {
-        var request = makeRequest(method, path)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(body)
-        _ = try await data(for: request)
-    }
-
-    private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
-        let data = try await data(for: request)
-        do { return try decoder.decode(T.self, from: data) } catch { throw BackendError.decoding }
-    }
-
-    private func data(for request: URLRequest) async throws -> Data {
-        let (data, response): (Data, URLResponse)
-        do { (data, response) = try await urlSession.data(for: request) } catch { throw BackendError.network }
-        guard let http = response as? HTTPURLResponse else { throw BackendError.network }
-        switch http.statusCode {
-        case 200..<300: return data
-        case 401, 403: throw BackendError.unauthorized
-        default:
-            struct ServerMessage: Decodable { var error: String?; var message: String? }
-            let parsed = try? decoder.decode(ServerMessage.self, from: data)
-            throw BackendError.server(parsed?.message ?? parsed?.error ?? "HTTP \(http.statusCode)")
-        }
+        let body = MultipartBody()
+            .field("meal", meal.rawValue)
+            .field("locale", locale)
+            .file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG)
+        var headers: [String: String] = [:]
+        if let anthropicKey, !anthropicKey.isEmpty { headers["X-Anthropic-Key"] = anthropicKey }
+        let request = RemoteTransport.Request(method: "POST", path: "ai/estimate", auth: .required,
+                                              payload: .multipart(body), headers: headers, timeout: 90)
+        return try transport.decode(try await transport.perform(request))
     }
 }

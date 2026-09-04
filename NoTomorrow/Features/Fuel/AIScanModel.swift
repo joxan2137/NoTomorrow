@@ -164,11 +164,7 @@ final class AIScanModel {
         case .anthropic:
             return DirectAnthropicEstimateService(apiKey: { KeychainHelper.readAnthropicKey() })
         case .google:
-            return BackendAIEstimateService(
-                baseURL: config.backendBaseURL,
-                authToken: { KeychainHelper.readSession()?.accessToken },
-                anthropicKey: { nil }
-            )
+            return BackendAIEstimateService(client: config.makeBackendClient())
         }
     }
 

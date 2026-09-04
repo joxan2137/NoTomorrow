@@ -8393,6 +8393,486 @@
           }
         }
       }
+    },
+    "auth.signIn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się"
+          }
+        }
+      }
+    },
+    "auth.createAccount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create account"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz konto"
+          }
+        }
+      }
+    },
+    "auth.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An account links you with your gym bro and unlocks AI photo estimates."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto łączy cię z twoim gym bro i odblokowuje szacunki AI ze zdjęć."
+          }
+        }
+      }
+    },
+    "auth.username": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa użytkownika"
+          }
+        }
+      }
+    },
+    "auth.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hasło"
+          }
+        }
+      }
+    },
+    "auth.hint.username": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username: 3–24 characters, letters, numbers, _ or ."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa użytkownika: 3–24 znaki, litery, cyfry, _ lub ."
+          }
+        }
+      }
+    },
+    "auth.hint.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password: at least 10 characters, anything goes."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hasło: co najmniej 10 znaków, dowolne."
+          }
+        }
+      }
+    },
+    "auth.error.generic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't sign in. Check your username and password."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zalogować. Sprawdź nazwę użytkownika i hasło."
+          }
+        }
+      }
+    },
+    "auth.error.register": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't create the account. Try a different username or password."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się utworzyć konta. Spróbuj innej nazwy użytkownika lub hasła."
+          }
+        }
+      }
+    },
+    "auth.error.usernameTaken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That username is taken."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta nazwa użytkownika jest zajęta."
+          }
+        }
+      }
+    },
+    "auth.error.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a longer password (10+ characters) that isn't common and doesn't contain your username."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz dłuższe hasło (10+ znaków), które nie jest popularne i nie zawiera twojej nazwy użytkownika."
+          }
+        }
+      }
+    },
+    "auth.error.tooMany": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many attempts. Try again in a minute."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zbyt wiele prób. Spróbuj ponownie za minutę."
+          }
+        }
+      }
+    },
+    "auth.or": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lub"
+          }
+        }
+      }
+    },
+    "auth.google": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google (coming soon)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google (wkrótce)"
+          }
+        }
+      }
+    },
+    "auth.footnote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts and meals stay on this phone. The account only syncs your gym-bro schedule and the photos you send for estimates."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi i posiłki zostają na tym telefonie. Konto synchronizuje tylko harmonogram z gym bro i zdjęcia, które wysyłasz do oszacowania."
+          }
+        }
+      }
+    },
+    "settings.signIn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się"
+          }
+        }
+      }
+    },
+    "settings.account.user": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in as"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zalogowano jako"
+          }
+        }
+      }
+    },
+    "settings.developer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deweloper"
+          }
+        }
+      }
+    },
+    "settings.demoData": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use demo data (offline)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj danych demo (offline)"
+          }
+        }
+      }
+    },
+    "settings.demoData.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fake gym bro and AI estimates, no server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fikcyjny gym bro i szacunki AI, bez serwera."
+          }
+        }
+      }
+    },
+    "bro.signedOut.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to pair"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się, aby sparować"
+          }
+        }
+      }
+    },
+    "bro.signedOut.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing needs an account so your bro's phone can reach yours."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parowanie wymaga konta, żeby telefon twojego bro mógł połączyć się z twoim."
+          }
+        }
+      }
+    },
+    "bro.signedOut.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your code appears here once you're signed in."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój kod pojawi się tutaj po zalogowaniu."
+          }
+        }
+      }
+    },
+    "bro.signInToPair": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to pair"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się, aby sparować"
+          }
+        }
+      }
+    },
+    "fuel.ai.signedOut.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use AI estimates"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się, aby korzystać z szacunków AI"
+          }
+        }
+      }
+    },
+    "fuel.ai.signedOut.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos are analysed through your account. Your own Claude key from Settings works without one."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia są analizowane przez twoje konto. Twój własny klucz Claude z ustawień działa bez konta."
+          }
+        }
+      }
+    },
+    "fuel.ai.error.busy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI is busy, try again in a minute."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI jest zajęte, spróbuj ponownie za minutę."
+          }
+        }
+      }
+    },
+    "fuel.ai.error.dailyLimit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily AI limit reached. Try again tomorrow."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzienny limit AI wyczerpany. Spróbuj ponownie jutro."
+          }
+        }
+      }
+    },
+    "fuel.ai.error.signedOut": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use AI estimates."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się, aby korzystać z szacunków AI."
+          }
+        }
+      }
+    },
+    "onboarding.pair.signInLater": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing needs an account. You can sign in and pair later from the Bro tab."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parowanie wymaga konta. Zalogujesz się i sparujesz później w zakładce Bro."
+          }
+        }
+      }
     }
   }
 }

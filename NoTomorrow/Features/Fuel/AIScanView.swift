@@ -85,7 +85,11 @@ struct AIScanView: View {
     private var content: some View {
         switch model.phase {
         case .pickSource:
-            AIScanSourceView(meal: model.meal) { model.handlePicked($0) }
+            if model.upload == .google, !AuthStore.shared.isSignedIn {
+                AIScanSignedOutView(meal: model.meal) {}
+            } else {
+                AIScanSourceView(meal: model.meal) { model.handlePicked($0) }
+            }
         case .analyzing:
             AIScanAnalyzingView(image: model.image)
         case .result:

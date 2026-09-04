@@ -43,9 +43,13 @@ actor MockBackendClient: BackendClient {
         return s
     }
 
+    func logout(refreshToken: String) async throws { session = nil }
+
     func me() async throws -> Me {
         Me(id: session?.userId ?? "mock-user", username: "kuba", displayName: "Kuba", email: nil, partner: partner, pairCode: Self.pairCode)
     }
+
+    func updateMe(locale: String?, timeZone: String?) async throws {}
 
     // MARK: Pairing
 

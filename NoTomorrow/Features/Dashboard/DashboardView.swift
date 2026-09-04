@@ -58,8 +58,9 @@ struct DashboardScreen: View {
 
     private var profile: UserProfile? { profiles.first }
     private var schedule: GymSchedule? { schedules.first }
-    private var isPaired: Bool { model.bro.isPaired || !pairings.isEmpty }
-    private var partnerName: String? { model.bro.partner?.name ?? pairings.first?.partnerName }
+    /// Signed out on the real backend counts as solo: the bro row must not show a stale partner.
+    private var isPaired: Bool { !AuthStore.shared.needsSignIn && (model.bro.isPaired || !pairings.isEmpty) }
+    private var partnerName: String? { isPaired ? (model.bro.partner?.name ?? pairings.first?.partnerName) : nil }
 
     private var week: [WeekDay] {
         AttendanceService.currentWeek(schedule: schedule, records: weekRecords, today: day)

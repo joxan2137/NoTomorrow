@@ -17,7 +17,10 @@ struct BroView: View {
     private var bro: BroService { BroShared.service }
     private var schedule: GymSchedule? { schedules.first }
     private var pairing: BroPairing? { pairings.first }
-    private var isPaired: Bool { bro.isPaired || pairing != nil }
+    /// Real backend without a session: pairing is impossible, so the tab shows "Sign in to pair" and ignores
+    /// any pairing cached from an earlier session.
+    private var needsSignIn: Bool { AuthStore.shared.needsSignIn }
+    private var isPaired: Bool { !needsSignIn && (bro.isPaired || pairing != nil) }
     private var partnerName: String { bro.partner?.name ?? pairing?.partnerName ?? "" }
     private var myName: String { profiles.first?.name ?? "" }
 
@@ -25,7 +28,9 @@ struct BroView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                if isPaired {
+                if needsSignIn {
+                    BroSignedOutView { Task { await bro.refresh(in: modelContext) } }
+                } else if isPaired {
                     pairedContent
                 } else {
                     BroUnpairedView(myCode: bro.myCode ?? pairing?.myCode, isLoading: bro.isLoading) { code in

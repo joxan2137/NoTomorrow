@@ -10,7 +10,14 @@ protocol AIEstimateService {
 
 enum AIEstimateError: LocalizedError {
     case missingKey
+    /// The user's own Anthropic key was rejected.
     case unauthorized
+    /// No account session (or it expired and could not be refreshed) for the backend path.
+    case signedOut
+    /// Backend 429 (`ai_busy`), 502 (`ai_upstream_error`, `ai_unparseable`) or 503 (`ai_unavailable`).
+    case busy
+    /// Backend 429 `ai_daily_limit`.
+    case dailyLimit
     case badResponse(Int, String?)
     case invalidJSON
     case network
@@ -19,7 +26,11 @@ enum AIEstimateError: LocalizedError {
         switch self {
         case .missingKey: String(localized: "fuel.ai.error.missingKey")
         case .unauthorized: String(localized: "fuel.ai.error.unauthorized")
-        case .badResponse, .network: String(localized: "fuel.ai.failed")
+        case .signedOut: String(localized: "fuel.ai.error.signedOut")
+        case .busy: String(localized: "fuel.ai.error.busy")
+        case .dailyLimit: String(localized: "fuel.ai.error.dailyLimit")
+        case .network: String(localized: "error.network")
+        case .badResponse: String(localized: "fuel.ai.failed")
         case .invalidJSON: String(localized: "fuel.ai.error.unreadable")
         }
     }
