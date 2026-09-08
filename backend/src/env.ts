@@ -33,9 +33,10 @@ const rawSchema = z.object({
   APNS_TOPIC: optStr,
   APNS_PRODUCTION: optBool,
   GEMINI_API_KEY: optStr,
-  GEMINI_MODEL: withDefault(z.string().trim().default('gemini-3.1-flash-lite')),
-  GEMINI_FALLBACK_MODELS: withDefault(z.string().trim().default('gemini-3.5-flash,gemini-3.1-flash-lite')),
+  GEMINI_MODEL: withDefault(z.string().trim().default('gemini-3.8-flash')),
+  GEMINI_FALLBACK_MODELS: withDefault(z.string().trim().default('')),
   AI_DAILY_LIMIT: withDefault(z.coerce.number().int().min(0).default(30)),
+  AI_ALLOWED_USERS: withDefault(z.string().trim().default('')),
   JOBS_ENABLED: optBool,
 });
 
@@ -75,6 +76,8 @@ export interface Env {
   apns: ApnsConfig | null;
   gemini: GeminiConfig | null;
   aiDailyLimit: number;
+  /** Lower-cased usernames allowed to use the Gemini proxy; empty = every signed-in user. */
+  aiAllowedUsers: string[];
   jobsEnabled: boolean;
   /** Human-readable notes about providers that are disabled (logged at boot, never secrets). */
   warnings: string[];
@@ -176,6 +179,9 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   }
   else warnings.push('Gemini AI proxy disabled (not configured)');
 
+  const aiAllowedUsers = r.AI_ALLOWED_USERS.split(',').map((u) => u.trim().toLowerCase()).filter(Boolean);
+  if (gemini && aiAllowedUsers.length === 0) warnings.push('AI_ALLOWED_USERS is empty: every signed-in user may use the Gemini proxy');
+
   if (problems.length > 0) throw new EnvError(problems);
 
   return {
@@ -191,6 +197,7 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     apns,
     gemini,
     aiDailyLimit: r.AI_DAILY_LIMIT,
+    aiAllowedUsers,
     jobsEnabled: parseBool(r.JOBS_ENABLED, true),
     warnings,
   };

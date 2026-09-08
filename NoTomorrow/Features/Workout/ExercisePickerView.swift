@@ -24,6 +24,7 @@ struct ExercisePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @State private var detail: Exercise?
     @State private var model = ExercisePickerViewModel()
     @FocusState private var searchFocused: Bool
 
@@ -44,6 +45,7 @@ struct ExercisePickerView: View {
         .presentationBackground(NT.Colors.ground)
         .presentationDragIndicator(.visible)
         .onAppear { model.load(context: modelContext) }
+        .sheet(item: $detail) { ExerciseDetailView(exercise: $0) }
     }
 
     // MARK: Header
@@ -129,8 +131,15 @@ struct ExercisePickerView: View {
                 .padding(.bottom, 6)
 
                 ForEach(model.results) { entry in
-                    ExercisePickerRow(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
-                        model.toggle(entry.exercise.id)
+                    HStack(spacing: 8) {
+                        ExercisePickerRow(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
+                            model.toggle(entry.exercise.id)
+                        }
+                        Button { detail = entry.exercise } label: {
+                            Image(systemName: "figure.strengthtraining.traditional")
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel(Text("exercises.details"))
                     }
                 }
 

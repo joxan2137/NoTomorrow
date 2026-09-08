@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- XML-only mirrors of NT.Colors. Compose reads NT.Colors, never these.
+     Only the tokens the platform needs before Compose exists live here. -->
+<resources>
+    <color name="nt_ground">#FF0A0A0B</color>
+    <color name="nt_ink">#FFF2F2F4</color>
+    <color name="nt_ember">#FFFF6A2B</color>
+    <color name="nt_transparent">#00000000</color>
+</resources>

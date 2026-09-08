@@ -1,0 +1,19 @@
+Android parity capture — emulator-5554 (AVD nt402, 1206x2622 @480dpi = 402x874dp, Android 16)
+Date: 2026-09-05
+
+BLOCKER + WORKAROUND
+Captures 06-20 were taken with a ONE-LINE LOCAL PATCH that disables the app-wide Liquid Glass
+backdrop, because the unpatched build renders the entire post-onboarding UI as an empty
+NT.Colors.ground rectangle on this emulator (see bug #1). The patch was:
+
+  RootScreen.kt:72   LocalNtBackdrop provides backdrop   ->   LocalNtBackdrop provides null
+
+Both `Modifier.ntBackdropSource` call sites are null-guarded and `Modifier.liquidGlass` falls back
+to its flat fill, so the only visual delta in 06-20 is: glass surfaces (tab bar, NtMenu in 15,
+finish confirmation in 16, sheet chrome) draw their FLAT FILL instead of blurring/refracting the
+content behind them. Layout, type, spacing and colour are otherwise the real build.
+The patch has been REVERTED in the working tree; the APK currently installed on the emulator is
+still the patched one.
+
+06-dashboard-realglass.png is the same screen from the UNPATCHED build (the one frame that did
+render before the failure latched) — use it to judge the real tab-bar glass.

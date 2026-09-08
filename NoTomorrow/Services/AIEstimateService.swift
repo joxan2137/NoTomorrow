@@ -5,15 +5,18 @@ import Foundation
 // MARK: - Protocol
 
 protocol AIEstimateService {
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate
 }
 
 enum AIEstimateError: LocalizedError {
     case missingKey
-    /// The user's own Anthropic key was rejected.
+    case missingGeminiKey
+    /// The user's own Anthropic or Gemini key was rejected.
     case unauthorized
     /// No account session (or it expired and could not be refreshed) for the backend path.
     case signedOut
+    /// Backend 403 `ai_not_allowed`: the account is not on the server's AI whitelist.
+    case notAllowed
     /// Backend 429 (`ai_busy`), 502 (`ai_upstream_error`, `ai_unparseable`) or 503 (`ai_unavailable`).
     case busy
     /// Backend 429 `ai_daily_limit`.
@@ -25,8 +28,10 @@ enum AIEstimateError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingKey: String(localized: "fuel.ai.error.missingKey")
+        case .missingGeminiKey: String(localized: "fuel.ai.error.missingGeminiKey")
         case .unauthorized: String(localized: "fuel.ai.error.unauthorized")
         case .signedOut: String(localized: "fuel.ai.error.signedOut")
+        case .notAllowed: String(localized: "fuel.ai.error.notAllowed")
         case .busy: String(localized: "fuel.ai.error.busy")
         case .dailyLimit: String(localized: "fuel.ai.error.dailyLimit")
         case .network: String(localized: "error.network")
@@ -122,7 +127,7 @@ struct AIEstimateWire: Decodable {
 struct MockAIEstimateService: AIEstimateService {
     var delay: Duration = .milliseconds(1200)
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         try await Task.sleep(for: delay)
         let t = { (key: String) in AIEstimateLocalizer.string(key, locale: locale) }
         switch meal {
@@ -157,5 +162,12 @@ enum AIEstimateLocalizer {
             return String(localized: String.LocalizationValue(key), bundle: bundle)
         }
         return String(localized: String.LocalizationValue(key))
+    }
+}
+
+// Keep existing integrations source-compatible while allowing weighed portions and cooking notes.
+extension AIEstimateService {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
+        try await estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, notes: "")
     }
 }

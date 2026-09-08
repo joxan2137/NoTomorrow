@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-written keys for rest/. -->
+<resources>
+    <string name="rest_action_plus15">+15</string>
+</resources>

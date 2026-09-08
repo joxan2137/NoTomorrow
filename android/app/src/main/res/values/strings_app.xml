@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-written keys for the app shell. Not in Localizable.xcstrings: the iOS
+     app name comes from the bundle display name, which has no catalog key. -->
+<resources>
+    <string name="app_name" translatable="false">No Tomorrow</string>
+    <string name="app_wordmark_no" translatable="false">NO</string>
+    <string name="app_wordmark_tomorrow" translatable="false">TOMORROW</string>
+
+    <string name="channel_rest_name">Rest timer</string>
+    <string name="channel_rest_description">The running rest countdown between sets.</string>
+    <string name="channel_rest_done_name">Rest finished</string>
+    <string name="channel_rest_done_description">Alerts you the moment a rest timer runs out.</string>
+    <string name="channel_reminders_name">Gym reminders</string>
+    <string name="channel_reminders_description">Reminders before a session and the evening check-in.</string>
+    <string name="channel_headsups_name">Heads-ups</string>
+    <string name="channel_headsups_description">Messages from your training partner.</string>
+</resources>

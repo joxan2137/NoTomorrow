@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     The OUTLINE companion to ic_group. SwiftUI substitutes the filled variant
+     for tab items, so `person.2` renders solid in the tab bar (ic_group) and as
+     outlines everywhere it is written literally — `BroSignedOutView.swift:21`,
+     the 44 dp card circle. Same centres and outer silhouette as ic_group, inset
+     by half the 1.8 stroke so the two read as one glyph at two weights. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Back figure's head ring, r 2.0 at (6.28, 8.6). -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M6.28,6.60 C7.385,6.60 8.28,7.495 8.28,8.60 C8.28,9.705 7.385,10.60 6.28,10.60 C5.175,10.60 4.28,9.705 4.28,8.60 C4.28,7.495 5.175,6.60 6.28,6.60 Z" />
+    <!-- Back figure's shoulders: the dome arc, then its own baseline running
+         right until the front dome's outline takes over. Not a half-arc left
+         hanging in the air — it closes onto the baseline the front dome sits on. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M9.672,14.926 A4.38,5.46 0 0 0 1.90,18.38 L8.62,18.38" />
+    <!-- Front figure's head ring, r 2.45 at (15.90, 8.08). -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M15.90,5.63 C17.253,5.63 18.35,6.727 18.35,8.08 C18.35,9.433 17.253,10.53 15.90,10.53 C14.547,10.53 13.45,9.433 13.45,8.08 C13.45,6.727 14.547,5.63 15.90,5.63 Z" />
+    <!-- Front figure's shoulders: closed dome outline (arc + baseline). -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M9.82,18.38 A6.14,5.50 0 0 1 15.96,12.88 A6.14,5.50 0 0 1 22.10,18.38 Z" />
+</vector>

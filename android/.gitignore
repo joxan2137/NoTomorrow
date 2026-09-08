@@ -1,0 +1,12 @@
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+.kotlin/
+captures/
+.cxx/
+*.hprof
+.DS_Store
+
+# google-services.json is deliberately NOT ignored — commit it when it exists.

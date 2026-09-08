@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-written keys for rest/. Not in Localizable.xcstrings: iOS draws "+15"
+     with Text(verbatim:) and has no notification-action strings at all. -->
+<resources>
+    <string name="rest_action_plus15">+15</string>
+</resources>

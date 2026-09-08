@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-written keys for feature/health. Not in Localizable.xcstrings: iOS has no
+     counterpart — HealthKit presents Apple's own authorization sheet, while Android
+     requires an app-owned rationale screen behind
+     androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE / VIEW_PERMISSION_USAGE that
+     states the same policy as the Play listing (docs/android-research.md §6.4). -->
+<resources>
+    <string name="health_rationale_eyebrow">Health Connect</string>
+    <string name="health_rationale_title">What No Tomorrow does with your health data</string>
+    <string name="health_rationale_intro">Body weight in, meals and workouts out. Nothing else is read, and nothing is sent anywhere.</string>
+
+    <string name="health_rationale_weight_title">Body weight</string>
+    <string name="health_rationale_weight_body">Read, so Progress can chart the weight you already recorded in another app. Written, so a weight you log here shows up in the rest of them.</string>
+
+    <string name="health_rationale_nutrition_title">Meals</string>
+    <string name="health_rationale_nutrition_body">Written: energy, protein, carbs and fat for every meal you log, with its name and the time of day.</string>
+
+    <string name="health_rationale_workouts_title">Workouts</string>
+    <string name="health_rationale_workouts_body">Written: a strength-training session for every workout you finish, and the calories it burned.</string>
+
+    <string name="health_rationale_privacy_title">Where it goes</string>
+    <string name="health_rationale_privacy_body">Nowhere. Health data stays on this phone: No Tomorrow never uploads it, never shares it and never uses it for advertising. You can withdraw access at any time in Health Connect.</string>
+</resources>

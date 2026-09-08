@@ -1,0 +1,72 @@
+== WINDOW UIWindow (0.0, 0.0, 402.0, 874.0) level=0.0
+UIWindow f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  _UITouchFallbackView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIDropShadowView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+      _UIHostingView<ModifiedContent<AnyView, RootModifier>> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001709d40; name = systemBackgroundColor>
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    _UIPopoverDimmingView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=UIExtendedSRGBColorSpace 0.933333 0.933333 1 0
+    _UIPopoverView f=(81.0, 304.0, 240.0, 292.33333333333326) r=0.0 alpha=1.0 bg=-
+      _UIRoundedRectShadowView f=(-150.0, -150.0, 540.0, 592.3333333333333) r=0.0 alpha=1.0 bg=-
+      _UIPopoverShapeLayerChromeView f=(0.0, 0.0, 240.0, 292.33333333333326) r=0.0 alpha=1.0 bg=-
+        _UIPopoverGlassBackground f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+          UICoreHostingView<PopoverBackgroundView> f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+            _UIInheritedView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+              _UIInheritedView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+                _UIInheritedView f=(0.0, 0.0, 0.0, 0.0) r=0.0 alpha=1.0 bg=-
+                  UIPlatformGlassInteractionView f=(-3.9968028886505635e-15, 8.881784197001252e-15, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+                    _UIInheritedView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+                      UICorePlatformViewHost<PlatformViewRepresentableAdaptor<PopoverGlassTraitCollectionReader>> f=(-3.9968028886505635e-15, 8.881784197001252e-15, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+                        UIView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+      UIView f=(0.0, 0.0, 240.0, 292.33333333333326) r=0.0 alpha=1.0 bg=-
+        _UIAlertControllerPhoneTVMacView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+          UIView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+            _UIAlertControllerInterfaceActionGroupView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+              UIView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+              UIView f=(0.0, 0.0, 240.0, 292.3333333333333) r=0.0 alpha=1.0 bg=-
+                _UIInterfaceActionGroupHeaderScrollView f=(0.0, 0.0, 240.0, 44.333333333333336) r=0.0 alpha=1.0 bg=-
+                  _UIAlertControllerLayoutObservingContainerView f=(0.0, 0.0, 240.0, 44.333333333333336) r=0.0 alpha=1.0 bg=-
+                    UIView f=(0.0, 0.0, 240.0, 0.0) r=0.0 alpha=1.0 bg=-
+                    UILabel f=(30.0, 22.0, 180.0, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                    UIView f=(0.0, 0.0, 240.0, 0.0) r=0.0 alpha=1.0 bg=-
+                    UIView f=(0.0, 0.0, 240.0, 0.0) r=0.0 alpha=1.0 bg=-
+                  _UIScrollViewScrollIndicator f=(234.0, -39.0, 3.0, 36.0) r=0.0 alpha=0.0 bg=-
+                    UIView f=(0.0, 0.0, 3.0, 36.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+                  _UIScrollViewScrollIndicator f=(-39.0, 38.33333333333333, 36.0, 3.0) r=0.0 alpha=0.0 bg=-
+                    UIView f=(0.0, 0.0, 36.0, 3.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+                _UIInterfaceActionRepresentationsSequenceView f=(0.0, 44.333333333333314, 240.0, 248.0) r=0.0 alpha=1.0 bg=-
+                  _UIInterfaceActionSeparatableSequenceView f=(0.0, 0.0, 240.0, 248.0) r=0.0 alpha=1.0 bg=-
+                    UIStackView f=(16.0, 16.0, 208.0, 216.0) r=0.0 alpha=1.0 bg=-
+                      _UIInterfaceActionCustomViewRepresentationView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                        _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 208.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001738b40; name = tertiarySystemFillColor>
+                        _UIAlertControllerActionView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(66.66666666666666, 0.0, 74.66666666666667, 48.0) r=0.0 alpha=1.0 bg=-
+                            UILabel f=(0.0, 13.999999999999998, 74.66666666666667, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UIInterfaceActionCustomViewRepresentationView f=(0.0, 56.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                        _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 208.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001738b40; name = tertiarySystemFillColor>
+                        _UIAlertControllerActionView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(80.0, 0.0, 48.333333333333336, 48.0) r=0.0 alpha=1.0 bg=-
+                            UILabel f=(0.0, 13.999999999999998, 48.333333333333336, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UIInterfaceActionCustomViewRepresentationView f=(0.0, 112.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                        _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 208.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001738b40; name = tertiarySystemFillColor>
+                        _UIAlertControllerActionView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(78.33333333333333, 0.0, 51.666666666666664, 48.0) r=0.0 alpha=1.0 bg=-
+                            UILabel f=(0.0, 13.999999999999998, 51.666666666666664, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UIInterfaceActionCustomViewRepresentationView f=(0.0, 168.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                        _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 208.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001738b40; name = tertiarySystemFillColor>
+                        _UIAlertControllerActionView f=(0.0, 0.0, 208.0, 48.0) r=0.0 alpha=1.0 bg=-
+                          UIView f=(78.66666666666667, 0.0, 50.666666666666664, 48.0) r=0.0 alpha=1.0 bg=-
+                            UILabel f=(0.0, 13.999999999999998, 50.666666666666664, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                  _UIScrollViewScrollIndicator f=(234.0, 90.0, 3.0, 7.0) r=0.0 alpha=0.0 bg=-
+                    UIView f=(0.0, 0.0, 3.0, 7.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+                  _UIScrollViewScrollIndicator f=(90.0, 242.0, 7.0, 3.0) r=0.0 alpha=0.0 bg=-
+                    UIView f=(0.0, 0.0, 7.0, 3.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+== WINDOW UITextEffectsWindow (0.0, 0.0, 402.0, 874.0) level=10.0
+UITextEffectsWindow f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  UITrackingWindowView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIKeyboardItemContainerView f=(0.0, 874.0, 402.0, 0.0) r=0.0 alpha=1.0 bg=-
+    UIEditingOverlayGestureView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-

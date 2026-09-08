@@ -147,7 +147,7 @@ actor MockBackendClient: BackendClient {
 
     // MARK: AI
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
         try await Task.sleep(for: .seconds(1.2))
         return AIEstimate(foods: [
             AIFood(name: String(localized: "mock.food.chicken"), grams: 180, kcal: 297, protein: 56, carbs: 0, fat: 6.5, confidence: 0.92),

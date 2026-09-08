@@ -1,0 +1,21 @@
+== WINDOW UIWindow (0.0, 0.0, 402.0, 874.0) level=0.0
+UIWindow f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIDropShadowView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+      _UIHostingView<ModifiedContent<AnyView, RootModifier>> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001710300; name = systemBackgroundColor>
+      UIDimmingView f=(-402.0, -874.0, 1206.0, 2622.0) r=0.0 alpha=1.0 bg=UIExtendedSRGBColorSpace 0 0 0 0.48
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIDimmingView f=(-402.0, -874.0, 1206.0, 2622.0) r=0.0 alpha=1.0 bg=UIExtendedSRGBColorSpace 0.933333 0.933333 1 0
+    UIDropShadowView f=(0.0, 62.0, 402.0, 812.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001710300; name = systemBackgroundColor>
+      _UIRoundedRectShadowView f=(-150.0, -150.0, 702.0, 1112.0) r=0.0 alpha=0.0 bg=-
+      UIView f=(0.0, 0.0, 402.0, 812.0) r=0.0 alpha=1.0 bg=-
+        UIView f=(0.0, 0.0, 402.0, 812.0) r=0.0 alpha=1.0 bg=-
+          HostingView f=(0.0, 0.0, 402.0, 812.0) r=0.0 alpha=1.0 bg=-
+      _UIGrabber f=(183.0, 5.0, 36.0, 5.0) r=2.5 alpha=1.0 bg=-
+        _UILumaTrackingBackdropView f=(0.0, -5.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-
+        UIVisualEffectView f=(0.0, -5.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-
+          _UIVisualEffectBackdropView f=(0.0, 0.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-
+      _UIGrabber f=(183.0, 802.0, 36.0, 5.0) r=2.5 alpha=0.0 bg=-
+        _UILumaTrackingBackdropView f=(0.0, -5.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-
+        UIVisualEffectView f=(0.0, -5.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-
+          _UIVisualEffectBackdropView f=(0.0, 0.0, 36.0, 15.0) r=0.0 alpha=1.0 bg=-

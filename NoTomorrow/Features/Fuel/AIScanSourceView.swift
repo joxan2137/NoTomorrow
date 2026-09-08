@@ -4,6 +4,7 @@ import UIKit
 
 /// Step 1 of the AI flow: where the photo comes from. Camera when the device has one, photo library always.
 struct AIScanSourceView: View {
+    @Binding var notes: String
     var meal: MealSlot
     var onPicked: (UIImage) -> Void
 
@@ -13,13 +14,15 @@ struct AIScanSourceView: View {
     private var cameraAvailable: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: NT.Spacing.section) {
+        ScrollView { VStack(alignment: .leading, spacing: NT.Spacing.section) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(AIScanText.slotKey(meal)).eyebrow()
                 Text("fuel.ai.source.subtitle")
                     .font(NT.Fonts.subheadline)
                     .foregroundStyle(NT.Colors.ink2)
             }
+
+            AIMealNotes(notes: $notes)
 
             plateIllustration
 
@@ -41,6 +44,7 @@ struct AIScanSourceView: View {
                 .buttonStyle(PressScale())
             }
             Spacer()
+        }
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.top, 12)
@@ -129,6 +133,20 @@ struct CameraPicker: UIViewControllerRepresentable {
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             onFinish(nil)
+        }
+    }
+}
+
+struct AIMealNotes: View {
+    @Binding var notes: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("fuel.ai.details").font(NT.Fonts.headline)
+            Text("fuel.ai.accuracyHint").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+            TextField("fuel.ai.detailsPlaceholder", text: $notes, axis: .vertical)
+                .lineLimit(2...4).padding(12)
+                .background(NT.Colors.surface2, in: RoundedRectangle(cornerRadius: 12))
+                .onChange(of: notes) { _, value in if value.count > 1500 { notes = String(value.prefix(1500)) } }
         }
     }
 }

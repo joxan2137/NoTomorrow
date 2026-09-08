@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Dark-only, forced. Compose owns every designed colour; this theme only
+         paints the window before the first frame and keeps the system bars out
+         of the way (research §9.5). -->
+    <!-- Parent is AppCompat's dark no-action-bar theme, not
+         Theme.Material3.Dark.NoActionBar: the latter lives in
+         com.google.android.material:material, which is not in the catalog
+         (Compose material3 ships no XML themes). AppCompatActivity only
+         requires *an* AppCompat theme, and every designed colour is Compose's. -->
+    <style name="Theme.NoTomorrow" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/nt_ground</item>
+        <item name="android:colorBackground">@color/nt_ground</item>
+        <item name="android:statusBarColor">@color/nt_transparent</item>
+        <item name="android:navigationBarColor">@color/nt_transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:navigationBarDividerColor">@color/nt_transparent</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
+    </style>
+
+    <!-- Applied in the manifest; MainActivity swaps to Theme.NoTomorrow in
+         onCreate via installSplashScreen(). -->
+    <style name="Theme.NoTomorrow.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/nt_ground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.NoTomorrow</item>
+    </style>
+</resources>

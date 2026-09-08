@@ -28,7 +28,7 @@ protocol BackendClient: Sendable {
     func sendHeadsUp(kind: HeadsUpKind, text: String, sessionDay: Date) async throws
     func registerPushToken(_ token: Data) async throws
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate
     func deleteAccount() async throws
 }
 
@@ -213,6 +213,9 @@ struct AIEstimate: Codable, Sendable, Equatable {
     var foods: [AIFood]
     /// 0…1
     var overallConfidence: Double
+    var assumptions: [String]? = nil
+    var questions: [String]? = nil
+    var scaleReferenceUsed: String? = nil
 
     var totalKcal: Double { foods.reduce(0) { $0 + $1.kcal } }
     var totalProtein: Double { foods.reduce(0) { $0 + $1.protein } }
@@ -263,5 +266,11 @@ enum BackendError: Error, Sendable, Equatable, LocalizedError {
             }
         }
         return .server(error.localizedDescription)
+    }
+}
+
+extension BackendClient {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
+        try await estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: anthropicKey, notes: "")
     }
 }

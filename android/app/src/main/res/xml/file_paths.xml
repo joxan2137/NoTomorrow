@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- CSV export lands in cacheDir/export, the share sheet reads it from here. -->
+    <cache-path name="export" path="export/" />
+    <cache-path name="images" path="images/" />
+    <files-path name="files" path="shared/" />
+</paths>

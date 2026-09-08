@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Polish half of res/values/strings_settings.xml. Sentence case, "ty" form. -->
+<resources>
+    <string name="settings_export_format">CSV</string>
+    <string name="settings_language_applies">Zmienia się od razu.</string>
+    <string name="settings_alarms_exact">Dokładne minutniki</string>
+    <string name="settings_alarms_request">Zezwól na dokładne minutniki</string>
+    <string name="settings_health_updateRequired">Wymagana aktualizacja</string>
+    <string name="settings_health_updateProvider">Zaktualizuj Health Connect</string>
+</resources>

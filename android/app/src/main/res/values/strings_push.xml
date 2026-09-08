@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-written keys for push/. Not in Localizable.xcstrings: on iOS every
+     push string is composed server-side (backend/src/i18n.ts) and APNs always
+     carries a title, so the client has no copy of its own. This is the single
+     fallback used when a payload arrives without a title; it matches
+     TITLE_BRO in backend/src/i18n.ts. -->
+<resources>
+    <string name="push_fallback_title">Gym bro</string>
+</resources>

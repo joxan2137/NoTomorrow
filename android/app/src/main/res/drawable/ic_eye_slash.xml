@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon(). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M3.8,12 C6.1,8.3 8.85,6.5 12,6.5 C15.15,6.5 17.9,8.3 20.2,12 C17.9,15.7 15.15,17.5 12,17.5 C8.85,17.5 6.1,15.7 3.8,12 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M12,9.4 C13.44,9.4 14.6,10.56 14.6,12 C14.6,13.44 13.44,14.6 12,14.6 C10.56,14.6 9.4,13.44 9.4,12 C9.4,10.56 10.56,9.4 12,9.4 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M3.6,3.6 L20.4,20.4" />
+</vector>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     `person.2`: two solid figures — a small one behind-left, a larger one in
+     front-right — each a full head disc over a full half-ellipse shoulder dome
+     sitting on one baseline (y 19.28). The back dome is not a half-arc that
+     stops mid-air: it runs to its own baseline and is cut only where the front
+     dome occludes it, along that dome's outline offset by a 0.32-unit hairline.
+     The old pair of open half-arcs read as a clipped glyph at both the 28 dp tab
+     size and the 44 dp Bro-card circle. Proportions measured on
+     design/ios26-reference/01b-tabbar-crop-2x-smooth.png. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Back figure's head: full disc, r 2.9 at (6.28, 8.6). -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M6.28,5.70 C7.88,5.70 9.18,7.00 9.18,8.60 C9.18,10.20 7.88,11.50 6.28,11.50 C4.68,11.50 3.38,10.20 3.38,8.60 C3.38,7.00 4.68,5.70 6.28,5.70 Z" />
+    <!-- Back figure's shoulders: the half-ellipse (6.28, 19.28) rx 5.28 ry 6.36,
+         cut at (10.232, 15.062) — where it meets the front dome grown by the
+         hairline (rx 7.36 ry 6.72) — then following that offset down to y 19.28. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M1.00,19.28 A5.28,6.36 0 0 1 10.232,15.062 A7.36,6.72 0 0 0 8.60,19.28 Z" />
+    <!-- Front figure's head: full disc, r 3.35 at (15.90, 8.08). -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M15.90,4.73 C17.75,4.73 19.25,6.23 19.25,8.08 C19.25,9.93 17.75,11.43 15.90,11.43 C14.05,11.43 12.55,9.93 12.55,8.08 C12.55,6.23 14.05,4.73 15.90,4.73 Z" />
+    <!-- Front figure's shoulders: full half-ellipse (15.96, 19.28) rx 7.04 ry 6.40. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M8.92,19.28 A7.04,6.40 0 0 1 15.96,12.88 A7.04,6.40 0 0 1 23.00,19.28 Z" />
+</vector>

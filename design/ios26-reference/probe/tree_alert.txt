@@ -1,0 +1,45 @@
+== WINDOW UIWindow (0.0, 0.0, 402.0, 874.0) level=0.0
+UIWindow f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIDropShadowView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+      _UIHostingView<ModifiedContent<AnyView, RootModifier>> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001705400; name = systemBackgroundColor>
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x60000172c800; name = _alertControllerDimmingViewColor>
+    UIView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    _UIKeyboardLayoutAlignmentView f=(0.0, 874.0, 0.0, 0.0) r=0.0 alpha=1.0 bg=-
+    _UIAlertControllerPhoneTVMacView f=(41.0, 375.0, 320.0, 152.0) r=34.0 alpha=1.0 bg=-
+      UIView f=(0.0, 0.0, 320.0, 152.0) r=0.0 alpha=1.0 bg=-
+        _UIAlertControllerInterfaceActionGroupView f=(0.0, 0.0, 320.0, 152.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+          _UIAlertBackground f=(0.0, 0.0, 320.0, 152.0) r=34.0 alpha=1.0 bg=-
+          UIView f=(0.0, 0.0, 320.0, 152.0) r=34.0 alpha=1.0 bg=-
+            _UIInterfaceActionGroupHeaderScrollView f=(0.0, 0.0, 320.0, 72.0) r=0.0 alpha=1.0 bg=-
+              _UIAlertControllerLayoutObservingContainerView f=(0.0, 0.0, 320.0, 72.0) r=0.0 alpha=1.0 bg=-
+                UIView f=(0.0, 0.0, 320.0, 0.0) r=0.0 alpha=1.0 bg=-
+                UILabel f=(30.0, 22.0, 260.0, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                UILabel f=(30.0, 49.666666666666686, 260.0, 18.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                UIView f=(160.0, 0.0, 0.0, 0.0) r=0.0 alpha=1.0 bg=-
+                UIView f=(0.0, 0.0, 320.0, 0.0) r=0.0 alpha=1.0 bg=-
+              _UIScrollViewScrollIndicator f=(314.0, -39.0, 3.0, 36.0) r=0.0 alpha=0.0 bg=-
+                UIView f=(0.0, 0.0, 3.0, 36.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+              _UIScrollViewScrollIndicator f=(-39.0, 66.0, 36.0, 3.0) r=0.0 alpha=0.0 bg=-
+                UIView f=(0.0, 0.0, 36.0, 3.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+              _UIAlertControllerGradientView f=(0.0, 70.0, 320.0, 2.0) r=0.0 alpha=0.0555555559694767 bg=-
+            _UIInterfaceActionRepresentationsSequenceView f=(0.0, 72.0, 320.0, 80.0) r=0.0 alpha=1.0 bg=-
+              _UIInterfaceActionSeparatableSequenceView f=(0.0, 0.0, 320.0, 80.0) r=0.0 alpha=1.0 bg=-
+                UIStackView f=(16.0, 16.0, 288.0, 48.0) r=0.0 alpha=1.0 bg=-
+                  _UIInterfaceActionCustomViewRepresentationView f=(148.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                    _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                      UIView f=(0.0, 0.0, 140.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x6000017415c0; name = tertiarySystemFillColor>
+                    _UIAlertControllerActionView f=(0.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                      UIView f=(44.66666666666666, 0.0, 50.666666666666664, 48.0) r=0.0 alpha=1.0 bg=-
+                        UILabel f=(0.0, 13.999999999999998, 50.666666666666664, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                  _UIInterfaceActionCustomViewRepresentationView f=(0.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                    _UIAlertControllerFilledBackgroundView f=(0.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                      UIView f=(0.0, 0.0, 140.0, 48.0) r=24.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x6000017415c0; name = tertiarySystemFillColor>
+                    _UIAlertControllerActionView f=(0.0, 0.0, 140.0, 48.0) r=0.0 alpha=1.0 bg=-
+                      UIView f=(43.0, 0.0, 54.0, 48.0) r=0.0 alpha=1.0 bg=-
+                        UILabel f=(0.0, 13.999999999999998, 54.0, 20.333333333333332) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+              _UIScrollViewScrollIndicator f=(314.0, 90.0, 3.0, 7.0) r=0.0 alpha=0.0 bg=-
+                UIView f=(0.0, 0.0, 3.0, 7.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+              _UIScrollViewScrollIndicator f=(90.0, 74.0, 7.0, 3.0) r=0.0 alpha=0.0 bg=-
+                UIView f=(0.0, 0.0, 7.0, 3.0) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5

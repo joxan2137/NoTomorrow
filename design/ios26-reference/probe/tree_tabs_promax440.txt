@@ -1,0 +1,56 @@
+== WINDOW UIWindow (0.0, 0.0, 440.0, 956.0) level=0.0
+UIWindow f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+  UITransitionView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+    UIDropShadowView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+      _UIHostingView<ModifiedContent<AnyView, RootModifier>> f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001706000; name = systemBackgroundColor>
+        UIKitPlatformViewHost<PlatformViewControllerRepresentableAdaptor<UIKitAdaptableTabView>> f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+          UILayoutContainerView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001706000; name = systemBackgroundColor>
+            UITransitionView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+              UIViewControllerWrapperView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+                HostingView f=(0.0, 0.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001706000; name = systemBackgroundColor>
+            _UITabBarContainerWrapperView f=(0.0, 873.0, 440.0, 83.0) r=0.0 alpha=1.0 bg=-
+              _UITabBarContainerView f=(0.0, -873.0, 440.0, 956.0) r=0.0 alpha=1.0 bg=-
+                UITabBar f=(0.0, 873.0, 440.0, 83.0) r=0.0 alpha=1.0 bg=-
+                  _UITabBarPlatterView f=(21.0, 0.0, 398.0, 62.0) r=nan alpha=1.0 bg=-
+                    SelectedContentView f=(0.0, 0.0, 398.0, 62.0) r=0.0 alpha=1.0 bg=-
+                      _UITabButton f=(4.0, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(26.000000000000004, 6.0, 33.333333333333336, 28.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(27.0, 35.0, 30.0, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(80.35, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(28.0, 7.333333333333332, 29.0, 25.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(31.0, 35.0, 22.0, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(156.7, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(28.0, 9.333333333333336, 29.333333333333332, 21.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(33.0, 35.0, 18.666666666666668, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(233.04999999999995, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(25.0, 7.333333333333334, 35.0, 25.333333333333332) r=0.0 alpha=1.0 bg=-
+                        Label f=(29.0, 35.0, 26.333333333333332, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(309.4, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(30.0, 15.666666666666668, 25.0, 8.666666666666666) r=0.0 alpha=1.0 bg=-
+                        Label f=(29.0, 35.0, 25.666666666666668, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                    _UILiquidLensView f=(4.0, 4.0, 84.6, 54.0) r=nan alpha=1.0 bg=-
+                      UIView f=(0.0, 0.0, 84.33333333333333, 54.0) r=0.0 alpha=1.0 bg=-
+                        _UITabSelectionView f=(0.0, 0.0, 84.33333333333333, 54.0) r=nan alpha=1.0 bg=-
+                        ClearGlassView f=(0.0, 0.0, 84.33333333333333, 54.0) r=nan alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 84.33333333333333, 54.0) r=0.0 alpha=1.0 bg=-
+                            SDFView f=(0.0, 0.0, 84.33333333333333, 54.0) r=0.0 alpha=1.0 bg=-
+                              SDFElementView f=(0.0, 0.0, 84.33333333333333, 54.0) r=nan alpha=1.0 bg=-
+                            _UIPortalView f=(0.0, 0.0, 84.33333333333333, 54.0) r=nan alpha=1.0 bg=-
+                          UIView f=(0.0, 0.0, 84.33333333333333, 54.0) r=nan alpha=1.0 bg=-
+                    ContentView f=(0.0, 0.0, 398.0, 62.0) r=0.0 alpha=1.0 bg=-
+                      _UITabButton f=(4.0, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(26.000000000000004, 6.0, 33.333333333333336, 28.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(27.0, 35.0, 29.666666666666668, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(80.35, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(28.0, 7.333333333333332, 29.0, 25.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(32.0, 35.0, 21.333333333333332, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(156.7, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(28.0, 9.333333333333336, 29.333333333333332, 21.0) r=0.0 alpha=1.0 bg=-
+                        Label f=(33.0, 35.0, 18.333333333333332, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(233.04999999999995, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(25.0, 7.333333333333334, 35.0, 25.333333333333332) r=0.0 alpha=1.0 bg=-
+                        Label f=(29.0, 35.0, 26.0, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITabButton f=(309.4, 4.0, 84.6, 54.0) r=0.0 alpha=1.0 bg=-
+                        UIImageView f=(30.0, 15.666666666666668, 25.0, 8.666666666666666) r=0.0 alpha=1.0 bg=-
+                        Label f=(30.0, 35.0, 25.333333333333332, 12.0) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                    DestOutView f=(0.0, 0.0, 84.6, 54.0) r=nan alpha=1.0 bg=UIExtendedGrayColorSpace 0 1

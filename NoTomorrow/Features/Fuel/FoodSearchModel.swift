@@ -71,9 +71,9 @@ final class FoodSearchModel {
     }
 
     /// Barcode → candidate, or nil when Open Food Facts has nothing under either EAN/UPC form.
-    func lookup(barcode: String) async -> FoodCandidate? {
+    func lookup(barcode: String) async throws -> FoodCandidate? {
         await MainActor.run { isLookingUpBarcode = true }
         defer { Task { @MainActor in self.isLookingUpBarcode = false } }
-        return try? await FoodSearchService.shared.lookup(barcode: barcode)
+        return try await FoodSearchService.shared.lookup(barcode: barcode)
     }
 }

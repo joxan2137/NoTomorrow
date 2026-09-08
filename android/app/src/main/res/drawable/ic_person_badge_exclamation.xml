@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors, original geometry drawn
+     to read like the SF glyph. Never traced from SF Symbols. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M9.8,4.2 C11.79,4.2 13.4,5.81 13.4,7.8 C13.4,9.79 11.79,11.4 9.8,11.4 C7.81,11.4 6.2,9.79 6.2,7.8 C6.2,5.81 7.81,4.2 9.8,4.2 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M2.8,20.4 C2.8,16.87 5.93,14 9.8,14 C10.75,14 11.66,14.17 12.5,14.49" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M17.6,13 C20.14,13 22.2,15.06 22.2,17.6 C22.2,20.14 20.14,22.2 17.6,22.2 C15.06,22.2 13,20.14 13,17.6 C13,15.06 15.06,13 17.6,13 Z" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.7" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M17.6,15.1 L17.6,18.1" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M17.6,19.35 A0.95,0.95 0 1 0 17.6,21.25 A0.95,0.95 0 1 0 17.6,19.35 Z" />
+</vector>

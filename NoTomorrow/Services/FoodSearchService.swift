@@ -123,9 +123,10 @@ actor FoodSearchService {
 
     /// EAN-13 from VisionKit; a leading zero usually means the product is stored under its 12-digit UPC-A form.
     static func barcodeForms(_ raw: String) -> [String] {
-        let digits = raw.filter(\.isNumber)
-        guard !digits.isEmpty else { return [] }
+        let digits = raw.filter { $0 >= "0" && $0 <= "9" }
+        guard [8, 12, 13, 14].contains(digits.count) else { return [] }
         var forms = [digits]
+        if digits.count == 14, digits.hasPrefix("0") { forms.append(String(digits.dropFirst())) }
         if digits.count == 13, digits.hasPrefix("0") { forms.append(String(digits.dropFirst())) }
         if digits.count == 12 { forms.append("0" + digits) }
         return forms
@@ -159,11 +160,16 @@ actor FoodSearchService {
         let name = locale == "pl" && !pl.isEmpty ? pl : (!en.isEmpty ? en : pl)
         guard !name.isEmpty else { return nil }
         let n = p.nutriments ?? [:]
-        guard let kcal = n["energy-kcal_100g"]?.value else { return nil }
+        let kj = n["energy-kj_100g"]?.value ?? n["energy_100g"]?.value
+        guard let kcal = n["energy-kcal_100g"]?.value ?? kj.map({ $0 / 4.184 }),
+              kcal.isFinite, (0...950).contains(kcal) else { return nil }
+        for key in ["proteins_100g", "carbohydrates_100g", "fat_100g"] {
+            if let value = n[key]?.value, !value.isFinite || !(0...100).contains(value) { return nil }
+        }
 
         let brand = p.brands?.split(separator: ",").first.map { $0.trimmingCharacters(in: .whitespaces) }
         let servingLabel = p.servingSize?.trimmingCharacters(in: .whitespaces)
-        var servingG = p.servingQuantity?.value
+        var servingG = (servingLabel?.lowercased().contains("ml") == true) ? nil : p.servingQuantity?.value
         if servingG == nil, let servingLabel { servingG = Self.grams(fromLabel: servingLabel) }
         if let g = servingG, g <= 0 { servingG = nil }
 
@@ -180,15 +186,19 @@ actor FoodSearchService {
         )
     }
 
-    /// "30 g", "250ml", "2 x 15g" → grams (ml treated as g).
+    /// Parse mass, including "2 x 15 g" and "1 porcja (30 g)". Volume is not mass.
     static func grams(fromLabel label: String) -> Double? {
-        let scanner = Scanner(string: label.replacingOccurrences(of: ",", with: "."))
-        scanner.charactersToBeSkipped = CharacterSet.decimalDigits.inverted
-        guard let value = scanner.scanDouble(), value > 0 else { return nil }
-        let lower = label.lowercased()
-        guard lower.contains("g") || lower.contains("ml") else { return nil }
-        return value
+        let text = label.lowercased().replacingOccurrences(of: ",", with: ".")
+        let pattern = #"(?:(\d+(?:\.\d+)?)\s*[x×]\s*)?(\d+(?:\.\d+)?)\s*(kg|g)\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let numberRange = Range(match.range(at: 2), in: text),
+              let amount = Double(text[numberRange]), amount > 0,
+              let unitRange = Range(match.range(at: 3), in: text) else { return nil }
+        let multiplier = Range(match.range(at: 1), in: text).flatMap { Double(text[$0]) } ?? 1
+        return amount * multiplier * (text[unitRange] == "kg" ? 1000 : 1)
     }
+
 }
 
 // MARK: - Wire types

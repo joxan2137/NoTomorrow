@@ -12,6 +12,9 @@ struct FoodSearchView: View {
     @State private var portionFood: PortionFood?
     @State private var showsScanner = false
     @State private var showsQuickAdd = false
+    @State private var missingBarcode = ""
+    @State private var showsLabel = false
+    @State private var lookupError = false
     @State private var barcodeNotFound = false
     @FocusState private var searchFocused: Bool
 
@@ -59,7 +62,17 @@ struct FoodSearchView: View {
                 dismiss()
             }
         }
+        .sheet(isPresented: $showsLabel) {
+            ProductLabelSheet(barcode: missingBarcode) { item in
+                showsLabel = false
+                portionFood = .item(item)
+            }
+        }
+        .alert("fuel.search.error.network", isPresented: $lookupError) {
+            Button("common.cancel", role: .cancel) {}
+        }
         .alert("fuel.barcodeNotFound", isPresented: $barcodeNotFound) {
+            Button("fuel.label.title") { showsLabel = true }
             Button("fuel.quickAdd") { showsQuickAdd = true }
             Button("common.cancel", role: .cancel) {}
         }
@@ -174,11 +187,20 @@ struct FoodSearchView: View {
         }
     }
 
+    @MainActor
     private func lookup(barcode: String) async {
-        if let found = await model.lookup(barcode: barcode) {
-            await MainActor.run { portionFood = .candidate(found) }
-        } else {
-            await MainActor.run { barcodeNotFound = true }
+        let forms = FoodSearchService.barcodeForms(barcode)
+        for code in forms {
+            let request = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.barcode == code })
+            if let saved = try? modelContext.fetch(request).first {
+                portionFood = .item(saved)
+                return
+            }
         }
+        do {
+            if let found = try await model.lookup(barcode: barcode) { portionFood = .candidate(found) }
+            else { missingBarcode = forms.first ?? barcode; barcodeNotFound = true }
+        } catch is CancellationError { }
+        catch { lookupError = true }
     }
 }

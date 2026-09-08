@@ -1,0 +1,9 @@
+Apple official iOS 26 reference imagery downloaded 2026-09-05.
+URL pattern:  https://developer.apple.com/tutorials + <relative url from the doc JSON>
+  HIG images:  https://developer.apple.com/tutorials/images/com.apple.HIG/<name>~dark@2x.png
+  TechOverview: https://developer.apple.com/tutorials/images/com.apple.TechnologyOverviews/<name>~dark@2x.png
+  Videos:       https://developer.apple.com/tutorials/videos/com.apple.TechnologyOverviews/<name>.mp4
+Doc JSON used to enumerate:
+  https://developer.apple.com/tutorials/data/documentation/technologyoverviews/adopting-liquid-glass.json
+  https://developer.apple.com/tutorials/data/design/human-interface-guidelines/{tab-bars,toggles,sheets,alerts,action-sheets,pickers,menus,materials}.json
+Local filename = <doc>__<original name with ~ and @ replaced by _>

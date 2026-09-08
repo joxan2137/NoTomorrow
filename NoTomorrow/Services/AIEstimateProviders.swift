@@ -12,15 +12,16 @@ struct BackendAIEstimateService: AIEstimateService {
         self.client = client
     }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         do {
-            return try await client.estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: nil)
+            return try await client.estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: nil, notes: notes)
         } catch {
             throw Self.map(BackendError.wrap(error))
         }
     }
 
-    /// 429/502/503 (and any `ai_*` code) → "busy, try again in a minute"; `ai_daily_limit` gets its own line.
+    /// 429/502/503 (and any `ai_*` code) → "busy, try again in a minute"; `ai_daily_limit` and `ai_not_allowed`
+    /// get their own lines.
     static func map(_ error: BackendError) -> AIEstimateError {
         switch error {
         case .unauthorized: return .signedOut
@@ -28,6 +29,7 @@ struct BackendAIEstimateService: AIEstimateService {
         case .decoding: return .invalidJSON
         case .server(let message): return .badResponse(0, message)
         case .http(let status, let code, let message):
+            if code == "ai_not_allowed" { return .notAllowed }
             if code == "ai_daily_limit" { return .dailyLimit }
             if [429, 502, 503].contains(status) || code.hasPrefix("ai_") { return .busy }
             return .badResponse(status, message)
@@ -52,7 +54,7 @@ struct DirectAnthropicEstimateService: AIEstimateService {
         self.session = session
     }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         guard let key = apiKey()?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
             throw AIEstimateError.missingKey
         }
@@ -64,7 +66,7 @@ struct DirectAnthropicEstimateService: AIEstimateService {
                 "content": [
                     ["type": "image",
                      "source": ["type": "base64", "media_type": "image/jpeg", "data": imageJPEG.base64EncodedString()]],
-                    ["type": "text", "text": AIEstimatePrompt.text(meal: meal, locale: locale)],
+                    ["type": "text", "text": AIEstimatePrompt.text(meal: meal, locale: locale) + "\nMeal details: " + String(notes.prefix(1500))],
                 ],
             ]],
         ]
@@ -111,6 +113,87 @@ struct AnthropicMessageResponse: Decodable {
 struct AnthropicErrorEnvelope: Decodable {
     struct Detail: Decodable {
         let type: String?
+        let message: String?
+    }
+    let error: Detail?
+}
+
+// MARK: - Direct Gemini provider (bring your own key)
+
+/// Calls the Generative Language API straight from the device with the user's own key. Only used when the user
+/// opted in to "Gemini with your key" in Settings; the photo goes to Google, same as the backend path.
+struct DirectGeminiEstimateService: AIEstimateService {
+    /// The same default the backend uses.
+    static let model = "gemini-3.8-flash"
+    static let endpoint = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent")!
+
+    let apiKey: () -> String?
+    var session: URLSession = .shared
+
+    init(apiKey: @escaping () -> String?, session: URLSession = .shared) {
+        self.apiKey = apiKey
+        self.session = session
+    }
+
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+        guard let key = apiKey()?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
+            throw AIEstimateError.missingGeminiKey
+        }
+        let body: [String: Any] = [
+            "contents": [[
+                "role": "user",
+                "parts": [
+                    ["text": AIEstimatePrompt.text(meal: meal, locale: locale) + "\nMeal details: " + String(notes.prefix(1500))],
+                    ["inlineData": ["mimeType": "image/jpeg", "data": imageJPEG.base64EncodedString()]],
+                ],
+            ]],
+            "generationConfig": ["responseMimeType": "application/json"],
+        ]
+        var request = URLRequest(url: Self.endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 60
+        request.setValue(key, forHTTPHeaderField: "x-goog-api-key")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response): (Data, URLResponse)
+        do { (data, response) = try await session.data(for: request) } catch { throw AIEstimateError.network }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        switch status {
+        case 200..<300: break
+        case 401, 403: throw AIEstimateError.unauthorized
+        case 429: throw AIEstimateError.busy
+        default:
+            let message = (try? JSONDecoder().decode(GeminiErrorEnvelope.self, from: data))?.error?.message
+            // Google answers a bad or expired key with 400 INVALID_ARGUMENT, not 401.
+            if status == 400, message?.contains("API key") == true { throw AIEstimateError.unauthorized }
+            throw AIEstimateError.badResponse(status, message)
+        }
+
+        let envelope = try? JSONDecoder().decode(GeminiGenerateContentResponse.self, from: data)
+        let parts = envelope?.candidates?.first?.content?.parts ?? []
+        let text = parts.compactMap(\.text).joined(separator: "\n")
+        guard let json = AIEstimatePrompt.extractJSON(from: text) else { throw AIEstimateError.invalidJSON }
+        return try AIEstimateWire.decode(json)
+    }
+}
+
+struct GeminiGenerateContentResponse: Decodable {
+    struct Candidate: Decodable {
+        struct Content: Decodable {
+            struct Part: Decodable {
+                let text: String?
+            }
+            let parts: [Part]?
+        }
+        let content: Content?
+    }
+    let candidates: [Candidate]?
+}
+
+struct GeminiErrorEnvelope: Decodable {
+    struct Detail: Decodable {
+        let status: String?
         let message: String?
     }
     let error: Detail?

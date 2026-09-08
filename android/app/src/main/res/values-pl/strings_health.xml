@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zobacz values/strings_health.xml. Ekran uzasadnienia dla Health Connect;
+     iOS nie ma odpowiednika. -->
+<resources>
+    <string name="health_rationale_eyebrow">Health Connect</string>
+    <string name="health_rationale_title">Co No Tomorrow robi z twoimi danymi zdrowotnymi</string>
+    <string name="health_rationale_intro">Waga do środka, posiłki i treningi na zewnątrz. Nic więcej nie jest odczytywane i nic nigdzie nie jest wysyłane.</string>
+
+    <string name="health_rationale_weight_title">Waga ciała</string>
+    <string name="health_rationale_weight_body">Odczyt, żeby Postępy pokazały wagę zapisaną w innej aplikacji. Zapis, żeby waga zapisana tutaj trafiła do pozostałych.</string>
+
+    <string name="health_rationale_nutrition_title">Posiłki</string>
+    <string name="health_rationale_nutrition_body">Zapis: kalorie, białko, węglowodany i tłuszcz każdego zapisanego posiłku, razem z nazwą i porą dnia.</string>
+
+    <string name="health_rationale_workouts_title">Treningi</string>
+    <string name="health_rationale_workouts_body">Zapis: sesja treningu siłowego dla każdego skończonego treningu i spalone w nim kalorie.</string>
+
+    <string name="health_rationale_privacy_title">Gdzie to trafia</string>
+    <string name="health_rationale_privacy_body">Nigdzie. Dane zdrowotne zostają na tym telefonie: No Tomorrow ich nie wysyła, nie udostępnia i nie używa do reklam. Dostęp możesz cofnąć w każdej chwili w Health Connect.</string>
+</resources>

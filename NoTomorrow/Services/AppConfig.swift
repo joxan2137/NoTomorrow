@@ -1,11 +1,12 @@
 import Foundation
 import Observation
 
-/// Who estimates food photos. `.standard` goes through our backend (Gemini); `.claudeBYOK` uses the user's own
-/// Anthropic key from the Keychain and talks to Anthropic directly.
+/// Who estimates food photos. `.standard` goes through our backend (Gemini); `.claudeBYOK` and `.geminiBYOK` use the
+/// user's own key from the Keychain and talk to Anthropic / Google directly.
 enum AIProvider: String, Codable, CaseIterable, Identifiable {
     case standard
     case claudeBYOK
+    case geminiBYOK
 
     var id: String { rawValue }
 }

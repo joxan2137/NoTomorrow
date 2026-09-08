@@ -8,6 +8,9 @@ struct FuelHomeView: View {
     @State private var sheet: FuelSheet?
     @State private var portionFood: PortionFood?
     @State private var isLookingUpBarcode = false
+    @State private var missingBarcode = ""
+    @State private var showsLabel = false
+    @State private var lookupError = false
     @State private var barcodeNotFound = false
     @State private var lookupMeal: MealSlot = .suggested()
 
@@ -76,7 +79,17 @@ struct FuelHomeView: View {
         .sheet(item: $portionFood, onDismiss: { model.refresh(in: modelContext) }) { food in
             PortionSheet(food: food, meal: lookupMeal, day: model.day) { portionFood = nil }
         }
+        .sheet(isPresented: $showsLabel) {
+            ProductLabelSheet(barcode: missingBarcode) { item in
+                showsLabel = false
+                portionFood = .item(item)
+            }
+        }
+        .alert("fuel.search.error.network", isPresented: $lookupError) {
+            Button("common.cancel", role: .cancel) {}
+        }
         .alert("fuel.barcodeNotFound", isPresented: $barcodeNotFound) {
+            Button("fuel.label.title") { showsLabel = true }
             Button("fuel.quickAdd") { sheet = .quickAdd(lookupMeal) }
             Button("common.cancel", role: .cancel) {}
         }
@@ -175,16 +188,19 @@ struct FuelHomeView: View {
         .transition(.opacity)
     }
 
+    @MainActor
     private func lookup(barcode: String) async {
-        await MainActor.run { isLookingUpBarcode = true }
-        let found = try? await FoodSearchService.shared.lookup(barcode: barcode)
-        await MainActor.run {
-            isLookingUpBarcode = false
-            if let found {
-                portionFood = .candidate(found)
-            } else {
-                barcodeNotFound = true
-            }
+        isLookingUpBarcode = true
+        defer { isLookingUpBarcode = false }
+        let forms = FoodSearchService.barcodeForms(barcode)
+        for code in forms {
+            let request = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.barcode == code })
+            if let saved = try? modelContext.fetch(request).first { portionFood = .item(saved); return }
         }
+        do {
+            if let found = try await FoodSearchService.shared.lookup(barcode: barcode) { portionFood = .candidate(found) }
+            else { missingBarcode = forms.first ?? barcode; barcodeNotFound = true }
+        } catch is CancellationError { }
+        catch { lookupError = true }
     }
 }

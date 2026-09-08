@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     `dumbbell`: four stadium plates (short outer collar, tall inner plate) and a
+     square-ended bar. Each plate is a round-capped stroke, i.e. a stadium whose
+     width IS the stroke width — the five hairlines it replaced carried 20 x 12 dp
+     of ink inside the 28 dp NtTabBarTokens.iconSize box; this carries 27.3 x 16.3.
+     Plate proportions measured on design/ios26-reference/01b-tabbar-crop-2x-smooth.png
+     (inner plate 4.4 units wide x 14 tall, outer 2.7 x 9.4, bar 7.3 x 3.7). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Outer collars. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="2.72" android:strokeLineCap="round"
+        android:pathData="M1.66,8.75 L1.66,15.44 M22.34,8.75 L22.34,15.44" />
+    <!-- Inner plates. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="4.30" android:strokeLineCap="round"
+        android:pathData="M6.20,7.15 L6.20,16.85 M17.80,7.15 L17.80,16.85" />
+    <!-- The bar: square ends, so it butts flush against both inner plates. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="3.70" android:strokeLineCap="butt"
+        android:pathData="M8.35,12 L15.65,12" />
+</vector>

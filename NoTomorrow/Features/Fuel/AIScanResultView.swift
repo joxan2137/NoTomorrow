@@ -17,6 +17,12 @@ struct AIScanResultView: View {
                 rows
                     .padding(.top, 10)
                 addMissedRow
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(model.assumptions, id: \.self) { Text($0).font(NT.Fonts.footnote) }
+                    ForEach(model.questions, id: \.self) { Text($0).font(NT.Fonts.subheadline) }
+                    AIMealNotes(notes: $model.notes)
+                    SecondaryButton(title: "fuel.ai.refine") { model.analyze() }
+                }.padding(.vertical, 12)
                 disclaimer
                     .padding(.top, 6)
             }

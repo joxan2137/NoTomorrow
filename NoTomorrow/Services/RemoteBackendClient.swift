@@ -95,10 +95,11 @@ final class RemoteBackendClient: BackendClient, @unchecked Sendable {
     /// Multipart `image` + `meal` + `locale`. The server answers `{foods, overallConfidence}` with `proteinG`-style
     /// keys, which `AIFood`'s tolerant decoder accepts. Errors surface as `BackendError.http` with the server code
     /// (`ai_daily_limit`, `ai_upstream_error`, `ai_unavailable`, …) for the AI service to map.
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
         let body = MultipartBody()
             .field("meal", meal.rawValue)
             .field("locale", locale)
+            .field("notes", String(notes.prefix(1500)))
             .file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG)
         var headers: [String: String] = [:]
         if let anthropicKey, !anthropicKey.isEmpty { headers["X-Anthropic-Key"] = anthropicKey }

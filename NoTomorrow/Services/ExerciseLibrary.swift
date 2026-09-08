@@ -24,7 +24,6 @@ actor ExerciseLibrary {
 
     func importIfNeeded(into context: ModelContext) async {
         guard !didRun else { return }
-        didRun = true
 
         let polish: [String: String] = {
             guard let url = Bundle.main.url(forResource: "exercises_pl", withExtension: "json"),
@@ -33,23 +32,17 @@ actor ExerciseLibrary {
             return map
         }()
 
-        let count = (try? context.fetchCount(FetchDescriptor<Exercise>())) ?? 0
-        if count > 0 {
-            // Already imported: backfill Polish names added in a later build.
-            var missing = FetchDescriptor<Exercise>(predicate: #Predicate { $0.namePL == nil && !$0.isCustom })
-            missing.fetchLimit = 2000
-            if !polish.isEmpty, let rows = try? context.fetch(missing), !rows.isEmpty {
-                for row in rows { row.namePL = polish[row.id] }
-                try? context.save()
-            }
-            return
-        }
-
         guard let url = Bundle.main.url(forResource: "exercises", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let records = try? JSONDecoder().decode([Record].self, from: data) else { return }
 
+        guard let existing = try? context.fetch(FetchDescriptor<Exercise>()) else { return }
+        let byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         for r in records {
+            if let row = byID[r.id] {
+                if !row.isCustom && row.namePL == nil { row.namePL = polish[r.id] }
+                continue
+            }
             let exercise = Exercise(
                 id: r.id,
                 name: r.name,
@@ -65,7 +58,7 @@ actor ExerciseLibrary {
             )
             context.insert(exercise)
         }
-        try? context.save()
+        do { try context.save(); didRun = true } catch { context.rollback() }
     }
 
     /// Muscle-group filter chips, mapped onto free-exercise-db primaryMuscles values.

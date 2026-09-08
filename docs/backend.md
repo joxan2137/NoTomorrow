@@ -5,7 +5,7 @@ Small API on Fly.io (region `ams`) that does four things: accounts, gym-bro pair
 ## Stack
 
 - Node 22, TypeScript (ESM), **Hono** 4.x, `postgres` (porsager) with hand-written SQL migrations (folder `migrations/`, applied at boot in order, tracked in a `schema_migrations` table), `zod` for input validation, `jose` for JWT/JWKS, `argon2` (node-argon2, argon2id m=19456 t=2 p=1), `@parse/node-apn` 8.x for APNs, `pg-boss` for scheduled jobs, `pino` logging. Dev: `tsx watch`; build: `tsc`; test: `vitest`.
-- Config from env (validated with zod at boot): `PORT` (8080), `DATABASE_URL`, `JWT_SECRET` (HS256 for 15-min access tokens), `REFRESH_PEPPER`, `TOKEN_ENC_KEY` (32-byte base64, AES-256-GCM for stored Apple refresh tokens), `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID` (= `aud`), `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_P8_B64`, `GOOGLE_CLIENT_IDS` (comma-separated allowlist for `aud`), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_B64`, `APNS_TOPIC` (bundle id), `APNS_PRODUCTION` (bool), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.1-flash-lite`), `AI_DAILY_LIMIT` (default 30). Missing optional providers (Apple/Google/APNs/Gemini) must degrade to a clear 503 on those routes, not a crash at boot.
+- Config from env (validated with zod at boot): `PORT` (8080), `DATABASE_URL`, `JWT_SECRET` (HS256 for 15-min access tokens), `REFRESH_PEPPER`, `TOKEN_ENC_KEY` (32-byte base64, AES-256-GCM for stored Apple refresh tokens), `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID` (= `aud`), `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_P8_B64`, `GOOGLE_CLIENT_IDS` (comma-separated allowlist for `aud`), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_B64`, `APNS_TOPIC` (bundle id), `APNS_PRODUCTION` (bool), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`), `AI_DAILY_LIMIT` (default 30), `AI_ALLOWED_USERS` (comma-separated usernames, case-insensitive, allowed to use the server's Gemini key; empty = every signed-in user). Missing optional providers (Apple/Google/APNs/Gemini) must degrade to a clear 503 on those routes, not a crash at boot.
 - `fly.toml`: `primary_region = "ams"`, `internal_port = 8080`, `force_https`, `auto_stop_machines = "stop"`, `auto_start_machines = true`, `min_machines_running = 1`, `[http_service.http_options] idle_timeout = 600`, health check `GET /healthz`, `[env] TZ = "UTC"`. Dockerfile: multi-stage, `node:22-slim`, non-root user.
 
 ## Schema (Postgres 16)
@@ -134,7 +134,7 @@ Jobs (pg-boss, one cron every 5 minutes that scans due work, idempotent):
 
 ## AI proxy
 
-`POST /ai/estimate` (auth, multipart: `image` JPEG ≤ 4 MB, `meal` in breakfast|lunch|snack|dinner, `locale` en|pl). Rate limit `AI_DAILY_LIMIT` per user per UTC day (`ai_usage`), 429 beyond. Calls Gemini Interactions API:
+`POST /ai/estimate` (auth, multipart: `image` JPEG ≤ 4 MB, `meal` in breakfast|lunch|snack|dinner, `locale` en|pl). If `AI_ALLOWED_USERS` is set and the caller's username is not on it → `403 {"error":"ai_not_allowed"}` before the body is read; the apps turn that into "ask the owner to whitelist you, or add your own Gemini or Claude API key in Settings". Rate limit `AI_DAILY_LIMIT` per user per UTC day (`ai_usage`), 429 beyond. Calls Gemini Interactions API:
 
 ```
 POST https://generativelanguage.googleapis.com/v1beta/interactions

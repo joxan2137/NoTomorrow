@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     `fork.knife`: a solid three-tine fork whose tines merge into a neck and stem,
+     and a knife with a STRAIGHT back and a tapered belly plus a handle — not the
+     single C-curve this used to draw, which read as a bent spoon. Proportions
+     measured on design/ios26-reference/01b-tabbar-crop-2x-smooth.png (fork tines
+     1.65 units wide on a 2.77 stem, blade back vertical at x 18, belly out to
+     x 14.1, handle 2.66 wide). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Fork: three tines -> neck -> stem, one closed silhouette. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M6.21,3.12 A0.825,0.825 0 0 1 7.86,3.12 L7.86,8.29 L8.66,8.29 L8.66,3.12 A0.825,0.825 0 0 1 10.31,3.12 L10.31,8.29 L11.10,8.29 L11.10,3.12 A0.825,0.825 0 0 1 12.75,3.12 L12.75,9.00 C12.75,10.40 11.75,11.20 10.66,11.60 L10.66,20.62 A1.385,1.385 0 0 1 7.89,20.62 L7.89,11.60 C6.80,11.20 6.21,10.40 6.21,9.00 Z" />
+    <!-- Knife: straight back on the right, tapered belly, then the handle. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M16.75,2.10 C17.55,3.00 18.00,4.30 18.00,5.70 L18.00,20.62 A1.33,1.33 0 0 1 15.34,20.62 L15.34,13.60 C14.55,13.00 14.10,11.60 14.10,9.90 C14.10,6.70 15.10,3.50 16.75,2.10 Z" />
+</vector>

@@ -210,7 +210,11 @@ extension SettingsModel {
     }
 
     var aiValue: String {
-        aiProvider == .claudeBYOK ? String(localized: "settings.ai.claudeShort") : String(localized: "settings.ai.standardShort")
+        switch aiProvider {
+        case .standard: String(localized: "settings.ai.standardShort")
+        case .claudeBYOK: String(localized: "settings.ai.claudeShort")
+        case .geminiBYOK: String(localized: "settings.ai.geminiShort")
+        }
     }
 
     var notificationStatusValue: String {

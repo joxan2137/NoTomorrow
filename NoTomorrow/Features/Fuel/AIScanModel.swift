@@ -10,30 +10,37 @@ final class AIScanModel {
         case analyzing
         case result
         case failed(String)
+        /// Backend 403 `ai_not_allowed`: the account is not whitelisted, so the card offers Settings instead.
+        case notAllowed
     }
 
     /// Which network provider the photo would go to. `.none` means the offline mock; nothing leaves the device.
+    /// `.gemini` is the user's own key, `.google` our backend — both end up at Google.
     enum Upload: Equatable {
         case none
         case google
+        case gemini
         case anthropic
 
         var consentKey: String? {
             switch self {
             case .none: nil
-            case .google: "nt.aiConsent.google"
+            case .google, .gemini: "nt.aiConsent.google"
             case .anthropic: "nt.aiConsent.anthropic"
             }
         }
 
         var providerNameKey: String {
             switch self {
-            case .none, .google: "fuel.ai.provider.google"
+            case .none, .google, .gemini: "fuel.ai.provider.google"
             case .anthropic: "fuel.ai.provider.anthropic"
             }
         }
     }
 
+    var notes = ""
+    var assumptions: [String] = []
+    var questions: [String] = []
     var meal: MealSlot
     var phase: Phase = .pickSource
     var image: UIImage?
@@ -84,6 +91,7 @@ final class AIScanModel {
     var upload: Upload {
         if config.useMockBackend { return .none }
         if config.aiProvider == .claudeBYOK, let key = KeychainHelper.readAnthropicKey(), !key.isEmpty { return .anthropic }
+        if config.aiProvider == .geminiBYOK, let key = KeychainHelper.readGeminiKey(), !key.isEmpty { return .gemini }
         return .google
     }
 
@@ -132,13 +140,17 @@ final class AIScanModel {
         phase = .analyzing
         let service = makeService()
         let meal = meal
+        let notes = notes
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
         task?.cancel()
         task = Task { [weak self] in
             do {
-                let estimate = try await service.estimate(imageJPEG: jpeg, meal: meal, locale: locale)
+                let estimate = try await service.estimate(imageJPEG: jpeg, meal: meal, locale: locale, notes: notes)
                 guard !Task.isCancelled else { return }
                 await MainActor.run { self?.apply(estimate) }
+            } catch AIEstimateError.notAllowed {
+                guard !Task.isCancelled else { return }
+                await MainActor.run { self?.phase = .notAllowed }
             } catch {
                 guard !Task.isCancelled else { return }
                 let message = (error as? AIEstimateError)?.errorDescription ?? String(localized: "fuel.ai.failed")
@@ -152,6 +164,8 @@ final class AIScanModel {
             phase = .failed(String(localized: "fuel.ai.failed"))
             return
         }
+        assumptions = estimate.assumptions ?? []
+        questions = estimate.questions ?? []
         foods = estimate.foods
         overallConfidence = estimate.overallConfidence
         phase = .result
@@ -163,6 +177,8 @@ final class AIScanModel {
             return MockAIEstimateService()
         case .anthropic:
             return DirectAnthropicEstimateService(apiKey: { KeychainHelper.readAnthropicKey() })
+        case .gemini:
+            return DirectGeminiEstimateService(apiKey: { KeychainHelper.readGeminiKey() })
         case .google:
             return BackendAIEstimateService(client: config.makeBackendClient())
         }

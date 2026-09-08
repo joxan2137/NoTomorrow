@@ -106,11 +106,13 @@ struct HealthEditor: View {
 
 // MARK: - AI estimates
 
-/// Standard (Gemini through our backend) or Claude with the user's own Anthropic API key (Keychain).
+/// Standard (Gemini through our backend), or Claude / Gemini with the user's own API key (Keychain).
 struct AIProviderEditor: View {
     @Bindable var model: SettingsModel
     @State private var keyDraft = ""
+    @State private var geminiKeyDraft = ""
     @FocusState private var keyFocused: Bool
+    @FocusState private var geminiKeyFocused: Bool
 
     private var provider: Binding<AIProvider> {
         Binding(get: { model.aiProvider }, set: { model.aiProvider = $0 })
@@ -123,10 +125,16 @@ struct AIProviderEditor: View {
                            isSelected: model.aiProvider == .standard) { provider.wrappedValue = .standard }
                 STCheckRow(title: "settings.ai.claude", detail: "settings.ai.claude.detail",
                            isSelected: model.aiProvider == .claudeBYOK) { provider.wrappedValue = .claudeBYOK }
+                STCheckRow(title: "settings.ai.gemini", detail: "settings.ai.gemini.detail",
+                           isSelected: model.aiProvider == .geminiBYOK) { provider.wrappedValue = .geminiBYOK }
             }
 
             if model.aiProvider == .claudeBYOK {
                 keySection
+            }
+
+            if model.aiProvider == .geminiBYOK {
+                geminiKeySection
             }
 
             STGroup(title: "settings.developer") {
@@ -177,11 +185,56 @@ struct AIProviderEditor: View {
         }
     }
 
+    private var geminiKeySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let masked = model.auth.maskedGeminiKey {
+                STGroup {
+                    STInfoRow(label: "settings.ai.geminiKeyLabel", value: masked, dot: NT.Colors.good)
+                    STActionRow(label: "settings.ai.removeKey", color: NT.Colors.bad) {
+                        model.auth.removeGeminiKey()
+                        geminiKeyDraft = ""
+                    }
+                }
+            } else {
+                SecureField(String(localized: "settings.ai.geminiKeyPlaceholder"), text: $geminiKeyDraft)
+                    .font(NT.Fonts.body)
+                    .foregroundStyle(NT.Colors.ink)
+                    .textContentType(.password)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .submitLabel(.done)
+                    .focused($geminiKeyFocused)
+                    .onSubmit(saveGeminiKey)
+                    .stField(isFocused: geminiKeyFocused)
+                    .stLabeled("settings.ai.geminiKeyLabel")
+
+                PrimaryButton(title: "settings.ai.saveKey", height: NT.Size.cardButton,
+                              isEnabled: !geminiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                    saveGeminiKey()
+                }
+            }
+
+            Text("settings.ai.geminiFootnote")
+                .font(NT.Fonts.footnote)
+                .foregroundStyle(NT.Colors.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+        }
+    }
+
     private func saveKey() {
         let trimmed = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         model.auth.anthropicKey = trimmed
         keyDraft = ""
         keyFocused = false
+    }
+
+    private func saveGeminiKey() {
+        let trimmed = geminiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        model.auth.geminiKey = trimmed
+        geminiKeyDraft = ""
+        geminiKeyFocused = false
     }
 }

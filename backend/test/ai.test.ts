@@ -133,3 +133,32 @@ describe('estimateFood', () => {
     await expect(estimateFood(config, input, empty as unknown as typeof fetch)).rejects.toBeInstanceOf(GeminiError);
   });
 });
+
+describe('accuracy safeguards', () => {
+  it('computes portions from per-100g nutrition instead of accepting model arithmetic', () => {
+    const result = parseEstimate(JSON.stringify({ foods: [{ name: 'Skyr', grams: 150, kcal: 999, proteinG: 999,
+      per100: { kcal: 64, protein: 12, carbs: 4, fat: 0 }, confidence: 0.6, isGuess: false }], assumptions: ['150 g eaten'], questions: [] }));
+    expect(result.foods[0]).toMatchObject({ kcal: 96, proteinG: 18, carbsG: 6, fatG: 0 });
+    expect(result.assumptions).toEqual(['150 g eaten']);
+  });
+  it('rejects impossible mass, energy density, and malformed responses', () => {
+    expect(() => parseEstimate('{"foods":[{"name":"rice","grams":0}]}')).toThrow(/mass/);
+    expect(() => parseEstimate('{"foods":[{"name":"rice","grams":10,"kcal":1000}]}')).toThrow(/implausible/);
+    expect(() => parseEstimate('{}')).toThrow(/foods array/);
+    expect(() => parseEstimate('{"foods":[{"name":"rice","grams":100,"per100":{"kcal":100,"protein":110,"carbs":0,"fat":0}}]}')).toThrow(/per-100g/);
+  });
+  it('ignores thought text when reading a structured answer', () => {
+    expect(extractText({ candidates: [{ content: { parts: [{ thought: true, text: 'not JSON' }, { text: '{"foods":[]}' }] } }] })).toBe('{"foods":[]}');
+  });
+  it('sends weighed-portion notes and disables server-side interaction storage', async () => {
+    const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.store).toBe(false);
+      expect(body.input[0].text).toContain('150 g ugotowanego ryżu');
+      expect(init?.signal).toBeDefined();
+      return new Response(JSON.stringify({ output_text: CLEAN }));
+    });
+    await estimateFood({ apiKey: 'test', model: 'gemini-3.8-flash', fallbackModels: [] },
+      { imageBase64: 'AA', locale: 'pl', meal: 'lunch', notes: '150 g ugotowanego ryżu' }, fetcher);
+  });
+});

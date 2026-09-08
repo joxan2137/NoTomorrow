@@ -26,6 +26,15 @@ npm run dev                  # tsx watch src/index.ts → http://localhost:8080
 Generate secrets with `openssl rand -base64 48` (JWT_SECRET), `openssl rand -base64 32`
 (REFRESH_PEPPER, TOKEN_ENC_KEY — the latter must decode to exactly 32 bytes).
 
+## Who may use the Gemini proxy
+
+The server's own `GEMINI_API_KEY` is only spent on the usernames in `AI_ALLOWED_USERS`
+(comma-separated, case-insensitive; e.g. `fly secrets set AI_ALLOWED_USERS=test123`). Everyone
+else gets `403 {"error": "ai_not_allowed"}` and the apps tell them to ask you for a spot on the
+list or to add their own Gemini or Claude API key in Settings — those keys never touch this server:
+the app then calls Google or Anthropic directly from the phone. Leave the variable empty to let
+every signed-in user through (the boot log warns when Gemini is configured and the list is empty).
+
 Optional providers (Apple, Google, APNs, Gemini) may be left blank: the server boots, logs a
 warning, and the routes that need them answer `503 {"error": "..._unavailable"}`. A *partially*
 configured provider is a boot error (it names the missing variables, never values).
@@ -92,7 +101,7 @@ fly secrets set --app notomorrow-api \
   APNS_TOPIC=app.notomorrow.ios \
   APNS_PRODUCTION=true \
   GEMINI_API_KEY=... \
-  GEMINI_MODEL=gemini-3.1-flash-lite \
+  GEMINI_MODEL=gemini-3.8-flash \
   AI_DAILY_LIMIT=30
 
 fly deploy --app notomorrow-api

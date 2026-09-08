@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "NT" wordmark mark: N in ember, T in ink — the same split as the Welcome
+     wordmark ("NO" ember over "TOMORROW" ink). Drawn inside the 66 dp adaptive
+     safe zone of the 108 dp viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFF6A2B"
+        android:pathData="M30,34 h7 l9,26 V34 h7 v40 h-7 l-9,-26 v26 h-7 z" />
+    <path
+        android:fillColor="#FFF2F2F4"
+        android:pathData="M57,34 h21 v7 h-7 v33 h-7 V41 h-7 z" />
+</vector>

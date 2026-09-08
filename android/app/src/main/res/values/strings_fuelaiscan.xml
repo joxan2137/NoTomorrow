@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AI photo estimate. The iOS catalog has no camera-permission copy: UIImagePickerController
+  presents the system permission UI itself, while Android needs the app to explain the denial.
+-->
+<resources>
+    <string name="fuel_ai_cameraDenied">Camera access is off. Choose a photo from your library instead.</string>
+</resources>

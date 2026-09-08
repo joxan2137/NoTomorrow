@@ -9,6 +9,7 @@ struct BarcodeScannerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var fired = false
+    @State private var manual = false
 
     private var scannerUsable: Bool {
         DataScannerViewController.isSupported && DataScannerViewController.isAvailable
@@ -16,8 +17,8 @@ struct BarcodeScannerView: View {
 
     var body: some View {
         ZStack {
-            if scannerUsable {
-                DataScannerRepresentable(onCode: deliver)
+            if scannerUsable && !manual {
+                DataScannerRepresentable(onCode: deliver, onUnavailable: { manual = true })
                     .ignoresSafeArea()
                 cameraChrome
             } else {
@@ -38,6 +39,7 @@ struct BarcodeScannerView: View {
                 .background(NT.Colors.ground.opacity(0.85), in: Capsule())
                 .padding(.top, 12)
             Spacer()
+            Button("fuel.scan.manual") { manual = true }.padding().background(.ultraThinMaterial, in: Capsule())
             Button { dismiss() } label: {
                 Text("common.cancel")
                     .font(NT.Fonts.headline)
@@ -65,8 +67,9 @@ struct BarcodeScannerView: View {
 
 private struct DataScannerRepresentable: UIViewControllerRepresentable {
     var onCode: (String) -> Void
+    var onUnavailable: () -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(onCode: onCode) }
+    func makeCoordinator() -> Coordinator { Coordinator(onCode: onCode, onUnavailable: onUnavailable) }
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let controller = DataScannerViewController(
@@ -86,7 +89,7 @@ private struct DataScannerRepresentable: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: DataScannerViewController, context: Context) {
         // The view must be in a window before scanning can start; this runs after the first layout pass.
         guard !controller.isScanning, !context.coordinator.finished else { return }
-        try? controller.startScanning()
+        do { try controller.startScanning() } catch { DispatchQueue.main.async { context.coordinator.onUnavailable() } }
     }
 
     static func dismantleUIViewController(_ controller: DataScannerViewController, coordinator: Coordinator) {
@@ -95,10 +98,11 @@ private struct DataScannerRepresentable: UIViewControllerRepresentable {
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
         let onCode: (String) -> Void
+        let onUnavailable: () -> Void
         weak var controller: DataScannerViewController?
         var finished = false
 
-        init(onCode: @escaping (String) -> Void) { self.onCode = onCode }
+        init(onCode: @escaping (String) -> Void, onUnavailable: @escaping () -> Void) { self.onCode = onCode; self.onUnavailable = onUnavailable }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
             guard !finished else { return }
@@ -114,6 +118,7 @@ private struct DataScannerRepresentable: UIViewControllerRepresentable {
 
         func dataScanner(_ dataScanner: DataScannerViewController, becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
             finished = true
+            onUnavailable()
         }
     }
 }
@@ -128,7 +133,7 @@ private struct ManualBarcodeEntry: View {
     @FocusState private var focused: Bool
 
     private var digits: String { code.filter(\.isNumber) }
-    private var isValid: Bool { (8...14).contains(digits.count) }
+    private var isValid: Bool { !FoodSearchService.barcodeForms(digits).isEmpty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: NT.Spacing.section) {

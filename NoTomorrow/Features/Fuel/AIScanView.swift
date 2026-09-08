@@ -75,7 +75,7 @@ struct AIScanView: View {
     private var showsRetake: Bool {
         switch model.phase {
         case .pickSource: false
-        case .analyzing, .result, .failed: true
+        case .analyzing, .result, .failed, .notAllowed: true
         }
     }
 
@@ -88,7 +88,7 @@ struct AIScanView: View {
             if model.upload == .google, !AuthStore.shared.isSignedIn {
                 AIScanSignedOutView(meal: model.meal) {}
             } else {
-                AIScanSourceView(meal: model.meal) { model.handlePicked($0) }
+                AIScanSourceView(notes: $model.notes, meal: model.meal) { model.handlePicked($0) }
             }
         case .analyzing:
             AIScanAnalyzingView(image: model.image)
@@ -96,6 +96,8 @@ struct AIScanView: View {
             AIScanResultView(model: model, onLog: log)
         case .failed(let message):
             AIScanFailedView(image: model.image, message: message) { model.retake() }
+        case .notAllowed:
+            AIScanNotAllowedView()
         }
     }
 
@@ -181,5 +183,42 @@ struct AIScanFailedView: View {
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.bottom, 12)
         }
+    }
+}
+
+// MARK: - Not allowed
+
+/// Backend 403 `ai_not_allowed`: the account is not on the AI whitelist. The way out is Settings — ask the owner
+/// for access, or switch to your own Gemini / Claude key.
+struct AIScanNotAllowedView: View {
+    @State private var showsSettings = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: NT.Spacing.section) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("fuel.ai.notAllowed.title")
+                    .font(NT.Fonts.title3)
+                    .foregroundStyle(NT.Colors.ink)
+                Text("fuel.ai.error.notAllowed")
+                    .font(NT.Fonts.subheadline)
+                    .foregroundStyle(NT.Colors.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ZStack {
+                RoundedRectangle(cornerRadius: NT.Radius.card, style: .continuous).fill(NT.Colors.surface)
+                Image(systemName: "lock.badge.clock")
+                    .font(.system(size: 34, weight: .medium))
+                    .foregroundStyle(NT.Colors.ink3)
+            }
+            .frame(height: 210)
+            .frame(maxWidth: .infinity)
+
+            PrimaryButton(title: "fuel.ai.notAllowed.openSettings", systemImage: "gearshape") { showsSettings = true }
+            Spacer()
+        }
+        .padding(.horizontal, NT.Spacing.screenH)
+        .padding(.top, 12)
+        .sheet(isPresented: $showsSettings) { SettingsView() }
     }
 }

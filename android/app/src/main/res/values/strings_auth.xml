@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auth strings that have no iOS catalog counterpart.
+
+  `auth.google` in the shared catalog reads "Google (coming soon)" because iOS ships the row
+  disabled (`SignInView.googleRow`). On Android the row is wired to Credential Manager and
+  `POST /auth/google`, so once a server client id is configured the label must not promise a
+  future feature — it is simply the provider's name.
+-->
+<resources>
+    <string name="auth_googleTitle">Google</string>
+</resources>

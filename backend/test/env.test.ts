@@ -58,12 +58,14 @@ describe('loadEnv', () => {
       APNS_PRODUCTION: 'true',
       GEMINI_API_KEY: 'g',
       AI_DAILY_LIMIT: '5',
+      AI_ALLOWED_USERS: 'test123, Bro',
       JOBS_ENABLED: '0',
     });
     expect(env.apple).toEqual({ teamId: 'TEAM', bundleId: 'app.notomorrow', keyId: 'KID', privateKeyPem: PEM });
     expect(env.google?.clientIds).toEqual(['a.apps.googleusercontent.com', 'b.apps.googleusercontent.com']);
+    expect(env.aiAllowedUsers).toEqual(['test123', 'bro']);
     expect(env.apns).toMatchObject({ keyId: 'AK', topic: 'app.notomorrow', production: true, keyPem: PEM });
-    expect(env.gemini).toEqual({ apiKey: 'g', model: 'gemini-3.1-flash-lite', fallbackModels: ['gemini-3.5-flash'] });
+    expect(env.gemini).toEqual({ apiKey: 'g', model: 'gemini-3.8-flash', fallbackModels: [] });
     expect(env.aiDailyLimit).toBe(5);
     expect(env.jobsEnabled).toBe(false);
     expect(env.warnings).toEqual([]);

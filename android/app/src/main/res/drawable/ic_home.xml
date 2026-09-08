@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     Today is the selected tab, so the reference renders the filled house: a
+     chevron roof stroke with a chimney stub on the right slope, and a SOLID body
+     below it (hairline-separated from the roof) carrying a knocked-out door.
+     The old two-stroke outline had neither door nor chimney and no fill.
+     Geometry measured on design/ios26-reference/01b-tabbar-crop-2x-smooth.png. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Roof chevron and the chimney stub, which merges into the right slope. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M3.40,12.60 L12,4.80 L20.60,12.60" />
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M17.80,6.20 L17.80,10.10" />
+    <!-- Body: sides parallel to the roof underside, 0.85 below it so the same
+         dark hairline the reference shows survives. evenOdd knocks out the door. -->
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M12,7.27 L19.60,14.16 L19.60,19.60 C19.60,20.48 18.88,21.20 18.00,21.20 L6.00,21.20 C5.12,21.20 4.40,20.48 4.40,19.60 L4.40,14.16 Z M9.90,15.60 L14.10,15.60 L14.10,20.10 L9.90,20.10 Z" />
+</vector>

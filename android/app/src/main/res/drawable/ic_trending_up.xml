@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon().
+
+     `chart.line.uptrend.xyaxis` reads as an L axis + zigzag + solid arrowhead.
+     Without the axis the glyph was a bare polyline, 13.3 dp of ink inside the
+     28 dp NtTabBarTokens.iconSize box against the reference's ~21 dp; the axis
+     is what fills the box (measured on design/ios26-reference/01b-tabbar-crop-2x-smooth.png). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- The xy axis: vertical at x 2.28, horizontal at y 19.59. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M2.28,3.08 L2.28,19.59 L21.72,19.59" />
+    <!-- The trend line, ending inside the arrowhead so its cap never shows. -->
+    <path android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M3.10,13.40 L7.40,8.44 L12.35,14.10 L17.60,9.10" />
+    <!-- Solid arrowhead. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M21.80,4.64 L15.10,6.64 L20.05,11.50 Z" />
+</vector>

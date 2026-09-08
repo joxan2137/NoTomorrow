@@ -7579,13 +7579,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Goes through the No Tomorrow server. Works with zero setup."
+            "value": "Goes through the No Tomorrow server. The server owner decides who may use it."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Idzie przez serwer No Tomorrow. Działa bez konfiguracji."
+            "value": "Idzie przez serwer No Tomorrow. Właściciel serwera decyduje, kto może z niego korzystać."
           }
         }
       }
@@ -8870,6 +8870,470 @@
           "stringUnit": {
             "state": "translated",
             "value": "Parowanie wymaga konta. Zalogujesz się i sparujesz później w zakładce Bro."
+          }
+        }
+      }
+    },
+    "exercises.front": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przód"
+          }
+        }
+      }
+    },
+    "exercises.back": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tył"
+          }
+        }
+      }
+    },
+    "exercises.primary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primary muscles"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Główne mięśnie"
+          }
+        }
+      }
+    },
+    "exercises.secondary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Secondary muscles"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mięśnie pomocnicze"
+          }
+        }
+      }
+    },
+    "exercises.muscleNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highlighted areas show the muscles involved, not a measured activation level."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznaczone obszary pokazują pracujące mięśnie, a nie zmierzony poziom aktywacji."
+          }
+        }
+      }
+    },
+    "exercises.details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły"
+          }
+        }
+      }
+    },
+    "exercises.demonstration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movement photos"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia ruchu"
+          }
+        }
+      }
+    },
+    "exercises.instructions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to perform"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak wykonać"
+          }
+        }
+      }
+    },
+    "exercises.photoUnavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo unavailable. The muscle map and instructions work offline."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcie niedostępne. Mapa mięśni i instrukcje działają offline."
+          }
+        }
+      }
+    },
+    "exercises.photoLoading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading photo…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ładowanie zdjęcia…"
+          }
+        }
+      }
+    },
+    "fuel.ai.details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meal details (optional)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły posiłku (opcjonalnie)"
+          }
+        }
+      }
+    },
+    "fuel.ai.detailsPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 150 g cooked rice, 5 g oil, half the pack eaten"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "np. 150 g ugotowanego ryżu, 5 g oliwy, zjedzona połowa opakowania"
+          }
+        }
+      }
+    },
+    "fuel.ai.accuracyHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For better accuracy, include weighed portions, cooking oil and how much you ate. Photograph the whole meal or a readable nutrition label."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aby poprawić dokładność, podaj zważone porcje, dodany tłuszcz i zjedzoną ilość. Zrób zdjęcie całego posiłku lub czytelnej tabeli wartości odżywczych."
+          }
+        }
+      }
+    },
+    "fuel.ai.refine": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recalculate with details"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przelicz ze szczegółami"
+          }
+        }
+      }
+    },
+    "muscleName.tibialis_anterior": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tibialis anterior"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piszczelowy przedni"
+          }
+        }
+      }
+    },
+    "fuel.label.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add from label"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj z etykiety"
+          }
+        }
+      }
+    },
+    "fuel.label.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the printed values per 100 g. This product is saved on this device for future scans. For store weight labels, verify the exact product each time."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz wartości z etykiety na 100 g. Produkt zostanie zapisany na tym urządzeniu do kolejnych skanów. Przy kodach wagowych sprawdzaj produkt za każdym razem."
+          }
+        }
+      }
+    },
+    "fuel.label.saveFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save. Please try again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "fuel.scan.manual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter barcode manually"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz kod ręcznie"
+          }
+        }
+      }
+    },
+    "fuel.ai.error.notAllowed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI estimates on this server are only for whitelisted users. Ask the owner to whitelist you, or add your own Gemini or Claude API key in Settings."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szacunki AI na tym serwerze są tylko dla użytkowników z białej listy. Poproś właściciela o dodanie cię do listy albo dodaj własny klucz API Gemini lub Claude w ustawieniach."
+          }
+        }
+      }
+    },
+    "fuel.ai.notAllowed.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not on the list yet"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie na liście"
+          }
+        }
+      }
+    },
+    "fuel.ai.notAllowed.openSettings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz ustawienia"
+          }
+        }
+      }
+    },
+    "fuel.ai.error.missingGeminiKey": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your Gemini key in Settings first."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw dodaj swój klucz Gemini w ustawieniach."
+          }
+        }
+      }
+    },
+    "settings.ai.gemini": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini with your API key"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini z twoim kluczem API"
+          }
+        }
+      }
+    },
+    "settings.ai.gemini.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos go straight from your phone to Google."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia idą prosto z twojego telefonu do Google."
+          }
+        }
+      }
+    },
+    "settings.ai.geminiShort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini"
+          }
+        }
+      }
+    },
+    "settings.ai.geminiKeyLabel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini API key"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klucz API Gemini"
+          }
+        }
+      }
+    },
+    "settings.ai.geminiKeyPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIza…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AIza…"
+          }
+        }
+      }
+    },
+    "settings.ai.geminiFootnote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is an API key from Google AI Studio. Usage is billed to your own Google account."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To klucz API z Google AI Studio. Użycie jest rozliczane na twoim własnym koncie Google."
           }
         }
       }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zobacz values/strings_push.xml. Tekst zgodny z TITLE_BRO w backend/src/i18n.ts. -->
+<resources>
+    <string name="push_fallback_title">Ziomek z siłowni</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Settings keys that have no counterpart in Localizable.xcstrings, because the iOS screen either
+  hardcodes them ("CSV") or the state does not exist on iOS (exact alarms, the Health Connect
+  provider update, and the language footnote — iOS says "Applies after you relaunch the app",
+  Android re-creates the Activity and applies it immediately).
+
+  Back-port these into NoTomorrow/Resources/Localizable.xcstrings and delete this file.
+-->
+<resources>
+    <string name="settings_export_format">CSV</string>
+    <string name="settings_language_applies">Switches straight away.</string>
+    <string name="settings_alarms_exact">Exact timers</string>
+    <string name="settings_alarms_request">Allow exact timers</string>
+    <string name="settings_health_updateRequired">Update required</string>
+    <string name="settings_health_updateProvider">Update Health Connect</string>
+</resources>

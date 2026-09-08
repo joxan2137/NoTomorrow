@@ -1,0 +1,61 @@
+== WINDOW UIWindow (0.0, 0.0, 402.0, 874.0) level=0.0
+UIWindow f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+  UITransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+    UIDropShadowView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+      _UIHostingView<ModifiedContent<AnyView, RootModifier>> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001704400; name = systemBackgroundColor>
+        UIKitPlatformViewHost<PlatformViewControllerRepresentableAdaptor<NavigationStackRepresentable>> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+          UILayoutContainerView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+            UINavigationTransitionView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+              UIViewControllerWrapperView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+                HostingView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=<UIDynamicSystemColor: 0x600001704400; name = systemBackgroundColor>
+                  PlatformContainer f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+                    HostingScrollView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+                      _UITouchPassthroughView f=(0.0, -168.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+                        BackdropView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                      PlatformGroupContainer f=(0.0, 0.0, 402.0, 1500.0) r=0.0 alpha=1.0 bg=-
+                      _UINavigationBarLargeTitleView f=(0.0, -52.0, 402.0, 52.0) r=0.0 alpha=1.0 bg=-
+                        UILabel f=(15.999999999999993, 3.666666666666668, 69.0, 40.666666666666664) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                      _UITouchPassthroughView f=(0.0, -168.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+                        ScrollEdgeEffectView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=0.0 bg=-
+                          TouchBlocker f=(0.0, 0.0, 402.0, 0.0) r=0.0 alpha=1.0 bg=-
+                          PocketMask f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                            UIView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                          PocketBlur f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                            _UIPortalView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                          LuminanceAdjustment f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                            BackdropView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=0.8500000238418579 bg=-
+                            UIView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=0.0 bg=UIExtendedGrayColorSpace 0 1
+                            _UIPortalView f=(0.0, 0.0, 402.0, 170.8) r=0.0 alpha=1.0 bg=-
+                          UIImageView f=(-120.0, -166.0, 642.0, 332.0) r=0.0 alpha=0.009999999776482582 bg=-
+                      _UIScrollViewScrollIndicator f=(396.0, -49.0, 3.0, 354.3333333333333) r=0.0 alpha=0.0 bg=-
+                        UIView f=(0.0, 0.0, 3.0, 354.3333333333333) r=1.5 alpha=1.0 bg=UIExtendedGrayColorSpace 1 0.5
+            UIKitNavigationBar f=(0.0, 62.0, 402.0, 106.0) r=0.0 alpha=1.0 bg=-
+              _UIBarBackground f=(0.0, -62.0, 402.0, 168.0) r=0.0 alpha=1.0 bg=-
+              NavigationBarLargeTitleView f=(0.0, 54.0, 402.0, 52.0) r=0.0 alpha=1.0 bg=-
+              NavigationBarContentView f=(0.0, 0.0, 402.0, 54.0) r=0.0 alpha=1.0 bg=-
+                NavigationBarTransitionContainer f=(0.0, 0.0, 402.0, 54.0) r=0.0 alpha=1.0 bg=-
+                  HostedViewContainer f=(0.0, 0.0, 402.0, 54.0) r=0.0 alpha=1.0 bg=-
+                    HostedViewWrapper f=(72.0, 26.666666666666664, 35.0, 20.66666666666667) r=0.0 alpha=0.0 bg=-
+                      _UINavigationBarTitleControl f=(0.0, 0.0, 35.0, 20.66666666666667) r=0.0 alpha=1.0 bg=-
+                        _UIIntrinsicContentSizeInvalidationForwardingWrapperView f=(0.0, 0.0, 35.0, 20.666666666666668) r=0.0 alpha=1.0 bg=-
+                          UILabel f=(0.0, 0.0, 35.0, 20.666666666666668) r=0.0 alpha=1.0 bg=UIExtendedGrayColorSpace 0 0
+                  UIView f=(0.0, 0.0, 402.0, 54.0) r=0.0 alpha=1.0 bg=-
+                  NavigationBarPlatterContainer f=(0.0, 0.0, 402.0, 54.0) r=0.0 alpha=1.0 bg=-
+                    PlatterView f=(16.0, 0.0, 44.0, 44.0) r=0.0 alpha=1.0 bg=-
+                      AnimationView f=(0.0, 0.0, 44.0, 44.0) r=0.0 alpha=1.0 bg=-
+                        AnimationView f=(0.0, 0.0, 44.0, 44.0) r=0.0 alpha=1.0 bg=-
+                          AnimationView f=(-2.099792530227308, -2.099792530227308, 48.19958506045461, 48.19958506045461) r=0.0 alpha=1.0 bg=-
+                            AnimationView f=(1.9168395581439093, 1.9168395581439093, 40.16632088371219, 40.16632088371219) r=0.0 alpha=1.0 bg=-
+                              PlatterContentView f=(0.0, 0.0, 44.0, 44.0) r=0.0 alpha=1.0 bg=-
+                                PlatterGlassView f=(0.0, 0.0, 44.0, 44.0) r=22.0 alpha=1.0 bg=-
+                    PlatterView f=(214.66666666666663, 0.0, 171.33333333333334, 44.0) r=0.0 alpha=1.0 bg=-
+                      AnimationView f=(0.0, 0.0, 171.33333333333334, 44.0) r=0.0 alpha=1.0 bg=-
+                        AnimationView f=(0.0, 0.0, 171.33333333333334, 44.0) r=0.0 alpha=1.0 bg=-
+                          AnimationView f=(-8.176464852551788, -2.099792530227308, 187.68626303843692, 48.19958506045461) r=0.0 alpha=1.0 bg=-
+                            AnimationView f=(7.4640570673179525, 1.9168395581439093, 156.40521919869744, 40.16632088371219) r=0.0 alpha=1.0 bg=-
+                              PlatterContentView f=(0.0, 0.0, 171.33333333333334, 44.0) r=0.0 alpha=1.0 bg=-
+                                PlatterGlassView f=(0.0, 0.0, 171.33333333333331, 44.0) r=22.0 alpha=1.0 bg=-
+              _UIPointerInteractionAssistantEffectContainerView f=(0.0, 0.0, 0.0, 0.0) r=0.0 alpha=1.0 bg=-
+            FloatingBarContainerView f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+              FloatingBarHostingView<FloatingBarContainer> f=(0.0, 0.0, 402.0, 874.0) r=0.0 alpha=1.0 bg=-
+              _UIPointerInteractionAssistantEffectContainerView f=(0.0, 0.0, 0.0, 0.0) r=0.0 alpha=1.0 bg=-

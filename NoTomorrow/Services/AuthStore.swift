@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import Security
 
-/// Session and the optional Anthropic key, both in the Keychain (never iCloud-synchronised).
+/// Session and the optional Anthropic / Gemini keys, all in the Keychain (never iCloud-synchronised).
 /// One instance per process (`shared`): the sign-in sheet, Settings, the Bro tab and the AI flow all observe it.
 @Observable
 @MainActor
@@ -12,6 +12,8 @@ final class AuthStore {
     private(set) var session: Session?
     /// Masked Anthropic key for display, e.g. "sk-ant-…1234". `nil` when no key is stored.
     private(set) var maskedAnthropicKey: String?
+    /// Masked Gemini key for display, e.g. "AIz…1234". `nil` when no key is stored.
+    private(set) var maskedGeminiKey: String?
 
     var isSignedIn: Bool { session != nil }
     var hasAnthropicKey: Bool { maskedAnthropicKey != nil }
@@ -23,6 +25,7 @@ final class AuthStore {
     init() {
         session = KeychainHelper.readSession()
         maskedAnthropicKey = KeychainHelper.readAnthropicKey().map(Self.mask)
+        maskedGeminiKey = KeychainHelper.readGeminiKey().map(Self.mask)
     }
 
     func save(_ session: Session) {
@@ -60,6 +63,26 @@ final class AuthStore {
         maskedAnthropicKey = nil
     }
 
+    // MARK: Gemini key (BYOK)
+
+    /// The raw key. Read on demand for the request header; never held in a view.
+    var geminiKey: String? {
+        get { KeychainHelper.readGeminiKey() }
+        set {
+            if let key = newValue?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+                KeychainHelper.writeGeminiKey(key)
+                maskedGeminiKey = Self.mask(key)
+            } else {
+                removeGeminiKey()
+            }
+        }
+    }
+
+    func removeGeminiKey() {
+        KeychainHelper.delete(account: KeychainHelper.Account.geminiKey)
+        maskedGeminiKey = nil
+    }
+
     /// "sk-ant-api03-…7Yq2" → "sk-ant-…7Yq2"
     static func mask(_ key: String) -> String {
         let suffix = String(key.suffix(4))
@@ -77,6 +100,7 @@ enum KeychainHelper {
     enum Account {
         static let session = "session"
         static let anthropicKey = "anthropic-key"
+        static let geminiKey = "gemini-key"
     }
 
     // Session: available once the device has been unlocked after boot (background refreshes, push handling).
@@ -97,6 +121,15 @@ enum KeychainHelper {
 
     static func writeAnthropicKey(_ key: String) {
         write(Data(key.utf8), account: Account.anthropicKey, accessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly)
+    }
+
+    // Gemini key: same lifetime as the Anthropic one.
+    static func readGeminiKey() -> String? {
+        read(account: Account.geminiKey).flatMap { String(data: $0, encoding: .utf8) }
+    }
+
+    static func writeGeminiKey(_ key: String) {
+        write(Data(key.utf8), account: Account.geminiKey, accessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly)
     }
 
     // MARK: Primitives
