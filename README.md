@@ -31,6 +31,14 @@ builds and simply does not register for push.
 **Backend.** See [`backend/README.md`](backend/README.md) — a Postgres, a `.env` from
 `.env.example`, `npm run dev`. Deploys to Fly.io with `fly deploy`.
 
+**Releases.** Publishing a GitHub release runs
+[`release.yml`](.github/workflows/release.yml), which builds both apps and attaches an unsigned
+iOS `.ipa` (AltStore, Sideloadly and friends re-sign it on install) plus an Android `.apk` and
+`.aab` to the release. The tag (`v1.2.3`) becomes the version string and the run number the build
+number. The Android build is signed with your own keystore when the `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` repository secrets
+exist, and with the debug key otherwise. The workflow can also be run by hand from the Actions tab.
+
 Both apps talk to `https://notomorrow-api.fly.dev` by default (`AppConfig` in each app); point them
 at your own deployment, or flip the in-app *demo data* switch to run fully offline.
 

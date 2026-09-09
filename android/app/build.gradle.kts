@@ -18,14 +18,35 @@ android {
         applicationId = "app.notomorrow.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        // The release workflow stamps these from the release tag and run number
+        // (-PappVersionName / -PappVersionCode); local builds keep the defaults.
+        versionCode = (project.findProperty("appVersionCode") as String?)?.toInt() ?: 1
+        versionName = (project.findProperty("appVersionName") as String?) ?: "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     androidResources {
         localeFilters += listOf("en", "pl")
+    }
+
+    // Release signing comes from the environment (CI secrets, see .github/workflows/release.yml).
+    // Without a keystore the release build type falls back to the debug key so the APK still
+    // installs; such builds cannot be upgraded in place by a properly signed one.
+    val releaseKeystore = providers.environmentVariable("ANDROID_KEYSTORE_FILE").orNull
+        ?.takeIf { it.isNotBlank() }
+        ?.let { file(it) }
+        ?.takeIf { it.isFile }
+
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull
+            }
+        }
     }
 
     buildTypes {
@@ -36,6 +57,7 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
