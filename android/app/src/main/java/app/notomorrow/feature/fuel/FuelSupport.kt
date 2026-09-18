@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.entity.FoodItemEntity
+import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.model.FoodCandidate
@@ -206,6 +207,58 @@ object FuelDerive {
     /** `PortionSheet.portionChip` — selection is a 0.5 g tolerance around the chip value. */
     fun isPortionSelected(grams: Double, chip: Double): Boolean =
         kotlin.math.abs(grams - chip) < 0.5
+
+    /**
+     * `MealEntry.resize(to:)` (`FuelSupport.swift:154`): a food-backed entry re-sized — the four
+     * macros follow the food's per-100 g figures, exactly as `PortionSheet` derives them on
+     * insert. `id` and `loggedAt` are untouched, so the row keeps its place in the day.
+     */
+    fun resized(
+        entry: MealEntryEntity,
+        food: FoodItemEntity,
+        grams: Double,
+        slot: MealSlot,
+    ): MealEntryEntity {
+        val factor = grams / 100.0
+        return entry.copy(
+            slot = slot,
+            grams = grams,
+            kcal = food.kcalPer100 * factor,
+            proteinG = food.proteinPer100 * factor,
+            carbsG = food.carbsPer100 * factor,
+            fatG = food.fatPer100 * factor,
+        )
+    }
+
+    /**
+     * `MealEntry.overwrite(name:…)` (`FuelSupport.swift:166`): a custom (quick-add / AI) entry
+     * rewritten with the user's figures. Once any number moves the row is no longer an estimate,
+     * so the AI badge and its confidence go; a rename or a slot move alone keeps them.
+     */
+    fun overwritten(
+        entry: MealEntryEntity,
+        name: String,
+        grams: Double,
+        kcal: Double,
+        proteinG: Double,
+        carbsG: Double,
+        fatG: Double,
+        slot: MealSlot,
+    ): MealEntryEntity {
+        val figuresChanged = entry.grams != grams || entry.kcal != kcal ||
+            entry.proteinG != proteinG || entry.carbsG != carbsG || entry.fatG != fatG
+        return entry.copy(
+            slot = slot,
+            customName = name,
+            grams = grams,
+            kcal = kcal,
+            proteinG = proteinG,
+            carbsG = carbsG,
+            fatG = fatG,
+            isAIEstimate = if (figuresChanged) false else entry.isAIEstimate,
+            confidence = if (figuresChanged) null else entry.confidence,
+        )
+    }
 
     /** `ManualBarcodeEntry.digits` / `isValid` (`BarcodeScannerView.swift:130`). */
     fun barcodeDigits(raw: String): String = raw.filter { it.isDigit() }

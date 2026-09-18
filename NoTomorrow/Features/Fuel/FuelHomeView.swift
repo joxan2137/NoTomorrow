@@ -19,6 +19,7 @@ struct FuelHomeView: View {
         case aiScan(MealSlot)
         case barcode(MealSlot)
         case quickAdd(MealSlot)
+        case edit(MealEntry)
 
         var id: String {
             switch self {
@@ -26,6 +27,7 @@ struct FuelHomeView: View {
             case .aiScan(let m): "ai-\(m.rawValue)"
             case .barcode(let m): "barcode-\(m.rawValue)"
             case .quickAdd(let m): "quick-\(m.rawValue)"
+            case .edit(let entry): "edit-\(entry.id.uuidString)"
             }
         }
     }
@@ -54,6 +56,7 @@ struct FuelHomeView: View {
                         proteinRemaining: MealSlot.ordered.first { model.entries(for: $0).isEmpty } == slot ? model.proteinRemaining : 0,
                         isLast: slot == MealSlot.ordered.last,
                         onOpen: { sheet = .search(slot) },
+                        onEdit: { sheet = .edit($0) },
                         onDelete: { model.delete($0, in: modelContext) }
                     )
                 }
@@ -173,6 +176,13 @@ struct FuelHomeView: View {
             }
         case .quickAdd(let meal):
             QuickAddSheet(meal: meal, day: model.day)
+        case .edit(let entry):
+            // Food-backed rows re-size through the portion sheet; quick-add and AI rows edit their figures directly.
+            if let food = entry.food {
+                PortionSheet(editing: entry, food: food) { self.sheet = nil }
+            } else {
+                QuickAddSheet(editing: entry) { self.sheet = nil }
+            }
         }
     }
 

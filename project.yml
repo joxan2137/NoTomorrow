@@ -19,7 +19,7 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     DEVELOPMENT_LANGUAGE: en
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -102,6 +102,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
 
 schemes:
   NoTomorrow:

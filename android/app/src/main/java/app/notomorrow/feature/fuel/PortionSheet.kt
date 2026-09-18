@@ -70,7 +70,7 @@ import java.time.LocalDate
  *
  * Fixed 376 dp detent, its own [Grabber], `surface` background. The kcal readout is a
  * `display(40)` numeric-text counter; the stepper moves in 10 g steps and never goes
- * below 5 g.
+ * below 5 g. [PortionEditSheet] is the same sheet pointed at a row that is already logged.
  */
 @Composable
 fun PortionSheet(
@@ -92,16 +92,70 @@ fun PortionSheet(
     // has to forget the last portion when the sheet leaves the composition.
     DisposableEffect(Unit) { onDispose { model.unbind() } }
     val state by model.state.collectAsStateWithLifecycle()
+
+    PortionSheetBody(
+        food = food,
+        state = state,
+        model = model,
+        buttonTitle = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+        onDismiss = onDismiss,
+        onSubmit = { model.add(meal = meal, day = day, onAdded = onAdded) },
+    )
+}
+
+/**
+ * The same sheet re-opened on a logged row (`FuelEntryRow`'s tap): the portion and the meal
+ * slot are seeded from the entry and the button writes the resized row back.
+ *
+ * Its own view-model key, so an interrupted add keeps its portion while this one runs.
+ */
+@Composable
+fun PortionEditSheet(entryId: String, onDismiss: () -> Unit) {
+    val model = ntViewModel(key = "portion-edit") { container ->
+        PortionViewModel(
+            foodDao = container.db.foodDao(),
+            mealDao = container.db.mealDao(),
+            foodSearch = container.foodSearchService,
+        )
+    }
+    LaunchedEffect(entryId) { model.bindEntry(entryId) }
+    DisposableEffect(Unit) { onDispose { model.unbind() } }
+    val state by model.state.collectAsStateWithLifecycle()
+
+    PortionSheetBody(
+        food = state.food,
+        state = state,
+        model = model,
+        buttonTitle = stringResource(S.common_save),
+        onDismiss = onDismiss,
+        onSubmit = { model.save(onSaved = onDismiss) },
+    )
+}
+
+/**
+ * Both presentations share every row; edit mode adds the [MealSlotPicker] under the macros,
+ * and waits for [PortionViewModel.bindEntry] to resolve the food before it has anything to draw.
+ */
+@Composable
+private fun PortionSheetBody(
+    food: PortionFood?,
+    state: PortionUiState,
+    model: PortionViewModel,
+    buttonTitle: String,
+    onDismiss: () -> Unit,
+    onSubmit: () -> Unit,
+) {
     val focus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
     NtSheet(
         onDismiss = onDismiss,
         containerColor = NT.Colors.surface,
-        height = PORTION_SHEET_HEIGHT,
+        height = if (state.isEditing) PORTION_EDIT_SHEET_HEIGHT else PORTION_SHEET_HEIGHT,
         // `PortionSheet.swift:52` `.presentationCornerRadius(24)`.
         cornerRadius = 24.dp,
     ) {
+        if (food == null) return@NtSheet
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,10 +195,14 @@ fun PortionSheet(
 
             PortionMacroRow(protein = state.protein, carbs = state.carbs, fat = state.fat)
 
+            if (state.isEditing) {
+                MealSlotPicker(slot = state.slot, onSelect = model::setSlot)
+            }
+
             PrimaryButton(
-                title = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+                title = buttonTitle,
                 enabled = state.grams > 0,
-                onClick = { model.add(meal = meal, day = day, onAdded = onAdded) },
+                onClick = onSubmit,
             )
         }
     }
@@ -152,6 +210,9 @@ fun PortionSheet(
 
 /** `.presentationDetents([.height(376)])`. */
 val PORTION_SHEET_HEIGHT = 376.dp
+
+/** The add detent plus the slot picker: a 32 dp capsule row and the stack's 16 dp spacing. */
+val PORTION_EDIT_SHEET_HEIGHT = PORTION_SHEET_HEIGHT + 48.dp
 
 @Composable
 private fun PortionTitleRow(food: PortionFood, kcal: Double) {
