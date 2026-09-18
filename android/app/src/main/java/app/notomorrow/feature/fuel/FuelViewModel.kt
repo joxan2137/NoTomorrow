@@ -164,6 +164,7 @@ class FuelViewModel(
                         grams = it.entry.grams,
                         kcal = it.entry.kcal,
                         isAIEstimate = it.entry.isAIEstimate,
+                        hasFood = it.entry.foodId != null,
                     )
                 }
             FuelSlotUi(slot = slot, entries = rows, kcal = rows.sumOf { it.kcal })
@@ -209,6 +210,8 @@ data class FuelEntryUi(
     val grams: Double,
     val kcal: Double,
     val isAIEstimate: Boolean,
+    /** A food-backed row edits through [PortionEditSheet]; a custom one through [QuickAddEditSheet]. */
+    val hasFood: Boolean,
 )
 
 /** One meal section (`FuelMealRows`). */
@@ -272,6 +275,9 @@ class PortionViewModel(
      */
     private var food: PortionFood? = null
 
+    /** The row being re-sized in edit mode; `null` while the sheet is adding. */
+    private var entry: MealEntryEntity? = null
+
     private val _state = MutableStateFlow(PortionUiState())
 
     val state: StateFlow<PortionUiState> = _state.asStateFlow()
@@ -281,14 +287,43 @@ class PortionViewModel(
         this.food = food
         val start = food.servingSizeG ?: 100.0
         _state.value = PortionUiState(
+            food = food,
             grams = start,
             gramsText = FuelDerive.portionText(start, locale()),
         ).withMacros(food)
     }
 
+    /**
+     * The same sheet re-opened on a logged row: the portion starts at the entry's own grams
+     * (not the pack's serving) and the meal slot becomes editable.
+     */
+    fun bindEntry(entryId: String) {
+        if (entry?.id == entryId) return
+        _state.value = PortionUiState(isEditing = true)
+        viewModelScope.launch {
+            val row = mealDao.byId(entryId) ?: return@launch
+            val item = row.foodId?.let { foodDao.byId(it) } ?: return@launch
+            val food = PortionFood.Item(item)
+            this@PortionViewModel.food = food
+            entry = row
+            _state.value = PortionUiState(
+                food = food,
+                grams = row.grams,
+                gramsText = FuelDerive.portionText(row.grams, locale()),
+                slot = row.slot,
+                isEditing = true,
+            ).withMacros(food)
+        }
+    }
+
+    fun setSlot(slot: MealSlot) {
+        _state.value = _state.value.copy(slot = slot)
+    }
+
     /** The sheet closed: the next presentation starts from its own food's serving size. */
     fun unbind() {
         food = null
+        entry = null
         _state.value = PortionUiState()
     }
 
@@ -336,6 +371,21 @@ class PortionViewModel(
         }
     }
 
+    /**
+     * The edit-mode button: the macros are re-derived from the food, the row keeps its `id` and
+     * `loggedAt`, and the food's usage stats stay where the original insert left them.
+     */
+    fun save(onSaved: () -> Unit) {
+        val entry = entry ?: return
+        val item = (food as? PortionFood.Item)?.item ?: return
+        val snapshot = _state.value
+        if (snapshot.grams <= 0) return
+        viewModelScope.launch {
+            mealDao.update(FuelDerive.resized(entry, item, snapshot.grams, snapshot.slot))
+            onSaved()
+        }
+    }
+
     private suspend fun resolveFoodId(food: PortionFood): String = when (food) {
         is PortionFood.Candidate -> foodSearch.cacheOnTap(food.candidate, foodDao).id
         is PortionFood.Item -> {
@@ -346,12 +396,16 @@ class PortionViewModel(
 }
 
 data class PortionUiState(
+    /** Add mode has it from the call site; edit mode only once [PortionViewModel.bindEntry] lands. */
+    val food: PortionFood? = null,
     val grams: Double = 100.0,
     val gramsText: String = "100",
     val kcal: Double = 0.0,
     val protein: Double = 0.0,
     val carbs: Double = 0.0,
     val fat: Double = 0.0,
+    val slot: MealSlot = suggestedMealSlot(),
+    val isEditing: Boolean = false,
 )
 
 /** `factor = grams / 100` applied to the four per-100 g figures. */

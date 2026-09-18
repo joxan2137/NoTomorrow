@@ -2498,6 +2498,38 @@
         }
       }
     },
+    "fuel.editEntry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit entry"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj wpis"
+          }
+        }
+      }
+    },
+    "fuel.mealSlot": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meal"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posiłek"
+          }
+        }
+      }
+    },
     "fuel.quickAdd": {
       "localizations": {
         "en": {

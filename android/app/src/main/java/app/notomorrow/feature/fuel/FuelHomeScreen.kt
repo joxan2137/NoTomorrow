@@ -137,6 +137,9 @@ fun FuelHomeScreen() {
                         SwipeToDeleteRow(onDelete = { model.delete(entry.id) }) {
                             FuelEntryRow(
                                 entry = entry,
+                                onClick = {
+                                    sheet = FuelSheet.Edit(entry.id, hasFood = entry.hasFood)
+                                },
                                 modifier = Modifier
                                     .background(NT.Colors.ground)
                                     .padding(horizontal = NT.Spacing.screenH),
@@ -260,14 +263,15 @@ fun FuelHomeScreen() {
     }
 }
 
-/** `FuelHomeView.FuelSheet` — the four things the tab can present. */
+/** `FuelHomeView.FuelSheet` — the five things the tab can present. */
 sealed interface FuelSheet {
-    val meal: MealSlot
+    data class Search(val meal: MealSlot) : FuelSheet
+    data class AIScan(val meal: MealSlot) : FuelSheet
+    data class Barcode(val meal: MealSlot) : FuelSheet
+    data class QuickAdd(val meal: MealSlot) : FuelSheet
 
-    data class Search(override val meal: MealSlot) : FuelSheet
-    data class AIScan(override val meal: MealSlot) : FuelSheet
-    data class Barcode(override val meal: MealSlot) : FuelSheet
-    data class QuickAdd(override val meal: MealSlot) : FuelSheet
+    /** A tap on a logged row; [hasFood] picks which of the two edit sheets can size it. */
+    data class Edit(val entryId: String, val hasFood: Boolean) : FuelSheet
 }
 
 @Composable
@@ -291,6 +295,12 @@ private fun FuelSheetHost(
             day = day,
             onDismiss = onDismiss,
         )
+
+        is FuelSheet.Edit -> if (sheet.hasFood) {
+            PortionEditSheet(entryId = sheet.entryId, onDismiss = onDismiss)
+        } else {
+            QuickAddEditSheet(entryId = sheet.entryId, onDismiss = onDismiss)
+        }
 
         is FuelSheet.Barcode -> NtSheet(
             onDismiss = onDismiss,

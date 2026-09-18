@@ -9,24 +9,46 @@ struct PortionSheet: View {
     var day: Date = .now
     /// Called after the entry is saved. The presenter is expected to close everything down to Fuel home.
     var onAdded: () -> Void
+    /// Set when the sheet re-sizes an entry that is already logged instead of inserting a new one.
+    private let editing: MealEntry?
 
     @Environment(\.modelContext) private var modelContext
     @State private var grams: Double
     @State private var gramsText: String
+    @State private var slot: MealSlot
     @FocusState private var gramsFocused: Bool
 
     static let step: Double = 10
     static let minimum: Double = 5
+    private static let height: CGFloat = 376
+    /// One `MealSlotPicker` row (32) plus the stack spacing (16).
+    private static let slotRowHeight: CGFloat = 48
 
     init(food: PortionFood, meal: MealSlot, day: Date = .now, onAdded: @escaping () -> Void) {
         self.food = food
         self.meal = meal
         self.day = day
         self.onAdded = onAdded
+        self.editing = nil
         let start = food.servingSizeG ?? 100
         _grams = State(initialValue: start)
         _gramsText = State(initialValue: Self.text(for: start))
+        _slot = State(initialValue: meal)
     }
+
+    /// Edit mode: grams start at the entry's portion, the slot can be changed, and Save rewrites the entry in place.
+    init(editing entry: MealEntry, food: FoodItem, onSaved: @escaping () -> Void) {
+        self.food = .item(food)
+        self.meal = entry.slot
+        self.day = entry.day
+        self.onAdded = onSaved
+        self.editing = entry
+        _grams = State(initialValue: entry.grams)
+        _gramsText = State(initialValue: Self.text(for: entry.grams))
+        _slot = State(initialValue: entry.slot)
+    }
+
+    private var isEditing: Bool { editing != nil }
 
     private var factor: Double { grams / 100 }
     private var kcal: Double { food.kcalPer100 * factor }
@@ -41,13 +63,16 @@ struct PortionSheet: View {
             stepperRow
             portionChips
             macroRow
-            PrimaryButton(title: FuelText.verbatim(FuelText.addTo(meal)), isEnabled: grams > 0) { add() }
+            if isEditing {
+                MealSlotPicker(slot: $slot)
+            }
+            PrimaryButton(title: isEditing ? "common.save" : FuelText.verbatim(FuelText.addTo(slot)), isEnabled: grams > 0) { add() }
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.bottom, 12)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(NT.Colors.surface)
-        .presentationDetents([.height(376)])
+        .presentationDetents([.height(Self.height + (isEditing ? Self.slotRowHeight : 0))])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(24)
         .presentationBackground(NT.Colors.surface)
@@ -174,10 +199,15 @@ struct PortionSheet: View {
 
     private func add() {
         guard grams > 0 else { return }
-        let item = food.resolveItem(in: modelContext)
-        let entry = MealEntry(day: day, slot: meal, food: item, grams: grams,
-                              kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
-        modelContext.insert(entry)
+        if let editing {
+            editing.resize(to: grams)
+            editing.slot = slot
+        } else {
+            let item = food.resolveItem(in: modelContext)
+            let entry = MealEntry(day: day, slot: slot, food: item, grams: grams,
+                                  kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
+            modelContext.insert(entry)
+        }
         try? modelContext.save()
         onAdded()
     }

@@ -205,6 +205,7 @@
     <string name="fuel_barcode">Barcode</string>
     <string name="fuel_barcodeNotFound">No product for this barcode. Add it by hand.</string>
     <string name="fuel_eatenGoal">%1$s eaten · %2$s goal</string>
+    <string name="fuel_editEntry">Edit entry</string>
     <string name="fuel_est">est.</string>
     <string name="fuel_foodName">Name</string>
     <string name="fuel_found">%d found</string>
@@ -218,6 +219,7 @@
     <string name="fuel_macro_c">C</string>
     <string name="fuel_macro_f">F</string>
     <string name="fuel_macro_p">P</string>
+    <string name="fuel_mealSlot">Meal</string>
     <string name="fuel_nextDay">Next day</string>
     <string name="fuel_notFound">Not in the database yet. Add it by hand.</string>
     <string name="fuel_nothingYet">Nothing yet</string>

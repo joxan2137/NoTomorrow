@@ -47,6 +47,7 @@ struct FuelMealRows: View {
     var proteinRemaining: Double
     var isLast: Bool
     var onOpen: () -> Void
+    var onEdit: (MealEntry) -> Void
     var onDelete: (MealEntry) -> Void
 
     private var rowInsets: EdgeInsets {
@@ -73,7 +74,9 @@ struct FuelMealRows: View {
         .listRowInsets(EdgeInsets(top: 4, leading: NT.Spacing.screenH, bottom: 0, trailing: NT.Spacing.screenH))
 
         ForEach(entries, id: \.id) { entry in
-            FuelEntryRow(entry: entry)
+            Button { onEdit(entry) } label: { FuelEntryRow(entry: entry) }
+                .buttonStyle(.plain)
+                .accessibilityHint(Text("common.edit"))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(rowInsets)

@@ -220,6 +220,7 @@ object S {
     val fuel_barcode = R.string.fuel_barcode
     val fuel_barcodeNotFound = R.string.fuel_barcodeNotFound
     val fuel_eatenGoal = R.string.fuel_eatenGoal
+    val fuel_editEntry = R.string.fuel_editEntry
     val fuel_est = R.string.fuel_est
     val fuel_foodName = R.string.fuel_foodName
     val fuel_found = R.string.fuel_found
@@ -233,6 +234,7 @@ object S {
     val fuel_macro_c = R.string.fuel_macro_c
     val fuel_macro_f = R.string.fuel_macro_f
     val fuel_macro_p = R.string.fuel_macro_p
+    val fuel_mealSlot = R.string.fuel_mealSlot
     val fuel_nextDay = R.string.fuel_nextDay
     val fuel_notFound = R.string.fuel_notFound
     val fuel_nothingYet = R.string.fuel_nothingYet

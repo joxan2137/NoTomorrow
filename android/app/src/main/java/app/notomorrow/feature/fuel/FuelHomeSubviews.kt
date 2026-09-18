@@ -21,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Badge
@@ -273,13 +276,14 @@ fun FuelMealHeaderRow(
     }
 }
 
-/** `FuelEntryRow` (`FuelHomeSubviews.swift:112`). */
+/** `FuelEntryRow` (`FuelHomeSubviews.swift:112`) — a tap opens the entry's edit sheet. */
 @Composable
-fun FuelEntryRow(entry: FuelEntryUi, modifier: Modifier = Modifier) {
+fun FuelEntryRow(entry: FuelEntryUi, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 30.dp),
+            .defaultMinSize(minHeight = 30.dp)
+            .ntPlainClickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -313,6 +317,49 @@ fun FuelEntryRow(entry: FuelEntryUi, modifier: Modifier = Modifier) {
             style = NT.Fonts.footnote,
             color = NT.Colors.ink2,
         )
+    }
+}
+
+/**
+ * `MealSlotPicker` (`FuelSupport.swift:184`): four equal capsules, the selected one on
+ * `surface3`. Both edit sheets use it to move a logged entry to another meal.
+ */
+@Composable
+fun MealSlotPicker(
+    slot: MealSlot,
+    onSelect: (MealSlot) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = stringResource(S.fuel_mealSlot)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = label },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MealSlotOrdered.forEach { candidate ->
+            val isSelected = candidate == slot
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(32.dp)
+                    .pressScale(onClick = { onSelect(candidate) })
+                    .background(
+                        if (isSelected) NT.Colors.surface3 else NT.Colors.surface2,
+                        CircleShape,
+                    )
+                    .semantics { selected = isSelected },
+                contentAlignment = Alignment.Center,
+            ) {
+                NtText(
+                    text = stringResource(NtKeys.meal(candidate)),
+                    style = NT.Fonts.footnote,
+                    color = NT.Colors.ink,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 

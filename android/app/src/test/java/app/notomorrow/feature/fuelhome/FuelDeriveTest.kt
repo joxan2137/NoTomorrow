@@ -1,7 +1,10 @@
 package app.notomorrow.feature.fuelhome
 
+import app.notomorrow.data.entity.FoodItemEntity
+import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.feature.fuel.FuelDerive
 import app.notomorrow.feature.fuel.MealSlotOrdered
+import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
 import app.notomorrow.feature.fuel.suggestedMealSlot
 import java.time.LocalDate
@@ -9,6 +12,7 @@ import java.time.LocalTime
 import java.util.Locale
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
 
@@ -158,6 +162,135 @@ class FuelDeriveTest {
         assertTrue(FuelDerive.isPortionSelected(100.0, 100.0))
         assertTrue(FuelDerive.isPortionSelected(100.3, 100.0))
         assertFalse(FuelDerive.isPortionSelected(101.0, 100.0))
+    }
+
+    // MARK: - Editing a logged entry
+
+    private val food = FoodItemEntity(
+        id = "off:123",
+        name = "Skyr",
+        source = FoodSource.OpenFoodFacts,
+        kcalPer100 = 63.0,
+        proteinPer100 = 11.0,
+        carbsPer100 = 4.0,
+        fatPer100 = 0.2,
+    )
+
+    private val logged = MealEntryEntity(
+        id = "entry-1",
+        day = 1_757_030_400_000,
+        slot = MealSlot.Breakfast,
+        foodId = food.id,
+        grams = 100.0,
+        kcal = 63.0,
+        proteinG = 11.0,
+        carbsG = 4.0,
+        fatG = 0.2,
+        loggedAt = 1_757_041_234_000,
+    )
+
+    private val estimate = MealEntryEntity(
+        id = "entry-2",
+        day = 1_757_030_400_000,
+        slot = MealSlot.Lunch,
+        customName = "Bowl of chilli",
+        grams = 350.0,
+        kcal = 520.0,
+        proteinG = 32.0,
+        carbsG = 48.0,
+        fatG = 20.0,
+        isAIEstimate = true,
+        confidence = 0.7,
+        loggedAt = 1_757_050_000_000,
+    )
+
+    @Test
+    fun `resizing recomputes every macro from the food's per-100 g figures`() {
+        val resized = FuelDerive.resized(logged, food, grams = 250.0, slot = MealSlot.Snack)
+        assertEquals(250.0, resized.grams)
+        assertEquals(157.5, resized.kcal)
+        assertEquals(27.5, resized.proteinG)
+        assertEquals(10.0, resized.carbsG)
+        assertEquals(0.5, resized.fatG)
+        assertEquals(MealSlot.Snack, resized.slot)
+    }
+
+    @Test
+    fun `resizing keeps the row's identity and its place in the day`() {
+        val resized = FuelDerive.resized(logged, food, grams = 40.0, slot = MealSlot.Breakfast)
+        assertEquals(logged.id, resized.id)
+        assertEquals(logged.loggedAt, resized.loggedAt)
+        assertEquals(logged.day, resized.day)
+        assertEquals(logged.foodId, resized.foodId)
+    }
+
+    @Test
+    fun `overwriting a changed figure drops the AI estimate`() {
+        val edited = FuelDerive.overwritten(
+            entry = estimate,
+            name = estimate.customName.orEmpty(),
+            grams = estimate.grams,
+            kcal = 480.0,
+            proteinG = estimate.proteinG,
+            carbsG = estimate.carbsG,
+            fatG = estimate.fatG,
+            slot = estimate.slot,
+        )
+        assertEquals(480.0, edited.kcal)
+        assertFalse(edited.isAIEstimate)
+        assertNull(edited.confidence)
+    }
+
+    @Test
+    fun `overwriting only the name keeps the AI estimate`() {
+        val edited = FuelDerive.overwritten(
+            entry = estimate,
+            name = "Chilli con carne",
+            grams = estimate.grams,
+            kcal = estimate.kcal,
+            proteinG = estimate.proteinG,
+            carbsG = estimate.carbsG,
+            fatG = estimate.fatG,
+            slot = estimate.slot,
+        )
+        assertEquals("Chilli con carne", edited.customName)
+        assertTrue(edited.isAIEstimate)
+        assertEquals(0.7, edited.confidence)
+    }
+
+    @Test
+    fun `moving an entry to another slot alone keeps the AI estimate`() {
+        val edited = FuelDerive.overwritten(
+            entry = estimate,
+            name = estimate.customName.orEmpty(),
+            grams = estimate.grams,
+            kcal = estimate.kcal,
+            proteinG = estimate.proteinG,
+            carbsG = estimate.carbsG,
+            fatG = estimate.fatG,
+            slot = MealSlot.Dinner,
+        )
+        assertEquals(MealSlot.Dinner, edited.slot)
+        assertTrue(edited.isAIEstimate)
+        assertEquals(0.7, edited.confidence)
+    }
+
+    @Test
+    fun `overwriting keeps the row's identity and its place in the day`() {
+        val edited = FuelDerive.overwritten(
+            entry = estimate,
+            name = "Chilli",
+            grams = 300.0,
+            kcal = 450.0,
+            proteinG = 30.0,
+            carbsG = 40.0,
+            fatG = 18.0,
+            slot = MealSlot.Dinner,
+        )
+        assertEquals(estimate.id, edited.id)
+        assertEquals(estimate.loggedAt, edited.loggedAt)
+        assertEquals(estimate.day, edited.day)
+        assertEquals(300.0, edited.grams)
     }
 
     // MARK: - Manual barcode entry

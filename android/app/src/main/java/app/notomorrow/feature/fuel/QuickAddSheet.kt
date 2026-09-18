@@ -47,6 +47,7 @@ import app.notomorrow.designsystem.tabular
 import app.notomorrow.di.ntViewModel
 import app.notomorrow.model.MealSlot
 import app.notomorrow.service.Days
+import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.NtKeys
 import app.notomorrow.util.Parsing
 import app.notomorrow.util.S
@@ -56,12 +57,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Locale
 import java.util.UUID
 
 /**
  * Manual entry for foods the database does not know — the port of
  * `Features/Fuel/QuickAddSheet.swift`. Name and kcal are required; P/C/F are optional and
  * default to 0. The result is a `MealEntry` with a `customName` and no food row.
+ *
+ * [QuickAddEditSheet] is the same sheet pointed at a custom row that is already logged.
  */
 @Composable
 fun QuickAddSheet(
@@ -78,9 +82,57 @@ fun QuickAddSheet(
     DisposableEffect(Unit) { onDispose { model.reset() } }
     val state by model.state.collectAsStateWithLifecycle()
 
+    QuickAddSheetBody(
+        state = state,
+        model = model,
+        title = stringResource(S.fuel_quickAdd),
+        buttonTitle = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+        onDismiss = onDismiss,
+        onSubmit = { model.add(meal = meal, day = day, onAdded = onAdded) },
+    )
+}
+
+/**
+ * The edit sheet for a quick-add or AI-scan row (`FuelEntryRow`'s tap on an entry with no
+ * food): every field is seeded from the entry, plus the grams the scan estimated and the
+ * meal slot. Its own view-model key, so an interrupted quick-add keeps its fields.
+ */
+@Composable
+fun QuickAddEditSheet(entryId: String, onDismiss: () -> Unit) {
+    val model = ntViewModel(key = "quickAdd-edit") { container ->
+        QuickAddViewModel(container.db.mealDao())
+    }
+    LaunchedEffect(entryId) { model.bindEntry(entryId) }
+    DisposableEffect(Unit) { onDispose { model.reset() } }
+    val state by model.state.collectAsStateWithLifecycle()
+
+    QuickAddSheetBody(
+        state = state,
+        model = model,
+        title = stringResource(S.fuel_editEntry),
+        buttonTitle = stringResource(S.common_save),
+        onDismiss = onDismiss,
+        onSubmit = { model.save(onSaved = onDismiss) },
+    )
+}
+
+/**
+ * Both presentations share every row; edit mode adds the grams field under the name and the
+ * [MealSlotPicker] under the macros, and never grabs focus (the fields are already filled).
+ */
+@Composable
+private fun QuickAddSheetBody(
+    state: QuickAddUiState,
+    model: QuickAddViewModel,
+    title: String,
+    buttonTitle: String,
+    onDismiss: () -> Unit,
+    onSubmit: () -> Unit,
+) {
     val nameFocus = remember { FocusRequester() }
     val kcalFocus = remember { FocusRequester() }
     LaunchedEffect(state.autofocus) {
+        if (!state.autofocus) return@LaunchedEffect
         runCatching {
             if (state.name.isEmpty()) nameFocus.requestFocus() else kcalFocus.requestFocus()
         }
@@ -88,7 +140,7 @@ fun QuickAddSheet(
 
     NtSheet(onDismiss = onDismiss, containerColor = NT.Colors.ground) {
         Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-            QuickAddHeader(onCancel = onDismiss)
+            QuickAddHeader(title = title, onCancel = onDismiss)
 
             Column(
                 modifier = Modifier
@@ -108,6 +160,15 @@ fun QuickAddSheet(
                     focusRequester = nameFocus,
                     nextFocusRequester = kcalFocus,
                 )
+                if (state.showsGrams) {
+                    QuickAddNumberRow(
+                        label = stringResource(S.fuel_grams),
+                        unit = stringResource(S.unit_g),
+                        value = state.gramsText,
+                        onValue = model::setGrams,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 QuickAddNumberRow(
                     label = stringResource(S.unit_kcal),
                     unit = stringResource(S.unit_kcal),
@@ -139,6 +200,13 @@ fun QuickAddSheet(
                         modifier = Modifier.weight(1f),
                     )
                 }
+                if (state.isEditing) {
+                    MealSlotPicker(
+                        slot = state.slot,
+                        onSelect = model::setSlot,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
                 NtText(
                     text = stringResource(S.fuel_quickAdd_hint),
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -148,19 +216,19 @@ fun QuickAddSheet(
             }
 
             PrimaryButton(
-                title = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+                title = buttonTitle,
                 modifier = Modifier
                     .padding(horizontal = NT.Spacing.screenH)
                     .padding(bottom = 12.dp),
                 enabled = state.canAdd,
-                onClick = { model.add(meal = meal, day = day, onAdded = onAdded) },
+                onClick = onSubmit,
             )
         }
     }
 }
 
 @Composable
-private fun QuickAddHeader(onCancel: () -> Unit) {
+private fun QuickAddHeader(title: String, onCancel: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,7 +238,7 @@ private fun QuickAddHeader(onCancel: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NtText(
-            text = stringResource(S.fuel_quickAdd),
+            text = title,
             modifier = Modifier.weight(1f),
             style = NT.Fonts.title2,
             color = NT.Colors.ink,
@@ -283,16 +351,20 @@ private fun numberFieldStyle(color: androidx.compose.ui.graphics.Color): TextSty
 // State
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** `QuickAddSheet`'s five fields and the insert. */
+/** `QuickAddSheet`'s five fields and the insert, plus the edit sheet's grams and slot. */
 class QuickAddViewModel(
     private val mealDao: MealDao,
     private val zone: ZoneId = ZoneId.systemDefault(),
+    private val locale: () -> Locale = { LocaleProvider.current() },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(QuickAddUiState())
     val state: StateFlow<QuickAddUiState> = _state.asStateFlow()
 
     private var started = false
+
+    /** The row being rewritten in edit mode; `null` while the sheet is adding. */
+    private var entry: MealEntryEntity? = null
 
     /** `init` — the sheet opens pre-filled with whatever the user typed into the search field. */
     fun start(initialName: String) {
@@ -301,14 +373,44 @@ class QuickAddViewModel(
         _state.value = QuickAddUiState(name = initialName, autofocus = true)
     }
 
+    /**
+     * The same sheet re-opened on a logged custom row: the fields come from the entry, and the
+     * grams row only exists when there is a weight to edit (a quick-add has none).
+     */
+    fun bindEntry(entryId: String) {
+        if (entry?.id == entryId) return
+        _state.value = QuickAddUiState(isEditing = true)
+        viewModelScope.launch {
+            val row = mealDao.byId(entryId) ?: return@launch
+            entry = row
+            val weighed = row.grams > 0
+            _state.value = QuickAddUiState(
+                name = row.customName.orEmpty(),
+                gramsText = if (weighed) text(row.grams) else "",
+                kcalText = text(row.kcal),
+                proteinText = text(row.proteinG),
+                carbsText = text(row.carbsG),
+                fatText = text(row.fatG),
+                slot = row.slot,
+                showsGrams = weighed,
+                isEditing = true,
+            )
+        }
+    }
+
     /** The sheet closed: iOS discards its `@State`, so this one discards the fields too. */
     fun reset() {
         started = false
+        entry = null
         _state.value = QuickAddUiState()
     }
 
     fun setName(value: String) {
         _state.value = _state.value.copy(name = value)
+    }
+
+    fun setGrams(value: String) {
+        _state.value = _state.value.copy(gramsText = value)
     }
 
     fun setKcal(value: String) {
@@ -325,6 +427,10 @@ class QuickAddViewModel(
 
     fun setFat(value: String) {
         _state.value = _state.value.copy(fatText = value)
+    }
+
+    fun setSlot(slot: MealSlot) {
+        _state.value = _state.value.copy(slot = slot)
     }
 
     fun add(meal: MealSlot, day: LocalDate, onAdded: () -> Unit) {
@@ -348,14 +454,44 @@ class QuickAddViewModel(
             onAdded()
         }
     }
+
+    /** The edit-mode button: the row keeps its `id` and `loggedAt`, everything else is the user's. */
+    fun save(onSaved: () -> Unit) {
+        val entry = entry ?: return
+        val snapshot = _state.value
+        val kcal = snapshot.kcal ?: return
+        if (!snapshot.canAdd) return
+        viewModelScope.launch {
+            mealDao.update(
+                FuelDerive.overwritten(
+                    entry = entry,
+                    name = snapshot.name.trim(),
+                    grams = Parsing.nonNegative(snapshot.gramsText) ?: 0.0,
+                    kcal = kcal,
+                    proteinG = Parsing.decimal(snapshot.proteinText) ?: 0.0,
+                    carbsG = Parsing.decimal(snapshot.carbsText) ?: 0.0,
+                    fatG = Parsing.decimal(snapshot.fatText) ?: 0.0,
+                    slot = snapshot.slot,
+                ),
+            )
+            onSaved()
+        }
+    }
+
+    private fun text(value: Double): String = FuelDerive.portionText(value, locale())
 }
 
 data class QuickAddUiState(
     val name: String = "",
+    val gramsText: String = "",
     val kcalText: String = "",
     val proteinText: String = "",
     val carbsText: String = "",
     val fatText: String = "",
+    val slot: MealSlot = suggestedMealSlot(),
+    /** A quick-add row has no weight, so it edits without the grams field. */
+    val showsGrams: Boolean = false,
+    val isEditing: Boolean = false,
     val autofocus: Boolean = false,
 ) {
     val kcal: Double? get() = Parsing.decimal(kcalText)

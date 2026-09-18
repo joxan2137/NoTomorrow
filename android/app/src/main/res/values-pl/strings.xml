@@ -205,6 +205,7 @@
     <string name="fuel_barcode">Kod kreskowy</string>
     <string name="fuel_barcodeNotFound">Brak produktu dla tego kodu. Dodaj ręcznie.</string>
     <string name="fuel_eatenGoal">%1$s zjedzone · cel %2$s</string>
+    <string name="fuel_editEntry">Edytuj wpis</string>
     <string name="fuel_est">szac.</string>
     <string name="fuel_foodName">Nazwa</string>
     <string name="fuel_found">znaleziono: %d</string>
@@ -218,6 +219,7 @@
     <string name="fuel_macro_c">W</string>
     <string name="fuel_macro_f">T</string>
     <string name="fuel_macro_p">B</string>
+    <string name="fuel_mealSlot">Posiłek</string>
     <string name="fuel_nextDay">Następny dzień</string>
     <string name="fuel_notFound">Nie ma go jeszcze w bazie. Dodaj ręcznie.</string>
     <string name="fuel_nothingYet">Jeszcze nic</string>
