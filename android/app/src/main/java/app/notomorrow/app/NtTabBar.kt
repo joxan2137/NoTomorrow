@@ -131,7 +131,8 @@ fun NtTabBar(
         val pressed by interaction.collectIsPressedAsState()
         val motion = remember { mutableFloatStateOf(0f) }
         val stretch = remember { mutableFloatStateOf(0f) }
-        PillMotionDriver(pillT, pressed, selectedIndex, motion, stretch)
+        val drift = remember { mutableFloatStateOf(0f) }
+        PillMotionDriver(pillT, pressed, selectedIndex, motion, stretch, drift)
 
         // The bar composes its own surface — platter glass, icons, labels — into a local backdrop
         // so the pill can be a lens *over* it. It is a second `NtBackdrop`, never a nesting of the
@@ -240,6 +241,7 @@ fun NtTabBar(
                         index = pillT,
                         motion = motion,
                         stretch = stretch,
+                        drift = drift,
                     )
                 }
             }
@@ -261,7 +263,8 @@ fun NtTabBar(
 }
 
 /**
- * Turns the pill spring into the lens's 0..1 `motion`, and the same signal into the stretch.
+ * Turns the pill spring into the lens's 0..1 `motion`, and the same signal into the stretch and
+ * the signed `drift` its dispersion trails along the travel (`GlassStyle.pillLens`).
  *
  * The reference burst is unambiguous about the shape of this envelope: the blob is *fully* liquid
  * for the whole of the travel (`burst-04`, `burst-05`, `burst-10`: interior 33/30, big rim, big
@@ -282,6 +285,7 @@ private fun PillMotionDriver(
     selectedIndex: Int,
     motion: MutableFloatState,
     stretch: MutableFloatState,
+    drift: MutableFloatState,
 ) {
     LaunchedEffect(pressed, selectedIndex) {
         val floor = if (pressed) NtTabBarTokens.pillPressMotion else 0f
@@ -302,10 +306,12 @@ private fun PillMotionDriver(
                 val bled = (motion.floatValue - dt / release).coerceAtLeast(0f)
                 motion.floatValue = maxOf(speed, bled, floor)
                 stretch.floatValue = speed
+                drift.floatValue = (pill.velocity / NtTabBarTokens.pillVelocityMax).coerceIn(-1f, 1f)
             }
         }
         motion.floatValue = floor
         stretch.floatValue = 0f
+        drift.floatValue = 0f
     }
 }
 
@@ -332,12 +338,14 @@ private fun BoxScope.TabPillLens(
     index: Animatable<Float, AnimationVector1D>,
     motion: MutableFloatState,
     stretch: MutableFloatState,
+    drift: MutableFloatState,
 ) {
     val maxSize = DpSize(
         restWidth + NtTabBarTokens.pillGrow + NtTabBarTokens.pillStretch,
         NtTabBarTokens.itemHeight + NtTabBarTokens.pillGrow,
     )
-    val maxStyle = remember { GlassStyle.pillLens(1f) }
+    // Full motion *and* full drift: the effect layer is padded for the furthest tap either reaches.
+    val maxStyle = remember { GlassStyle.pillLens(1f, 1f) }
     val frame = remember<Density.() -> GlassLensFrame>(margin, pitch, restWidth) {
         {
             val m = motion.floatValue
@@ -352,7 +360,7 @@ private fun BoxScope.TabPillLens(
                 rect = Rect(Offset(left.toPx(), top.toPx()), Size(width.toPx(), height.toPx())),
                 // CapsuleShape resolves to min(w, h) / 2 — r = h / 2 at both ends of the morph,
                 // which is what the frames measure (27 at rest, 33.5 mid-travel).
-                style = GlassStyle.pillLens(m),
+                style = GlassStyle.pillLens(m, drift.floatValue),
             )
         }
     }
@@ -527,8 +535,9 @@ object NtTabBarTokens {
      *
      * The blob is 3.5 dp proud of the 62 dp platter at full motion ([pillGrow] / 2 over the 54 dp
      * item), and its lens samples up to `GlassStyle.pillLens`'s 11.5 dp refraction beyond its own
-     * rim, plus the blur kernel. Under that the outer ring of the lens reads past the recorded
-     * layer and comes back transparent — a black bite out of the blob's edge.
+     * rim, less the magnification's pull back in, plus its outermost (red) dispersion tap and the
+     * blur kernel — 17.5 dp past the capsule at worst. Under that the outer ring of the lens reads
+     * past the recorded layer and comes back transparent — a black bite out of the blob's edge.
      *
      * It is free of the bar's own layout: `NtTabBar` hangs the overhang off a
      * `wrapContentSize(unbounded = true)`, which reports the capsule's footprint whatever this is,
