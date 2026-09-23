@@ -4,8 +4,10 @@ Train today. Track everything. Keep your bro honest.
 
 No Tomorrow is a gym and nutrition app built around one idea: you pair with one gym partner, share a
 weekly schedule, and each of you sees whether the other actually showed up. Around that sit
-routines and set-by-set workout logging with rest timers, a food log with barcode and text search
-(Open Food Facts) and AI photo estimates, and progress charts per exercise.
+routines and set-by-set workout logging with rest timers (a workout in progress shrinks to a bar
+above the tabs, and finished workouts can be edited), a food log with day-by-day history and a
+calorie heatmap scored against your goal, barcode and text search (Open Food Facts), AI photo
+estimates and nutrition-label reads, and progress charts per exercise.
 
 There are two native apps and one small backend:
 
@@ -44,7 +46,9 @@ at your own deployment, or flip the in-app *demo data* switch to run fully offli
 
 ## AI photo estimates
 
-A photo of a plate becomes a list of foods with grams and macros. Three ways to run it:
+A photo of a plate becomes a list of foods with grams and macros, which you can correct and send
+back for a better answer; a photo of a nutrition table fills in a product the barcode database
+does not know. Three ways to run it:
 
 - **Standard** — the app sends the photo to the backend, which calls Gemini with the server's key.
   The server owner decides who may use it: `AI_ALLOWED_USERS` (comma-separated usernames). Anyone
@@ -54,14 +58,18 @@ A photo of a plate becomes a list of foods with grams and macros. Three ways to 
 - **Claude with your API key** — the same, against Anthropic's Messages API.
 
 Every path shows a consent step the first time: the photo (without location or other metadata),
-the meal slot and your language leave the phone; nothing else does.
+the meal details you typed, the meal slot and your language leave the phone; nothing else does.
+Prompts, JSON schemas and the generic food table live in `backend/data/ai/estimate-spec.json`; the
+backend and both apps (which bundle it for the bring-your-own-key paths) finalize answers the same
+way and are checked against the shared fixtures next to it.
 
 ## Repository map
 
 ```
 NoTomorrow/          iOS app (Features/, Services/, Models/, Resources/Localizable.xcstrings)
 android/app/src/     Android app (app.notomorrow: feature/, designsystem/, service/, data/, net/)
-backend/src/         API (routes/, auth/, ai.ts, push.ts, jobs.ts), migrations/, test/
+backend/src/         API (routes/, auth/, ai.ts, aiFinalize.ts, push.ts, jobs.ts), migrations/, test/
+backend/data/ai/     AI spec (prompts, schemas, food table) + fixtures, shared with both apps
 docs/                architecture.md, backend.md, android-*.md — the specs
 design/              iOS reference captures and Android parity captures
 scripts/             string pipeline: xcstrings → Android res + typed keys; font fitting
@@ -73,7 +81,8 @@ Android resources. Never hand-edit the generated files.
 
 ## Tests
 
-- Backend: `cd backend && npx vitest run`
+- Backend: `cd backend && npx vitest run` (`npm run ai:fixtures` checks the AI finalizer against
+  the shared fixtures)
 - Android: `cd android && ./gradlew :app:testDebugUnitTest`
 - iOS: the `NoTomorrowTests` scheme in Xcode
 
