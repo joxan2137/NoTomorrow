@@ -63,6 +63,19 @@ class WorkoutStarterTest {
     }
 
     @Test
+    fun `an unfinished workout never seeds a template`() {
+        val rows = listOf(
+            row(setId = 1, workoutExerciseId = 10, workoutId = "done", startedAt = 1_000, order = 0, weight = 60.0, reps = 8),
+            row(
+                setId = 2, workoutExerciseId = 20, workoutId = "abandoned", startedAt = 9_000, order = 0,
+                weight = 100.0, reps = 1, finished = false,
+            ),
+        )
+
+        assertEquals(listOf(1L), WorkoutStarter.templateSets(rows).map { it.setId })
+    }
+
+    @Test
     fun `no history gives empty rows`() {
         val sets = WorkoutStarter.prefilledSets(3, WorkoutStarter.templateSets(emptyList()))
 
@@ -96,6 +109,40 @@ class WorkoutStarterTest {
         assertEquals(listOf(80.0), WorkoutStarter.prefilledSets(1, template).map { it.weightKg })
     }
 
+    @Test
+    fun `an exercise never done starts at its target reps and no weight`() {
+        val sets = WorkoutStarter.prefilledSets(3, emptyList(), targetReps = 8)
+
+        assertEquals(listOf(8, 8, 8), sets.map { it.reps })
+        assertTrue(sets.all { it.weightKg == 0.0 })
+    }
+
+    @Test
+    fun `history beats the target reps`() {
+        val template = listOf(
+            row(setId = 1, workoutExerciseId = 10, workoutId = "w", startedAt = 1_000, order = 0, weight = 80.0, reps = 6),
+        )
+
+        val sets = WorkoutStarter.prefilledSets(2, template, targetReps = 10)
+
+        assertEquals(listOf(6, 6), sets.map { it.reps })
+        assertEquals(listOf(80.0, 80.0), sets.map { it.weightKg })
+    }
+
+    @Test
+    fun `a routine item inherits the default rest unless it has its own`() {
+        assertEquals(150, WorkoutStarter.routineItemRest(0, "Triceps_Pushdown", defaultRest = 150))
+        assertEquals(180, WorkoutStarter.routineItemRest(0, "Barbell_Bench_Press_-_Medium_Grip", defaultRest = 150))
+        assertEquals(75, WorkoutStarter.routineItemRest(75, "Barbell_Bench_Press_-_Medium_Grip", defaultRest = 150))
+    }
+
+    @Test
+    fun `no profile or an unset default rests 90 s`() {
+        assertEquals(90, WorkoutStarter.resolveDefaultRest(null))
+        assertEquals(90, WorkoutStarter.resolveDefaultRest(0))
+        assertEquals(150, WorkoutStarter.resolveDefaultRest(150))
+    }
+
     /** `Workout.duration` — clamped at zero and frozen once the workout ends. */
     @Test
     fun `duration uses the end when there is one`() {
@@ -123,6 +170,7 @@ class WorkoutStarterTest {
         reps: Int,
         kind: SetKind = SetKind.Normal,
         workoutExerciseOrder: Int = 0,
+        finished: Boolean = true,
     ) = CompletedSetRow(
         setId = setId,
         setOrder = order,
@@ -139,6 +187,6 @@ class WorkoutStarterTest {
         workoutId = workoutId,
         workoutName = "Push A",
         workoutStartedAt = startedAt,
-        workoutEndedAt = null,
+        workoutEndedAt = if (finished) startedAt + 3_600_000 else null,
     )
 }

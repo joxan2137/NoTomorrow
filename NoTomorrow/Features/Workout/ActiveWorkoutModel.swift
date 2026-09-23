@@ -11,14 +11,54 @@ struct UpNextTarget: Equatable {
     var reps: Int
     var bestKg: Double?
     var bestReps: Int?
+    /// The user's unit for the rest card (weights above are kg).
+    var unit: WeightUnit = .kg
 
     var setLabel: String { String(localized: "timer.setOf \(setIndex) \(setCount)") }
 }
 
 /// Derived state for one workout in progress: which exercise is open, ghost values from the last time
 /// each exercise was done, PR hints, and the set/exercise mutations behind the table.
+/// Owned by `WorkoutSessionController` (not the view), so it survives collapsing the workout into the mini bar.
 @Observable
+@MainActor
 final class ActiveWorkoutModel {
+    /// Weight and reps of a set, copied out of SwiftData so caches never hold a model a history edit may delete.
+    struct SetValue: Equatable {
+        var weightKg: Double
+        var reps: Int
+    }
+
+    /// The rows of the last session with an exercise, split the way the table numbers them: warm-ups apart,
+    /// working sets (reps > 0) counted 1, 2, 3… So "Previous" lines up with the prefill even when warm-ups were logged.
+    struct PreviousRows: Equatable {
+        var warmups: [SetValue]
+        var working: [SetValue]
+
+        init(warmups: [SetValue] = [], working: [SetValue] = []) {
+            self.warmups = warmups
+            self.working = working
+        }
+
+        /// From that session's completed sets, in row order.
+        init(completed sets: [SetEntry]) {
+            warmups = sets.filter { $0.kind == .warmup }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+            working = sets.filter { $0.kind != .warmup && $0.reps > 0 }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+        }
+
+        /// The row at the same position: the k-th warm-up for a warm-up, the k-th working set otherwise.
+        func value(at slot: Slot) -> SetValue? {
+            let rows = slot.isWarmup ? warmups : working
+            return slot.index < rows.count ? rows[slot.index] : nil
+        }
+    }
+
+    /// Where a set sits in its table: the k-th warm-up, or the k-th set that is not one (0-based).
+    struct Slot: Equatable {
+        var isWarmup: Bool
+        var index: Int
+    }
+
     let workout: Workout
     private let context: ModelContext
 
@@ -27,11 +67,15 @@ final class ActiveWorkoutModel {
     /// Set whose "beats your best" hint is showing, with the best-before it beat.
     var hintSetID: PersistentIdentifier?
     var hintBest: (weightKg: Double, reps: Int)?
-    /// Cached "previous" sets per exercise (rows of the most recent earlier workout that had it).
-    private var previousRows: [PersistentIdentifier: [SetEntry]] = [:]
-    private var previousLast: [PersistentIdentifier: SetEntry?] = [:]
+    /// Cached "previous" rows per exercise (from the most recent other finished workout that did it).
+    private var previousRows: [PersistentIdentifier: PreviousRows] = [:]
+    private var previousLast: [PersistentIdentifier: SetValue?] = [:]
+    /// The user's weight unit: cells, Previous, "Last:", the rest card and the summary show it (stored in kg).
+    private(set) var unit: WeightUnit = .kg
     /// Filled when the rest timer starts, read by RestTimerView.
     var upNext: UpNextTarget?
+    /// The "DONE." summary is on screen instead of the table (the workout is finished, `endedAt` stamped).
+    var showsSummary = false
 
     init(workout: Workout, context: ModelContext) {
         self.workout = workout
@@ -52,6 +96,14 @@ final class ActiveWorkoutModel {
         return min(list.count, (list.firstIndex { !$0.isDone } ?? 0) + 1)
     }
 
+    /// The exercise the user is on, for the mini bar: the open one, else the first with work left, else the last.
+    var currentExercise: WorkoutExercise? { Self.currentExercise(in: exercises, expandedID: expandedExerciseID) }
+
+    static func currentExercise(in exercises: [WorkoutExercise], expandedID: PersistentIdentifier?) -> WorkoutExercise? {
+        if let expandedID, let open = exercises.first(where: { $0.persistentModelID == expandedID }) { return open }
+        return exercises.first { !$0.isDone } ?? exercises.last
+    }
+
     /// Row number shown in the Set column: warm-ups do not count.
     func setNumber(for set: SetEntry, in exercise: WorkoutExercise) -> Int {
         var n = 0
@@ -62,6 +114,17 @@ final class ActiveWorkoutModel {
         return n
     }
 
+    /// Position of `id` among its kind in `sets` (row order): warm-ups and the other sets are counted apart.
+    static func slot(of id: PersistentIdentifier, in sets: [SetEntry]) -> Slot? {
+        var warmups = 0, others = 0
+        for s in sets {
+            let isWarmup = s.kind == .warmup
+            if s.persistentModelID == id { return Slot(isWarmup: isWarmup, index: isWarmup ? warmups : others) }
+            if isWarmup { warmups += 1 } else { others += 1 }
+        }
+        return nil
+    }
+
     /// First uncompleted set of an exercise — the row that gets the highlighted cells.
     func currentSetID(in exercise: WorkoutExercise) -> PersistentIdentifier? {
         exercise.sortedSets.first { !$0.isCompleted }?.persistentModelID
@@ -69,37 +132,50 @@ final class ActiveWorkoutModel {
 
     // MARK: Previous values
 
-    /// Same-row set from the last earlier workout that had this exercise, else the most recent completed set.
-    func previous(for set: SetEntry, in exercise: WorkoutExercise) -> (weightKg: Double, reps: Int)? {
-        guard let ex = exercise.exercise else { return nil }
-        let rows = previousRows[ex.persistentModelID] ?? []
-        if let i = exercise.sortedSets.firstIndex(where: { $0.persistentModelID == set.persistentModelID }), i < rows.count {
-            return (rows[i].weightKg, rows[i].reps)
-        }
-        if let last = lastSet(for: exercise) { return (last.weightKg, last.reps) }
-        return nil
+    /// Same-position set from the last session with this exercise (warm-ups against warm-ups, working sets by
+    /// number), else, for a working set, the most recent completed set.
+    func previous(for set: SetEntry, in exercise: WorkoutExercise) -> SetValue? {
+        guard let ex = exercise.exercise,
+              let slot = Self.slot(of: set.persistentModelID, in: exercise.sortedSets) else { return nil }
+        if let aligned = previousRows[ex.persistentModelID]?.value(at: slot) { return aligned }
+        return slot.isWarmup ? nil : lastSet(for: exercise)
+    }
+
+    /// Fills an open row's empty cells from Previous (the table shows what a tick will log).
+    func prefillFromPrevious(_ set: SetEntry, in exercise: WorkoutExercise) {
+        guard !set.isCompleted, set.weightKg == 0 || set.reps == 0,
+              let previous = previous(for: set, in: exercise) else { return }
+        if set.weightKg == 0, previous.weightKg > 0 { set.weightKg = previous.weightKg }
+        if set.reps == 0, previous.reps > 0 { set.reps = previous.reps }
     }
 
     /// "Last: 80 kg × 8" source for the exercise header.
-    func lastSet(for exercise: WorkoutExercise) -> SetEntry? {
+    func lastSet(for exercise: WorkoutExercise) -> SetValue? {
         guard let ex = exercise.exercise else { return nil }
         if let cached = previousLast[ex.persistentModelID] { return cached }
-        let found = RecordService.lastSet(for: ex, excluding: workout) ?? fetchedLastSet(for: ex)
+        let found = (RecordService.lastSet(for: ex, excluding: workout) ?? fetchedLastSet(for: ex))
+            .map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
         previousLast[ex.persistentModelID] = found
         return found
     }
 
+    /// Re-reads Previous / Last and the unit. On init, on every expand (history may have been edited meanwhile)
+    /// and after exercises are added.
     func reloadPrevious() {
         previousRows = [:]
         previousLast = [:]
+        unit = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first?.units ?? .kg
         for we in exercises {
             guard let ex = we.exercise else { continue }
             let myID = workout.persistentModelID
             let earlier = ex.usages
-                .filter { $0.workout?.persistentModelID != myID && $0.workout?.endedAt != nil }
+                .filter { usage in
+                    guard let other = usage.workout, other.persistentModelID != myID, other.endedAt != nil else { return false }
+                    return usage.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+                }
                 .max { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }
             let rows = earlier?.sortedSets.filter(\.isCompleted) ?? fetchedRows(for: ex)
-            previousRows[ex.persistentModelID] = rows
+            previousRows[ex.persistentModelID] = PreviousRows(completed: rows)
         }
     }
 
@@ -110,7 +186,9 @@ final class ActiveWorkoutModel {
         d.fetchLimit = 50
         let workouts = (try? context.fetch(d)) ?? []
         for w in workouts where w.persistentModelID != myID {
-            if let we = w.sortedExercises.first(where: { $0.exercise?.id == exercise.id }) {
+            if let we = w.sortedExercises.first(where: { we in
+                we.exercise?.id == exercise.id && we.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+            }) {
                 return we.sortedSets.filter(\.isCompleted)
             }
         }
@@ -118,18 +196,22 @@ final class ActiveWorkoutModel {
     }
 
     private func fetchedLastSet(for exercise: Exercise) -> SetEntry? {
-        fetchedRows(for: exercise).filter { $0.kind != .warmup }.max { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
+        fetchedRows(for: exercise).filter { $0.kind != .warmup && $0.reps > 0 }
+            .max(by: RecordService.completedEarlier)
     }
 
     // MARK: Mutations
 
-    /// Ticks a set: stamps `completedAt`, evaluates records, returns the rest-timer target (nil when the next set is a drop set).
+    /// Ticks a set: stamps `completedAt`, evaluates records and starts the rest (not before a drop set).
+    /// An empty row takes Previous; a row that still has no reps is not logged (no "0 × 0" sets) and stays open,
+    /// so the caller can send the user to its reps cell. Returns whether a rest started.
     @discardableResult
     func complete(_ set: SetEntry, in exercise: WorkoutExercise, restTimer: RestTimerController) -> Bool {
         if set.weightKg == 0 && set.reps == 0, let prev = previous(for: set, in: exercise) {
             set.weightKg = prev.weightKg
             set.reps = prev.reps
         }
+        guard set.reps > 0 else { return false }
         set.completedAt = .now
         let result = RecordService.mark(set: set, in: context)
         if result.isPR || result.isSetRecord, let best = result.bestBefore {
@@ -145,7 +227,7 @@ final class ActiveWorkoutModel {
         if let target, !target.isDrop, autoStart {
             upNext = target.upNext
             restTimer.start(seconds: exercise.restSeconds, exerciseName: target.upNext.exerciseName,
-                            nextSetLabel: "\(target.upNext.setLabel) · \(Fmt.set(target.upNext.weightKg, target.upNext.reps))",
+                            nextSetLabel: "\(target.upNext.setLabel) · \(Fmt.set(target.upNext.weightKg, target.upNext.reps, unit: unit))",
                             workoutName: workout.name)
             return true
         }
@@ -165,6 +247,18 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    /// "Delete set" from the kind menu: removes the row and renumbers the rest. Records are re-derived on Finish.
+    /// Progress (open under the mini bar) reloads, so it drops a deleted completed set.
+    func removeSet(_ set: SetEntry, in exercise: WorkoutExercise) {
+        let id = set.persistentModelID
+        if hintSetID == id { hintSetID = nil }
+        exercise.sets.removeAll { $0.persistentModelID == id }
+        context.delete(set)
+        for (i, s) in exercise.sortedSets.enumerated() { s.order = i }
+        try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+    }
+
     func addSet(to exercise: WorkoutExercise) {
         let sets = exercise.sortedSets
         let order = (sets.last?.order ?? -1) + 1
@@ -178,13 +272,17 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    /// Removes an exercise and its sets. Progress reloads, as after `removeSet`.
     func remove(_ exercise: WorkoutExercise) {
         if expandedExerciseID == exercise.persistentModelID { expandedExerciseID = nil }
         let id = exercise.persistentModelID
         workout.exercises.removeAll { $0.persistentModelID == id }
+        // Its sets go first (cascade is not reliable on iOS 17), as in `WorkoutEditor`.
+        for set in Array(exercise.sets) { context.delete(set) }
         context.delete(exercise)
         for (i, we) in exercises.enumerated() { we.order = i }
         try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
     }
 
     func toggleExpanded(_ exercise: WorkoutExercise) {
@@ -193,40 +291,48 @@ final class ActiveWorkoutModel {
 
     // MARK: Finish
 
-    /// Moment Finish was tapped. `endedAt` is written only on Done, because the presenting cover closes
-    /// as soon as the workout stops being active — the summary must render before that happens.
-    private(set) var finishedAt: Date?
-
-    /// Marks today attended when it is a gym day and remembers the finish time. Idempotent.
-    func finish() {
-        let now = Date.now
-        finishedAt = now
-        if let schedule = AttendanceService.schedule(in: context), schedule.isGymDay(Calendar.current.isoWeekday(for: now)) {
-            AttendanceService.markAttended(day: now, context: context)
+    /// Finish: stamps the end now, so a kill on the summary can never stretch the workout, marks the day it started
+    /// attended when at least one set was done, and shows the summary. The session keeps the workout (by id, not by
+    /// `endedAt == nil`) until Done, so the summary stays up.
+    /// Any day counts, scheduled or not (a make-up day, an extra session), and the day is the start's: a session
+    /// from 22:30 to 00:20 is the evening it began. The status also goes to the backend (`AttendanceSync`), so the
+    /// partner sees it and the server's 21:00 skip check stays quiet.
+    /// Records are re-derived for this workout's exercises, so a kind changed, a set unticked or deleted after its
+    /// tick leaves no stale PR on the summary or in history.
+    /// With nothing done, a day an earlier Finish of this workout counted ("Edit sets", every set unticked) is
+    /// reverted, locally and on the backend.
+    func finish(now: Date = .now) {
+        workout.endedAt = now
+        try? context.save()
+        RecordService.rebuild(exerciseIDs: Set(workout.exercises.compactMap { $0.exercise?.id }), in: context)
+        if workout.completedSetCount > 0 {
+            AttendanceService.markAttended(day: workout.startedAt, context: context)
+            AttendanceSync.report(day: workout.startedAt, status: .attended)
+        } else {
+            WorkoutEditor.releaseAttendance(of: workout, in: context, today: now)
         }
+        try? context.save()
+        showsSummary = true
     }
 
-    /// Done on the summary: stamp the end, save, release the session (which closes the cover).
+    /// Done on the summary: release the session (which closes the full screen). The end is already stamped.
     func commitFinish(session: WorkoutSessionController) {
-        workout.endedAt = finishedAt ?? .now
         try? context.save()
         session.end()
     }
 
-    /// "Edit sets" from the summary: back to the table, nothing to revert.
+    /// "Edit sets" from the summary: the workout is back in progress.
     func reopen() {
-        finishedAt = nil
+        workout.endedAt = nil
+        try? context.save()
+        showsSummary = false
     }
 
-    /// Drops an empty workout. The row is deleted after the cover has animated out so nothing renders a deleted model.
-    func discard(session: WorkoutSessionController) {
-        let context = self.context
-        let workout = self.workout
-        session.end()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-            context.delete(workout)
-            try? context.save()
-        }
+    /// Drops an empty workout (the session deletes the row once the full screen has animated out, and reverts a day
+    /// an earlier Finish of it counted).
+    @discardableResult
+    func discard(session: WorkoutSessionController) -> Task<Void, Never> {
+        session.discard(workout, context: context)
     }
 
     // MARK: Next target
@@ -239,22 +345,25 @@ final class ActiveWorkoutModel {
     private func nextTarget(after set: SetEntry, in exercise: WorkoutExercise) -> NextTarget? {
         let sets = exercise.sortedSets
         if let next = sets.first(where: { $0.order > set.order && !$0.isCompleted }) {
-            return NextTarget(upNext: makeUpNext(next, in: exercise, fallback: set), isDrop: next.kind == .drop)
+            return NextTarget(upNext: makeUpNext(next, in: exercise, fallback: SetValue(weightKg: set.weightKg, reps: set.reps)),
+                              isDrop: next.kind == .drop)
         }
         // Exercise done: rest before the next exercise that still has work.
         let list = exercises
         guard let i = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
         for we in list[(i + 1)...] {
             if let next = we.sortedSets.first(where: { !$0.isCompleted }) {
-                let fallback = we.sortedSets.last(where: \.isCompleted) ?? lastSet(for: we)
+                let fallback = we.sortedSets.last(where: \.isCompleted).map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+                    ?? lastSet(for: we)
                 return NextTarget(upNext: makeUpNext(next, in: we, fallback: fallback), isDrop: false)
             }
         }
         // Nothing left: still rest, aimed at this exercise's numbers.
-        return NextTarget(upNext: makeUpNext(set, in: exercise, fallback: set), isDrop: false)
+        return NextTarget(upNext: makeUpNext(set, in: exercise, fallback: SetValue(weightKg: set.weightKg, reps: set.reps)),
+                          isDrop: false)
     }
 
-    private func makeUpNext(_ next: SetEntry, in exercise: WorkoutExercise, fallback: SetEntry?) -> UpNextTarget {
+    private func makeUpNext(_ next: SetEntry, in exercise: WorkoutExercise, fallback: SetValue?) -> UpNextTarget {
         let sets = exercise.sortedSets
         let index = (sets.firstIndex { $0.persistentModelID == next.persistentModelID } ?? 0) + 1
         let weight = next.weightKg > 0 ? next.weightKg : (fallback?.weightKg ?? previous(for: next, in: exercise)?.weightKg ?? 0)
@@ -263,6 +372,6 @@ final class ActiveWorkoutModel {
         return UpNextTarget(exerciseName: exercise.exercise?.localizedName ?? "",
                             setIndex: index, setCount: sets.count,
                             weightKg: weight, reps: reps,
-                            bestKg: best?.weightKg, bestReps: best?.reps)
+                            bestKg: best?.weightKg, bestReps: best?.reps, unit: unit)
     }
 }

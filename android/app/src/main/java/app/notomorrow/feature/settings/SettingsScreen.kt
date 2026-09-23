@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,8 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
+import app.notomorrow.BuildConfig
 import app.notomorrow.R
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
@@ -30,6 +34,7 @@ import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
+import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.AIProvider
 import app.notomorrow.nav.NtRoute
 import app.notomorrow.service.Days
@@ -65,6 +70,7 @@ fun SettingsScreen(
             onSignOut = { showsSignOut = true },
             onDelete = { showsDelete = true },
         )
+        VersionFooter()
     }
 
     if (showsSignIn && signIn != null) {
@@ -319,6 +325,29 @@ private fun AccountGroup(
                 isBusy = state.isDeleting,
             )
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Version
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `SettingsView.versionFooter`: "Version 0.2.1 (57)" under the account group, so "which build is
+ * installed" has an answer. Centred footnote in `ink3`, selectable like iOS's `.textSelection`.
+ */
+@Composable
+private fun VersionFooter() {
+    val label = SettingsFormat.versionLabel(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE.toLong())
+    SelectionContainer(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        NtText(
+            text = stringResource(S.settings_version_s, label),
+            modifier = Modifier.fillMaxWidth(),
+            style = NT.Fonts.footnote.tabular(),
+            color = NT.Colors.ink3,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

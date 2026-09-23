@@ -11,11 +11,17 @@ struct PortionSheet: View {
     var onAdded: () -> Void
     /// Set when the sheet re-sizes an entry that is already logged instead of inserting a new one.
     private let editing: MealEntry?
+    /// Pick mode (a food for an AI estimate): the button hands the grams back and nothing is written.
+    private let onPicked: ((Double) -> Void)?
+    /// Edit mode: the trash button. The presenter closes the sheet and deletes through `FuelModel`, so Undo shows.
+    private let onDelete: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
     @State private var grams: Double
     @State private var gramsText: String
     @State private var slot: MealSlot
+    /// Edit mode only: the day the entry is listed under, movable with `EntryDayStepper`.
+    @State private var entryDay: Date
     @FocusState private var gramsFocused: Bool
 
     static let step: Double = 10
@@ -23,6 +29,10 @@ struct PortionSheet: View {
     private static let height: CGFloat = 376
     /// One `MealSlotPicker` row (32) plus the stack spacing (16).
     private static let slotRowHeight: CGFloat = 48
+    /// One `EntryDayStepper` row (44) plus the stack spacing (16).
+    private static let dayRowHeight: CGFloat = 60
+    /// The two-line "estimated" caption (32) plus the stack spacing (16).
+    private static let estimateRowHeight: CGFloat = 48
 
     init(food: PortionFood, meal: MealSlot, day: Date = .now, onAdded: @escaping () -> Void) {
         self.food = food
@@ -30,25 +40,51 @@ struct PortionSheet: View {
         self.day = day
         self.onAdded = onAdded
         self.editing = nil
+        self.onPicked = nil
+        self.onDelete = nil
         let start = food.servingSizeG ?? 100
         _grams = State(initialValue: start)
         _gramsText = State(initialValue: Self.text(for: start))
         _slot = State(initialValue: meal)
+        _entryDay = State(initialValue: Calendar.current.startOfDay(for: day))
     }
 
-    /// Edit mode: grams start at the entry's portion, the slot can be changed, and Save rewrites the entry in place.
-    init(editing entry: MealEntry, food: FoodItem, onSaved: @escaping () -> Void) {
+    /// Edit mode: grams start at the entry's portion, the day and slot can be changed, and Save rewrites the entry in place.
+    init(editing entry: MealEntry, food: FoodItem, onSaved: @escaping () -> Void, onDelete: (() -> Void)? = nil) {
         self.food = .item(food)
         self.meal = entry.slot
         self.day = entry.day
         self.onAdded = onSaved
         self.editing = entry
+        self.onPicked = nil
+        self.onDelete = onDelete
         _grams = State(initialValue: entry.grams)
         _gramsText = State(initialValue: Self.text(for: entry.grams))
         _slot = State(initialValue: entry.slot)
+        _entryDay = State(initialValue: FuelCalendar.dayKey(entry.day))
+    }
+
+    /// Pick mode: sizes a food the AI estimate missed; "Add to this estimate" returns the grams.
+    init(picking food: PortionFood, onPicked: @escaping (Double) -> Void) {
+        self.food = food
+        self.meal = .lunch
+        self.onAdded = {}
+        self.editing = nil
+        self.onPicked = onPicked
+        self.onDelete = nil
+        let start = food.servingSizeG ?? 100
+        _grams = State(initialValue: start)
+        _gramsText = State(initialValue: Self.text(for: start))
+        _slot = State(initialValue: .lunch)
+        _entryDay = State(initialValue: Calendar.current.startOfDay(for: .now))
     }
 
     private var isEditing: Bool { editing != nil }
+
+    private var buttonTitle: LocalizedStringKey {
+        if onPicked != nil { return "fuel.ai.addMissed.pick" }
+        return isEditing ? "common.save" : FuelText.verbatim(FuelText.addTo(slot))
+    }
 
     private var factor: Double { grams / 100 }
     private var kcal: Double { food.kcalPer100 * factor }
@@ -60,25 +96,27 @@ struct PortionSheet: View {
         VStack(spacing: 16) {
             Grabber()
             titleRow
+            if food.isEstimated { estimateCaption }
             stepperRow
             portionChips
             macroRow
             if isEditing {
+                EntryDayStepper(day: $entryDay)
                 MealSlotPicker(slot: $slot)
             }
-            PrimaryButton(title: isEditing ? "common.save" : FuelText.verbatim(FuelText.addTo(slot)), isEnabled: grams > 0) { add() }
+            PrimaryButton(title: buttonTitle, isEnabled: grams > 0) { add() }
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.bottom, 12)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(NT.Colors.surface)
-        .presentationDetents([.height(Self.height + (isEditing ? Self.slotRowHeight : 0))])
+        .presentationDetents([.height(Self.height + (isEditing ? Self.dayRowHeight + Self.slotRowHeight : 0)
+                                      + (food.isEstimated ? Self.estimateRowHeight : 0))])
         .presentationDragIndicator(.hidden)
         .presentationCornerRadius(24)
         .presentationBackground(NT.Colors.surface)
         .onChange(of: gramsText) { _, text in
-            let cleaned = text.replacingOccurrences(of: ",", with: ".")
-            if let value = Double(cleaned), value >= 0 { grams = value }
+            if let value = NumberInput.nonNegative(text) { grams = value }
         }
     }
 
@@ -104,7 +142,27 @@ struct PortionSheet: View {
                     .animation(.easeOut(duration: 0.15), value: kcal)
                 Text("unit.kcal").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
             }
+            if isEditing, let onDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(NT.Colors.bad)
+                        .frame(width: NT.Size.control, height: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressScale())
+                .padding(.trailing, -10)   // the glyph lines up with the sheet's edge; the 44 pt target stays whole
+                .accessibilityLabel(Text("common.delete"))
+            }
         }
+    }
+
+    /// Open Food Facts had no label values and filled in its own estimate; the user should compare with the pack.
+    private var estimateCaption: some View {
+        Text("fuel.estimatedNutrition")
+            .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+            .lineLimit(2)
+            .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
     }
 
     private var stepperRow: some View {
@@ -194,14 +252,20 @@ struct PortionSheet: View {
     }
 
     private static func text(for value: Double) -> String {
-        value.rounded() == value ? String(Int(value)) : value.formatted(.number.precision(.fractionLength(1)))
+        FuelText.fieldText(value)
     }
 
     private func add() {
         guard grams > 0 else { return }
+        if let onPicked {
+            onPicked(grams)
+            return
+        }
         if let editing {
-            editing.resize(to: grams)
+            // An untouched field shows the portion rounded; keep the exact figures unless it really changed.
+            if grams != editing.grams { editing.resize(to: grams) }
             editing.slot = slot
+            editing.move(to: entryDay)
         } else {
             let item = food.resolveItem(in: modelContext)
             let entry = MealEntry(day: day, slot: slot, food: item, grams: grams,

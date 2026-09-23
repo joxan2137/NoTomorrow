@@ -1,6 +1,7 @@
 package app.notomorrow.util
 
 import app.notomorrow.model.WeightUnit
+import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -27,16 +28,18 @@ class FmtTest {
         S.in_n_d_n_h to "in %1\$d d %2\$d h",
         S.day_today to "Today",
         S.day_tomorrow to "Tomorrow",
+        S.day_yesterday to "Yesterday",
     )
 
     private val plText = mapOf(
         S.n_min to "%d min",
-        S.n_h_n_min to "%1\$d godz. %2\$d min",
+        S.n_h_n_min to "%1\$d h %2\$d min",
         S.in_n_min to "za %d min",
-        S.in_n_h_n_min to "za %1\$d godz. %2\$d min",
-        S.in_n_d_n_h to "za %1\$d dn. %2\$d godz.",
+        S.in_n_h_n_min to "za %1\$d h %2\$d min",
+        S.in_n_d_n_h to "za %1\$d dn. %2\$d h",
         S.day_today to "Dziś",
         S.day_tomorrow to "Jutro",
+        S.day_yesterday to "Wczoraj",
     )
 
     private fun localizer(text: Map<Int, String>, locale: Locale) =
@@ -103,11 +106,34 @@ class FmtTest {
         assertEquals("10:05", Fmt.clock(605.4))
     }
 
+    /** `FormattersTests.testElapsed`: never "159:41" for a workout left open for hours. */
+    @Test
+    fun `elapsed switches to hours at 60 minutes`() {
+        assertEquals("0:00", Fmt.elapsed(0.0))
+        assertEquals("42:10", Fmt.elapsed(42 * 60 + 10.9))
+        assertEquals("59:59", Fmt.elapsed(3599.0))
+        assertEquals("1:00:00", Fmt.elapsed(3600.0))
+        assertEquals("2:39:41", Fmt.elapsed(2 * 3600 + 39 * 60 + 41.0))
+        assertEquals("0:00", Fmt.elapsed(-5.0))
+    }
+
     @Test
     fun `duration switches to hours at 60 minutes`() {
         assertEquals("52 min", Fmt.duration(52 * 60.0, enStrings))
         assertEquals("1 h 12 min", Fmt.duration(72 * 60.0, enStrings))
-        assertEquals("1 godz. 12 min", Fmt.duration(72 * 60.0, plStrings))
+        assertEquals("1 h 12 min", Fmt.duration(72 * 60.0, plStrings), "the SI h keeps the TIME tile whole")
+    }
+
+    @Test
+    fun `the Polish catalog uses h for hours`() {
+        val file = File("src/main/res/values-pl/strings.xml")
+        if (!file.exists()) return // running outside the module directory
+        val xml = file.readText()
+        fun value(name: String): String? =
+            Regex("""<string name="$name">([^<]*)</string>""").find(xml)?.groupValues?.get(1)
+        assertEquals("%1\$d h %2\$d min", value("n_h_n_min"))
+        assertEquals("za %1\$d h %2\$d min", value("in_n_h_n_min"))
+        assertEquals("za %1\$d dn. %2\$d h", value("in_n_d_n_h"))
     }
 
     @Test
@@ -159,6 +185,36 @@ class FmtTest {
         assertEquals("Monday", Fmt.relativeDay(today.plusDays(3), enStrings, en, today))
         assertEquals("Dziś", Fmt.relativeDay(today, plStrings, pl, today))
         assertEquals("Poniedziałek", Fmt.relativeDay(today.plusDays(3), plStrings, pl, today))
+    }
+
+    @Test
+    fun `dayTitle says today or yesterday, else the short day with the year outside this one`() {
+        val today = LocalDate.of(2026, 9, 22)
+        assertEquals("Today", Fmt.dayTitle(today, enStrings, en, today))
+        assertEquals("Yesterday", Fmt.dayTitle(today.minusDays(1), enStrings, en, today))
+        assertEquals("Wczoraj", Fmt.dayTitle(today.minusDays(1), plStrings, pl, today))
+        assertEquals("niedz., 20 wrz", Fmt.dayTitle(today.minusDays(2), plStrings, pl, today))
+        assertEquals("Sun, Sep 20", Fmt.dayTitle(today.minusDays(2), enStrings, en, today))
+        assertEquals("niedz., 21 wrz 2025", Fmt.dayTitle(LocalDate.of(2025, 9, 21), plStrings, pl, today))
+        // New Year's Day: yesterday is last year, and still reads "Yesterday".
+        assertEquals("Yesterday", Fmt.dayTitle(LocalDate.of(2025, 12, 31), enStrings, en, LocalDate.of(2026, 1, 1)))
+    }
+
+    @Test
+    fun `monthShort is the standalone abbreviation`() {
+        assertEquals("wrz", Fmt.monthShort(LocalDate.of(2026, 9, 1), pl))
+        assertEquals("paź", Fmt.monthShort(LocalDate.of(2026, 10, 1), pl))
+        assertEquals("Sep", Fmt.monthShort(LocalDate.of(2026, 9, 1), en))
+        assertEquals("Sep", Fmt.monthShort(LocalDate.of(2026, 9, 1), Locale.UK))   // CLDR "Sept", Foundation "Sep"
+        assertEquals("Jan", Fmt.monthShort(LocalDate.of(2027, 1, 1), en))
+    }
+
+    @Test
+    fun `percent has no fraction digits`() {
+        assertEquals("93%", Fmt.percent(0.934, en))
+        assertEquals("110%", Fmt.percent(1.1, en))
+        assertEquals("93%", Fmt.percent(0.934, pl))
+        assertEquals("0%", Fmt.percent(0.0, pl))
     }
 
     @Test

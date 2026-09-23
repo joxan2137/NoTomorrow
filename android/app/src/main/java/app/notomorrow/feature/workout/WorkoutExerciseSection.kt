@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +42,7 @@ import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.SetKind
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
@@ -48,6 +50,11 @@ import app.notomorrow.util.S
  * One exercise of the active workout — 1:1 port of `WorkoutExerciseSection.swift`.
  * Expanded it is header + column header + the set table + "Add set"; collapsed it is a
  * 60 dp row with the set count and the last time it was done.
+ *
+ * [editing] is the workout editor's section (`WorkoutEditExerciseSection`): always expanded, the
+ * header shows the muscle only and its menu offers [onMoveUp] / [onMoveDown] (hidden when null,
+ * at the ends) before Remove; rows are never dimmed or locked and the Previous column is blank.
+ * Weights are shown in [unit]. [onDeleteSet] adds "Delete set" to every row's kind menu.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -56,7 +63,9 @@ fun WorkoutExerciseSection(
     hintSetId: Long?,
     hintBest: SetValue?,
     focus: SetFieldFocus,
+    unit: WeightUnit,
     modifier: Modifier = Modifier,
+    editing: Boolean = false,
     onToggleExpanded: () -> Unit,
     onRemove: () -> Unit,
     onAddSet: () -> Unit,
@@ -64,13 +73,19 @@ fun WorkoutExerciseSection(
     onWeight: (Long, Double) -> Unit,
     onReps: (Long, Int) -> Unit,
     onToggleSet: (SetRowUi) -> Unit,
+    onDeleteSet: ((Long) -> Unit)? = null,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
+    onRowAppear: (Long) -> Unit = {},
 ) {
-    if (isExpanded) {
+    if (isExpanded || editing) {
         Expanded(
             exercise = exercise,
             hintSetId = hintSetId,
             hintBest = hintBest,
             focus = focus,
+            unit = unit,
+            editing = editing,
             modifier = modifier,
             onToggleExpanded = onToggleExpanded,
             onRemove = onRemove,
@@ -79,9 +94,13 @@ fun WorkoutExerciseSection(
             onWeight = onWeight,
             onReps = onReps,
             onToggleSet = onToggleSet,
+            onDeleteSet = onDeleteSet,
+            onMoveUp = onMoveUp,
+            onMoveDown = onMoveDown,
+            onRowAppear = onRowAppear,
         )
     } else {
-        Collapsed(exercise = exercise, modifier = modifier, onClick = onToggleExpanded)
+        Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
     }
 }
 
@@ -90,12 +109,13 @@ fun WorkoutExerciseSection(
 @Composable
 private fun Collapsed(
     exercise: WorkoutExerciseUi,
+    unit: WeightUnit,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
     val subtitle = listOfNotNull(
         workoutSetCount(exercise.setCount),
-        lastLine(exercise),
+        lastLine(exercise, unit),
     ).joinToString(SEPARATOR)
     Row(
         modifier = modifier
@@ -136,6 +156,8 @@ private fun Expanded(
     hintSetId: Long?,
     hintBest: SetValue?,
     focus: SetFieldFocus,
+    unit: WeightUnit,
+    editing: Boolean,
     modifier: Modifier,
     onToggleExpanded: () -> Unit,
     onRemove: () -> Unit,
@@ -144,72 +166,115 @@ private fun Expanded(
     onWeight: (Long, Double) -> Unit,
     onReps: (Long, Int) -> Unit,
     onToggleSet: (SetRowUi) -> Unit,
+    onDeleteSet: ((Long) -> Unit)?,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
+    onRowAppear: (Long) -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.Start,
     ) {
-        Header(exercise = exercise, onToggleExpanded = onToggleExpanded, onRemove = onRemove)
-        ColumnHeader()
+        Header(
+            exercise = exercise,
+            unit = unit,
+            editing = editing,
+            onToggleExpanded = onToggleExpanded,
+            onRemove = onRemove,
+            onMoveUp = onMoveUp,
+            onMoveDown = onMoveDown,
+        )
+        ColumnHeader(unit = unit, showsPrevious = !editing)
         for (row in exercise.sets) {
-            SetRow(
-                row = row,
-                focus = focus,
-                modifier = Modifier.fillMaxWidth(),
-                onKind = { kind -> onKind(row.id, kind) },
-                onWeight = { value -> onWeight(row.id, value) },
-                onReps = { value -> onReps(row.id, value) },
-                onToggle = { onToggleSet(row) },
-            )
-            val visible = hintSetId == row.id && hintBest != null
-            // `hintSetID` and `hintBest` go nil in the same emission, so the exit would play over
-            // an empty box; latch the last pair the hint showed and keep rendering it while the
-            // scale/fade runs out, exactly as SwiftUI's transition keeps the removed view alive.
-            val shown = remember(row.id) { mutableStateOf<Pair<SetRowUi, SetValue>?>(null) }
-            if (visible && hintBest != null) shown.value = row to hintBest
-            AnimatedVisibility(
-                visible = visible,
-                enter = scaleIn(HINT_SPRING_FLOAT, initialScale = 0.9f, transformOrigin = LEADING) +
-                    fadeIn(HINT_SPRING_FLOAT),
-                exit = scaleOut(HINT_SPRING_FLOAT, targetScale = 0.9f, transformOrigin = LEADING) +
-                    fadeOut(HINT_SPRING_FLOAT),
-            ) {
-                shown.value?.let { (hintRow, best) -> BeatsBestHint(row = hintRow, best = best) }
+            key(row.id) {
+                SetRow(
+                    row = row,
+                    focus = focus,
+                    unit = unit,
+                    modifier = Modifier.fillMaxWidth(),
+                    editing = editing,
+                    onKind = { kind -> onKind(row.id, kind) },
+                    onWeight = { value -> onWeight(row.id, value) },
+                    onReps = { value -> onReps(row.id, value) },
+                    onToggle = { onToggleSet(row) },
+                    onDelete = onDeleteSet?.let { delete -> { delete(row.id) } },
+                    onAppear = { onRowAppear(row.id) },
+                )
+                val visible = hintSetId == row.id && hintBest != null
+                // `hintSetID` and `hintBest` go nil in the same emission, so the exit would play over
+                // an empty box; latch the last pair the hint showed and keep rendering it while the
+                // scale/fade runs out, exactly as SwiftUI's transition keeps the removed view alive.
+                val shown = remember(row.id) { mutableStateOf<Pair<SetRowUi, SetValue>?>(null) }
+                if (visible && hintBest != null) shown.value = row to hintBest
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = scaleIn(HINT_SPRING_FLOAT, initialScale = 0.9f, transformOrigin = LEADING) +
+                        fadeIn(HINT_SPRING_FLOAT),
+                    exit = scaleOut(HINT_SPRING_FLOAT, targetScale = 0.9f, transformOrigin = LEADING) +
+                        fadeOut(HINT_SPRING_FLOAT),
+                ) {
+                    shown.value?.let { (hintRow, best) -> BeatsBestHint(row = hintRow, best = best, unit = unit) }
+                }
             }
         }
         AddSetRow(onClick = onAddSet)
     }
 }
 
+/**
+ * Name over "muscle · Last: 80 kg × 8" (tap toggles the section) and the "…" menu. The editor's
+ * header shows the muscle alone, does not toggle, and its menu also moves the exercise.
+ */
 @Composable
 private fun Header(
     exercise: WorkoutExerciseUi,
+    unit: WeightUnit,
+    editing: Boolean,
     onToggleExpanded: () -> Unit,
     onRemove: () -> Unit,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val subtitle = listOfNotNull(
-        exercise.primaryMuscle?.let { workoutMuscleName(it) },
-        lastLine(exercise),
-    ).joinToString(SEPARATOR)
+    val muscle = exercise.primaryMuscle?.let { workoutMuscleName(it) }
+    val subtitle = if (editing) {
+        muscle
+    } else {
+        listOfNotNull(muscle, lastLine(exercise, unit)).joinToString(SEPARATOR)
+    }
+    val items = buildList {
+        onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
+        onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        add(
+            NtMenuItem(
+                title = stringResource(S.workout_removeExercise),
+                onClick = onRemove,
+                destructive = true,
+            ),
+        )
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.weight(1f).ntPlainClickable(onClick = onToggleExpanded),
+            modifier = Modifier
+                .weight(1f)
+                .then(if (editing) Modifier else Modifier.ntPlainClickable(onClick = onToggleExpanded)),
             // `VStack(spacing: 2)`: Compose already spends that gap on the 17/22 and 13/18 line
             // boxes, so stacking 2 dp on top makes the block 2 dp taller than iOS.
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             NtText(exercise.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
-            NtText(
-                text = subtitle,
-                style = NT.Fonts.footnote.tabular(),
-                color = NT.Colors.ink2,
-                maxLines = 1,
-            )
+            if (subtitle != null) {
+                NtText(
+                    text = subtitle,
+                    style = NT.Fonts.footnote.tabular(),
+                    color = NT.Colors.ink2,
+                    maxLines = 1,
+                )
+            }
         }
         Spacer(Modifier.width(8.dp))
         Box(
@@ -222,29 +287,31 @@ private fun Header(
             NtMenu(
                 expanded = menuExpanded,
                 onDismiss = { menuExpanded = false },
-                items = listOf(
-                    NtMenuItem(
-                        title = stringResource(S.workout_removeExercise),
-                        onClick = onRemove,
-                        destructive = true,
-                    ),
-                ),
+                items = items,
             )
         }
     }
 }
 
-/** Set 36 · Previous flexible · kg 60 · Reps 60 · check 48 — the widths are the contract. */
+/**
+ * Set 36 · Previous flexible · kg (or lb) 60 · Reps 60 · check 48 — the widths are the contract.
+ * The editor leaves the Previous column blank.
+ */
 @Composable
-private fun ColumnHeader() {
+private fun ColumnHeader(unit: WeightUnit, showsPrevious: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(SetTable.spacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HeaderCell(stringResource(S.workout_set), Modifier.width(SetTable.setColumn))
-        HeaderCell(stringResource(S.workout_previous), Modifier.weight(1f))
-        HeaderCell(UNIT_KG, Modifier.width(SetTable.cell))
+        if (showsPrevious) {
+            HeaderCell(stringResource(S.workout_previous), Modifier.weight(1f))
+        } else {
+            Spacer(Modifier.weight(1f).height(1.dp))
+        }
+        // `Text(verbatim: unit.rawValue)` — the column header is not localized on iOS.
+        HeaderCell(unit.raw, Modifier.width(SetTable.cell))
         HeaderCell(stringResource(S.workout_reps), Modifier.width(SetTable.cell))
         Spacer(Modifier.width(SetTable.check).height(1.dp))
     }
@@ -264,7 +331,7 @@ private fun HeaderCell(text: String, modifier: Modifier) {
 
 /** "82,5 × 9 beats your best set (80 × 8)" on an ember tint. */
 @Composable
-private fun BeatsBestHint(row: SetRowUi, best: SetValue) {
+private fun BeatsBestHint(row: SetRowUi, best: SetValue, unit: WeightUnit) {
     Row(
         modifier = Modifier
             .height(32.dp)
@@ -277,8 +344,8 @@ private fun BeatsBestHint(row: SetRowUi, best: SetValue) {
         NtText(
             text = stringResource(
                 S.workout_beatsBest_s_s,
-                Fmt.set(row.weightKg, row.reps),
-                Fmt.set(best.weightKg, best.reps),
+                Fmt.set(row.weightKg, row.reps, unit),
+                Fmt.set(best.weightKg, best.reps, unit),
             ),
             style = NT.Fonts.footnoteBold.tabular(),
             color = NT.Colors.ember,
@@ -310,18 +377,15 @@ private fun AddSetRow(onClick: () -> Unit) {
 
 // MARK: - Copy
 
-/** "Last: 80 kg × 8" — `null` when the exercise has never been done. */
+/** "Last: 80 kg × 8" in [unit] — `null` when the exercise has never been done. */
 @Composable
-private fun lastLine(exercise: WorkoutExerciseUi): String? {
+private fun lastLine(exercise: WorkoutExerciseUi, unit: WeightUnit): String? {
     val last = exercise.last ?: return null
-    return stringResource(S.workout_last) + ": " + Fmt.weight(last.weightKg) + " " + Fmt.TIMES + " " + last.reps
+    return stringResource(S.workout_last) + ": " + Fmt.weight(last.weightKg, unit) + " " + Fmt.TIMES + " " + last.reps
 }
 
 /** The dot the two subtitle halves are joined with. */
 private const val SEPARATOR = " · "
-
-/** `Text(verbatim: "kg")` — the column header is not localized on iOS. */
-private const val UNIT_KG = "kg"
 
 /** `spring(response: 0.35, dampingFraction: 0.7)` — the PR hint. */
 private val HINT_SPRING_FLOAT = spring<Float>(dampingRatio = 0.7f, stiffness = 322.3f)

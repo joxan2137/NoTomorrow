@@ -26,11 +26,59 @@ final class FoodSearchTests: XCTestCase {
     func testMuscleModelCoversLibrary() throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "exercises", withExtension: "json"))
         let records = try JSONDecoder().decode([ExerciseLibrary.Record].self, from: Data(contentsOf: url))
-        XCTAssertEqual(records.count, 900)
+        XCTAssertEqual(records.count, 989, "free-exercise-db plus the app's nt_ additions (ExerciseLibrary)")
         XCTAssertEqual(Set(records.map(\.id)).count, records.count)
         let represented = Set(ExerciseMedia.regions.map(\.muscle))
         for record in records {
             XCTAssertTrue(Set(record.primaryMuscles + record.secondaryMuscles).isSubset(of: represented), record.id)
         }
+    }
+}
+
+/// The Polish spelling a diacritic-free query also searches for, and the budget headroom extra requests keep.
+final class PolishSpellingTests: XCTestCase {
+    func testKnownWordsGetTheirPolishSpelling() {
+        XCTAssertEqual(PolishSpelling.variant(of: "mieta"), "mięta")
+        XCTAssertEqual(PolishSpelling.variant(of: "Zurek"), "żurek")
+        XCTAssertEqual(PolishSpelling.variant(of: "ser zolty"), "ser żółty")
+        XCTAssertEqual(PolishSpelling.variant(of: "losos wedzony"), "łosoś wędzony")
+        XCTAssertEqual(PolishSpelling.variant(of: "smietana 18%"), "śmietana 18%")
+        XCTAssertEqual(PolishSpelling.variant(of: "maslo"), "masło")
+    }
+
+    func testNothingToSpell() {
+        XCTAssertNil(PolishSpelling.variant(of: "żurek"), "typed with Polish letters: the user's spelling stands")
+        XCTAssertNil(PolishSpelling.variant(of: "zurek żytni"), "one Polish letter typed is enough")
+        XCTAssertNil(PolishSpelling.variant(of: "serek wiejski"), "no word with Polish letters")
+        XCTAssertNil(PolishSpelling.variant(of: "skyr"))
+        XCTAssertNil(PolishSpelling.variant(of: "   "))
+    }
+
+    func testExtraRequestsKeepHeadroom() {
+        var window = RequestWindow(limit: 4, window: 60)
+        let now = Date.now
+        XCTAssertTrue(window.reserveNow(at: now, keepingFree: 2))
+        XCTAssertTrue(window.reserveNow(at: now, keepingFree: 2))
+        XCTAssertFalse(window.reserveNow(at: now, keepingFree: 2), "the last two slots stay for typed queries")
+        XCTAssertEqual(window.reserve(at: now, maxWait: 0), 0, "which a typed query still gets")
+        XCTAssertTrue(window.reserveNow(at: now.addingTimeInterval(61), keepingFree: 2), "the window moved on")
+    }
+}
+
+/// A remote hit that is a saved food already shows once, under the saved foods.
+final class FoodSearchResultsTests: XCTestCase {
+    private func hit(_ code: String, _ name: String) -> FoodCandidate {
+        FoodCandidate(id: "off:\(code)", code: code, name: name, brand: nil, quantity: nil, servingSizeG: nil,
+                      servingLabel: nil, kcalPer100: 43, proteinPer100: 1, carbsPer100: 5, fatPer100: 2,
+                      fiberPer100: nil, imageURL: nil)
+    }
+
+    func testSavedFoodIsLeftOutOfTheRemoteHits() {
+        let hits = [hit("5902003060560", "Zurek"), hit("5900397016613", "Żurek Krakus"), hit("5901", "Zurek soup")]
+
+        let listed = FoodSearchModel.remoteHits(hits, excluding: ["off:5902003060560", "custom:abc"])
+
+        XCTAssertEqual(listed.map(\.name), ["Żurek Krakus", "Zurek soup"])
+        XCTAssertEqual(FoodSearchModel.remoteHits(hits, excluding: []).count, 3)
     }
 }

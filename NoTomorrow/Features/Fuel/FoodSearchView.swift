@@ -1,10 +1,26 @@
 import SwiftUI
 import SwiftData
 
-/// "Add to <meal>" sheet: search field + barcode, Recent foods, Open Food Facts results, portion sheet on tap.
+/// Picking a food for an AI estimate instead of logging it: nothing is written until the estimate itself is logged.
+struct FoodSearchPick {
+    enum Mode {
+        /// "Add something it missed": the portion sheet sizes the food and adds it to the estimate.
+        case add
+        /// "Find in food database" for one item: a tap picks the product; the item keeps its grams (`nil` here).
+        case replace
+    }
+
+    var mode: Mode
+    var title: String
+    var onPick: (PortionFood, _ grams: Double?) -> Void
+}
+
+/// "Add to <meal>" sheet: search field + barcode, the saved foods (recent, or matching the query), Open Food Facts
+/// results, portion sheet on tap. With `pick` it hands the food back to the AI estimate instead (no quick add).
 struct FoodSearchView: View {
     let meal: MealSlot
     var day: Date = .now
+    var pick: FoodSearchPick? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -12,19 +28,22 @@ struct FoodSearchView: View {
     @State private var portionFood: PortionFood?
     @State private var showsScanner = false
     @State private var showsQuickAdd = false
-    @State private var missingBarcode = ""
-    @State private var showsLabel = false
-    @State private var lookupError = false
-    @State private var barcodeNotFound = false
+    @State private var quickAddName = ""
+    @State private var barcodeFlow = BarcodeLookupFlow()
     @FocusState private var searchFocused: Bool
 
-    @Query(filter: #Predicate<FoodItem> { $0.lastUsedAt != nil }, sort: \FoodItem.lastUsedAt, order: .reverse)
-    private var recentItems: [FoodItem]
+    /// The whole saved-food library, most recently used first (never-used labels last).
+    @Query(sort: \FoodItem.lastUsedAt, order: .reverse)
+    private var savedItems: [FoodItem]
 
+    /// No query: the 10 most recently used foods. A query: saved foods whose name or brand contains every typed word,
+    /// ignoring case and Polish diacritics, so they stay reachable offline and when Open Food Facts is down.
     private var recent: [FoodItem] {
-        let q = model.trimmedQuery.lowercased()
-        let filtered = q.isEmpty ? recentItems : recentItems.filter { $0.name.lowercased().contains(q) }
-        return Array(filtered.prefix(10))
+        let q = model.trimmedQuery
+        let matches = q.isEmpty
+            ? savedItems.lazy.filter { $0.lastUsedAt != nil }
+            : savedItems.lazy.filter { FoodMatch.matches(q, name: $0.name, brand: $0.brand) }
+        return Array(matches.prefix(10))
     }
 
     var body: some View {
@@ -45,39 +64,37 @@ struct FoodSearchView: View {
         .onAppear { searchFocused = true }
         .onChange(of: model.query) { _, _ in model.queryChanged() }
         .sheet(item: $portionFood) { food in
-            PortionSheet(food: food, meal: meal, day: day) {
-                portionFood = nil
-                dismiss()
+            if let pick {
+                PortionSheet(picking: food) { grams in
+                    portionFood = nil
+                    pick.onPick(food, grams)
+                    dismiss()
+                }
+            } else {
+                PortionSheet(food: food, meal: meal, day: day) {
+                    portionFood = nil
+                    dismiss()
+                }
             }
         }
-        .sheet(isPresented: $showsScanner) {
+        // The lookup starts once the scanner has gone, so its portion sheet or alert can present.
+        .sheet(isPresented: $showsScanner, onDismiss: {
+            barcodeFlow.startPending(in: modelContext) { select($0) }
+        }) {
             BarcodeScannerView { code in
+                barcodeFlow.pendingCode = code
                 showsScanner = false
-                Task { await lookup(barcode: code) }
             }
         }
         .sheet(isPresented: $showsQuickAdd) {
-            QuickAddSheet(meal: meal, day: day, initialName: model.trimmedQuery) {
+            QuickAddSheet(meal: meal, day: day, initialName: quickAddName) {
                 showsQuickAdd = false
                 dismiss()
             }
         }
-        .sheet(isPresented: $showsLabel) {
-            ProductLabelSheet(barcode: missingBarcode) { item in
-                showsLabel = false
-                portionFood = .item(item)
-            }
-        }
-        .alert("fuel.search.error.network", isPresented: $lookupError) {
-            Button("common.cancel", role: .cancel) {}
-        }
-        .alert("fuel.barcodeNotFound", isPresented: $barcodeNotFound) {
-            Button("fuel.label.title") { showsLabel = true }
-            Button("fuel.quickAdd") { showsQuickAdd = true }
-            Button("common.cancel", role: .cancel) {}
-        }
+        .barcodeLookupFlow(barcodeFlow, onFood: { select($0) }, onQuickAdd: pick == nil ? openQuickAdd : nil)
         .overlay(alignment: .bottom) {
-            if model.isLookingUpBarcode {
+            if barcodeFlow.isLookingUp {
                 HStack(spacing: 10) {
                     ProgressView().tint(NT.Colors.ink)
                     Text("fuel.lookingUp").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink)
@@ -94,7 +111,7 @@ struct FoodSearchView: View {
 
     private var header: some View {
         HStack {
-            Text(FuelText.addTo(meal)).font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink).lineLimit(1)
+            Text(pick?.title ?? FuelText.addTo(meal)).font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink).lineLimit(1)
             Spacer()
             Button { dismiss() } label: {
                 Text("common.cancel").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
@@ -158,9 +175,9 @@ struct FoodSearchView: View {
     @ViewBuilder
     private var content: some View {
         if !recent.isEmpty {
-            FoodSectionLabel(text: String(localized: "fuel.recent"))
+            FoodSectionLabel(text: String(localized: model.trimmedQuery.isEmpty ? "fuel.recent" : "fuel.yourFoods"))
             ForEach(recent, id: \.id) { item in
-                FoodRecentRow(item: item) { portionFood = .item(item) }
+                FoodRecentRow(item: item) { select(.item(item)) }
             }
         }
 
@@ -169,38 +186,52 @@ struct FoodSearchView: View {
             case .idle, .loading:
                 FoodSectionLabel(text: String(localized: "fuel.products")).padding(.top, recent.isEmpty ? 0 : 16)
                 FoodStateRow(kind: .loading)
-            case .results(let hits):
-                FoodSectionLabel(text: "\(String(localized: "fuel.products")) · \(FuelText.format("fuel.found", hits.count))")
-                    .padding(.top, recent.isEmpty ? 0 : 16)
-                ForEach(hits) { hit in
-                    FoodResultRow(candidate: hit) { portionFood = .candidate(hit) }
+            case .results(let found):
+                // A product saved already is listed once, in the section above.
+                let hits = FoodSearchModel.remoteHits(found, excluding: Set(recent.map(\.id)))
+                if !hits.isEmpty {
+                    FoodSectionLabel(text: "\(String(localized: "fuel.products")) · \(FuelText.format("fuel.found", hits.count))")
+                        .padding(.top, recent.isEmpty ? 0 : 16)
+                    // Its own identities: a saved food and an Open Food Facts hit share "off:<code>", and two rows
+                    // with one identity in this lazy stack rendered one of them blank.
+                    ForEach(hits, id: \.remoteRowID) { hit in
+                        FoodResultRow(candidate: hit) { select(.candidate(hit)) }
+                    }
                 }
             case .empty:
-                FoodStateRow(kind: .notFound, onQuickAdd: { showsQuickAdd = true })
+                FoodStateRow(kind: .notFound, onQuickAdd: quickAddAction)
                     .padding(.top, recent.isEmpty ? 0 : 16)
             case .error(let message):
-                FoodStateRow(kind: .error(message), onRetry: { model.retry() }, onQuickAdd: { showsQuickAdd = true })
+                FoodStateRow(kind: .error(message), onRetry: { model.retry() }, onQuickAdd: quickAddAction)
                     .padding(.top, recent.isEmpty ? 0 : 16)
             }
         } else if recent.isEmpty {
-            FoodStateRow(kind: .hint, onQuickAdd: { showsQuickAdd = true })
+            FoodStateRow(kind: .hint, onQuickAdd: quickAddAction)
         }
     }
 
-    @MainActor
-    private func lookup(barcode: String) async {
-        let forms = FoodSearchService.barcodeForms(barcode)
-        for code in forms {
-            let request = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.barcode == code })
-            if let saved = try? modelContext.fetch(request).first {
-                portionFood = .item(saved)
-                return
-            }
+    /// A tapped food: the portion sheet, or straight back to the estimate when replacing an item.
+    private func select(_ food: PortionFood) {
+        if let pick, pick.mode == .replace {
+            pick.onPick(food, nil)
+            dismiss()
+        } else {
+            portionFood = food
         }
-        do {
-            if let found = try await model.lookup(barcode: barcode) { portionFood = .candidate(found) }
-            else { missingBarcode = forms.first ?? barcode; barcodeNotFound = true }
-        } catch is CancellationError { }
-        catch { lookupError = true }
     }
+
+    /// Quick add logs a custom row, which has no place in a pick for the AI estimate.
+    private var quickAddAction: (() -> Void)? {
+        pick == nil ? { openQuickAdd(model.trimmedQuery) } : nil
+    }
+
+    private func openQuickAdd(_ name: String) {
+        quickAddName = name
+        showsQuickAdd = true
+    }
+}
+
+private extension FoodCandidate {
+    /// Row identity in the results list, apart from the saved foods' ids in the same stack.
+    var remoteRowID: String { "remote|\(id)" }
 }

@@ -9,6 +9,7 @@ import UIKit
 /// Truth is an absolute `endDate` persisted in UserDefaults; the UI derives the remaining time from it.
 /// Runs a Live Activity (Lock Screen / Dynamic Island) and a local notification for the moment it ends.
 @Observable
+@MainActor
 final class RestTimerController {
     private(set) var endDate: Date?
     private(set) var totalSeconds: Int = 90
@@ -20,8 +21,14 @@ final class RestTimerController {
     var remaining: TimeInterval { max(0, (endDate ?? .now).timeIntervalSinceNow) }
     var progress: Double { totalSeconds > 0 ? 1 - remaining / Double(totalSeconds) : 1 }
 
-    private var activity: Activity<RestTimerAttributes>?
-    private let notificationId = "nt.rest.end"
+    /// Identifier of the "rest is over" notification (`NotificationRouter` routes its taps to the workout).
+    nonisolated static let notificationID = "nt.rest.end"
+
+    @ObservationIgnored private var activity: Activity<RestTimerAttributes>?
+    /// Tail of the ActivityKit queue: calls run one after another in call order, so a Skip followed by a quick
+    /// tick can never end the activity the tick just requested.
+    @ObservationIgnored private var activityOp: Task<Void, Never>?
+    private var notificationId: String { Self.notificationID }
 
     init() {
         restore()
@@ -36,8 +43,9 @@ final class RestTimerController {
         self.nextSetLabel = nextSetLabel
         self.workoutName = workoutName
         persist()
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notificationId])
         scheduleNotification()
-        Task { await startOrUpdateActivity() }
+        enqueueActivity { await $0.startOrUpdateActivity() }
         Haptics.tap()
     }
 
@@ -48,7 +56,7 @@ final class RestTimerController {
         endDate = newEnd
         persist()
         scheduleNotification()
-        Task { await startOrUpdateActivity() }
+        enqueueActivity { await $0.startOrUpdateActivity() }
         Haptics.tap()
     }
 
@@ -56,7 +64,16 @@ final class RestTimerController {
         endDate = nil
         persist()
         cancelNotification()
-        Task { await endActivity() }
+        enqueueActivity { await $0.endActivity() }
+    }
+
+    /// Account deletion: the rest ends like a Skip (notification cancelled, Live Activity ended) and the labels of
+    /// the deleted workout are forgotten too.
+    func reset() {
+        exerciseName = ""
+        nextSetLabel = ""
+        workoutName = ""
+        skip()
     }
 
     /// Called by the UI when remaining hits zero.
@@ -64,7 +81,7 @@ final class RestTimerController {
         guard let end = endDate, end <= .now else { return }
         endDate = nil
         persist()
-        Task { await endActivity() }
+        enqueueActivity { await $0.endActivity() }
         Haptics.success()
     }
 
@@ -98,7 +115,7 @@ final class RestTimerController {
         nextSetLabel = d.string(forKey: Keys.next) ?? ""
         workoutName = d.string(forKey: Keys.workout) ?? ""
         activity = Activity<RestTimerAttributes>.activities.first
-        if endDate == nil { Task { await endActivity() } }
+        if endDate == nil { enqueueActivity { await $0.endActivity() } }
     }
 
     // MARK: Notifications
@@ -117,20 +134,37 @@ final class RestTimerController {
     }
 
     private func cancelNotification() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationId])
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [notificationId])
+        center.removeDeliveredNotifications(withIdentifiers: [notificationId])
     }
 
     // MARK: Live Activity
 
+    private func enqueueActivity(_ op: @escaping @MainActor (RestTimerController) async -> Void) {
+        let previous = activityOp
+        activityOp = Task { @MainActor [weak self] in
+            await previous?.value
+            guard let self else { return }
+            await op(self)
+        }
+    }
+
+    /// Reads the timer when it runs (not when queued), so a queued start that a Skip overtook starts nothing.
+    /// Stale at the end: the Lock Screen then switches to "Rest is over" even while the app is suspended.
     private func startOrUpdateActivity() async {
         guard let endDate, ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let state = RestTimerAttributes.ContentState(endDate: endDate, totalSeconds: totalSeconds, isPaused: false)
-        if let activity {
-            await activity.update(ActivityContent(state: state, staleDate: endDate.addingTimeInterval(60)))
+        let state = RestTimerAttributes.ContentState(endDate: endDate, totalSeconds: totalSeconds, isPaused: false,
+                                                     exerciseName: exerciseName, nextSetLabel: nextSetLabel)
+        let content = ActivityContent(state: state, staleDate: endDate)
+        if let activity, activity.activityState == .active || activity.activityState == .stale {
+            await activity.update(content)
             return
         }
-        let attributes = RestTimerAttributes(exerciseName: exerciseName, nextSetLabel: nextSetLabel, workoutName: workoutName)
-        activity = try? Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: endDate.addingTimeInterval(60)))
+        let attributes = RestTimerAttributes(workoutName: workoutName,
+                                             restLabel: Fmt.localized("timer.rest"),
+                                             overLabel: Fmt.localized("timer.notification.title"))
+        activity = try? Activity.request(attributes: attributes, content: content)
     }
 
     private func endActivity() async {

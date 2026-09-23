@@ -27,13 +27,16 @@ object SettingsExportFiles {
     /** The share-sheet MIME type for a pair of CSVs. */
     const val MIME_TYPE: String = "text/csv"
 
+    /** `cacheDir/export` — every export lives under it; "Delete account and data" removes it. */
+    const val EXPORT_DIR: String = "export"
+
     suspend fun build(
         cacheDir: File,
         workoutDao: WorkoutDao,
         mealDao: MealDao,
         today: LocalDate = LocalDate.now(),
     ): Result {
-        val dir = File(File(cacheDir, "export"), Csv.exportDirectoryName(today))
+        val dir = File(File(cacheDir, EXPORT_DIR), Csv.exportDirectoryName(today))
         dir.mkdirs()
         // A previous export of the same day would otherwise be shared alongside the new one.
         dir.listFiles()?.forEach { it.delete() }

@@ -6,7 +6,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.notomorrow.model.AIProvider
 import kotlinx.coroutines.flow.Flow
@@ -129,6 +132,70 @@ class AppPrefs(context: Context) {
         }
     }
 
+    /**
+     * Workouts being discarded (deleted 0.7 s after Discard). A kill inside that window leaves the
+     * id here and the next launch finishes the delete (`nt.workout.discarding`).
+     */
+    val workoutDiscarding: Flow<Set<String>> = data.map { it[Keys.workoutDiscarding].orEmpty() }
+
+    suspend fun workoutDiscardingOnce(): Set<String> = workoutDiscarding.first()
+
+    suspend fun setWorkoutDiscarding(ids: Set<String>) {
+        store.edit { prefs ->
+            if (ids.isEmpty()) prefs.remove(Keys.workoutDiscarding) else prefs[Keys.workoutDiscarding] = ids
+        }
+    }
+
+    /** One-time pass that turned the legacy seeded 90 / 120 s routine rests into "inherit". */
+    val routinesInheritRest: Flow<Boolean> = data.map { it[Keys.routinesInheritRest] ?: false }
+
+    suspend fun routinesInheritRestOnce(): Boolean = routinesInheritRest.first()
+
+    suspend fun setRoutinesInheritRest(value: Boolean) = put(Keys.routinesInheritRest, value)
+
+    /**
+     * The workout screen asked once for what an on-time rest alert needs (exact alarms,
+     * notifications). Android only: iOS delivers the alert on time with no permission.
+     */
+    val restPermissionAsked: Flow<Boolean> = data.map { it[Keys.restPermissionAsked] ?: false }
+
+    suspend fun restPermissionAskedOnce(): Boolean = restPermissionAsked.first()
+
+    suspend fun setRestPermissionAsked(value: Boolean) = put(Keys.restPermissionAsked, value)
+
+    // MARK: - Attendance
+
+    /**
+     * `nt.attendance.outbox` — my attendance writes the backend has not taken yet, the JSON array
+     * `AttendanceOutbox` reads and writes (`[{"day": "yyyy-MM-dd", "status": "attended",
+     * "backend": "remote", "account": "…"}]`, plus a cancellation's reason, note and make-up day).
+     */
+    suspend fun attendanceOutboxOnce(): String? = data.first()[Keys.attendanceOutbox]
+
+    /** Replaces the outbox with `transform(current)` in one DataStore edit; `null` removes the key. */
+    suspend fun updateAttendanceOutbox(transform: (String?) -> String?) {
+        store.edit { prefs ->
+            val next = transform(prefs[Keys.attendanceOutbox])
+            if (next == null) prefs.remove(Keys.attendanceOutbox) else prefs[Keys.attendanceOutbox] = next
+        }
+    }
+
+    /** `nt.attendance.sweptThrough` — the last day the missed-day sweep has judged, as an epoch day. */
+    suspend fun attendanceSweptThroughOnce(): Long? = data.first()[Keys.attendanceSweptThrough]
+
+    suspend fun setAttendanceSweptThrough(epochDay: Long) {
+        store.edit { it[Keys.attendanceSweptThrough] = epochDay }
+    }
+
+    // MARK: - Exercise library
+
+    /** `nt.exerciseLibrary.version` — the bundled library version last imported (`ExerciseLibrary.LIBRARY_VERSION`). */
+    suspend fun exerciseLibraryVersionOnce(): Int? = data.first()[Keys.exerciseLibraryVersion]
+
+    suspend fun setExerciseLibraryVersion(version: Int) {
+        store.edit { it[Keys.exerciseLibraryVersion] = version }
+    }
+
     // MARK: - Internals
 
     private suspend fun put(key: Preferences.Key<Boolean>, value: Boolean) {
@@ -147,7 +214,13 @@ class AppPrefs(context: Context) {
         val useMockBackend = booleanPreferencesKey("nt.useMockBackend")
         val restAutoStart = booleanPreferencesKey("nt.rest.autoStart")
         val activeWorkoutId = stringPreferencesKey("nt.activeWorkoutId")
+        val workoutDiscarding = stringSetPreferencesKey("nt.workout.discarding")
+        val routinesInheritRest = booleanPreferencesKey("nt.routines.inheritRest")
+        val restPermissionAsked = booleanPreferencesKey("nt.rest.permissionAsked")
         val mockPaired = booleanPreferencesKey("nt.mock.paired")
+        val attendanceOutbox = stringPreferencesKey("nt.attendance.outbox")
+        val attendanceSweptThrough = longPreferencesKey("nt.attendance.sweptThrough")
+        val exerciseLibraryVersion = intPreferencesKey("nt.exerciseLibrary.version")
     }
 
     companion object {

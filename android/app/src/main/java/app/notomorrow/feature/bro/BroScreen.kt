@@ -214,6 +214,7 @@ private fun BroPairedContent(
         )
         BroHeadsUpRow(
             partnerName = state.partnerName,
+            offersCantMakeIt = state.offersCantMakeIt,
             onCantMakeIt = onCantMakeIt,
             onSend = onSend,
             modifier = Modifier.padding(top = NT.Spacing.section),

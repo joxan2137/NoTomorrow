@@ -41,8 +41,9 @@ class NoTomorrowApp : Application() {
 
     /**
      * Everything the container must know before the first meaningful frame, off the main thread:
-     * the database is opened by the first `by lazy` touch inside [AppContainer.load], and
-     * `MainActivity` holds the splash screen up until `appState.isLoaded` flips.
+     * [AppContainer.load] opens the database through `container.store` (a store that cannot be
+     * opened shows the store error screen and skips the seeding), and `MainActivity` holds the
+     * splash screen up until `appState.isLoaded` flips.
      *
      * Order is load-bearing twice over: `load()` seeds the session before any authenticated call,
      * and the exercise import must precede the routine seeder, which is a deliberate no-op until

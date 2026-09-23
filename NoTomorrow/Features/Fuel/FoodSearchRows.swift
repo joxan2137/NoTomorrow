@@ -108,7 +108,10 @@ struct FoodStateRow: View {
                 }
                 .frame(height: 62)
             case .notFound:
-                Text("fuel.notFound").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+                // Picking a food for an AI estimate has no manual add, so the copy must not promise one.
+                Text(LocalizedStringKey(onQuickAdd == nil ? "fuel.notFound.pick" : "fuel.notFound"))
+                    .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 12)
                 if let onQuickAdd { GhostButton(title: "fuel.quickAdd", systemImage: "plus", action: onQuickAdd) }
             case .error(let message):

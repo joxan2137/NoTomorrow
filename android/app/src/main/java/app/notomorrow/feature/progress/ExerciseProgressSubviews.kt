@@ -98,7 +98,7 @@ fun WeeklyVolumeSection(state: ExerciseProgressUiState, modifier: Modifier = Mod
             Spacer(Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TabularText(
-                    text = Fmt.volume(state.allThisWeekVolume),
+                    text = Fmt.volume(state.allThisWeekVolume, state.unit),
                     style = NT.Fonts.footnote,
                     color = NT.Colors.ink2,
                 )

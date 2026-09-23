@@ -8,6 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -41,7 +42,10 @@ class AppState(
     /** `languageOverride` (`nt.language`): `"en"`, `"pl"` or `null` for "System". */
     val languageOverride: StateFlow<String?> = _languageOverride.asStateFlow()
 
-    /** `pendingRoute` — a deep link or a tapped notification, consumed by `RootScreen`. */
+    /**
+     * `pendingRoute` — a deep link or a tapped notification, consumed by `RootScreen`. The rest
+     * sheet a rest-notification tap asks for travels on `WorkoutSessionController.wantsRestSheet`.
+     */
     val pendingRoute: MutableStateFlow<Route?> = MutableStateFlow(null)
 
     private val _isLoaded = MutableStateFlow(false)
@@ -55,11 +59,10 @@ class AppState(
      */
     val showsSettings: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    /**
-     * The full-screen `RestTimerSheet`. Hoisted for the same reason: `Route.RestTimer` arrives
-     * from the rest notification; `feature/workout` observes it.
-     */
-    val showsRestTimer: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _fuelTodayRequests = MutableStateFlow(0)
+
+    /** Bumped by the Dashboard's Fuel row; the Fuel tab jumps to today whenever it changes. */
+    val fuelTodayRequests: StateFlow<Int> = _fuelTodayRequests.asStateFlow()
 
     /**
      * `AppState.Route` — where a push or deep link wants to land. [wire] matches the extras
@@ -112,6 +115,12 @@ class AppState(
 
     fun select(tab: AppTab) {
         selectedTab.value = tab
+    }
+
+    /** Opens the Fuel tab on today, whatever day it was left on. */
+    fun openFuelToday() {
+        _fuelTodayRequests.update { it + 1 }
+        select(AppTab.Fuel)
     }
 
     // MARK: - Routing

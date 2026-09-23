@@ -8,6 +8,7 @@ struct WorkoutExerciseSection: View {
     let isExpanded: Bool
     var focus: FocusState<SetField?>.Binding
     var onToggleSet: (SetEntry) -> Void
+    var onDeleteSet: (SetEntry) -> Void
 
     @Environment(\.modelContext) private var context
 
@@ -15,7 +16,7 @@ struct WorkoutExerciseSection: View {
 
     private var lastLine: String? {
         guard let last = model.lastSet(for: exercise) else { return nil }
-        return "\(String(localized: "workout.last")): \(Fmt.weight(last.weightKg)) × \(last.reps)"
+        return "\(String(localized: "workout.last")): \(Fmt.weight(last.weightKg, unit: model.unit)) × \(last.reps)"
     }
 
     var body: some View {
@@ -48,17 +49,17 @@ struct WorkoutExerciseSection: View {
     private var expanded: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            columnHeader
+            SetColumnHeader(unit: model.unit)
             ForEach(exercise.sortedSets) { set in
                 SetRowView(set: set, exercise: exercise, model: model,
                            isCurrent: model.currentSetID(in: exercise) == set.persistentModelID,
-                           focus: focus) { onToggleSet(set) }
+                           focus: focus, onToggle: { onToggleSet(set) }, onDelete: { onDeleteSet(set) })
                 if model.hintSetID == set.persistentModelID, let best = model.hintBest {
                     hint(set: set, best: best)
                         .transition(.scale(scale: 0.9, anchor: .leading).combined(with: .opacity))
                 }
             }
-            addSetRow
+            AddSetButton { model.addSet(to: exercise) }
         }
         .padding(.top, 12)
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: model.hintSetID)
@@ -93,41 +94,15 @@ struct WorkoutExerciseSection: View {
         return [muscle, lastLine].compactMap { $0 }.joined(separator: " · ")
     }
 
-    private var columnHeader: some View {
-        HStack(spacing: 8) {
-            Text("workout.set").frame(width: 36)
-            Text("workout.previous").frame(maxWidth: .infinity)
-            Text(verbatim: "kg").frame(width: 60)
-            Text("workout.reps").frame(width: 60)
-            Color.clear.frame(width: 48, height: 1)
-        }
-        .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
-        .padding(.top, 4)
-    }
-
     private func hint(set: SetEntry, best: (weightKg: Double, reps: Int)) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "trophy").font(.system(size: 12, weight: .semibold))
-            Text("workout.beatsBest \(Fmt.set(set.weightKg, set.reps)) \(Fmt.set(best.weightKg, best.reps))")
+            Text("workout.beatsBest \(Fmt.set(set.weightKg, set.reps, unit: model.unit)) \(Fmt.set(best.weightKg, best.reps, unit: model.unit))")
                 .font(NT.Fonts.footnoteBold).tabular()
         }
         .foregroundStyle(NT.Colors.ember)
         .padding(.horizontal, 12)
         .frame(height: 32)
         .background(NT.Colors.emberTint, in: RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
-    }
-
-    private var addSetRow: some View {
-        Button { model.addSet(to: exercise) } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "plus").font(.system(size: 14, weight: .semibold))
-                Text("workout.addSet").font(NT.Fonts.subheadline)
-            }
-            .foregroundStyle(NT.Colors.ink2)
-            .frame(height: 32)
-            .frame(minWidth: NT.Size.control, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

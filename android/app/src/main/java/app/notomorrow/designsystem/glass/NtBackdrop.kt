@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.IntSize
  * once per frame by the node that wears [ntBackdropSource].
  *
  * There is exactly **one** of these per app — created in `RootScreen` (§3.3) and recorded around
- * whichever screen is mounted: the tab `NavHost` in `MainTabScaffold`, or the ActiveWorkout
- * destination, never both. `NtTabBar` is a sibling of that `NavHost` in the same `Box`, drawn after
+ * whichever screen is mounted: the tab pages in `MainTabScaffold` (with the workout layer over
+ * them), or a root destination, never both. `NtTabBar` is a sibling of that `NavHost` in the same `Box`, drawn after
  * it, so it sits *outside* the capture and can legally sample it.
  */
 @Stable

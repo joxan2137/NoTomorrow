@@ -101,8 +101,9 @@ struct AIScanView: View {
         }
     }
 
+    /// Nothing is left to log once every item was removed (Log is disabled then): no success, the sheet stays.
     private func log() {
-        model.log(into: modelContext, day: day)
+        guard model.hasItems, model.log(into: modelContext, day: day) > 0 else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         onLogged()
         dismiss()
@@ -110,19 +111,29 @@ struct AIScanView: View {
 
     // MARK: Toast
 
+    /// At least 44 pt tall and growing with its text (a failed refine's reason runs to two or three lines in Polish),
+    /// inside the screen gutter. VoiceOver reads it out when it appears; it goes after `AIScanModel.toastDuration`,
+    /// counted again for a new message.
     @ViewBuilder
     private var toastOverlay: some View {
         if let toast = model.toast {
             Text(toast)
                 .font(NT.Fonts.subheadlineBold)
                 .foregroundStyle(NT.Colors.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 16)
-                .frame(height: NT.Size.control)
-                .background(NT.Colors.surface2, in: Capsule())
+                .padding(.vertical, 10)
+                .frame(minHeight: NT.Size.control)
+                .background(NT.Colors.surface2,
+                            in: RoundedRectangle(cornerRadius: NT.Size.control / 2, style: .continuous))
+                .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.bottom, NT.Size.primaryButton + 28)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .task {
-                    try? await Task.sleep(for: .seconds(2))
+                .task(id: toast) {
+                    AccessibilityNotification.Announcement(toast).post()
+                    try? await Task.sleep(for: AIScanModel.toastDuration)
+                    guard !Task.isCancelled else { return }
                     withAnimation { model.toast = nil }
                 }
         }

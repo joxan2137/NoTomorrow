@@ -65,6 +65,16 @@ class SettingsFormatTest {
     }
 
     @Test
+    fun `version label is the name then the build number`() {
+        assertEquals("0.2.1 (57)", SettingsFormat.versionLabel("0.2.1", 57))
+        assertEquals("0.2.0 (1)", SettingsFormat.versionLabel("0.2.0", 1))
+        assertEquals("0.2.1", SettingsFormat.versionLabel("0.2.1", null))
+        assertEquals("0.2.1", SettingsFormat.versionLabel("0.2.1", 0))
+        assertEquals("–", SettingsFormat.versionLabel(null, null))
+        assertEquals("– (3)", SettingsFormat.versionLabel("", 3))
+    }
+
+    @Test
     fun `rest stepper buttons disable at the bounds`() {
         assertFalse(SettingsFormat.canStepRest(15, -SettingsFormat.REST_STEP))
         assertTrue(SettingsFormat.canStepRest(30, -SettingsFormat.REST_STEP))

@@ -232,6 +232,25 @@ class RecordServiceTest {
     }
 
     @Test
+    fun `lastSet breaks a time tie by the exercise's place, then the row's`() {
+        // One instant (sets added in the workout editor take their neighbour's time), listed top row first.
+        val rows = listOf(
+            row(30.0, 10, 5_000, workoutExerciseId = 1, setOrder = 0),
+            row(30.0, 8, 5_000, workoutExerciseId = 1, setOrder = 1),
+            row(30.0, 7, 5_000, workoutExerciseId = 1, setOrder = 2),
+            row(20.0, 12, 4_000, workoutExerciseId = 1, setOrder = 3),
+        )
+        assertEquals(7, RecordService.lastSet(rows)?.reps, "the bottom row, not the first one listed")
+
+        // The same exercise twice in a workout: the later entry wins over a lower row of the earlier one.
+        val twice = listOf(
+            row(40.0, 5, 9_000, workoutExerciseId = 2, setOrder = 0).copy(workoutExerciseOrder = 1),
+            row(40.0, 6, 9_000, workoutExerciseId = 1, setOrder = 3),
+        )
+        assertEquals(5, RecordService.lastSet(twice)?.reps)
+    }
+
+    @Test
     fun `e1RM history keeps the best per workout, oldest first`() {
         val rows = listOf(
             row(100.0, 5, 1_000, workoutId = "b", workoutStartedAt = 900),

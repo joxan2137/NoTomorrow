@@ -31,4 +31,10 @@ data class FoodCandidate(
     val fatPer100: Double,
     val fiberPer100: Double? = null,
     val imageURL: String? = null,
+    /**
+     * The figures are OFF's `nutriments_estimated` (computed from the category and ingredients)
+     * because the label values are missing. Not persisted: the portion sheet captions it the first
+     * time the product is sized.
+     */
+    val isEstimated: Boolean = false,
 )

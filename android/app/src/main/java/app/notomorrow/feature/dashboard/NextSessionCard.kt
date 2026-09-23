@@ -62,12 +62,15 @@ fun NextSessionCard(
         ) {
             TitleRow(
                 eyebrow = stringResource(
-                    if (session == null || sessionIsToday) S.dashboard_nextSession
-                    else S.dashboard_restDay_next
+                    when {
+                        state.sessionDone -> S.dashboard_todaysSession
+                        session == null || sessionIsToday -> S.dashboard_nextSession
+                        else -> S.dashboard_restDay_next
+                    }
                 ),
                 routineName = state.routineName,
             )
-            HeroRow(session)
+            HeroRow(session, done = state.sessionDone)
             Hairline()
             StatusRow(
                 state = state,
@@ -80,7 +83,6 @@ fun NextSessionCard(
                 state = state,
                 sessionIsToday = sessionIsToday,
                 isIn = isIn,
-                isOut = isOut,
                 onConfirm = onConfirm,
                 onStart = onStart,
                 onCantMakeIt = onCantMakeIt,
@@ -114,8 +116,9 @@ private fun TitleRow(eyebrow: String, routineName: String?) {
     }
 }
 
+/** [done]: today's session is trained, so "Done" stands where the countdown would. */
 @Composable
-private fun HeroRow(session: DashboardSession?) {
+private fun HeroRow(session: DashboardSession?, done: Boolean) {
     if (session == null) {
         NtText(
             text = stringResource(S.dashboard_noSchedule),
@@ -151,10 +154,10 @@ private fun HeroRow(session: DashboardSession?) {
                 color = NT.Colors.ink,
             )
             TabularText(
-                text = if (!session.at.isAfter(now)) {
-                    stringResource(S.dashboard_now)
-                } else {
-                    Fmt.countdown(session.at, strings, now)
+                text = when {
+                    done -> stringResource(S.dashboard_sessionDone)
+                    !session.at.isAfter(now) -> stringResource(S.dashboard_now)
+                    else -> Fmt.countdown(session.at, strings, now)
                 },
                 style = NT.Fonts.subheadline,
                 color = NT.Colors.ink2,
@@ -248,7 +251,6 @@ private fun ButtonRow(
     state: DashboardUiState,
     sessionIsToday: Boolean,
     isIn: Boolean,
-    isOut: Boolean,
     onConfirm: () -> Unit,
     onStart: () -> Unit,
     onCantMakeIt: () -> Unit,
@@ -288,7 +290,7 @@ private fun ButtonRow(
                 onClick = onConfirm,
             )
         }
-        if (sessionIsToday && !isOut) {
+        if (offersCantMakeIt(sessionIsToday, state.myState, state.trainedToday)) {
             SecondaryButton(
                 title = stringResource(S.dashboard_cantMakeIt),
                 modifier = button,
@@ -298,6 +300,13 @@ private fun ButtonRow(
         }
     }
 }
+
+/**
+ * `NextSessionCard.offersCantMakeIt` — "Can't make it" is for a session still ahead today: not once
+ * I am out, and not once I trained (it would cancel a day that is already attended).
+ */
+internal fun offersCantMakeIt(sessionIsToday: Boolean, myState: DayState, trainedToday: Boolean): Boolean =
+    sessionIsToday && !myState.isMissedOrCancelled && myState !is DayState.Attended && !trainedToday
 
 /** `TimelineView(.periodic(by: 60))` — the relative day and the countdown. */
 private const val COUNTDOWN_TICK_MILLIS = 60_000L

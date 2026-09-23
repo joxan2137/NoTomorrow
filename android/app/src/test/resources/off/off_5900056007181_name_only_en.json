@@ -1,0 +1,29 @@
+{
+ "code": "5900056007181",
+ "status": 1,
+ "product": {
+  "code": "5900056007181",
+  "product_name": "",
+  "product_name_pl": "",
+  "brands": "Kopernik Toruń",
+  "quantity": "135g",
+  "serving_size": "100 g",
+  "serving_quantity": 100,
+  "nutriments": {
+   "carbohydrates_100g": 73,
+   "energy-kcal_100g": 399,
+   "energy-kj_100g": 1686,
+   "energy_100g": 1686,
+   "fat_100g": 8.4,
+   "proteins_100g": 6.6
+  },
+  "image_front_small_url": "https://images.openfoodfacts.org/images/products/590/005/600/7181/front_pl.25.200.jpg",
+  "countries_tags": [
+   "en:poland"
+  ],
+  "product_name_en": "Bagatelka",
+  "generic_name": "",
+  "generic_name_pl": "",
+  "lang": "pl"
+ }
+}

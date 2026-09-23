@@ -81,8 +81,11 @@ enum WorkoutStrings {
         return parts.joined(separator: " · ")
     }
 
-    /// Case- and diacritic-insensitive search key.
+    /// Case- and diacritic-insensitive search key. Foundation strips the marks from ą ę ó ś ż ź ć ń but keeps ł
+    /// (it has no decomposition), so ł is flattened by hand: "lawka" finds "Ławka". Locale-independent, like Android.
     static func fold(_ text: String) -> String {
-        text.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
+            .replacingOccurrences(of: "ł", with: "l")
+            .replacingOccurrences(of: "Ł", with: "l")
     }
 }

@@ -125,12 +125,32 @@ enum AttendanceService {
         return record
     }
 
+    /// A make-up session on `day` (picked in the Can't make it sheet): the day becomes planned for me, the server's
+    /// rule, so both sides agree: an empty day, or one that was cancelled or missed, turns planned; a planned,
+    /// confirmed or attended day is left alone. A make-up day that passes untrained is swept to missed.
+    @discardableResult
+    static func markPlanned(day: Date, context: ModelContext) -> AttendanceRecord {
+        let isNew = record(for: day, participant: .me, context: context) == nil
+        let record = upsert(day: day, participant: .me, context: context)
+        if isNew || record.status == .cancelled || record.status == .missed {
+            record.status = .planned
+            record.reason = nil
+            record.note = nil
+            record.makeUpDay = nil
+            record.updatedAt = .now
+            try? context.save()
+        }
+        return record
+    }
+
     /// Records that I am not coming. `status` is `.cancelled` for an announced skip (Can't make it sheet);
-    /// pass `.missed` for a silent no-show.
+    /// pass `.missed` for a silent no-show. A day I already trained is never cancelled (the server's rule): the
+    /// attended record comes back unchanged. Only a workout edit or delete turns attended into missed.
     @discardableResult
     static func markMissed(day: Date, reason: String?, note: String?, makeUp: Date?,
                            status: AttendanceStatus = .cancelled, context: ModelContext) -> AttendanceRecord {
         let record = upsert(day: day, participant: .me, context: context)
+        if status == .cancelled && record.status == .attended { return record }
         record.status = status
         record.reason = reason
         record.note = note.flatMap { $0.isEmpty ? nil : $0 }
@@ -138,6 +158,13 @@ enum AttendanceService {
         record.updatedAt = .now
         try? context.save()
         return record
+    }
+
+    /// Drops my record for `day`, so the day derives from the schedule again.
+    static func clearMine(day: Date, context: ModelContext) {
+        guard let record = record(for: day, participant: .me, context: context) else { return }
+        context.delete(record)
+        try? context.save()
     }
 
     /// Upsert for either participant (BroService uses it for the partner).
@@ -155,15 +182,26 @@ enum AttendanceService {
         return record
     }
 
-    /// Turns every past gym day (since the profile was created, before today) that has no attended/cancelled record into `.missed`.
-    /// Call from the dashboard on appear.
-    static func markPastPlannedAsMissed(schedule: GymSchedule?, context: ModelContext, today: Date = .now) {
-        guard let schedule, !schedule.weekdays.isEmpty else { return }
+    /// Judges the days that ended since the last sweep: a gym day with no record of mine, and any day whose record is
+    /// still planned or confirmed (a make-up day included), becomes `.missed`. Each day is judged once, by the
+    /// schedule in force the first time the app opened after it (`cursor`), so changing the gym days never turns
+    /// past rest days into misses. Bounded by the profile's creation and 30 days back. Call from the dashboard on appear.
+    /// The first sweep with a cursor judges yesterday alone, by the schedule in force now: earlier builds already
+    /// judged the days before it on every appear (never the day they ran on), and today's schedule must not re-judge
+    /// them. The cursor only moves forward, and it moves even without a schedule.
+    static func markPastPlannedAsMissed(schedule: GymSchedule?, context: ModelContext, today: Date = .now,
+                                        cursor: SweepCursor = SweepCursor()) {
         let cal = Calendar.current
         let todayStart = cal.startOfDay(for: today)
+        guard let yesterday = cal.date(byAdding: .day, value: -1, to: todayStart) else { return }
+        // No cursor yet: as if everything up to the day before yesterday had been judged.
+        let sweptThrough = cursor.sweptThrough ?? cal.date(byAdding: .day, value: -1, to: yesterday) ?? yesterday
+        defer { if sweptThrough < yesterday { cursor.sweptThrough = yesterday } }
+
         let lookback = cal.date(byAdding: .day, value: -30, to: todayStart) ?? todayStart
         let createdAt = profileCreatedAt(in: context).map { cal.startOfDay(for: $0) } ?? lookback
-        let from = max(lookback, createdAt)
+        let firstUnswept = cal.date(byAdding: .day, value: 1, to: sweptThrough) ?? todayStart
+        let from = max(lookback, createdAt, firstUnswept)
         guard from < todayStart else { return }
 
         let existing = records(from: from, to: todayStart, context: context)
@@ -171,25 +209,163 @@ enum AttendanceService {
         var day = from
         while day < todayStart {
             let iso = cal.isoWeekday(for: day)
-            if schedule.isGymDay(iso) {
-                let mine = existing.first { $0.participant == .me && cal.isDate($0.day, inSameDayAs: day) }
-                if let mine {
-                    if mine.status == .planned || mine.status == .confirmed {
-                        mine.status = .missed
-                        mine.updatedAt = .now
-                        changed = true
-                    }
-                } else {
-                    let record = AttendanceRecord(day: day, participant: .me,
-                                                  scheduledMinuteOfDay: schedule.minuteOfDay(for: iso), status: .missed)
-                    context.insert(record)
+            let mine = existing.first { $0.participant == .me && cal.isDate($0.day, inSameDayAs: day) }
+            if let mine {
+                if mine.status == .planned || mine.status == .confirmed {
+                    mine.status = .missed
+                    mine.updatedAt = .now
                     changed = true
                 }
+            } else if let schedule, schedule.isGymDay(iso) {
+                let record = AttendanceRecord(day: day, participant: .me,
+                                              scheduledMinuteOfDay: schedule.minuteOfDay(for: iso), status: .missed)
+                context.insert(record)
+                changed = true
             }
             guard let next = cal.date(byAdding: .day, value: 1, to: day) else { break }
             day = next
         }
         if changed { try? context.save() }
+    }
+
+    /// The last day the sweep has judged, in UserDefaults as a calendar day ("yyyy-MM-dd", `WireDay`), not an instant:
+    /// read back in another time zone it is still the same day, so flying west never has a day judged twice (Android
+    /// keeps an epoch day). Tests pass their own suite.
+    struct SweepCursor {
+        static let key = "nt.attendance.sweptThrough"
+        let defaults: UserDefaults
+        let calendar: Calendar
+
+        init(defaults: UserDefaults = .standard, calendar: Calendar = .current) {
+            self.defaults = defaults
+            self.calendar = calendar
+        }
+
+        /// Start of that day in `calendar`'s time zone.
+        var sweptThrough: Date? {
+            get {
+                // Not `string(forKey:)`: it would turn the legacy number below into a string.
+                let stored = defaults.object(forKey: Self.key)
+                if let day = stored as? String { return WireDay.date(day, calendar: calendar) }
+                // Written as seconds since 2001 by an earlier build of this branch: the day it was in, here.
+                guard let seconds = stored as? Double else { return nil }
+                return calendar.startOfDay(for: Date(timeIntervalSinceReferenceDate: seconds))
+            }
+            nonmutating set {
+                if let newValue {
+                    defaults.set(WireDay.string(newValue, calendar: calendar), forKey: Self.key)
+                } else {
+                    defaults.removeObject(forKey: Self.key)
+                }
+            }
+        }
+    }
+
+    // MARK: - Workout edited or deleted
+
+    /// One write to my attendance after a finished workout moved to another day, was deleted, or stopped counting.
+    enum WorkoutDayChange: Equatable {
+        case markAttended(Date)
+        case markMissed(Date)
+        /// A make-up day that is today again goes back to the plan the Can't make it sheet made.
+        case markPlanned(Date)
+        case clear(Date)
+    }
+
+    /// What a workout that counted on `oldDay` and now counts on `newDay` does to my attendance. A workout counts on
+    /// its start day when it has a completed set; nil = it did not count / no longer counts (deleted, all unticked).
+    /// The new day is marked attended with Finish's rule (any day, scheduled or not, that is not in the future).
+    /// Only `.attended` is ever reverted, and only when no other finished workout keeps the old day: a make-up day
+    /// (one of my cancellations points at it) returns to its plan, planned today or later and missed once past (what
+    /// the sweep would write); a past gym day becomes missed; today or a rest day loses the record and derives from
+    /// the schedule again.
+    static func workoutDayChanges(oldDay: Date?, newDay: Date?, oldDayStillAttended: Bool,
+                                  isGymDay: (Date) -> Bool, myStatus: (Date) -> AttendanceStatus?,
+                                  isMakeUpDay: (Date) -> Bool = { _ in false },
+                                  today: Date = .now) -> [WorkoutDayChange] {
+        let cal = Calendar.current
+        let old = oldDay.map { cal.startOfDay(for: $0) }
+        let new = newDay.map { cal.startOfDay(for: $0) }
+        let todayStart = cal.startOfDay(for: today)
+        guard old != new else { return [] }
+        var changes: [WorkoutDayChange] = []
+        if let new, new <= todayStart, myStatus(new) != .attended {
+            changes.append(.markAttended(new))
+        }
+        if let old, !oldDayStillAttended, myStatus(old) == .attended {
+            if isMakeUpDay(old) {
+                changes.append(old < todayStart ? .markMissed(old) : .markPlanned(old))
+            } else {
+                changes.append(old < todayStart && isGymDay(old) ? .markMissed(old) : .clear(old))
+            }
+        }
+        return changes
+    }
+
+    /// Applies `workoutDayChanges` for workout `workoutID` (already saved in its new state, or deleted) and returns
+    /// them, so the caller can report them to the backend (`AttendanceSync`).
+    @discardableResult
+    static func applyWorkoutDayChange(from oldDay: Date?, to newDay: Date?, excluding workoutID: UUID,
+                                      context: ModelContext, today: Date = .now) -> [WorkoutDayChange] {
+        let cal = Calendar.current
+        let schedule = schedule(in: context)
+        let stillAttended = oldDay.map { hasOtherFinishedWorkout(on: $0, excluding: workoutID, context: context) } ?? false
+        let changes = workoutDayChanges(
+            oldDay: oldDay, newDay: newDay, oldDayStillAttended: stillAttended,
+            isGymDay: { schedule?.isGymDay(cal.isoWeekday(for: $0)) ?? false },
+            myStatus: { record(for: $0, participant: .me, context: context)?.status },
+            isMakeUpDay: { isMakeUpDay($0, context: context) },
+            today: today)
+        for change in changes {
+            switch change {
+            case .markAttended(let day): markAttended(day: day, context: context)
+            case .markMissed(let day): markMissed(day: day, reason: nil, note: nil, makeUp: nil, status: .missed, context: context)
+            case .markPlanned(let day): restorePlanned(day: day, context: context)
+            case .clear(let day): clearMine(day: day, context: context)
+            }
+        }
+        return changes
+    }
+
+    /// The status the server should hold after a local change (it has no delete): attended / missed / planned as
+    /// written; a cleared gym day is planned again (so the 21:00 skip check can still ask). A cleared rest day has no
+    /// server equivalent and is not reported.
+    static func wireStatus(for change: WorkoutDayChange, isGymDay: (Date) -> Bool) -> (day: Date, status: AttendanceStatus)? {
+        switch change {
+        case .markAttended(let day): return (day, .attended)
+        case .markMissed(let day): return (day, .missed)
+        case .markPlanned(let day): return (day, .planned)
+        case .clear(let day): return isGymDay(day) ? (day, .planned) : nil
+        }
+    }
+
+    /// One of my records (a cancellation with a make-up day) names `day` as its make-up day.
+    static func isMakeUpDay(_ day: Date, context: ModelContext) -> Bool {
+        let target: Date? = Calendar.current.startOfDay(for: day)
+        let d = FetchDescriptor<AttendanceRecord>(predicate: #Predicate { $0.makeUpDay == target })
+        return ((try? context.fetch(d)) ?? []).contains { $0.participant == .me }
+    }
+
+    /// My record for `day` back to planned, whatever it held (`markPlanned` leaves an attended day alone).
+    private static func restorePlanned(day: Date, context: ModelContext) {
+        let record = upsert(day: day, participant: .me, context: context)
+        record.status = .planned
+        record.reason = nil
+        record.note = nil
+        record.makeUpDay = nil
+        record.updatedAt = .now
+        try? context.save()
+    }
+
+    /// A finished workout other than `workoutID`, with a completed set, started on `day`.
+    private static func hasOtherFinishedWorkout(on day: Date, excluding workoutID: UUID, context: ModelContext) -> Bool {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: day)
+        guard let end = cal.date(byAdding: .day, value: 1, to: start) else { return false }
+        let d = FetchDescriptor<Workout>(predicate: #Predicate {
+            $0.endedAt != nil && $0.startedAt >= start && $0.startedAt < end && $0.id != workoutID
+        })
+        return ((try? context.fetch(d)) ?? []).contains { $0.completedSetCount > 0 }
     }
 
     // MARK: - Streaks & counts

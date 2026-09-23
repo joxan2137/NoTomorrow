@@ -61,7 +61,7 @@ final class SignInModel {
     /// Generic copy for credential failures; specific only where the user can act on it (taken name, weak password).
     static func message(for error: BackendError, mode: Mode) -> String {
         switch error {
-        case .network:
+        case .network, .timedOut:
             return String(localized: "error.network")
         case .http(let status, let code, _):
             if code == "username_taken" { return String(localized: "auth.error.usernameTaken") }

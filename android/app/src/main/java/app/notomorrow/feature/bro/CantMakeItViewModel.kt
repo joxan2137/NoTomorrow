@@ -10,6 +10,7 @@ import app.notomorrow.data.dao.RoutineDao
 import app.notomorrow.data.dao.ScheduleDao
 import app.notomorrow.data.dao.WorkoutDao
 import app.notomorrow.data.entity.HeadsUpEntity
+import app.notomorrow.model.AttendanceStatus
 import app.notomorrow.model.HeadsUpKind
 import app.notomorrow.service.AttendanceService
 import app.notomorrow.service.BroService
@@ -160,9 +161,12 @@ class CantMakeItViewModel(
     // MARK: - Send
 
     /**
-     * `CantMakeItSheet.send()` — my `AttendanceRecord(.cancelled)` and a local
-     * `HeadsUp(.cantMakeIt)` first, then the partner is told. [onDone] runs as soon as the
-     * local writes have landed, so the sheet closes without waiting for the network.
+     * `CantMakeItSheet.send()` — my `AttendanceRecord(.cancelled)`, the make-up day as planned
+     * (`AttendanceService.markPlanned`, the server's rule) and a local `HeadsUp(.cantMakeIt)`
+     * first, then the backend is told whenever I am signed in, paired or not — its 21:00 skip check
+     * reads the cancellation too; the heads-up itself goes out only when paired (`BroService`).
+     * [onDone] runs as soon as the local writes have landed, so the sheet closes without waiting
+     * for the network.
      */
     fun send(onDone: () -> Unit) {
         if (isSending.value) return
@@ -173,15 +177,22 @@ class CantMakeItViewModel(
         val trimmed = state.note.trim()
         val noteValue = trimmed.ifEmpty { null }
         val makeUpDay = state.makeUp?.date
-        val paired = state.isPaired
 
         viewModelScope.launch {
-            attendance.markMissed(
+            val record = attendance.markMissed(
                 day = day,
                 reason = reasonRaw,
                 note = noteValue,
                 makeUp = makeUpDay,
             )
+            // A day I already trained stays attended: nothing is cancelled, told to the partner or
+            // sent to the server.
+            if (record.status == AttendanceStatus.Attended) {
+                onDone()
+                isSending.value = false
+                return@launch
+            }
+            makeUpDay?.let { attendance.markPlanned(it) }
             val text = noteValue
                 ?: state.reason?.let { strings.string(it.labelRes) }
                 ?: ""
@@ -196,7 +207,7 @@ class CantMakeItViewModel(
                 )
             )
             onDone()
-            if (paired) bro.cantMakeIt(reasonRaw, noteValue, makeUpDay, day)
+            if (bro.canSync) bro.cantMakeIt(reasonRaw, noteValue, makeUpDay, day)
             isSending.value = false
         }
     }

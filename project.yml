@@ -31,6 +31,9 @@ targets:
         excludes:
           - "Resources/Info.plist"
       - path: Shared
+      # The AI prompt/schema/table spec is shared with the backend (and Android); never copy it into the app tree.
+      - path: backend/data/ai/estimate-spec.json
+        buildPhase: resources
     info:
       path: NoTomorrow/Resources/Info.plist
       properties:
@@ -56,6 +59,9 @@ targets:
         NSUserNotificationsUsageDescription: "Reminders before your gym session, rest-timer alerts and heads-ups from your gym bro."
         ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes: [remote-notification]
+        CFBundleURLTypes:
+          - CFBundleURLName: app.notomorrow.deeplink
+            CFBundleURLSchemes: [notomorrow]
     entitlements:
       path: NoTomorrow/NoTomorrow.entitlements
       properties:
@@ -97,6 +103,10 @@ targets:
     platform: iOS
     sources:
       - path: NoTomorrowTests
+      # Parity fixtures for the AI finalizer; a folder reference, so new fixtures need no project change.
+      - path: backend/data/ai/fixtures
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: NoTomorrow
     settings:

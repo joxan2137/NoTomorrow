@@ -1,9 +1,5 @@
 package app.notomorrow.feature.dashboard
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,23 +17,18 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.app.LocalTabBarHeight
 import app.notomorrow.designsystem.Avatar
@@ -48,9 +39,11 @@ import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.di.ntViewModel
 import app.notomorrow.feature.bro.CantMakeItSheet
+import app.notomorrow.feature.workout.WorkoutDetailPresenter
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.NtStrings
 import app.notomorrow.util.S
+import app.notomorrow.util.rememberCurrentDay
 import java.time.LocalDate
 
 /**
@@ -85,6 +78,8 @@ fun DashboardScreen() {
     }
     val state by model.uiState.collectAsStateWithLifecycle()
     val day = rememberCurrentDay()
+    // `@State private var selectedWorkout: Workout?` — "Last session" opens it over Today.
+    var selectedWorkoutId by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(day) {
         model.setDay(day)
@@ -129,11 +124,21 @@ fun DashboardScreen() {
             LastSessionRow(
                 session = state.lastSession,
                 units = state.units,
-                onClick = model::selectTrainTab,
+                onClick = {
+                    val last = state.lastSession
+                    if (last != null) selectedWorkoutId = last.workoutId else model.selectTrainTab()
+                },
                 modifier = Modifier.padding(top = 18.dp),
             )
         }
     }
+
+    WorkoutDetailPresenter(
+        workoutId = selectedWorkoutId,
+        unit = state.units,
+        host = "today",
+        onDismiss = { selectedWorkoutId = null },
+    )
 
     if (state.showsCantMakeIt) {
         // iOS hands `CantMakeItSheet` an `onDone` closure that only its `send()` calls;
@@ -178,43 +183,4 @@ private fun Header(day: LocalDate, initial: String, onSettings: () -> Unit) {
             Avatar(initial = initial)
         }
     }
-}
-
-/**
- * The calendar day, re-read on `ACTION_DATE_CHANGED` (and its time/time-zone siblings) and
- * on every resume — the replacement for iOS's `.NSCalendarDayChanged` + `.id(day)`.
- */
-@Composable
-private fun rememberCurrentDay(): LocalDate {
-    val context = LocalContext.current
-    val owner = LocalLifecycleOwner.current
-    var day by remember { mutableStateOf(LocalDate.now()) }
-
-    DisposableEffect(context, owner) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                day = LocalDate.now()
-            }
-        }
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_DATE_CHANGED)
-            addAction(Intent.ACTION_TIME_CHANGED)
-            addAction(Intent.ACTION_TIMEZONE_CHANGED)
-        }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) day = LocalDate.now()
-        }
-        owner.lifecycle.addObserver(observer)
-        onDispose {
-            runCatching { context.unregisterReceiver(receiver) }
-            owner.lifecycle.removeObserver(observer)
-        }
-    }
-    return day
 }

@@ -2,6 +2,7 @@ package app.notomorrow.feature.fuelaiscan
 
 import app.notomorrow.feature.fuel.AIScanConfidence
 import app.notomorrow.feature.fuel.AIScanDerive
+import app.notomorrow.feature.fuel.AIScanEdits
 import app.notomorrow.net.dto.AIFood
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -76,9 +77,9 @@ class AIScanDeriveTest {
     }
 
     @Test
-    fun `applying grams rescales kcal and macros proportionally`() {
-        val foods = listOf(food(name = "rice", grams = 200.0, kcal = 260.0, protein = 6.0, carbs = 56.0, fat = 1.0))
-        val scaled = AIScanDerive.applyGrams(foods, "rice", 100.0)
+    fun `applying grams to a v1 item rescales kcal and macros proportionally`() {
+        val edits = AIScanEdits(listOf(food(name = "rice", grams = 200.0, kcal = 260.0, protein = 6.0, carbs = 56.0, fat = 1.0)))
+        val scaled = edits.setGrams("rice", 100.0).foods
         assertEquals(100.0, scaled[0].grams, 1e-9)
         assertEquals(130.0, scaled[0].kcal, 1e-9)
         assertEquals(3.0, scaled[0].protein, 1e-9)
@@ -88,10 +89,10 @@ class AIScanDeriveTest {
 
     @Test
     fun `applying grams ignores unknown ids and non-positive portions`() {
-        val foods = listOf(food(name = "rice"))
-        assertEquals(foods, AIScanDerive.applyGrams(foods, "nope", 100.0))
-        assertEquals(foods, AIScanDerive.applyGrams(foods, "rice", 0.0))
-        assertEquals(foods, AIScanDerive.applyGrams(foods, "rice", -5.0))
+        val edits = AIScanEdits(listOf(food(name = "rice")))
+        assertEquals(edits, edits.setGrams("nope", 100.0))
+        assertEquals(edits, edits.setGrams("rice", 0.0))
+        assertEquals(edits, edits.setGrams("rice", -5.0))
     }
 
     @Test

@@ -31,6 +31,25 @@ class ParsingTest {
         assertNull(Parsing.decimal("8,2,4"))
     }
 
+    /** The iOS `NumberInput` vectors (`FuelInputTests`): both ports must accept and reject the same text. */
+    @Test
+    fun `decimal matches the iOS NumberInput vectors`() {
+        val accepted = listOf(
+            "72,5" to 72.5, "72.5" to 72.5, " 72 " to 72.0, "0" to 0.0, ",5" to 0.5, "5," to 5.0,
+            "+2" to 2.0, "-3" to -3.0, "1e3" to 1000.0,
+            "12 500" to 12500.0,
+            "1 234,5" to 1234.5,
+            "12 345,5" to 12345.5,
+            "1 234" to 1234.0, "1 234" to 1234.0, "7\t2" to 72.0,
+        )
+        for ((text, expected) in accepted) assertEquals(expected, Parsing.decimal(text), text)
+        val rejected = listOf(
+            "", " ", "abc", "1.234.5", "1,234.5", "1.234,5", "inf", "nan", "Infinity", "0x10", "1.5f", "--1", ".", "e5",
+        )
+        for (text in rejected) assertNull(Parsing.decimal(text), text)
+        assertEquals(82.4, Parsing.nonNegative("82,4"))
+    }
+
     @Test
     fun `bounds mirror the iOS call sites`() {
         assertEquals(0.0, Parsing.nonNegative("0")!!, 0.0)

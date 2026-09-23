@@ -45,6 +45,14 @@ object NT {
         val bad = Color(0xFFFF375F)
         val badTint = bad.copy(alpha = 0.12f)
 
+        /**
+         * Fuel history levels 0…4 (nothing logged → on target): an OKLCH ramp at ember's hue,
+         * lighter and more saturated per step, ending on ember itself. Declared after [surface2]
+         * and [ember] on purpose — object properties initialise in order.
+         */
+        val heat: List<Color> =
+            listOf(surface2, Color(0xFF693927), Color(0xFF98492B), Color(0xFFCA592C), ember)
+
         val hairline = Color.White.copy(alpha = 0.12f)
         val border = Color.White.copy(alpha = 0.20f)
     }

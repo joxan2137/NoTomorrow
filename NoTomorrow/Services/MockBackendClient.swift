@@ -157,6 +157,10 @@ actor MockBackendClient: BackendClient {
         ], overallConfidence: 0.78)
     }
 
+    func readLabel(imageJPEG: Data, locale: String) async throws -> LabelReading {
+        try await MockAIEstimateService().readLabel(imageJPEG: imageJPEG, locale: locale)
+    }
+
     func deleteAccount() async throws {
         session = nil
         try await unpair()

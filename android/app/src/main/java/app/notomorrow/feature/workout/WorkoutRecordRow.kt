@@ -25,6 +25,7 @@ import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.sfIconSize
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.localizedName
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
@@ -54,7 +55,7 @@ fun WorkoutDoneRecords(
             )
         } else {
             state.records.forEachIndexed { index, record ->
-                WorkoutRecordRow(record = record)
+                WorkoutRecordRow(record = record, unit = state.unit)
                 if (index < state.records.lastIndex) Hairline()
             }
         }
@@ -65,13 +66,13 @@ fun WorkoutDoneRecords(
  * 60 pt record row: trophy (PR, ember) or medal (set record, grey), "Exercise · 85 × 7", detail
  * line, trailing tag.
  *
- * iOS calls `Fmt.set(entry.weightKg, entry.reps)` with the default kg unit here, so the row takes
- * no unit of its own.
+ * Weights are shown in [unit] (`WorkoutRecordRow.unit`).
  */
 @Composable
 fun WorkoutRecordRow(
     record: WorkoutRecordItem,
     modifier: Modifier = Modifier,
+    unit: WeightUnit = WeightUnit.Kg,
 ) {
     Row(
         modifier = modifier.fillMaxWidth().height(60.dp),
@@ -96,12 +97,12 @@ fun WorkoutRecordRow(
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             TabularText(
                 text = record.exercise?.localizedName().orEmpty() +
-                    " · " + Fmt.set(record.weightKg, record.reps),
+                    " · " + Fmt.set(record.weightKg, record.reps, unit),
                 style = NT.Fonts.headline,
                 color = NT.Colors.ink,
             )
             TabularText(
-                text = recordDetail(record),
+                text = recordDetail(record, unit),
                 style = NT.Fonts.footnote,
                 color = NT.Colors.ink2,
             )
@@ -117,12 +118,12 @@ fun WorkoutRecordRow(
 
 /** "New best set · e1RM 104 kg, up from 96" or "Set record · most reps at 85 kg". */
 @Composable
-private fun recordDetail(record: WorkoutRecordItem): String = if (record.isPR) {
+private fun recordDetail(record: WorkoutRecordItem, unit: WeightUnit): String = if (record.isPR) {
     stringResource(
         S.workout_done_prDetail_s_s,
-        Fmt.weight(record.e1RM),
-        Fmt.weight(record.bestBeforeE1RM, withUnit = false),
+        Fmt.weight(record.e1RM, unit),
+        Fmt.weight(record.bestBeforeE1RM, unit, withUnit = false),
     )
 } else {
-    stringResource(S.workout_done_setRecordDetail_s, Fmt.weight(record.weightKg))
+    stringResource(S.workout_done_setRecordDetail_s, Fmt.weight(record.weightKg, unit))
 }

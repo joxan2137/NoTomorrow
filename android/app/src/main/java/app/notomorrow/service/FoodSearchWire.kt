@@ -1,5 +1,6 @@
 package app.notomorrow.service
 
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -7,8 +8,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 
 /**
- * The Open Food Facts wire shapes — the port of `OFFSearchResponse` / `OFFProductResponse` /
- * `OFFProduct` / `LooseNumber` at the bottom of `NoTomorrow/Services/FoodSearchService.swift`.
+ * The Open Food Facts wire shapes — the port of `OFFSearchResponse` / `SearchALiciousResponse` /
+ * `OFFProductResponse` / `OFFProduct` / `LooseNumber` at the bottom of
+ * `NoTomorrow/Services/FoodSearchService.swift`.
  *
  * Swift decodes every field with `try?`, so a malformed value is `nil` rather than a thrown
  * error. `JsonObject` lookups reproduce that exactly: nothing here can throw.
@@ -17,11 +19,19 @@ internal data class OffProduct(
     val code: String? = null,
     val productName: String? = null,
     val productNamePL: String? = null,
+    val productNameEN: String? = null,
+    val genericName: String? = null,
+    val genericNamePL: String? = null,
+    val abbreviatedProductName: String? = null,
+    /** The product's main language ("pl", "fr"…): `product_name` is written in it. */
+    val lang: String? = null,
+    /** "Lidl, Nergi". search-a-licious sends an array, which is joined the same way. */
     val brands: String? = null,
     val quantity: String? = null,
     val servingSize: String? = null,
     val servingQuantity: Double? = null,
-    val nutriments: Map<String, Double?> = emptyMap(),
+    val nutriments: Map<String, Double?>? = null,
+    val nutrimentsEstimated: Map<String, Double?>? = null,
     val imageFrontSmallURL: String? = null,
 ) {
     companion object {
@@ -30,15 +40,23 @@ internal data class OffProduct(
             code = LooseNumber.text(json["code"]),
             productName = LooseNumber.string(json["product_name"]),
             productNamePL = LooseNumber.string(json["product_name_pl"]),
-            brands = LooseNumber.string(json["brands"]),
+            productNameEN = LooseNumber.string(json["product_name_en"]),
+            genericName = LooseNumber.string(json["generic_name"]),
+            genericNamePL = LooseNumber.string(json["generic_name_pl"]),
+            abbreviatedProductName = LooseNumber.string(json["abbreviated_product_name"]),
+            lang = LooseNumber.string(json["lang"]),
+            brands = LooseNumber.string(json["brands"]) ?: LooseNumber.strings(json["brands"])?.joinToString(", "),
             quantity = LooseNumber.string(json["quantity"]),
             servingSize = LooseNumber.string(json["serving_size"]),
             servingQuantity = LooseNumber.value(json["serving_quantity"]),
-            nutriments = (json["nutriments"] as? JsonObject)
-                ?.mapValues { (_, element) -> LooseNumber.value(element) }
-                ?: emptyMap(),
+            nutriments = numbers(json["nutriments"]),
+            nutrimentsEstimated = numbers(json["nutriments_estimated"]),
             imageFrontSmallURL = LooseNumber.string(json["image_front_small_url"]),
         )
+
+        /** `[String: LooseNumber]?`: an object of loose numbers, `null` when missing or not an object. */
+        private fun numbers(element: JsonElement?): Map<String, Double?>? =
+            (element as? JsonObject)?.mapValues { (_, value) -> LooseNumber.value(value) }
     }
 }
 
@@ -66,6 +84,12 @@ internal object LooseNumber {
         return primitive.content
     }
 
+    /** `[String]`: an array of strings, `null` when it is not one (one non-string element fails it). */
+    fun strings(element: JsonElement?): List<String>? {
+        val array = element as? JsonArray ?: return null
+        return array.map { string(it) ?: return null }
+    }
+
     /** `code`: `String` first, then `Int64` rendered back to text. */
     fun text(element: JsonElement?): String? {
         val primitive = element as? JsonPrimitive ?: return null
@@ -75,18 +99,30 @@ internal object LooseNumber {
     }
 }
 
-/** `OFFSearchResponse.products`, tolerant of a missing or wrongly typed array. */
-internal fun offSearchProducts(root: JsonObject): List<OffProduct> {
-    val array = root["products"] as? kotlinx.serialization.json.JsonArray ?: return emptyList()
-    return array.mapNotNull { element -> (element as? JsonObject)?.let(OffProduct::from) }
+/** `OFFSearchResponse.products` (legacy `cgi/search.pl`), tolerant of a missing or wrongly typed array. */
+internal fun offSearchProducts(root: JsonObject): List<OffProduct> = products(root["products"])
+
+/** `SearchALiciousResponse.hits`: search-a-licious puts the products under `hits`. */
+internal fun searchALiciousHits(root: JsonObject): List<OffProduct> = products(root["hits"])
+
+private fun products(element: JsonElement?): List<OffProduct> {
+    val array = element as? JsonArray ?: return emptyList()
+    return array.mapNotNull { item -> (item as? JsonObject)?.let(OffProduct::from) }
 }
 
-/** `OFFProductResponse` — `status == 1` plus the product object. */
-internal fun offProduct(root: JsonObject): OffProduct? {
-    val status = LooseNumber.value(root["status"])?.toInt()
-    if (status != 1) return null
-    val product = root["product"] as? JsonObject ?: return null
-    return OffProduct.from(product)
+/** `OFFProductResponse`: the v2 product read, with the top-level `code` kept for products that lack their own. */
+internal data class OffProductResponse(
+    val code: String? = null,
+    val status: Int? = null,
+    val product: OffProduct? = null,
+) {
+    companion object {
+        fun from(root: JsonObject): OffProductResponse = OffProductResponse(
+            code = LooseNumber.string(root["code"]),
+            status = LooseNumber.value(root["status"])?.toInt(),
+            product = (root["product"] as? JsonObject)?.let(OffProduct::from),
+        )
+    }
 }
 
 /** Parses a response body into an object, returning `null` when it is not one. */

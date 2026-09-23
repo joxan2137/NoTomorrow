@@ -19,9 +19,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MealDao {
 
+    /**
+     * The Fuel day view: every entry whose stored `day` is in `[from, to)` —
+     * `FuelCalendar.storedDayBounds`, the same day key as the history grid, so a day the grid
+     * shows as logged never opens empty after a time-zone change.
+     */
     @Transaction
-    @Query("SELECT * FROM meal_entry WHERE day = :day ORDER BY loggedAt")
-    fun observeDay(day: Long): Flow<List<MealEntryWithFood>>
+    @Query("SELECT * FROM meal_entry WHERE day >= :from AND day < :to ORDER BY loggedAt")
+    fun observeDayRange(from: Long, to: Long): Flow<List<MealEntryWithFood>>
 
     @Transaction
     @Query("SELECT * FROM meal_entry WHERE day = :day ORDER BY loggedAt")
@@ -65,6 +70,10 @@ interface MealDao {
 
     @Query("DELETE FROM meal_entry WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    /** The Fuel undo toast taking back a "Log again today" / "Copy to today". */
+    @Query("DELETE FROM meal_entry WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
 
     @Query("DELETE FROM meal_entry")
     suspend fun deleteAll()

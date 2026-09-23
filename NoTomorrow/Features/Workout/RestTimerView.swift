@@ -49,7 +49,7 @@ struct RestTimerView: View {
                     if let workout {
                         Text(verbatim: " · ")
                         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text(Fmt.clock((workout.endedAt ?? ctx.date).timeIntervalSince(workout.startedAt))).tabular()
+                            Text(Fmt.elapsed((workout.endedAt ?? ctx.date).timeIntervalSince(workout.startedAt))).tabular()
                         }
                     }
                 }
@@ -144,9 +144,9 @@ struct RestTimerView: View {
                     Spacer(minLength: 12)
                     if let upNext, upNext.weightKg > 0 || upNext.reps > 0 {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text(Fmt.weight(upNext.weightKg, withUnit: false))
+                            Text(Fmt.weight(upNext.weightKg, unit: upNext.unit, withUnit: false))
                                 .font(NT.Fonts.display(32)).foregroundStyle(NT.Colors.ink).tabular()
-                            Text(verbatim: "kg ×").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                            Text(verbatim: "\(upNext.unit.rawValue) ×").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
                             Text("\(upNext.reps)")
                                 .font(NT.Fonts.display(32)).foregroundStyle(NT.Colors.ink).tabular()
                         }
@@ -160,7 +160,7 @@ struct RestTimerView: View {
     private var upNextLine: String {
         guard let upNext else { return restTimer.nextSetLabel }
         if let kg = upNext.bestKg, let reps = upNext.bestReps {
-            return "\(upNext.setLabel) · \(String(localized: "workout.best")): \(Fmt.set(kg, reps))"
+            return "\(upNext.setLabel) · \(String(localized: "workout.best")): \(Fmt.set(kg, reps, unit: upNext.unit))"
         }
         return upNext.setLabel
     }

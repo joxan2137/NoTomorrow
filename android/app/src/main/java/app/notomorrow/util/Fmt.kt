@@ -120,9 +120,17 @@ object Fmt {
     fun grams(value: Double, locale: Locale = LocaleProvider.current()): String =
         integer(locale).format(roundHalfAwayFromZero(value)) + NBSP + "g"
 
-    /** "12 500 kg" — session/weekly volume. */
-    fun volume(kg: Double, locale: Locale = LocaleProvider.current()): String =
-        integer(locale).format(roundHalfAwayFromZero(kg)) + NBSP + "kg"
+    /** "12 500 kg" — session/weekly volume: whole numbers, converted to [unit]. */
+    fun volume(
+        kg: Double,
+        unit: WeightUnit = WeightUnit.Kg,
+        withUnit: Boolean = true,
+        locale: Locale = LocaleProvider.current(),
+    ): String {
+        val value = if (unit == WeightUnit.Kg) kg else kg * LB_PER_KG
+        val number = integer(locale).format(roundHalfAwayFromZero(value))
+        return if (withUnit) number + NBSP + unit.raw else number
+    }
 
     /** "85 × 7" */
     fun set(
@@ -145,6 +153,13 @@ object Fmt {
         val number = format.format(value)
         return if (withUnit) number + NBSP + unit.raw else number
     }
+
+    /** "93%" — `ratio` is a fraction (0.934), no fraction digits (iOS `Fmt.percent`). */
+    fun percent(ratio: Double, locale: Locale = LocaleProvider.current()): String =
+        (NumberFormat.getPercentInstance(locale) as DecimalFormat).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 0
+        }.format(ratio)
 
     /** "+5%" — `ratio` is a fraction (0.05), zero keeps the plus sign. */
     fun signedPercent(ratio: Double, locale: Locale = LocaleProvider.current()): String {
@@ -183,6 +198,16 @@ object Fmt {
 
     /** "1:12" */
     fun clock(seconds: Int): String = clock(seconds.toDouble())
+
+    /**
+     * Workout clock: "42:10", then "1:02:03" from an hour on (never "62:03") — `Fmt.elapsed`.
+     * Seconds are floored, so the clock flips when the second has passed, like `clock` at rest.
+     */
+    fun elapsed(seconds: Double): String {
+        val s = if (seconds.isNaN()) 0L else maxOf(0L, floor(seconds).toLong())
+        if (s < 3600) return clock(s.toDouble())
+        return String.format(Locale.ROOT, "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
+    }
 
     /** "52 min" / "1 h 12 min" */
     fun duration(seconds: Double, strings: Localizer): String {
@@ -238,6 +263,13 @@ object Fmt {
     fun dayMonth(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
         format(date, withoutYear(pattern(FormatStyle.MEDIUM, null, locale)), locale)
 
+    /**
+     * "4 Sep 2026" / "4 wrz 2026" — the medium date with its year, as a compact `DatePicker`
+     * shows its value (the workout editor's date).
+     */
+    fun mediumDate(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
+        format(date, pattern(FormatStyle.MEDIUM, null, locale), locale)
+
     /** "4" — `.dateTime.day()`, the bare day-of-month number on the week strip. */
     fun dayOfMonth(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
         format(date, "d", locale)
@@ -253,6 +285,26 @@ object Fmt {
         today.plusDays(1) -> strings.string(S.day_tomorrow)
         else -> format(date, "EEEE", locale).replaceFirstChar { it.titlecase(locale) }
     }
+
+    /**
+     * Fuel's day title: "Today" / "Yesterday" / "Mon, 21 Sep", with the year added outside the
+     * current one ("Sun, 21 Sep 2025") — iOS `Fmt.dayTitle`.
+     */
+    fun dayTitle(
+        date: LocalDate,
+        strings: Localizer,
+        locale: Locale = LocaleProvider.current(),
+        today: LocalDate = LocalDate.now(),
+    ): String = when {
+        date == today -> strings.string(S.day_today)
+        date == today.minusDays(1) -> strings.string(S.day_yesterday)
+        date.year != today.year -> shortDay(date, locale) + " " + format(date, "y", locale)
+        else -> shortDay(date, locale)
+    }
+
+    /** "Sep" / "wrz" — the standalone abbreviated month (the History grid's column labels). */
+    fun monthShort(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
+        format(date, "LLL", locale)
 
     /** ISO weekday: 1 = Monday … 7 = Sunday. */
     fun isoWeekday(date: LocalDate): Int = date.dayOfWeek.value

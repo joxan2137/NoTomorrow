@@ -11,15 +11,25 @@ import java.io.InputStream
 
 /**
  * Shrinks a camera/library photo to something worth uploading: ≤ 1024 px on the
- * long edge, JPEG 0.8, orientation baked in, metadata stripped — re-encoding
- * drops EXIF, including GPS. 1:1 port of `Services/ImageDownscaler.swift`.
+ * long edge (1600 for a nutrition label, whose small print needs the pixels),
+ * JPEG 0.8, orientation baked in, metadata stripped — re-encoding drops EXIF,
+ * including GPS. 1:1 port of `Services/ImageDownscaler.swift`.
  *
  * iOS gets the upright, pixel-sized image for free from `UIImage`; here the
  * EXIF rotation has to be read and applied by hand **before** re-encoding.
+ * Nothing here decodes a full-resolution bitmap: every path decodes at the
+ * smallest power-of-two step that still covers the target and scales before it
+ * rotates. All of it is blocking work, so call it off the main thread.
  */
 object ImageDownscaler {
 
-    const val MAX_LONG_EDGE = 1024
+    /** Plate photos (`ImageDownscaler.plateLongEdge`). */
+    const val PLATE_LONG_EDGE = 1024
+
+    /** Nutrition-label photos (`ImageDownscaler.labelLongEdge`): the table's small print needs the pixels. */
+    const val LABEL_LONG_EDGE = 1600
+
+    const val MAX_LONG_EDGE = PLATE_LONG_EDGE
 
     /** iOS `quality: CGFloat = 0.8`. */
     const val QUALITY = 80
@@ -42,7 +52,7 @@ object ImageDownscaler {
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
         val orientation = open(context, uri)?.use { readOrientation(it) } ?: 0
-        val swapped = orientation == 90 || orientation == 270
+        val swapped = isQuarterTurn(orientation)
         val pixelWidth = if (swapped) bounds.outHeight else bounds.outWidth
         val pixelHeight = if (swapped) bounds.outWidth else bounds.outHeight
         val target = targetSize(pixelWidth, pixelHeight, maxLongEdge) ?: return null
@@ -62,8 +72,39 @@ object ImageDownscaler {
     }
 
     /**
-     * The same pipeline for an already-decoded bitmap (camera capture).
-     * [orientationDegrees] is the clockwise rotation still to apply, 0/90/180/270.
+     * Encoded photo bytes (the camera's JPEG) → the upload JPEG, without decoding the full-size
+     * image: bounds first, then a sub-sampled decode, then scale → rotate → encode.
+     * [orientationDegrees] is the clockwise rotation still to apply (CameraX `rotationDegrees`).
+     */
+    fun jpeg(
+        bytes: ByteArray,
+        orientationDegrees: Int,
+        maxLongEdge: Int = MAX_LONG_EDGE,
+        quality: Int = QUALITY,
+    ): ByteArray? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        val swapped = isQuarterTurn(orientationDegrees)
+        val pixelWidth = if (swapped) bounds.outHeight else bounds.outWidth
+        val pixelHeight = if (swapped) bounds.outWidth else bounds.outHeight
+        val target = targetSize(pixelWidth, pixelHeight, maxLongEdge) ?: return null
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize(pixelWidth, pixelHeight, target.first, target.second)
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
+        return try {
+            jpeg(decoded, orientationDegrees, maxLongEdge, quality)
+        } finally {
+            decoded.recycle()
+        }
+    }
+
+    /**
+     * The same pipeline for an already-decoded bitmap. [orientationDegrees] is the clockwise
+     * rotation still to apply, 0/90/180/270. Scales **before** rotating, so the rotation copy is
+     * target-sized rather than a second full-resolution bitmap.
      */
     fun jpeg(
         bitmap: Bitmap,
@@ -71,20 +112,30 @@ object ImageDownscaler {
         maxLongEdge: Int = MAX_LONG_EDGE,
         quality: Int = QUALITY,
     ): ByteArray? {
-        val upright = rotate(bitmap, orientationDegrees)
-        val target = targetSize(upright.width, upright.height, maxLongEdge) ?: return null
+        val swapped = isQuarterTurn(orientationDegrees)
+        val uprightWidth = if (swapped) bitmap.height else bitmap.width
+        val uprightHeight = if (swapped) bitmap.width else bitmap.height
+        val target = targetSize(uprightWidth, uprightHeight, maxLongEdge) ?: return null
+        val (scaleWidth, scaleHeight) = if (swapped) target.second to target.first else target
         val scaled =
-            if (upright.width == target.first && upright.height == target.second) upright
-            else Bitmap.createScaledBitmap(upright, target.first, target.second, true)
+            if (bitmap.width == scaleWidth && bitmap.height == scaleHeight) bitmap
+            else Bitmap.createScaledBitmap(bitmap, scaleWidth, scaleHeight, true)
+        val upright = rotate(scaled, orientationDegrees)
         return try {
             ByteArrayOutputStream().use { out ->
                 // JPEG has no alpha; the encoder flattens onto opaque, matching `format.opaque = true`.
-                if (!scaled.compress(Bitmap.CompressFormat.JPEG, quality, out)) null else out.toByteArray()
+                if (!upright.compress(Bitmap.CompressFormat.JPEG, quality, out)) null else out.toByteArray()
             }
         } finally {
-            if (scaled !== upright) scaled.recycle()
-            if (upright !== bitmap) upright.recycle()
+            if (upright !== scaled) upright.recycle()
+            if (scaled !== bitmap) scaled.recycle()
         }
+    }
+
+    /** 90° or 270°: width and height swap when the rotation is applied. */
+    fun isQuarterTurn(degrees: Int): Boolean {
+        val normalized = ((degrees % 360) + 360) % 360
+        return normalized == 90 || normalized == 270
     }
 
     /**

@@ -15,9 +15,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,6 +73,8 @@ fun AIScanScreen(
             prefs = container.appPrefs,
             providers = container.aiEstimateService,
             mealDao = container.db.mealDao(),
+            foodDao = container.db.foodDao(),
+            foodSearch = container.foodSearchService,
             needsSignIn = container.authStore.needsSignIn,
             initialMeal = meal,
         )
@@ -96,7 +103,8 @@ fun AIScanScreen(
                 model = model,
                 onLog = {
                     scope.launch {
-                        model.log(day)
+                        // Nothing written is no success: stay on the result (Log is disabled then).
+                        if (model.log(day) == 0) return@launch
                         // `UINotificationFeedbackGenerator().notificationOccurred(.success)`
                         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                         onLogged()
@@ -220,6 +228,10 @@ private fun AIScanContent(
             onRefine = model::analyze,
             onScale = model::scale,
             onSetGrams = model::setGrams,
+            onStepCount = model::stepCount,
+            onUpdate = model::update,
+            onRemove = model::remove,
+            onAppend = model::append,
             onMeal = model::setMeal,
             onSaveRecipe = model::saveAsRecipe,
             onLog = onLog,
@@ -241,8 +253,10 @@ private fun AIScanContent(
 }
 
 /**
- * `AIScanView.toastOverlay` — a 44 dp `surface2` capsule 84 dp above the bottom edge, moving in
- * from below with the phase's opacity.
+ * `AIScanView.toastOverlay` — a `surface2` capsule at least 44 dp tall, 84 dp above the bottom
+ * edge, moving in from below with the phase's opacity. It grows with its text (a failed refine's
+ * message runs to two or three lines at large font sizes) and is a polite live region, so
+ * TalkBack reads it out when it appears.
  */
 @Composable
 private fun AIScanToast(
@@ -258,20 +272,24 @@ private fun AIScanToast(
         exit = slideOutVertically(slide) { it } + fadeOut(NT.Anim.easeOut20),
     ) {
         // Keeps the last text while the exit transition runs.
-        val text = toast ?: S.fuel_ai_recipeSoon
+        val last = remember { intArrayOf(S.fuel_ai_recipeSoon) }
+        if (toast != null) last[0] = toast
+        val text = last[0]
         Box(
             modifier = Modifier
+                .padding(horizontal = NT.Spacing.screenH)
                 .padding(bottom = NT.Size.primaryButton + 28.dp)
-                .height(NT.Size.control)
-                .background(NT.Colors.surface2, CircleShape)
-                .padding(horizontal = 16.dp),
+                .heightIn(min = NT.Size.control)
+                .background(NT.Colors.surface2, RoundedCornerShape(NT.Size.control / 2))
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
             contentAlignment = Alignment.Center,
         ) {
             NtText(
                 text = stringResource(text),
                 style = NT.Fonts.subheadlineBold,
                 color = NT.Colors.ink,
-                maxLines = 1,
+                textAlign = TextAlign.Center,
             )
         }
     }

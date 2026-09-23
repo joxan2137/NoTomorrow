@@ -166,7 +166,7 @@ fun AIMealNotes(notes: String, onNotes: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         NtText(stringResource(app.notomorrow.R.string.fuel_ai_accuracyHint), style = NT.Fonts.footnote, color = NT.Colors.ink2)
         androidx.compose.material3.OutlinedTextField(
-            value = notes, onValueChange = { onNotes(it.take(1500)) }, modifier = Modifier.fillMaxWidth(),
+            value = notes, onValueChange = onNotes, modifier = Modifier.fillMaxWidth(),
             label = { NtText(stringResource(app.notomorrow.R.string.fuel_ai_details), style = NT.Fonts.footnote) },
             placeholder = { NtText(stringResource(app.notomorrow.R.string.fuel_ai_detailsPlaceholder), style = NT.Fonts.footnote) },
             minLines = 2, maxLines = 4,

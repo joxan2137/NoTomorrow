@@ -50,6 +50,22 @@ class RestTimerController(
 
     private val restored = CompletableDeferred<Unit>()
 
+    /**
+     * Where the user is when a rest runs out — `NotificationRouter.connect(isWorkoutOnScreen:)`
+     * on iOS. Wired by `AppContainer`; a receiver in a fresh process leaves both false, which is
+     * right: nothing of the app is on screen then.
+     */
+    @Volatile
+    private var isAppInForeground: () -> Boolean = { false }
+
+    @Volatile
+    private var isWorkoutOnScreen: () -> Boolean = { false }
+
+    fun connect(isAppInForeground: () -> Boolean, isWorkoutOnScreen: () -> Boolean) {
+        this.isAppInForeground = isAppInForeground
+        this.isWorkoutOnScreen = isWorkoutOnScreen
+    }
+
     init {
         scope.launch {
             restore()
@@ -76,6 +92,8 @@ class RestTimerController(
             workoutName = workoutName,
         )
         _state.value = next
+        // A delivered "Rest is over" belongs to the rest before this one.
+        notifier.cancelDone()
         commit(next)
         haptics.tap()
     }
@@ -96,30 +114,48 @@ class RestTimerController(
         haptics.tap()
     }
 
-    /** Clears the rest, cancels the alarm and the notification. No haptic on iOS. */
+    /** Clears the rest, cancels the alarm and both notifications. No haptic on iOS. */
     fun skip() {
         val next = _state.value.copy(endAt = null)
         _state.value = next
         alarms.cancel()
         notifier.cancelRunning()
+        notifier.cancelDone()
     }
 
-    /** Called by the UI when remaining hits zero. Only fires when the rest really elapsed. */
+    /**
+     * Called by the UI when remaining hits zero. Only fires when the rest really elapsed: the
+     * success haptic, plus the "Rest is over" alert while the workout is collapsed (iOS shows its
+     * notification as a banner then, and nothing but the haptic over the full workout).
+     */
     fun finishIfElapsed() {
-        val end = _state.value.endAt ?: return
+        val current = _state.value
+        val end = current.endAt ?: return
         if (end > System.currentTimeMillis()) return
         clearElapsed()
-        haptics.success()
+        announceEnd(current, restEndAlert(isAppInForeground(), isWorkoutOnScreen()))
     }
 
     // MARK: Broadcast entry points (fresh-process safe)
 
-    /** `ACTION_END`: the alarm fired. Posts the end alert and clears the state. */
+    /**
+     * `ACTION_END`: the alarm fired. Clears the state, then alerts by where the user is: the
+     * notification when the app is away; in the foreground what [finishIfElapsed] does, so an
+     * exact alarm that beats the in-app watcher by a few hundred ms changes nothing.
+     */
     suspend fun handleAlarmFired() {
         awaitRestored()
         val current = _state.value
-        notifier.notifyDone(current.exerciseName, current.nextSetLabel)
+        val foreground = isAppInForeground()
+        // In the foreground the watcher got there first: the rest is closed and announced.
+        if (foreground && current.endAt == null) return
         clearElapsed()
+        announceEnd(current, restEndAlert(foreground, isWorkoutOnScreen()))
+    }
+
+    private fun announceEnd(rest: RestTimerState, alert: RestEndAlert) {
+        if (alert != RestEndAlert.Notification) haptics.success()
+        if (alert != RestEndAlert.Haptic) notifier.notifyDone(rest.exerciseName, rest.nextSetLabel)
     }
 
     /** `ACTION_PLUS15` from the notification action. */
@@ -197,6 +233,27 @@ class RestTimerController(
                 instance ?: RestTimerController(context.applicationContext).also { instance = it }
             }
     }
+}
+
+/**
+ * How the end of a rest reaches the user — iOS's `NotificationRouter.presentation(forNotification:
+ * workoutOnScreen:)` plus the in-app `Haptics.success()`.
+ */
+enum class RestEndAlert {
+    /** The full workout is on screen: the success haptic says it. */
+    Haptic,
+
+    /** The app is open but the workout is collapsed: the haptic and the heads-up with sound. */
+    HapticAndNotification,
+
+    /** The app is not on screen: the notification alone. */
+    Notification,
+}
+
+fun restEndAlert(appInForeground: Boolean, workoutOnScreen: Boolean): RestEndAlert = when {
+    !appInForeground -> RestEndAlert.Notification
+    workoutOnScreen -> RestEndAlert.Haptic
+    else -> RestEndAlert.HapticAndNotification
 }
 
 /**

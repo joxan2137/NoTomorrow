@@ -10,8 +10,8 @@ import app.notomorrow.data.entity.ExerciseEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The exercise library: 876 bundled records plus the user's `custom-<uuid>` rows.
- * `ExerciseLibrary.importIfNeeded()` uses [count], [insertAllIgnoring] and
+ * The exercise library: 989 bundled records plus the user's `custom-<uuid>` rows.
+ * `ExerciseLibrary.importIfNeeded()` uses [libraryCount], [insertAllIgnoring] and
  * [missingPolishNames] / [updatePolishName]; the picker uses [observeAllByName].
  */
 @Dao
@@ -25,6 +25,10 @@ interface ExerciseDao {
 
     @Query("SELECT COUNT(*) FROM exercise")
     suspend fun count(): Int
+
+    /** Bundled (non-custom) rows — the import's "library is empty" check. */
+    @Query("SELECT COUNT(*) FROM exercise WHERE isCustom = 0")
+    suspend fun libraryCount(): Int
 
     @Query("SELECT * FROM exercise WHERE id = :id")
     suspend fun byId(id: String): ExerciseEntity?
@@ -55,6 +59,10 @@ interface ExerciseDao {
     /** Delete-account wipe: the bundled library is not the user's data, custom rows are. */
     @Query("DELETE FROM exercise WHERE isCustom = 1")
     suspend fun deleteCustom()
+
+    /** Delete-account wipe: the library stays, the order the last account used it in does not. */
+    @Query("UPDATE exercise SET lastUsedAt = NULL WHERE lastUsedAt IS NOT NULL")
+    suspend fun clearLastUsed()
 
     @Query("DELETE FROM exercise")
     suspend fun deleteAll()

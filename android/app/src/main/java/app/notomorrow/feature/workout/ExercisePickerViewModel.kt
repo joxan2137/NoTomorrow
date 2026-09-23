@@ -59,7 +59,7 @@ class ExercisePickerViewModel(
             RecordService.completedSets(rows)
                 .groupBy { it.exerciseId }
                 .mapNotNull { (id, group) ->
-                    if (id == null) null else id to group.maxBy { it.completedAt }
+                    if (id == null) null else id to group.maxWith(RecordService.COMPLETED_EARLIER)
                 }
                 .toMap()
         }

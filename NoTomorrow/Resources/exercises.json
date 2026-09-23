@@ -23199,5 +23199,1909 @@
     ],
     "category": "strength",
     "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_bench_press",
+    "name": "Hammer Strength Iso-Lateral Bench Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with mid-chest; sit with your back flat against the pad.",
+      "Press the handles forward along the converging path until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_horizontal_bench_press",
+    "name": "Hammer Strength Iso-Lateral Horizontal Bench Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Lie on the bench with your eyes under the handles and feet flat on the floor.",
+      "Press the handles up along the flat bench-press path until your arms are nearly straight.",
+      "Lower under control until the handles are level with your chest, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_incline_press",
+    "name": "Hammer Strength Iso-Lateral Incline Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your upper chest; sit with your back flat against the pad.",
+      "Press the handles up and forward along the incline path until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_super_incline_press",
+    "name": "Hammer Strength Iso-Lateral Super Incline Press",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders",
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your collarbones; sit with your back flat against the pad.",
+      "Press the handles up along the steep path, between an incline and an overhead press until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_decline_press",
+    "name": "Hammer Strength Iso-Lateral Decline Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your lower chest; sit with your back flat against the pad.",
+      "Press the handles forward and down along the decline path until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_wide_chest",
+    "name": "Hammer Strength Iso-Lateral Wide Chest",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with mid-chest with a wide grip; sit with your back flat against the pad.",
+      "Press the handles forward and inward along the wide converging path until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_chest_press_chest_back",
+    "name": "Hammer Strength Iso-Lateral Chest/Back – Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with mid-chest, facing away from the machine; sit with your back flat against the pad.",
+      "Press the handles forward until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_row_chest_back",
+    "name": "Hammer Strength Iso-Lateral Chest/Back – Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "instructions": [
+      "Sit facing the machine with your chest against the pad.",
+      "Grip the handles and pull toward your torso, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_shoulder_press",
+    "name": "Hammer Strength Iso-Lateral Shoulder Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your shoulders; sit with your back flat against the pad.",
+      "Press the handles overhead until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_behind_the_neck_press",
+    "name": "Hammer Strength Behind the Neck Press",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with the back of your shoulders; sit with your back flat against the pad.",
+      "Press the handles overhead along the behind-the-neck path until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_super_fly",
+    "name": "Hammer Strength Super Fly",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders"
+    ],
+    "instructions": [
+      "Lie on the bench and set the arm pads so they sit against your forearms with elbows slightly bent.",
+      "Sweep your arms together in a wide arc above your chest, squeezing the pecs at the top.",
+      "Open the arms slowly until you feel a stretch across the chest, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_lateral_raise",
+    "name": "Hammer Strength Lateral Raise",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "traps"
+    ],
+    "instructions": [
+      "Sit with your chest against the angled pad and the arm pads resting on the outside of your upper arms.",
+      "Raise your arms out to the sides until they reach shoulder height, leading with the elbows.",
+      "Lower slowly without letting the weight stack touch down, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_lying_rear_delt_fly",
+    "name": "Hammer Strength Lying Rear Deltoid Fly",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "middle back",
+      "traps"
+    ],
+    "instructions": [
+      "Lie face down on the pad and take the handles with your arms hanging straight down.",
+      "Sweep the arms out and back to shoulder height, keeping a slight bend in the elbows.",
+      "Lower slowly under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_seated_dip",
+    "name": "Hammer Strength Seated Dip",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "shoulders"
+    ],
+    "instructions": [
+      "Sit with your back against the pad and grip the handles at your sides with elbows bent.",
+      "Press the handles down until your arms are straight, keeping the elbows close to your body.",
+      "Let the handles rise slowly until the elbows reach about 90 degrees, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_row",
+    "name": "Hammer Strength Iso-Lateral Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "instructions": [
+      "Sit with your chest against the pad, adjusting the seat so the handles are at shoulder height.",
+      "Grip the handles and pull toward your torso, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_high_row",
+    "name": "Hammer Strength Iso-Lateral High Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats",
+      "middle back"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "instructions": [
+      "Sit with your thighs under the pad and reach up and forward for the handles.",
+      "Grip the handles and pull down and back toward your lower chest, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_low_row",
+    "name": "Hammer Strength Iso-Lateral Low Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "traps"
+    ],
+    "instructions": [
+      "Sit with your chest against the pad and reach forward and down for the low handles.",
+      "Grip the handles and pull back toward your hips, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_dy_row",
+    "name": "Hammer Strength Iso-Lateral D.Y. Row",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats",
+      "middle back"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "instructions": [
+      "Sit with your chest against the pad and take the handles with an underhand grip.",
+      "Grip the handles and pull back and toward your hips along the overhead-pivot arc, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_t_bar_row",
+    "name": "Hammer Strength Iso-Lateral T-Bar Row",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "traps"
+    ],
+    "instructions": [
+      "Stand on the platform with your chest on the pad and grab the handles below you.",
+      "Grip the handles and pull up toward your chest, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_front_lat_pulldown",
+    "name": "Hammer Strength Iso-Lateral Front Lat Pulldown",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "middle back"
+    ],
+    "instructions": [
+      "Adjust the seat and thigh pads so your legs are locked in and the handles are just within reach overhead.",
+      "Pull the handles down in front of you toward your upper chest, leading with the elbows and keeping your chest up.",
+      "Let the handles rise slowly until the arms are straight and the lats stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_wide_pulldown",
+    "name": "Hammer Strength Iso-Lateral Wide Pulldown",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "middle back",
+      "biceps"
+    ],
+    "instructions": [
+      "Adjust the seat and thigh pads so your legs are locked in and the handles are just within reach overhead.",
+      "Pull the handles down and out to the sides along the wide arc, leading with the elbows and keeping your chest up.",
+      "Let the handles rise slowly until the arms are straight and the lats stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_behind_neck_pulldown",
+    "name": "Hammer Strength Iso-Lateral Behind the Neck Pulldown",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "middle back",
+      "biceps"
+    ],
+    "instructions": [
+      "Adjust the seat and thigh pads so your legs are locked in and the handles are just within reach overhead.",
+      "Pull the handles down behind your head toward the base of your neck, leading with the elbows and keeping your chest up.",
+      "Let the handles rise slowly until the arms are straight and the lats stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_pullover",
+    "name": "Hammer Strength Pullover",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so your shoulders line up with the pivot and place your elbows on the pads overhead.",
+      "Drive the elbows down in an arc until the bar reaches your torso.",
+      "Let the arms travel slowly back overhead until the lats are fully stretched, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_shrug",
+    "name": "Hammer Strength Seated/Standing Shrug",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "traps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "instructions": [
+      "Stand or sit between the handles and grip them with your arms straight at your sides.",
+      "Shrug your shoulders straight up toward your ears and hold briefly.",
+      "Lower slowly to a full stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_seated_biceps",
+    "name": "Hammer Strength Seated Biceps",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "instructions": [
+      "Sit with your upper arms on the pad and the elbows lined up with the pivot.",
+      "Curl the handles up toward your shoulders, keeping your upper arms still.",
+      "Lower slowly until the arms are nearly straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gripper",
+    "name": "Hammer Strength Gripper",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "forearms"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit and hold the handles with a pronated or supinated grip, forearms supported.",
+      "Squeeze the handles together as hard as you can and hold briefly.",
+      "Open the hands slowly under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_ab_oblique_crunch",
+    "name": "Hammer Strength Abdominal Oblique Crunch",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "abdominals"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Set the swivel seat straight for crunches or turned for obliques and hold the handles by your shoulders.",
+      "Curl your torso down by contracting the abs, keeping the hips on the seat.",
+      "Return slowly to upright, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_four_way_neck",
+    "name": "Hammer Strength 4-Way Neck",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [
+      "traps"
+    ],
+    "instructions": [
+      "Sit with your head against the pad, facing the direction you want to train (front, back or either side).",
+      "Move your head against the pad through a small, controlled range.",
+      "Return slowly to neutral, then repeat. Use light weight and never jerk the neck."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_leg_press",
+    "name": "Hammer Strength Iso-Lateral Leg Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Sit with your back against the pad and place your feet on the footplates, hip-width apart.",
+      "Press the footplates away until your legs are nearly straight, without locking the knees.",
+      "Lower under control until your knees are bent to about 90 degrees, then repeat. Each leg can work alone."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_linear_leg_press",
+    "name": "Hammer Strength Linear Leg Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings",
+      "calves"
+    ],
+    "instructions": [
+      "Sit with your back flat against the pad and your feet shoulder-width apart on the platform.",
+      "Release the stops and press the platform away until your legs are nearly straight.",
+      "Lower under control as deep as you can while keeping your lower back on the pad, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_super_squat_press",
+    "name": "Hammer Strength Super Squat Press",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Sit in the machine with your back against the pad and your feet on the articulating footplates.",
+      "Press the workarms away until your legs are nearly straight; each leg moves independently.",
+      "Lower under control into a deep squat position, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_linear_hack_squat",
+    "name": "Hammer Strength Linear Hack Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes"
+    ],
+    "instructions": [
+      "Stand on the platform with your back against the pad and your shoulders under the pads.",
+      "Release the stops and squat down along the fixed path until your thighs are at least parallel.",
+      "Drive through the whole foot back to standing, then repeat. Engage the stops before stepping out."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_v_squat",
+    "name": "Hammer Strength V-Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Stand on the platform with your shoulders under the pads and your hands on the handles.",
+      "Squat down along the machine's arc until your thighs are at least parallel.",
+      "Drive back up to standing without locking the knees, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_reverse_v_squat",
+    "name": "Hammer Strength Reverse V-Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes"
+    ],
+    "instructions": [
+      "Face the machine with your chest against the pad for a front-squat position.",
+      "Squat down along the arc until your thighs are at least parallel, keeping your torso upright.",
+      "Drive back up to standing, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_belt_squat",
+    "name": "Hammer Strength Belt Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors"
+    ],
+    "instructions": [
+      "Attach the belt around your hips and stand on the platform holding the handles for balance.",
+      "Release the lever and squat down as deep as your mobility allows, keeping the spine unloaded.",
+      "Drive back up to standing, then repeat. Lock the lever before taking off the belt."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_pendulum_x_squat",
+    "name": "Hammer Strength Pendulum-X Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Stand on the platform with your back against the pad and your shoulders under the pads.",
+      "Release the stops and squat down along the arc as deep as you can with heels flat.",
+      "Drive back up to full hip extension, then repeat. Engage the stops before stepping out."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_leg_extension",
+    "name": "Hammer Strength Iso-Lateral Leg Extension",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your knees lined up with the pivot and the pads on your lower shins.",
+      "Extend the legs until they are straight and squeeze the quads; each leg can work alone.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_leg_curl",
+    "name": "Hammer Strength Iso-Lateral Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Lie face down with your knees just off the pad and the roller above your heels.",
+      "Curl your heels toward your glutes, keeping your hips pressed into the pad.",
+      "Lower slowly until the legs are nearly straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_iso_lateral_kneeling_leg_curl",
+    "name": "Hammer Strength Iso-Lateral Kneeling Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Kneel on the pad with your forearms on the support and one heel under the roller.",
+      "Curl the heel toward your glutes, keeping the hips still.",
+      "Lower slowly until the leg is nearly straight, then switch legs after the set."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_seated_leg_curl",
+    "name": "Hammer Strength Seated Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Sit with your knees lined up with the pivot, the thigh pad locked down and the roller behind your ankles.",
+      "Curl your heels down and back as far as you can.",
+      "Return slowly until the legs are nearly straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_seated_calf_raise",
+    "name": "Hammer Strength Seated Calf Raise",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with the balls of your feet on the platform and the pad on your lower thighs.",
+      "Release the stop and raise your heels as high as possible.",
+      "Lower your heels slowly into a full stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_super_horizontal_calf",
+    "name": "Hammer Strength Super Horizontal Calf",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Position yourself with the pads on your hips and the balls of your feet on the footplate.",
+      "Push through the balls of your feet to raise the heels as high as possible.",
+      "Lower slowly into a full stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_tibia_dorsi_flexion",
+    "name": "Hammer Strength Tibia Dorsi-Flexion",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "tibialis anterior"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your heels on the platform and the tops of your feet under the pads.",
+      "Pull your toes up toward your shins as far as you can.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_glute_drive",
+    "name": "Hammer Strength Glute Drive",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "instructions": [
+      "Sit with your upper back against the pad, the belt or pad across your hips and your feet flat.",
+      "Drive through the heels to lift the hips until your torso and thighs are in line; squeeze the glutes.",
+      "Lower the hips under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_glute_ham_raise",
+    "name": "Hammer Strength Glute Ham/Reverse Hyper – Glute Ham Raise",
+    "force": "pull",
+    "level": "advanced",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "calves"
+    ],
+    "instructions": [
+      "Lock your ankles under the rollers with your knees just behind the pad and your body upright.",
+      "Lower your torso forward under control, keeping the hips extended.",
+      "Pull yourself back up with the hamstrings, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_reverse_hyper",
+    "name": "Hammer Strength Glute Ham/Reverse Hyper – Reverse Hyper",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
+    ],
+    "instructions": [
+      "Lie face down on the pad with your hips at the edge and hold the handles.",
+      "Swing your straight legs up behind you until they are in line with your torso.",
+      "Lower under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_jammer",
+    "name": "Hammer Strength Ground Base Jammer",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders",
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "quadriceps",
+      "glutes"
+    ],
+    "instructions": [
+      "Stand between the arms in a quarter squat, holding the handles at shoulder height.",
+      "Drive through the legs and press the handles up and out in one explosive motion.",
+      "Lower the handles under control back to the shoulders, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_multi_squat",
+    "name": "Hammer Strength Ground Base Multi-Squat",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower back"
+    ],
+    "instructions": [
+      "Stand under the shoulder pads (or hold the low handles for deadlifts) with feet shoulder-width apart.",
+      "Squat, lunge or split-squat down along the free arc until the thighs are at least parallel.",
+      "Drive back up to standing, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_squat_lunge",
+    "name": "Hammer Strength Ground Base Squat Lunge",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "instructions": [
+      "Stand under the shoulder pads, feet shoulder-width apart for squats or staggered for lunges.",
+      "Lower down along the arc until the front thigh is parallel to the floor.",
+      "Drive back up to standing, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_squat_high_pull",
+    "name": "Hammer Strength Ground Base Squat/High Pull",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps",
+      "glutes",
+      "traps"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "shoulders"
+    ],
+    "instructions": [
+      "Stand between the arms and squat down to grip the handles.",
+      "Drive up explosively through the legs and finish by pulling the handles high, elbows up and out.",
+      "Lower under control back to the squat, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_incline_press",
+    "name": "Hammer Strength Ground Base Combo Incline – Press",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest",
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Stand facing away from the machine, feet staggered, holding the handles at your shoulders.",
+      "Press the handles up and forward along the incline path, driving from the legs.",
+      "Lower under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_high_row",
+    "name": "Hammer Strength Ground Base Combo Incline – High Row",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "middle back"
+    ],
+    "instructions": [
+      "Stand facing the machine, feet staggered, reaching up for the handles.",
+      "Pull the handles down and back toward your chest, squeezing the shoulder blades.",
+      "Return under control until the arms are straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_combo_decline",
+    "name": "Hammer Strength Ground Base Combo Decline",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "abdominals"
+    ],
+    "instructions": [
+      "Stand facing away from the machine holding the handles at chest height.",
+      "Press the handles forward and down, adding a twist through the torso if desired.",
+      "Return under control, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_twist",
+    "name": "Hammer Strength Ground Base Twist",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "abdominals"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "chest",
+      "middle back"
+    ],
+    "instructions": [
+      "Stand side-on to the machine with feet planted, holding the handle with both hands.",
+      "Rotate through the hips and torso, pushing or pulling the handle across your body.",
+      "Return under control, then switch sides after the set."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_gb_deadlift",
+    "name": "Hammer Strength Ground Base Deadlift",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "lower back"
+    ],
+    "secondaryMuscles": [
+      "traps",
+      "quadriceps",
+      "forearms"
+    ],
+    "instructions": [
+      "Stand between the arms and hinge down with a flat back to grip the low handles.",
+      "Drive through the floor and stand up tall, finishing with the hips extended.",
+      "Lower under control by hinging at the hips, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_chest_press",
+    "name": "Hammer Strength MTS Iso-Lateral Chest Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with mid-chest; sit with your back flat against the pad.",
+      "Press the handles forward until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_incline_press",
+    "name": "Hammer Strength MTS Iso-Lateral Incline Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your upper chest; sit with your back flat against the pad.",
+      "Press the handles up and forward until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_decline_press",
+    "name": "Hammer Strength MTS Iso-Lateral Decline Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "shoulders"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your lower chest; sit with your back flat against the pad.",
+      "Press the handles forward and down until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_shoulder_press",
+    "name": "Hammer Strength MTS Iso-Lateral Shoulder Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your shoulders; sit with your back flat against the pad.",
+      "Press the handles overhead until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_front_pulldown",
+    "name": "Hammer Strength MTS Iso-Lateral Front Pulldown",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "middle back"
+    ],
+    "instructions": [
+      "Adjust the seat and thigh pads so your legs are locked in and the handles are just within reach overhead.",
+      "Pull the handles down in front of you toward your upper chest, leading with the elbows and keeping your chest up.",
+      "Let the handles rise slowly until the arms are straight and the lats stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_row",
+    "name": "Hammer Strength MTS Iso-Lateral Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "instructions": [
+      "Sit with your chest against the pad, adjusting the seat so the handles are at shoulder height.",
+      "Grip the handles and pull toward your torso, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_high_row",
+    "name": "Hammer Strength MTS Iso-Lateral High Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats",
+      "middle back"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "instructions": [
+      "Sit with your thighs under the pad and reach up and forward for the handles.",
+      "Grip the handles and pull down and back toward your lower chest, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_biceps_curl",
+    "name": "Hammer Strength MTS Iso-Lateral Biceps Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "instructions": [
+      "Sit with your upper arms on the pad and the elbows lined up with the pivot.",
+      "Curl the handles toward your shoulders; each arm moves independently.",
+      "Lower slowly until the arms are nearly straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_triceps_extension",
+    "name": "Hammer Strength MTS Iso-Lateral Triceps Extension",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your upper arms on the pad and the elbows lined up with the pivot.",
+      "Extend the handles until your arms are straight; each arm moves independently.",
+      "Return slowly until the elbows are fully bent, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_leg_extension",
+    "name": "Hammer Strength MTS Iso-Lateral Leg Extension",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your knees lined up with the pivot and the pads on your lower shins.",
+      "Extend the legs until straight and squeeze the quads; each leg can work alone.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_kneeling_leg_curl",
+    "name": "Hammer Strength MTS Kneeling Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Kneel on the pad with your forearms on the support and one heel under the roller.",
+      "Curl the heel toward your glutes, keeping the hips still.",
+      "Lower slowly, then switch legs after the set."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_mts_ab_crunch",
+    "name": "Hammer Strength MTS Abdominal Crunch",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "abdominals"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your feet under the rollers and hold the handles by your shoulders.",
+      "Crunch your upper body down while the lower body rises, squeezing the abs.",
+      "Return slowly to upright, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_chest_press",
+    "name": "Hammer Strength Select Chest Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with mid-chest; sit with your back flat against the pad.",
+      "Press the handles forward until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_pec_fly",
+    "name": "Hammer Strength Select Pec Fly",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "shoulders"
+    ],
+    "instructions": [
+      "Sit with your back against the pad and hold the handles out to the sides at chest height, elbows slightly bent.",
+      "Bring the handles together in front of your chest in a wide arc.",
+      "Open the arms slowly until you feel a stretch across the chest, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_rear_delt",
+    "name": "Hammer Strength Select Rear Deltoid",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "middle back",
+      "traps"
+    ],
+    "instructions": [
+      "Sit facing the pad and hold the handles in front of you at shoulder height.",
+      "Sweep the arms out and back in a wide arc, keeping a slight bend in the elbows.",
+      "Return slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_shoulder_press",
+    "name": "Hammer Strength Select Shoulder Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles line up with your shoulders; sit with your back flat against the pad.",
+      "Press the handles overhead until your arms are nearly straight, without locking the elbows.",
+      "Lower under control until you feel a stretch, then repeat. Each arm moves independently, so you can train one side at a time."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_lateral_raise",
+    "name": "Hammer Strength Select Lateral Raise",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "shoulders"
+    ],
+    "secondaryMuscles": [
+      "traps"
+    ],
+    "instructions": [
+      "Sit with the arm pads resting on the outside of your upper arms.",
+      "Raise your arms out to the sides until they reach shoulder height.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_lat_pulldown",
+    "name": "Hammer Strength Select Lat Pulldown",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "middle back"
+    ],
+    "instructions": [
+      "Adjust the seat and thigh pads so your legs are locked in and the handles are just within reach overhead.",
+      "Pull the handles down toward your upper chest, leading with the elbows and keeping your chest up.",
+      "Let the handles rise slowly until the arms are straight and the lats stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_seated_row",
+    "name": "Hammer Strength Select Seated Row",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "middle back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "instructions": [
+      "Sit with your chest against the pad and grab the handles with arms extended.",
+      "Grip the handles and pull toward your torso, driving the elbows back and squeezing the shoulder blades together.",
+      "Return slowly until the arms are straight and the shoulders are stretched forward, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_biceps_curl",
+    "name": "Hammer Strength Select Biceps Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "instructions": [
+      "Sit with your upper arms on the pad and the elbows lined up with the pivot.",
+      "Curl the handles toward your shoulders, keeping your upper arms still.",
+      "Lower slowly until the arms are nearly straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_triceps_extension",
+    "name": "Hammer Strength Select Triceps Extension",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your upper arms on the pad and the elbows lined up with the pivot.",
+      "Extend the handles until your arms are straight.",
+      "Return slowly until the elbows are fully bent, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_assisted_dip",
+    "name": "Hammer Strength Select Assist Dip",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "shoulders"
+    ],
+    "instructions": [
+      "Kneel on the pad and grip the dip handles; more weight on the stack means more assistance.",
+      "Lower your body by bending the elbows to about 90 degrees.",
+      "Press back up until your arms are straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_assisted_chin_up",
+    "name": "Hammer Strength Select Assist Chin",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "middle back"
+    ],
+    "instructions": [
+      "Kneel on the pad and grip the chin handles overhead; more weight on the stack means more assistance.",
+      "Pull yourself up until your chin clears the handles.",
+      "Lower slowly until your arms are straight, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_ab_crunch",
+    "name": "Hammer Strength Select Abdominal Crunch",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "abdominals"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your feet secured and hold the handles by your shoulders.",
+      "Curl your torso down by contracting the abs.",
+      "Return slowly to upright, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_back_extension",
+    "name": "Hammer Strength Select Back Extension",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "lower back"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Sit with the pad across your upper back and your feet secured.",
+      "Extend your torso backward until your body is straight.",
+      "Return slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_leg_extension",
+    "name": "Hammer Strength Select Leg Extension",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your knees lined up with the pivot and the pad on your lower shins.",
+      "Extend the legs until straight and squeeze the quads.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_leg_curl",
+    "name": "Hammer Strength Select Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Lie face down with your knees just off the pad and the roller above your heels.",
+      "Curl your heels toward your glutes, keeping your hips pressed into the pad.",
+      "Lower slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_seated_leg_curl",
+    "name": "Hammer Strength Select Seated Leg Curl",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ],
+    "instructions": [
+      "Sit with your knees lined up with the pivot, the thigh pad locked down and the roller behind your ankles.",
+      "Curl your heels down and back as far as you can.",
+      "Return slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_seated_leg_press",
+    "name": "Hammer Strength Select Seated Leg Press",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "compound",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "instructions": [
+      "Sit with your back against the pad and your feet shoulder-width apart on the footplate.",
+      "Press the footplate away until your legs are nearly straight, without locking the knees.",
+      "Return under control until the knees are bent to about 90 degrees, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_standing_calf",
+    "name": "Hammer Strength Select Standing Calf",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Stand with your shoulders under the pads and the balls of your feet on the step.",
+      "Raise your heels as high as possible.",
+      "Lower slowly into a full stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_horizontal_calf",
+    "name": "Hammer Strength Select Horizontal Calf",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with your back against the pad and the balls of your feet on the footplate, legs straight.",
+      "Push through the balls of your feet to extend the ankles fully.",
+      "Return slowly into a full stretch, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_hip_abduction",
+    "name": "Hammer Strength Select Hip Abduction",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "abductors"
+    ],
+    "secondaryMuscles": [
+      "glutes"
+    ],
+    "instructions": [
+      "Sit with the pads against the outside of your knees.",
+      "Push your legs apart as far as you can.",
+      "Return slowly without letting the weight stack touch down, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_hip_adduction",
+    "name": "Hammer Strength Select Hip Adduction",
+    "force": "pull",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "adductors"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Sit with the pads against the inside of your knees, legs apart.",
+      "Squeeze your legs together.",
+      "Return slowly, then repeat."
+    ],
+    "category": "strength",
+    "images": []
+  },
+  {
+    "id": "nt_hs_select_hip_glute",
+    "name": "Hammer Strength Select Hip and Glute",
+    "force": "push",
+    "level": "beginner",
+    "mechanic": "isolation",
+    "equipment": "machine",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "instructions": [
+      "Stand facing the machine with your chest on the pad and the working leg against the roller.",
+      "Push the leg back until the hip is fully extended, squeezing the glute.",
+      "Return slowly, then switch legs after the set."
+    ],
+    "category": "strength",
+    "images": []
   }
 ]

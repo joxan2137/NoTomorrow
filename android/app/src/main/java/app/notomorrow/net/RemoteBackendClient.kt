@@ -6,6 +6,7 @@ import app.notomorrow.model.MealSlot
 import app.notomorrow.net.dto.AIEstimate
 import app.notomorrow.net.dto.AttendanceStatusSerializer
 import app.notomorrow.net.dto.HeadsUpKindSerializer
+import app.notomorrow.net.dto.LabelReading
 import app.notomorrow.net.dto.Me
 import app.notomorrow.net.dto.PairCodeReply
 import app.notomorrow.net.dto.Partner
@@ -146,11 +147,14 @@ class RemoteBackendClient(
     // MARK: AI
 
     /**
-     * Multipart `image` + `meal` + `locale`. The server answers
-     * `{foods, overallConfidence}` with `proteinG`-style keys, which the tolerant
-     * `AIFood` decoder accepts. Errors surface as [BackendError.Http] with the
-     * server code (`ai_daily_limit`, `ai_upstream_error`, `ai_unavailable`, …)
-     * for `AIEstimateService` to map.
+     * Multipart `image` + `meal` + `locale` + `notes`. The server answers the finalized v2 estimate
+     * (`per100`, portions, `totals`, `skipped`); an older server's v1 answer (`{foods,
+     * overallConfidence}` with `proteinG`-style keys) still decodes, with the v2 fields null. Errors
+     * surface as [BackendError.Http] with the server code (`ai_daily_limit`, `ai_busy`,
+     * `ai_timeout`, `ai_unparseable`, `ai_upstream_error`, …) for `AIEstimateService` to map.
+     *
+     * The notes are capped at 1500 UTF-16 units, which is what the server counts (a longer value is
+     * a 400).
      */
     override suspend fun estimate(
         imageJpeg: ByteArray,
@@ -170,7 +174,7 @@ class RemoteBackendClient(
                 formData {
                     append("meal", meal.raw)
                     append("locale", locale)
-                    append("notes", notes.take(1500))
+                    append("notes", notes.take(MAX_NOTES_LENGTH))
                     append(
                         "image",
                         imageJpeg,
@@ -185,6 +189,35 @@ class RemoteBackendClient(
             timeoutMillis = RemoteTransport.AI_TIMEOUT_MS,
         )
         return transport.decode(transport.perform(request), AIEstimate.serializer())
+    }
+
+    /** Multipart `image` (≤ 1600 px) + `locale`; 75 s, the server gives up at 65 s. */
+    override suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading {
+        val request = RemoteTransport.Request(
+            method = "POST",
+            path = "ai/label",
+            auth = RemoteTransport.Auth.REQUIRED,
+            payload = RemoteTransport.Payload.Multipart {
+                formData {
+                    append("locale", locale)
+                    append(
+                        "image",
+                        imageJpeg,
+                        Headers.build {
+                            append(HttpHeaders.ContentType, "image/jpeg")
+                            append(HttpHeaders.ContentDisposition, "filename=\"label.jpg\"")
+                        },
+                    )
+                }
+            },
+            timeoutMillis = RemoteTransport.AI_LABEL_TIMEOUT_MS,
+        )
+        return transport.decode(transport.perform(request), LabelReading.serializer())
+    }
+
+    companion object {
+        /** `notes` limit of `POST ai/estimate`, in UTF-16 units (JavaScript `length`). */
+        const val MAX_NOTES_LENGTH: Int = 1500
     }
 }
 

@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,9 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.designsystem.NT
-import app.notomorrow.designsystem.NtAlert
-import app.notomorrow.designsystem.NtAlertAction
-import app.notomorrow.designsystem.NtAlertRole
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSheet
@@ -55,41 +51,78 @@ import app.notomorrow.model.FoodCandidate
 import app.notomorrow.model.MealSlot
 import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
-import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+/**
+ * Picking a food for an AI estimate instead of logging it (`FoodSearchPick`): nothing is written
+ * until the estimate itself is logged.
+ */
+class FoodSearchPick(
+    val mode: Mode,
+    val title: String,
+    /** The picked food and, in [Mode.Add], the grams the portion sheet sized it to. */
+    val onPick: (food: PortionFood, grams: Double?) -> Unit,
+) {
+    enum class Mode {
+        /** "Add something it missed": the portion sheet sizes the food and adds it to the estimate. */
+        Add,
+
+        /** "Find in food database" for one item: a tap picks the product; the item keeps its grams. */
+        Replace,
+    }
+}
 
 /**
  * "Add to &lt;meal&gt;" — the port of `Features/Fuel/FoodSearchView.swift`.
  *
- * Search field + barcode button, the last ten used foods, Open Food Facts results, and a
- * portion sheet on tap. Every empty state offers Quick add.
+ * Search field + barcode button, the saved foods (the last ten used, or the ones matching the
+ * query), Open Food Facts results, and a portion sheet on tap. Every empty state offers Quick add.
+ * With [pick] it hands the food back to the AI estimate instead: its own title, no Quick add
+ * anywhere (not in the barcode prompts either), and nothing logged.
  */
 @Composable
 fun FoodSearchSheet(
     meal: MealSlot,
     day: LocalDate,
     onDismiss: () -> Unit,
+    pick: FoodSearchPick? = null,
 ) {
-    val model = ntViewModel(key = "foodSearch") { container ->
+    // A pick runs inside the AI scan; its own key keeps it apart from the Fuel tab's search.
+    val model = ntViewModel(key = if (pick == null) "foodSearch" else "foodSearch-pick") { container ->
         FoodSearchViewModel(container.db.foodDao(), container.foodSearchService)
     }
     val state by model.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
+    val barcodeState by model.barcode.state.collectAsStateWithLifecycle()
     // iOS builds a fresh `FoodSearchModel` per presentation.
     DisposableEffect(Unit) { onDispose { model.reset() } }
 
     var portionFood by remember { mutableStateOf<PortionFood?>(null) }
     var showsScanner by remember { mutableStateOf(false) }
     var showsQuickAdd by remember { mutableStateOf(false) }
-    var missingBarcode by remember { mutableStateOf("") }
-    var showsLabel by remember { mutableStateOf(false) }
-    var lookupError by remember { mutableStateOf(false) }
-    var barcodeNotFound by remember { mutableStateOf(false) }
+    var quickAddName by remember { mutableStateOf("") }
+    val openQuickAdd: (String) -> Unit = { name ->
+        quickAddName = name
+        showsQuickAdd = true
+    }
+    // Quick add logs a custom row, which has no place in a pick for the AI estimate.
+    val quickAddAction: ((String) -> Unit)? = if (pick == null) openQuickAdd else null
+    // A tapped food: the portion sheet, or straight back to the estimate when replacing an item.
+    val select: (PortionFood) -> Unit = { food ->
+        if (pick?.mode == FoodSearchPick.Mode.Replace) {
+            pick.onPick(food, null)
+            onDismiss()
+        } else {
+            portionFood = food
+        }
+    }
 
     NtSheet(onDismiss = onDismiss, containerColor = NT.Colors.ground) {
         Box(Modifier.fillMaxWidth().fillMaxHeight()) {
             Column(Modifier.fillMaxWidth()) {
-                FoodSearchHeader(meal = meal, onCancel = onDismiss)
+                FoodSearchHeader(
+                    title = pick?.title ?: stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+                    onCancel = onDismiss,
+                )
 
                 FoodSearchField(
                     query = state.query,
@@ -113,15 +146,15 @@ fun FoodSearchSheet(
                 ) {
                     FoodSearchContent(
                         state = state,
-                        onCandidate = { portionFood = PortionFood.Candidate(it) },
-                        onItem = { portionFood = PortionFood.Item(it) },
+                        onCandidate = { select(PortionFood.Candidate(it)) },
+                        onItem = { select(PortionFood.Item(it)) },
                         onRetry = model::retry,
-                        onQuickAdd = { showsQuickAdd = true },
+                        onQuickAdd = quickAddAction?.let { action -> { action(state.query.trim()) } },
                     )
                 }
             }
 
-            if (state.isLookingUpBarcode) {
+            if (barcodeState.isLookingUp) {
                 FuelLookupPill(
                     Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
                 )
@@ -130,16 +163,28 @@ fun FoodSearchSheet(
     }
 
     portionFood?.let { food ->
-        PortionSheet(
-            food = food,
-            meal = meal,
-            day = day,
-            onAdded = {
-                portionFood = null
-                onDismiss()
-            },
-            onDismiss = { portionFood = null },
-        )
+        if (pick != null) {
+            PortionPickSheet(
+                food = food,
+                onPicked = { grams ->
+                    portionFood = null
+                    pick.onPick(food, grams)
+                    onDismiss()
+                },
+                onDismiss = { portionFood = null },
+            )
+        } else {
+            PortionSheet(
+                food = food,
+                meal = meal,
+                day = day,
+                onAdded = {
+                    portionFood = null
+                    onDismiss()
+                },
+                onDismiss = { portionFood = null },
+            )
+        }
     }
 
     if (showsScanner) {
@@ -147,21 +192,7 @@ fun FoodSearchSheet(
             BarcodeScannerScreen(
                 onCode = { code ->
                     showsScanner = false
-                    scope.launch {
-                        try {
-                            val saved = model.savedBarcode(code)
-                            if (saved != null) portionFood = PortionFood.Item(saved)
-                            else {
-                                val found = model.lookup(code)
-                                if (found != null) portionFood = PortionFood.Candidate(found)
-                                else {
-                                    missingBarcode = app.notomorrow.service.FoodSearchService.barcodeForms(code).firstOrNull() ?: code
-                                    barcodeNotFound = true
-                                }
-                            }
-                        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                        catch (_: Exception) { lookupError = true }
-                    }
+                    model.barcode.start(code, select)
                 },
                 onCancel = { showsScanner = false },
                 modifier = Modifier.fillMaxWidth().fillMaxHeight(),
@@ -173,7 +204,7 @@ fun FoodSearchSheet(
         QuickAddSheet(
             meal = meal,
             day = day,
-            initialName = state.query.trim(),
+            initialName = quickAddName,
             onAdded = {
                 showsQuickAdd = false
                 onDismiss()
@@ -182,37 +213,17 @@ fun FoodSearchSheet(
         )
     }
 
-    if (showsLabel) {
-        ProductLabelSheet(missingBarcode, onDismiss = { showsLabel = false }) { name, values ->
-            val saved = model.saveLabel(missingBarcode, name, values)
-            showsLabel = false
-            portionFood = PortionFood.Item(saved)
-        }
-    }
-    if (lookupError) {
-        NtAlert(title = stringResource(S.fuel_search_error_network),
-            actions = listOf(NtAlertAction(title = stringResource(S.common_cancel), role = NtAlertRole.Cancel)),
-            onDismiss = { lookupError = false })
-    }
-    if (barcodeNotFound) {
-        NtAlert(
-            title = stringResource(S.fuel_barcodeNotFound),
-            actions = listOf(
-                NtAlertAction(title = stringResource(app.notomorrow.R.string.fuel_label_title), onClick = { barcodeNotFound = false; showsLabel = true }),
-                NtAlertAction(
-                    title = stringResource(S.fuel_quickAdd),
-                    onClick = { showsQuickAdd = true },
-                ),
-                NtAlertAction(title = stringResource(S.common_cancel), role = NtAlertRole.Cancel),
-            ),
-            onDismiss = { barcodeNotFound = false },
-        )
-    }
+    BarcodeLookupPrompts(
+        flow = model.barcode,
+        state = barcodeState,
+        onFood = select,
+        onQuickAdd = quickAddAction,
+    )
 }
 
-/** `FoodSearchView.header` — "Add to Lunch" + Cancel, 44 dp tall. */
+/** `FoodSearchView.header` — "Add to Lunch" (or the pick's title) + Cancel, 44 dp tall. */
 @Composable
-private fun FoodSearchHeader(meal: MealSlot, onCancel: () -> Unit) {
+private fun FoodSearchHeader(title: String, onCancel: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,7 +233,7 @@ private fun FoodSearchHeader(meal: MealSlot, onCancel: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NtText(
-            text = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
+            text = title,
             modifier = Modifier.weight(1f),
             style = NT.Fonts.title2,
             color = NT.Colors.ink,
@@ -327,20 +338,20 @@ private fun FoodSearchField(
     }
 }
 
-/** `FoodSearchView.content` — Recent, then the phase-driven Products section. */
+/** `FoodSearchView.content` — Recent (or "Your foods" while a query filters it), then the phase-driven Products section. */
 @Composable
 private fun FoodSearchContent(
     state: FoodSearchUiState,
     onCandidate: (FoodCandidate) -> Unit,
     onItem: (FoodItemEntity) -> Unit,
     onRetry: () -> Unit,
-    onQuickAdd: () -> Unit,
+    onQuickAdd: (() -> Unit)?,
 ) {
     val hasRecent = state.recent.isNotEmpty()
     val sectionTop = if (hasRecent) 16.dp else 0.dp
 
     if (hasRecent) {
-        FoodSectionLabel(stringResource(S.fuel_recent))
+        FoodSectionLabel(stringResource(if (state.hasQuery) S.fuel_yourFoods else S.fuel_recent))
         state.recent.forEach { item ->
             FoodRecentRow(item = item, onAdd = { onItem(item) })
         }

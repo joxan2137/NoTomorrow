@@ -42,8 +42,7 @@ fun WorkoutHistoryRow(
     val meta = listOf(
         Fmt.dayMonth(Instant.ofEpochMilli(row.startedAt)),
         Fmt.duration(workoutDuration(row.startedAt, row.endedAt), strings),
-        // `Fmt.volume` is always kg on iOS — the unit only reaches the set lines.
-        Fmt.volume(workout.totalVolumeKg),
+        Fmt.volume(workout.totalVolumeKg, unit),
     ).joinToString(" · ")
     val prCount = workout.prCount
 

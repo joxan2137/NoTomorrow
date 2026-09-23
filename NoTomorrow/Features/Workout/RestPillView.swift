@@ -70,3 +70,26 @@ struct RestTimerExpiryWatcher: View {
         .allowsHitTesting(false)
     }
 }
+
+/// Shell-level counterpart of `RestTimerExpiryWatcher`: sleeps until the rest's end and closes it, so a rest that runs
+/// out while the workout is collapsed still ends in-app. Restarts whenever the end moves (+15, skip, a new rest).
+private struct RestTimerExpiryTask: ViewModifier {
+    @Environment(RestTimerController.self) private var restTimer
+
+    func body(content: Content) -> some View {
+        content.task(id: restTimer.endDate) {
+            while let end = restTimer.endDate, !Task.isCancelled {
+                let wait = end.timeIntervalSinceNow
+                if wait <= 0 {
+                    restTimer.finishIfElapsed()
+                    return
+                }
+                try? await Task.sleep(for: .seconds(wait + 0.05))
+            }
+        }
+    }
+}
+
+extension View {
+    func restTimerExpiry() -> some View { modifier(RestTimerExpiryTask()) }
+}

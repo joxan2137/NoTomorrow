@@ -14,7 +14,6 @@ final class FoodSearchModel {
 
     var query: String = ""
     private(set) var phase: Phase = .idle
-    private(set) var isLookingUpBarcode = false
 
     private var searchTask: Task<Void, Never>?
     private var lastQuery: String = ""
@@ -22,6 +21,12 @@ final class FoodSearchModel {
     static let debounce: Duration = .milliseconds(500)
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// The Open Food Facts hits to list under the saved foods: those not listed there already (saved foods from
+    /// Open Food Facts keep the hit's "off:<code>" id), in OFF's order.
+    static func remoteHits(_ hits: [FoodCandidate], excluding savedIDs: Set<String>) -> [FoodCandidate] {
+        savedIDs.isEmpty ? hits : hits.filter { !savedIDs.contains($0.id) }
+    }
     var canSearch: Bool { trimmedQuery.count >= FoodSearchService.minimumQueryLength }
 
     /// Called from `.onChange(of: query)`.
@@ -56,7 +61,11 @@ final class FoodSearchModel {
         do {
             let hits = try await FoodSearchService.shared.search(query: q, locale: FuelText.locale)
             guard !Task.isCancelled else { return }
-            await MainActor.run { phase = hits.isEmpty ? .empty : .results(hits) }
+            await MainActor.run {
+                // An answer for a query the field has moved on from never replaces the current query's state.
+                guard q == trimmedQuery else { return }
+                phase = hits.isEmpty ? .empty : .results(hits)
+            }
         } catch is CancellationError {
             return
         } catch FoodSearchError.alreadyInFlight {
@@ -66,14 +75,10 @@ final class FoodSearchModel {
             await run(q)
         } catch {
             guard !Task.isCancelled else { return }
-            await MainActor.run { phase = .error(error.localizedDescription) }
+            await MainActor.run {
+                guard q == trimmedQuery else { return }
+                phase = .error(FoodSearchError.message(for: error))
+            }
         }
-    }
-
-    /// Barcode → candidate, or nil when Open Food Facts has nothing under either EAN/UPC form.
-    func lookup(barcode: String) async throws -> FoodCandidate? {
-        await MainActor.run { isLookingUpBarcode = true }
-        defer { Task { @MainActor in self.isLookingUpBarcode = false } }
-        return try await FoodSearchService.shared.lookup(barcode: barcode)
     }
 }

@@ -24,8 +24,27 @@ final class BroService {
 
     var isPaired: Bool { partner != nil }
 
-    init(client: (any BackendClient)? = nil) {
+    /// My attendance writes not yet confirmed by the server (see `reportAttendance`).
+    let attendanceOutbox: AttendanceOutbox
+    /// The backend and account my attendance goes to: the demo backend, or the signed-in account of the real one.
+    /// nil while signed out of the real backend: nothing can be sent then. Read fresh on every use.
+    private let syncTargetProvider: @MainActor () -> AttendanceOutbox.Target?
+    @ObservationIgnored private var isFlushingOutbox = false
+
+    init(client: (any BackendClient)? = nil, attendanceOutbox: AttendanceOutbox = AttendanceOutbox(),
+         syncTarget: @escaping @MainActor () -> AttendanceOutbox.Target? = BroService.currentSyncTarget) {
         injectedClient = client
+        self.attendanceOutbox = attendanceOutbox
+        syncTargetProvider = syncTarget
+    }
+
+    /// The backend and account queued writes are tagged with and sent to; nil while signed out.
+    var syncTarget: AttendanceOutbox.Target? { syncTargetProvider() }
+
+    /// The demo backend, else the signed-in account (`!AuthStore.needsSignIn`).
+    static func currentSyncTarget() -> AttendanceOutbox.Target? {
+        if AppConfig.shared.useMockBackend { return .demo }
+        return AuthStore.shared.session.map { .remote($0.userId) }
     }
 
     // MARK: Refresh
@@ -40,6 +59,8 @@ final class BroService {
             isSignedOut = false
             partner = me.partner
             if let code = me.pairCode { myCode = code }
+            // Reachable and signed in: send any attendance that could not go out when it was logged.
+            await flushAttendanceOutbox()
             if partner == nil {
                 partnerState = nil
                 clearPairing(in: context)
@@ -160,20 +181,64 @@ final class BroService {
         }
     }
 
-    /// Cancels today's session: local `.cancelled` record plus backend attendance and a `.cantMakeIt` heads-up.
-    /// The caller (`CantMakeItSheet`) inserts its own `HeadsUp(fromMe: true)` row.
+    /// Cancels today's session: local `.cancelled` record, the cancellation (reason, note, make-up day) through the
+    /// attendance outbox (it replaces whatever was queued for the day and is retried like every other attendance
+    /// write), and a `.cantMakeIt` heads-up when paired. The caller (`CantMakeItSheet`) inserts its own
+    /// `HeadsUp(fromMe: true)` row. Nothing reaches the backend while signed out.
     func cantMakeIt(reason: String?, note: String?, makeUpDay: Date?, sessionDay: Date = .now, in context: ModelContext) async {
         let day = Calendar.current.startOfDay(for: sessionDay)
+        // Never cancels a day I already trained (`AttendanceService.markMissed` keeps it attended too).
+        if AttendanceService.record(for: day, participant: .me, context: context)?.status == .attended { return }
         upsertAttendance(day: day, participant: .me, status: .cancelled, reason: reason, note: note, makeUpDay: makeUpDay, in: context)
+        guard let target = syncTarget else { return }
+        attendanceOutbox.put(AttendanceOutbox.Entry(
+            day: WireDay.string(day), status: .cancelled, reason: reason,
+            note: note.flatMap { $0.isEmpty ? nil : $0 }, makeUpDay: makeUpDay.map { WireDay.string($0) },
+            target: target))
+        await flushAttendanceOutbox()
+        guard partner != nil else { return }
         do {
-            try await client.setAttendance(day: day, status: .cancelled, reason: reason, note: note, makeUpDay: makeUpDay)
-            if partner != nil {
-                let text = (note?.isEmpty == false ? note : reason) ?? ""
-                try await client.sendHeadsUp(kind: .cantMakeIt, text: text, sessionDay: day)
-            }
+            let text = (note?.isEmpty == false ? note : reason) ?? ""
+            try await client.sendHeadsUp(kind: .cantMakeIt, text: text, sessionDay: day)
             lastError = nil
         } catch {
             handle(error)
+        }
+    }
+
+    /// Sends my status for `day` to the backend, paired or not: the server's reminder and 21:00 skip check read it,
+    /// and a partner sees it. The local record is the caller's (`AttendanceService`). Queued in `attendanceOutbox`
+    /// first, so a write made offline goes out with a later `refresh`. Nothing is sent or queued while signed out.
+    func reportAttendance(day: Date, status: AttendanceStatus) async {
+        guard let target = syncTarget else { return }
+        attendanceOutbox.put(day: day, status: status, target: target)
+        await flushAttendanceOutbox()
+    }
+
+    /// Sends the queued attendance writes of the current backend and account, oldest day first. Stops at the first
+    /// failure that may clear up (no connection, signed out, server trouble) and drops a write the server rejects
+    /// outright, so one bad entry cannot block the rest. Failures stay quiet: this is background sync, not something
+    /// the user asked for.
+    func flushAttendanceOutbox() async {
+        guard syncTarget != nil, !isFlushingOutbox else { return }
+        isFlushingOutbox = true
+        defer { isFlushingOutbox = false }
+        var tried: Set<AttendanceOutbox.Entry> = []
+        while let target = syncTarget,
+              let entry = attendanceOutbox.entries(for: target).first(where: { !tried.contains($0) }) {
+            tried.insert(entry)
+            guard let day = WireDay.date(entry.day) else {
+                attendanceOutbox.remove(entry)
+                continue
+            }
+            do {
+                try await client.setAttendance(day: day, status: entry.status, reason: entry.reason, note: entry.note,
+                                               makeUpDay: entry.makeUpDay.flatMap { WireDay.date($0) })
+                attendanceOutbox.remove(entry)
+            } catch {
+                guard AttendanceOutbox.isRejected(error) else { return }
+                attendanceOutbox.remove(entry)
+            }
         }
     }
 

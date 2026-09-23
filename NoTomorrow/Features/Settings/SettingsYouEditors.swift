@@ -148,7 +148,7 @@ struct DailyTargetEditor: View {
     private var goalChips: some View {
         HStack(spacing: 8) {
             ForEach(TrainingGoal.allCases, id: \.self) { goal in
-                Chip(title: String(localized: String.LocalizationValue("goal.\(goal.rawValue)")),
+                Chip(title: goal.localizedName,
                      isSelected: profile.goal == goal) {
                     profile.goal = goal
                 }

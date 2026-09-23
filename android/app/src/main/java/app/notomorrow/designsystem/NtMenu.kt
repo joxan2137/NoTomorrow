@@ -77,10 +77,12 @@ data class NtMenuItem(
     val icon: NtIcons? = null,
     /**
      * A `Divider()` above this row. §1.8 measures **no** separators on the set-kind menu, and that
-     * is right — SwiftUI only draws one where the source declares it, and the whole iOS codebase
-     * declares exactly one: `AIScanFoodRow.swift:62`, between the ±% group and "Custom…".
+     * is right — SwiftUI only draws one where the source declares it; the only menu that declares
+     * any is the AI-scan grams menu (`AIScanFoodRow.swift`), around its count/edit group.
      */
     val separatorBefore: Boolean = false,
+    /** SwiftUI's `.disabled(…)` on a menu button: drawn in `ink3`, not tappable. */
+    val enabled: Boolean = true,
 )
 
 /** Measured 250 pt on the set-kind menu; long labels grow the panel to [NtMenuMaxWidth]. */
@@ -123,9 +125,10 @@ private val NtMenuEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
  * A caller inside a sheet has no reachable host (that sheet is its own window, stacked above the
  * host), and keeps the `Popup` path — same geometry, same flat fill.
  *
- * Four call sites: the set-kind menu (`SetRowView.swift:52`), the remove-exercise
+ * Five call sites: the set-kind menu (`SetRowView.swift:52`), the remove-exercise
  * menu (`WorkoutExerciseSection.swift:78`), the grams-rescale menu
- * (`AIScanFoodRow.swift:58`) and the log-to-meal menu (`AIScanResultView.swift:139`).
+ * (`AIScanFoodRow.swift:58`), the log-to-meal menu (`AIScanResultView.swift:139`) and the
+ * Fuel entry row's long-press menu (iOS `.contextMenu` on `FuelEntryRow`).
  */
 @Composable
 fun NtMenu(
@@ -280,8 +283,10 @@ private fun NtMenuPanel(
                 Hairline(Modifier.padding(vertical = 4.dp))
             }
             NtMenuRow(item) {
-                onDismiss()
-                item.onClick()
+                if (item.enabled) {
+                    onDismiss()
+                    item.onClick()
+                }
             }
         }
     }
@@ -289,12 +294,16 @@ private fun NtMenuPanel(
 
 @Composable
 private fun NtMenuRow(item: NtMenuItem, onClick: () -> Unit) {
-    val color = if (item.destructive) NT.Colors.bad else NT.Colors.ink
+    val color = when {
+        !item.enabled -> NT.Colors.ink3
+        item.destructive -> NT.Colors.bad
+        else -> NT.Colors.ink
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(NtMenuItemHeight)
-            .ntClickable(onClick = onClick)
+            .ntClickable(enabled = item.enabled, onClick = onClick)
             .padding(end = NtMenuTrailingPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -1,0 +1,27 @@
+{
+ "code": "20582555",
+ "status": 1,
+ "product": {
+  "code": "20582555",
+  "product_name": "Mini kiwi",
+  "brands": "Lidl, Nergi",
+  "quantity": "125 g",
+  "nutriments": {},
+  "image_front_small_url": "https://images.openfoodfacts.org/images/products/000/002/058/2555/front_pl.18.200.jpg",
+  "countries_tags": [
+   "en:croatia",
+   "en:france"
+  ],
+  "generic_name": "",
+  "lang": "fr",
+  "nutriments_estimated": {
+   "carbohydrates_100g": 11,
+   "energy-kcal_100g": 60.5,
+   "energy-kj_100g": 255,
+   "energy_100g": 255,
+   "fat_100g": 0.6,
+   "fiber_100g": 2.4,
+   "proteins_100g": 0.88
+  }
+ }
+}

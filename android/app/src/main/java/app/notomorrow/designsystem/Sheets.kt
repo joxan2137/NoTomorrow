@@ -1,5 +1,6 @@
 package app.notomorrow.designsystem
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
@@ -7,6 +8,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -25,12 +28,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +48,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -51,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.launch
 
 // ─────────────────────────────────────────────────────────────────────────────
 // docs/android-glass.md §1.5 / §3.6.
@@ -219,22 +228,59 @@ fun ntMediumDetent(): Dp = (LocalConfiguration.current.screenHeightDp * 0.5f).dp
  * sites in the iOS source, `.interactively` and `.immediately` alike, since both react only to
  * the user's drag.
  *
- * The [NestedScrollSource.UserInput] guard is what makes that true: without it a *programmatic*
- * scroll (a list animating a newly focused field into view) would dismiss the keyboard the user
- * just opened.
+ * Built on [ntOnUserScroll], so only a finger's scroll counts — never the scroll that brings a
+ * newly focused field above the keyboard.
  */
 @Composable
 fun Modifier.ntDismissKeyboardOnScroll(): Modifier {
     val keyboard = LocalSoftwareKeyboardController.current
-    val connection = remember(keyboard) {
+    return ntOnUserScroll { keyboard?.hide() }
+}
+
+/**
+ * Calls [onScroll] for every step of a scroll the user's **finger** drives on the scrollable this
+ * modifier wraps (place it before `verticalScroll` / on the `LazyColumn`).
+ *
+ * [NestedScrollSource.UserInput] alone does not say that: current Compose foundation dispatches the
+ * bring-into-view scroll — the one that lifts a focused field above the keyboard as the IME
+ * shrinks the viewport — as `UserInput` too, so a keyboard-dismiss built on it closed the keyboard
+ * the user had just opened, for every field the keyboard would cover. The pointer pass below
+ * records whether a finger is actually down on this region; a scroll step only counts while one
+ * is. It observes on the Initial pass and consumes nothing, so the scrollable, the fields and any
+ * swipe inside behave exactly as before.
+ */
+@Composable
+fun Modifier.ntOnUserScroll(onScroll: () -> Unit): Modifier {
+    val latest by rememberUpdatedState(onScroll)
+    val gate = remember { FingerGate() }
+    val connection = remember(gate) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (source == NestedScrollSource.UserInput && available.y != 0f) keyboard?.hide()
+                if (source == NestedScrollSource.UserInput && available.y != 0f && gate.down) latest()
                 return Offset.Zero
             }
         }
     }
-    return nestedScroll(connection)
+    return this
+        .pointerInput(gate) {
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                gate.down = true
+                try {
+                    do {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                    } while (event.changes.any { it.pressed })
+                } finally {
+                    gate.down = false
+                }
+            }
+        }
+        .nestedScroll(connection)
+}
+
+/** Whether a finger is on the region right now; read by the scroll connection, never drawn. */
+private class FingerGate {
+    var down = false
 }
 
 /**
@@ -303,9 +349,22 @@ fun NtSheet(
      * that this very padding brings the *content* back to iOS's `N − 8`.
      */
     clearsNavigationBar: Boolean = true,
+    /**
+     * Asked before a swipe, a scrim tap or back closes the sheet; `false` keeps it up (it springs
+     * back) — SwiftUI's `.interactiveDismissDisabled`. The caller can show its own "Discard
+     * changes?" from here — composed **inside** [content], so it lands in the sheet's window and
+     * not behind it. Closing it from code (dropping it from composition) never asks. `null` (the
+     * default) always closes.
+     */
+    confirmDismiss: (() -> Boolean)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = skipPartiallyExpanded)
+    val confirm by rememberUpdatedState(confirmDismiss)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = skipPartiallyExpanded,
+        confirmValueChange = { it != SheetValue.Hidden || confirm?.invoke() != false },
+    )
+    val dismissScope = rememberCoroutineScope()
     val partial = minHeight != null || height != null || !skipPartiallyExpanded
 
     // How many sheets were already up when this one appeared. Read in `remember` — i.e. during the
@@ -435,6 +494,17 @@ fun NtSheet(
                 .then(if (clearsNavigationBar) Modifier.navigationBarsPadding() else Modifier)
                 .then(if (sized) Modifier else Modifier.imePadding()),
         ) {
+            // material3 answers back with `sheetState.hide()`, which never consults
+            // `confirmValueChange` — a swipe and a scrim tap ask, back did not, and every unsaved
+            // edit went with it. So a sheet that can refuse takes back over itself: this handler is
+            // registered on the sheet window's dispatcher after material's, and wins.
+            BackHandler(enabled = confirmDismiss != null) {
+                if (confirm?.invoke() != false) {
+                    dismissScope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) onDismiss()
+                    }
+                }
+            }
             if (showsHandle) NtSheetHandle()
             content()
         }

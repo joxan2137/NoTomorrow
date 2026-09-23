@@ -49,20 +49,49 @@ class RoutineSeeder(
                     order = order++,
                     targetSets = DEFAULT_SETS,
                     targetReps = DEFAULT_REPS,
-                    restSeconds = restSeconds(id),
+                    restSeconds = INHERIT_REST,
                 )
             }
             routineDao.insertRoutineWithItems(routine, items)
         }
     }
 
+    /**
+     * `inheritDefaultRestIfNeeded(context:defaults:)`, minus the once-flag the caller keeps
+     * (`nt.routines.inheritRest`): routine items still holding the fixed rest older builds seeded
+     * (90 s, 120 s for heavy lifts) switch to [INHERIT_REST], so the Rest length setting drives
+     * them too. Items with any other value are left alone. Returns how many items changed.
+     */
+    suspend fun inheritDefaultRest(): Int {
+        var changed = 0
+        for (routine in routineDao.routinesWithItems()) {
+            for (entry in routine.items) {
+                val item = entry.item
+                val exerciseId = item.exerciseId ?: continue
+                if (item.restSeconds != restSeconds(exerciseId)) continue
+                routineDao.updateItem(item.copy(restSeconds = INHERIT_REST))
+                changed += 1
+            }
+        }
+        return changed
+    }
+
     companion object {
         const val DEFAULT_SETS = 3
         const val DEFAULT_REPS = 8
-        const val DEFAULT_REST_SECONDS = 90
-        const val HEAVY_REST_SECONDS = 120
 
-        /** Squat / deadlift / bench variants rest longer. */
+        /** Rest before the user has a profile (Settings > Rest timer > Rest length overrides it). */
+        const val DEFAULT_REST_SECONDS = 90
+
+        /** Squat / deadlift / bench variants rest this much longer than the user's default. */
+        const val HEAVY_EXTRA_REST_SECONDS = 30
+
+        /** The Rest length setting's maximum; a heavy lift's extra never goes past it. */
+        const val MAX_REST_SECONDS = 600
+
+        /** `RoutineItem.restSeconds` value meaning "use the user's default when the workout starts". */
+        const val INHERIT_REST = 0
+
         private val HEAVY = listOf("squat", "deadlift", "bench_press")
 
         val TEMPLATES: List<Template> = listOf(
@@ -98,9 +127,16 @@ class RoutineSeeder(
             ),
         )
 
-        fun restSeconds(exerciseId: String): Int {
+        fun isHeavy(exerciseId: String): Boolean {
             val id = exerciseId.lowercase(Locale.ROOT)
-            return if (HEAVY.any { id.contains(it) }) HEAVY_REST_SECONDS else DEFAULT_REST_SECONDS
+            return HEAVY.any { id.contains(it) }
         }
+
+        /**
+         * Rest for an exercise given the user's default rest: heavy compounds get 30 s more
+         * (capped at the setting's 10 min maximum). With the stock 1:30 default that is 1:30 / 2:00.
+         */
+        fun restSeconds(exerciseId: String, defaultRest: Int = DEFAULT_REST_SECONDS): Int =
+            if (isHeavy(exerciseId)) minOf(MAX_REST_SECONDS, defaultRest + HEAVY_EXTRA_REST_SECONDS) else defaultRest
     }
 }

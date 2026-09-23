@@ -42,6 +42,7 @@ import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.di.ntViewModel
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 import app.notomorrow.util.rememberNtStrings
@@ -61,8 +62,8 @@ import java.time.ZoneId
  * ([WorkoutDoneUiState.loaded]) — iOS is handed the `Workout` object itself and never renders a
  * zeroed summary.
  *
- * @param endedAt provisional end while the workout is still technically active — the finish flow
- *   stamps `endedAt` on Done, exactly as iOS does.
+ * The duration reads the stored `endedAt`, which Finish stamps before this screen shows.
+ *
  * @param onEditSets `null` hides the "Edit sets" link.
  */
 @Composable
@@ -70,18 +71,18 @@ fun WorkoutDoneScreen(
     workoutId: String,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
-    endedAt: Long? = null,
     onEditSets: (() -> Unit)? = null,
 ) {
-    val model = ntViewModel(key = workoutId) { container ->
+    // Prefixed: the tab shell's store also holds a picker and an active-workout model per workout.
+    val model = ntViewModel(key = "workoutDone/$workoutId") { container ->
         WorkoutDoneViewModel(container, workoutId)
     }
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = rememberNtStrings()
 
-    val duration = remember(state.startedAt, state.endedAt, endedAt) {
-        workoutDuration(state.startedAt, endedAt ?: state.endedAt)
+    val duration = remember(state.startedAt, state.endedAt) {
+        workoutDuration(state.startedAt, state.endedAt)
     }
 
     if (!state.loaded) {
@@ -108,7 +109,7 @@ fun WorkoutDoneScreen(
                             S.workout_done_shareText,
                             state.name,
                             Fmt.duration(duration, strings),
-                            Fmt.volume(state.volumeKg),
+                            Fmt.volume(state.volumeKg, state.unit),
                         ),
                     )
                 },
@@ -205,16 +206,15 @@ private fun WorkoutDoneHero(state: WorkoutDoneUiState) {
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TabularText(
-                text = Fmt.weight(
-                    kg = Fmt.roundHalfAwayFromZero(state.volumeKg),
-                    withUnit = false,
-                ),
+                text = Fmt.volume(state.volumeKg, state.unit, withUnit = false),
                 modifier = Modifier.alignByBaseline(),
                 style = NT.Fonts.display(56),
                 color = NT.Colors.ink,
             )
             NtText(
-                text = stringResource(S.workout_done_kgMoved),
+                text = stringResource(
+                    if (state.unit == WeightUnit.Lb) S.workout_done_lbMoved else S.workout_done_kgMoved,
+                ),
                 modifier = Modifier.alignByBaseline(),
                 style = NT.Fonts.title2,
                 color = NT.Colors.ink2,
@@ -222,14 +222,14 @@ private fun WorkoutDoneHero(state: WorkoutDoneUiState) {
         }
         val previous = state.previousVolumeKg
         if (previous != null && previous != state.volumeKg) {
-            DeltaChip(delta = state.volumeKg - previous, workoutName = state.name)
+            DeltaChip(delta = state.volumeKg - previous, workoutName = state.name, unit = state.unit)
         }
     }
 }
 
 /** "+1 200 kg more than last Push A" — ember when up, grey when down. */
 @Composable
-private fun DeltaChip(delta: Double, workoutName: String) {
+private fun DeltaChip(delta: Double, workoutName: String, unit: WeightUnit) {
     val up = delta > 0
     val tint = if (up) NT.Colors.ember else NT.Colors.ink2
     Row(
@@ -250,9 +250,9 @@ private fun DeltaChip(delta: Double, workoutName: String) {
         )
         TabularText(
             text = if (up) {
-                stringResource(S.workout_done_moreThanLast_s_s, Fmt.volume(delta), workoutName)
+                stringResource(S.workout_done_moreThanLast_s_s, Fmt.volume(delta, unit), workoutName)
             } else {
-                stringResource(S.workout_done_lessThanLast_s_s, Fmt.volume(-delta), workoutName)
+                stringResource(S.workout_done_lessThanLast_s_s, Fmt.volume(-delta, unit), workoutName)
             },
             style = NT.Fonts.footnoteBold,
             color = tint,

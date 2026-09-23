@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Train tab: resume banner, routines with Start, empty-workout ghost button, finished-workout history.
+/// Train tab: routines with Start, empty-workout ghost button, finished-workout history.
+/// A workout in progress lives in the mini bar above the tab bar; Start while one runs asks first (in the tab shell).
 struct TrainView: View {
     @Environment(WorkoutSessionController.self) private var session
     @Environment(\.modelContext) private var modelContext
@@ -9,24 +10,16 @@ struct TrainView: View {
     @Query(sort: \Routine.order) private var routines: [Routine]
     @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt, order: .reverse)
     private var history: [Workout]
-    @Query(filter: #Predicate<Workout> { $0.endedAt == nil }, sort: \Workout.startedAt, order: .reverse)
-    private var unfinished: [Workout]
     @Query private var profiles: [UserProfile]
 
     @State private var selectedWorkout: Workout?
 
     private var unit: WeightUnit { profiles.first?.units ?? .kg }
-    private var activeWorkout: Workout? { unfinished.first }
 
     var body: some View {
-        @Bindable var session = session
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                if let active = activeWorkout {
-                    ResumeWorkoutBanner(workout: active) { session.begin(active) }
-                        .padding(.top, 18)
-                }
                 routinesSection
                 historySection
             }
@@ -35,13 +28,9 @@ struct TrainView: View {
             .padding(.bottom, NT.Spacing.section)
         }
         .ntScreenBackground()
-        .sheet(item: $selectedWorkout) { workout in
-            WorkoutDetailSheet(workout: workout, unit: unit)
-        }
-        .task {
-            await ExerciseLibrary.shared.importIfNeeded(into: modelContext)
-            RoutineSeeder.seedIfNeeded(context: modelContext)
-        }
+        .workoutDetailSheet($selectedWorkout, unit: unit)
+        // RootView imports the library once and seeds right after; this is a no-op once the routines exist.
+        .task { RoutineSeeder.seedIfNeeded(context: modelContext) }
     }
 
     // MARK: Header
@@ -67,17 +56,21 @@ struct TrainView: View {
                     .padding(.vertical, 12)
             } else {
                 ForEach(routines) { routine in
-                    RoutineRow(routine: routine) {
-                        WorkoutStarter.start(routine: routine, in: modelContext, session: session)
-                    }
+                    RoutineRow(routine: routine) { requestStart(.routine(routine)) }
                     Hairline()
                 }
             }
-            GhostButton(title: "workout.startEmpty") {
-                WorkoutStarter.startEmpty(in: modelContext, session: session)
-            }
+            GhostButton(title: "workout.startEmpty") { requestStart(.empty) }
             .padding(.top, 16)
         }
+    }
+
+    // MARK: Start
+
+    /// Starts right away, or, while a workout is in progress (only one runs at a time), has the tab shell ask:
+    /// Resume, Discard it and start new, Cancel (`WorkoutStartConflictDialog`).
+    private func requestStart(_ request: WorkoutStarter.Request) {
+        WorkoutStarter.requestStart(request, in: modelContext, session: session)
     }
 
     // MARK: History
@@ -102,42 +95,5 @@ struct TrainView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Resume banner
-
-/// The one card on this screen: an unfinished workout the user can jump back into.
-struct ResumeWorkoutBanner: View {
-    var workout: Workout
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            NTCard {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Circle().fill(NT.Colors.ember).frame(width: 8, height: 8)
-                            Text("workout.inProgress").eyebrow(NT.Colors.ember)
-                        }
-                        Text("dashboard.resumeWorkout")
-                            .font(NT.Fonts.headline)
-                            .foregroundStyle(NT.Colors.ink)
-                        TimelineView(.periodic(from: .now, by: 60)) { context in
-                            Text(verbatim: "\(workout.name) · \(Fmt.duration(context.date.timeIntervalSince(workout.startedAt)))")
-                                .font(NT.Fonts.footnote)
-                                .foregroundStyle(NT.Colors.ink2)
-                                .tabular()
-                        }
-                    }
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(NT.Colors.ink3)
-                }
-            }
-        }
-        .buttonStyle(PressScale())
     }
 }

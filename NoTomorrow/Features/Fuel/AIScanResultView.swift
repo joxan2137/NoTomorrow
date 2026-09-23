@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// The editable estimate: photo with detection tags, hero total, one row per food, disclaimer, and the log bar.
+/// The editable estimate: photo with detection tags, hero total, one row per food (grams, count, edit, remove),
+/// "add something it missed" from the food database, details + recalculate, disclaimer, and the log bar.
 struct AIScanResultView: View {
     @Bindable var model: AIScanModel
     var onLog: () -> Void
 
     @State private var showAddMissed = false
+    @State private var editing: AIFood?
 
     var body: some View {
         ScrollView {
@@ -22,6 +24,8 @@ struct AIScanResultView: View {
                     ForEach(model.questions, id: \.self) { Text($0).font(NT.Fonts.subheadline) }
                     AIMealNotes(notes: $model.notes)
                     SecondaryButton(title: "fuel.ai.refine") { model.analyze() }
+                        .disabled(!model.hasItems)
+                        .opacity(model.hasItems ? 1 : 0.4)
                 }.padding(.vertical, 12)
                 disclaimer
                     .padding(.top, 6)
@@ -31,7 +35,20 @@ struct AIScanResultView: View {
         }
         .scrollIndicators(.hidden)
         .safeAreaInset(edge: .bottom) { bottomBar }
-        .sheet(isPresented: $showAddMissed) { AIScanAddMissedSheet(meal: model.meal) }
+        .sheet(isPresented: $showAddMissed) {
+            FoodSearchView(meal: model.meal, pick: FoodSearchPick(mode: .add, title: String(localized: "fuel.ai.addMissed")) { food, grams in
+                withAnimation { model.append(AIFood.fromDatabase(food, grams: grams ?? food.servingSizeG ?? 100)) }
+            })
+        }
+        .sheet(item: $editing) { food in
+            AIScanItemSheet(food: food, meal: model.meal, onDone: { edited in
+                withAnimation { model.update(edited) }
+                editing = nil
+            }, onRemove: {
+                withAnimation { model.remove(food.id) }
+                editing = nil
+            })
+        }
     }
 
     // MARK: Total
@@ -80,7 +97,10 @@ struct AIScanResultView: View {
                 AIScanFoodRow(
                     food: food,
                     onScale: { model.scale(by: $0, for: food.id) },
-                    onSetGrams: { model.setGrams($0, for: food.id) }
+                    onSetGrams: { model.setGrams($0, for: food.id) },
+                    onStepCount: { up in model.stepCount(up: up, for: food.id) },
+                    onEdit: { editing = food },
+                    onRemove: { withAnimation { model.remove(food.id) } }
                 )
             }
         }
@@ -125,7 +145,7 @@ struct AIScanResultView: View {
             }
             .fixedSize(horizontal: true, vertical: false)
 
-            LogToMealButton(meal: $model.meal, action: onLog)
+            LogToMealButton(meal: $model.meal, isEnabled: model.hasItems, action: onLog)
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.top, 10)
@@ -139,6 +159,8 @@ struct AIScanResultView: View {
 /// White pill that logs on tap and opens the slot menu on long press (and on the chevron).
 struct LogToMealButton: View {
     @Binding var meal: MealSlot
+    /// False once every item was removed: nothing would be logged.
+    var isEnabled: Bool = true
     var action: () -> Void
 
     var body: some View {
@@ -167,10 +189,12 @@ struct LogToMealButton: View {
             .frame(height: NT.Size.primaryButton)
             .padding(.horizontal, 16)
             .background(NT.Colors.ink, in: Capsule())
+            .opacity(isEnabled ? 1 : 0.4)
         } primaryAction: {
             action()
         }
         .buttonStyle(PressScale())
+        .disabled(!isEnabled)
     }
 }
 
@@ -248,36 +272,16 @@ struct ConfidenceDots: View {
     }
 }
 
-// MARK: - "Add something it missed"
-
-/// Hands off to the food search for the same meal. Until `FoodSearchView` lands this is a plain placeholder sheet.
-struct AIScanAddMissedSheet: View {
-    var meal: MealSlot
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(spacing: NT.Spacing.section) {
-            Grabber()
-            Text(String(format: String(localized: "fuel.addTo"), AIScanText.slotName(meal)))
-                .font(NT.Fonts.title2)
-                .foregroundStyle(NT.Colors.ink)
-            Text("fuel.notFound")
-                .font(NT.Fonts.subheadline)
-                .foregroundStyle(NT.Colors.ink2)
-                .multilineTextAlignment(.center)
-            Spacer()
-            SecondaryButton(title: "common.done") { dismiss() }
-        }
-        .padding(.horizontal, NT.Spacing.screenH)
-        .padding(.bottom, 12)
-        .ntScreenBackground()
-        .presentationDetents([.medium])
-    }
-}
-
 enum AIScanFormat {
     /// Whole-gram number without a unit, locale grouping applied.
     static func wholeGrams(_ value: Double) -> String {
         Int(value.rounded()).formatted(.number.grouping(.automatic))
+    }
+
+    /// "6 szt. × 35 g" for a counted portion; nil for a single unit or mass, where the grams cell says it all.
+    static func portionBasis(_ food: AIFood, locale: Locale = Fmt.locale) -> String? {
+        guard let unit = food.unitName, food.units != 1 else { return nil }
+        return FuelText.format("fuel.ai.portionBasis", "\(FuelText.fieldText(food.units, locale: locale)) \(unit)",
+                               FuelText.fieldText(food.unitGrams, locale: locale))
     }
 }

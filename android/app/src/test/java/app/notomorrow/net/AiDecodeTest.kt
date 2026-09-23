@@ -3,7 +3,8 @@ package app.notomorrow.net
 import app.notomorrow.net.dto.AIEstimate
 import app.notomorrow.net.dto.AIFood
 import app.notomorrow.net.dto.NtJson
-import app.notomorrow.service.AIEstimatePrompt
+import app.notomorrow.net.dto.LabelReading
+import app.notomorrow.service.AIFinalizer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,11 +14,12 @@ import org.junit.Test
 /**
  * The tolerant AI decoder (`docs/android-architecture.md`, "Tests"): the backend sends `proteinG`,
  * Claude replies with `protein_g`, the mock uses `protein`, and any of them may arrive as a JSON
- * string. Two deliberate divergences from `AIFood.init(from:)` in `Services/BackendClient.swift`
- * are pinned here because the spec asks for them and Swift does not do them:
+ * string. `isGuess` defaults to `false` like `AIFood.init(from:)` in `Services/BackendClient.swift`
+ * (contract §11). One deliberate divergence stays pinned: `grams` / `kcal` default to 0 when absent
+ * (Swift throws `keyNotFound`).
  *
- *  - `isGuess` falls back to `confidence < 0.5` (Swift falls back to `false`);
- *  - `grams` / `kcal` default to 0 when absent (Swift throws `keyNotFound`).
+ * Backend v2 (contract §8): every v2 field is optional, so an old server's v1 answer still decodes,
+ * and a malformed optional field is dropped instead of failing the estimate.
  */
 class AiDecodeTest {
 
@@ -90,14 +92,13 @@ class AiDecodeTest {
     // MARK: isGuess
 
     @Test
-    fun `isGuess defaults to confidence below one half`() {
-        assertTrue(food("""{"name":"Oil","grams":10,"kcal":90,"confidence":0.3}""").isGuess)
-        assertFalse(food("""{"name":"Rice","grams":10,"kcal":90,"confidence":0.5}""").isGuess)
+    fun `isGuess defaults to false like iOS`() {
+        assertFalse(food("""{"name":"Oil","grams":10,"kcal":90,"confidence":0.3}""").isGuess)
         assertFalse(food("""{"name":"Rice","grams":10,"kcal":90,"confidence":0.9}""").isGuess)
     }
 
     @Test
-    fun `an explicit isGuess wins over the confidence fallback in both spellings`() {
+    fun `an explicit isGuess is read in both spellings`() {
         assertFalse(food("""{"name":"a","grams":1,"kcal":1,"confidence":0.1,"isGuess":false}""").isGuess)
         assertFalse(food("""{"name":"a","grams":1,"kcal":1,"confidence":0.1,"is_guess":false}""").isGuess)
         assertTrue(food("""{"name":"a","grams":1,"kcal":1,"confidence":0.9,"is_guess":true}""").isGuess)
@@ -146,21 +147,136 @@ class AiDecodeTest {
         assertEquals(0.0, zero.scaled(120.0).grams, 0.0001)
     }
 
-    // MARK: extractJson
+    // MARK: extractJsonObject
 
     @Test
-    fun `extractJson strips fences and surrounding prose`() {
-        assertEquals("""{"foods":[]}""", AIEstimatePrompt.extractJson("```json\n{\"foods\":[]}\n```"))
-        assertEquals("""{"foods":[]}""", AIEstimatePrompt.extractJson("```\n{\"foods\":[]}\n```"))
+    fun `extractJsonObject strips fences and surrounding prose`() {
+        assertEquals("""{"foods":[]}""", AIFinalizer.extractJsonObject("```json\n{\"foods\":[]}\n```"))
+        assertEquals("""{"foods":[]}""", AIFinalizer.extractJsonObject("```\n{\"foods\":[]}\n```"))
         assertEquals(
             """{"foods":[{"name":"a"}]}""",
-            AIEstimatePrompt.extractJson("""Here is the plate: {"foods":[{"name":"a"}]} — hope that helps!"""),
+            AIFinalizer.extractJsonObject("""Here is the plate: {"foods":[{"name":"a"}]} — hope that helps!"""),
         )
     }
 
     @Test
-    fun `extractJson returns null when there is no object`() {
-        assertNull(AIEstimatePrompt.extractJson("I could not see the food."))
-        assertNull(AIEstimatePrompt.extractJson("} {"))
+    fun `extractJsonObject returns null when there is no object`() {
+        assertNull(AIFinalizer.extractJsonObject("I could not see the food."))
+        assertNull(AIFinalizer.extractJsonObject("} {"))
+    }
+
+    // MARK: Backend v2
+
+    private val v2 = """
+        {"version":2,"foods":[{"name":"Pierogi ruskie","grams":210,"kcal":430.5,"protein":12.6,"carbs":60.9,
+          "fat":14.7,"proteinG":12.6,"carbsG":60.9,"fatG":14.7,"confidence":0.65,"isGuess":false,"barcode":"",
+          "nutritionSource":"generic_table","cooking":"boiled","genericKey":"pierogi_ruskie","portionCount":6,
+          "portionUnit":"szt.","gramsPerUnit":35,"per100":{"kcal":205,"protein":6,"carbs":29,"fat":7,"alcohol":0},
+          "adjustments":["generic_table","confidence_capped"]}],
+         "totals":{"kcal":430.5,"protein":12.6,"carbs":60.9,"fat":14.7},"overallConfidence":0.65,
+         "scaleReferenceUsed":"none","assumptions":["a"],"questions":[],
+         "skipped":[{"index":1,"name":"Sos","reason":"invalid_grams"}]}
+    """.trimIndent()
+
+    @Test
+    fun `a v2 answer decodes its per100, portion and provenance fields`() {
+        val e = NtJson.decodeFromString(AIEstimate.serializer(), v2)
+        val f = e.foods.single()
+        assertEquals(205.0, f.per100!!.kcal, 0.0)
+        assertEquals(6.0, f.portionCount!!, 0.0)
+        assertEquals("szt.", f.portionUnit)
+        assertEquals(35.0, f.gramsPerUnit!!, 0.0)
+        assertEquals("generic_table", f.nutritionSource)
+        assertEquals("boiled", f.cooking)
+        assertEquals("pierogi_ruskie", f.genericKey)
+        assertEquals("", f.barcode)
+        assertEquals(listOf("generic_table", "confidence_capped"), f.adjustments)
+        assertEquals(2, e.version)
+        assertEquals(430.5, e.totals!!.kcal, 0.0)
+        assertEquals("invalid_grams", e.skipped!!.single().reason)
+        assertEquals("none", e.scaleReferenceUsed)
+    }
+
+    @Test
+    fun `a v1 answer still decodes with the v2 fields null`() {
+        val json = """{"foods":[{"name":"Rice","grams":180,"kcal":230,"proteinG":5,"carbsG":50,"fatG":1,
+            "confidence":0.8,"isGuess":false}],"overallConfidence":0.8,"assumptions":[],"questions":[]}"""
+        val e = NtJson.decodeFromString(AIEstimate.serializer(), json)
+        val f = e.foods.single()
+        assertNull(f.per100)
+        assertNull(f.portionCount)
+        assertNull(f.nutritionSource)
+        assertNull(e.version)
+        assertNull(e.totals)
+        assertNull(e.skipped)
+    }
+
+    @Test
+    fun `a malformed optional v2 field is dropped, not fatal`() {
+        val f = food("""{"name":"a","grams":10,"kcal":10,"per100":{"kcal":"x"},"portionCount":"two","adjustments":[1]}""")
+        assertNull(f.per100)
+        assertNull(f.portionCount)
+        assertNull(f.adjustments)
+        assertEquals(10.0, f.kcal, 0.0)
+    }
+
+    @Test
+    fun `rescaling with per100 follows the finalizer and keeps the count`() {
+        val f = NtJson.decodeFromString(AIEstimate.serializer(), v2).foods.single()
+        val scaled = f.scaled(245.04)
+        assertEquals(245.0, scaled.grams, 0.0)
+        assertEquals(502.3, scaled.kcal, 1e-9) // round1(205 × 245 / 100)
+        assertEquals(6.0, scaled.portionCount!!, 0.0)
+        assertEquals(40.8, scaled.gramsPerUnit!!, 1e-9) // round1(245 / 6)
+        val seven = f.withCount(7.0)
+        assertEquals(245.0, seven.grams, 0.0)
+        assertEquals(7.0, seven.portionCount!!, 0.0)
+        assertEquals(35.0, seven.gramsPerUnit!!, 0.0)
+        val heavier = f.withGramsPerUnit(40.0)
+        assertEquals(240.0, heavier.grams, 0.0)
+        assertEquals(6.0, heavier.portionCount!!, 0.0)
+        assertEquals("szt.", f.unitName)
+        assertEquals(205.0, f.kcalPer100!!, 0.0)
+    }
+
+    @Test
+    fun `an item without portion fields counts as one unit of its grams`() {
+        val f = AIFood.of("Rice", grams = 150.0, kcal = 195.0, protein = 4.0, carbs = 42.0, fat = 0.4, confidence = 0.8)
+        assertEquals(1.0, f.units, 0.0)
+        assertEquals(150.0, f.unitGrams, 0.0)
+        assertNull(f.unitName)
+        assertEquals(130.0, f.kcalPer100!!, 1e-9)
+        assertEquals(300.0, f.withCount(2.0).grams, 1e-9)
+        assertEquals(390.0, f.withCount(2.0).kcal, 1e-9)
+    }
+
+    // MARK: Label reading
+
+    @Test
+    fun `a label reading decodes, including an illegible one`() {
+        val legible = NtJson.decodeFromString(
+            LabelReading.serializer(),
+            """{"version":1,"legible":true,"unreadableReason":null,"basis":"per100g","energyFrom":"kcal","name":"Skyr",
+               "brand":"Piątnica","per100":{"kcal":62,"protein":11,"carbs":4,"fat":0.2,"fiber":null,"sugar":4,"salt":0.13},
+               "servingSizeG":150,"packageSizeG":null,"barcode":"","confidence":0.9,"needsReview":false}""",
+        )
+        assertTrue(legible.legible)
+        val per100 = legible.per100!!
+        assertEquals(62.0, per100.kcal, 0.0)
+        assertNull(per100.fiber)
+        assertEquals(0.13, per100.salt!!, 0.0)
+        assertEquals(150.0, legible.servingSizeG!!, 0.0)
+        assertEquals("Piątnica", legible.brand)
+
+        val illegible = NtJson.decodeFromString(
+            LabelReading.serializer(),
+            """{"version":1,"legible":false,"unreadableReason":"illegible","basis":"per100g","energyFrom":null,
+               "name":"Ciastka","brand":"","per100":null,"servingSizeG":null,"packageSizeG":null,"barcode":"",
+               "confidence":0.5,"needsReview":false}""",
+        )
+        assertFalse(illegible.legible)
+        assertEquals("illegible", illegible.unreadableReason)
+        assertNull(illegible.per100)
+        assertEquals("Ciastka", illegible.name)
     }
 }

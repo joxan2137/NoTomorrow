@@ -7,9 +7,12 @@ import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.data.relation.CompletedSetRow
 import app.notomorrow.data.relation.WorkoutWithExercises
+import app.notomorrow.model.AttendanceStatus
 import app.notomorrow.model.SetKind
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.rest.RestTimerController
 import app.notomorrow.rest.RestTimerState
+import app.notomorrow.service.AttendanceReporter
 import app.notomorrow.service.AttendanceService
 import app.notomorrow.service.RecordService
 import app.notomorrow.service.WorkoutSessionController
@@ -21,11 +24,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -37,10 +40,21 @@ import java.time.ZoneId
  * here the graph comes back through `WorkoutDao.observeWorkoutWithExercises` and is folded
  * into one immutable [ActiveWorkoutUiState] on every emission. The two things Room cannot
  * derive on its own — the *previous* workout's rows per exercise and the "Last: 80 × 8" set —
- * are cached in [previousRows] / [previousLast], reloaded exactly where iOS calls
- * `reloadPrevious()`.
+ * are cached in [previousRows] / [previousLast] as plain values, reloaded exactly where iOS calls
+ * `reloadPrevious()` (on every expand, since history may have been edited meanwhile). The user's
+ * weight unit is re-read there too.
+ *
+ * Every write to a set runs under [writes], in call order: a tick right after typing sees the
+ * number that was typed, and two keystrokes can never land in the wrong order.
+ *
+ * One per workout, keyed by [workoutId] and hosted by the tab shell (`MainTabScaffold`), not by
+ * the full screen: the full screen and the mini bar read the same instance, so collapsing keeps
+ * the open exercise, the PR hint, "up next" and the summary — iOS gets the same by owning the
+ * model on `WorkoutSessionController`. Once the session lets go (Done, Discard, another workout)
+ * it stops reading Room and keeps its last state, so the full screen can finish sliding away.
  */
 class ActiveWorkoutViewModel(
+    private val workoutId: String,
     private val workoutDao: WorkoutDao,
     private val recordService: RecordService,
     private val attendanceService: AttendanceService,
@@ -49,6 +63,11 @@ class ActiveWorkoutViewModel(
     private val appPrefs: AppPrefs,
     private val strings: NtStrings,
     private val zone: ZoneId = ZoneId.systemDefault(),
+    private val clock: () -> Long = System::currentTimeMillis,
+    /** The user's weight unit (`UserProfile.units`), read on load and on every [reloadPrevious]. */
+    private val units: suspend () -> WeightUnit = { WeightUnit.Kg },
+    /** Sends the attended day to the backend (`AttendanceSync.report`); a no-op in tests. */
+    private val reportAttendance: AttendanceReporter = AttendanceReporter.None,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ActiveWorkoutUiState())
@@ -64,29 +83,34 @@ class ActiveWorkoutViewModel(
     private var hintSetId: Long? = null
     private var hintBest: SetValue? = null
     private var upNext: UpNextTarget? = null
+
+    /**
+     * `showsSummary` — the "DONE." summary is on screen. Mirrored to `session.showsSummary` for the
+     * rest of the app; kept here too so the summary keeps rendering while the full screen slides
+     * away after Done (the session has already let go by then).
+     */
     private var showsDone = false
 
-    /** Rows of the most recent earlier workout that had the exercise, keyed by exercise id. */
-    private val previousRows = mutableMapOf<String, List<CompletedSetRow>>()
+    /** Rows of the last finished session with the exercise, keyed by exercise id. */
+    private val previousRows = mutableMapOf<String, PreviousRows>()
     private val previousLast = mutableMapOf<String, SetValue?>()
 
-    private var workoutId: String? = null
+    /** `unit` — cells, Previous, "Last:", the hint, the rest card and its notification show it. */
+    private var unit = WeightUnit.Kg
+    private var unitLoaded = false
+
+    /** Serialises the set writes (see the class comment). */
+    private val writes = Mutex()
+
     private var graph: WorkoutWithExercises? = null
 
-    /** Outlives the view model, for the delayed discard alone. */
-    private val discardScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     init {
-        viewModelScope.launch {
-            val workout = session.activeWorkout()
-            if (workout == null) {
-                _state.value = ActiveWorkoutUiState(loading = false, missing = true)
-                return@launch
-            }
-            workoutId = workout.id
-            workoutDao.observeWorkoutWithExercises(workout.id).collectLatest { next ->
+        val reading = viewModelScope.launch {
+            workoutDao.observeWorkoutWithExercises(workoutId).collectLatest { next ->
                 if (next == null) {
-                    _state.value = ActiveWorkoutUiState(loading = false, missing = true)
+                    _state.value = ActiveWorkoutUiState(loading = false, missing = true, workoutId = workoutId)
+                    // The row is gone (deleted elsewhere): there is nothing left to resume.
+                    if (session.activeWorkoutId.value == workoutId) session.end()
                     return@collectLatest
                 }
                 graph = next
@@ -94,17 +118,23 @@ class ActiveWorkoutViewModel(
                 publish(next)
             }
         }
+        viewModelScope.launch {
+            session.activeWorkoutId.first { it == workoutId }
+            session.activeWorkoutId.first { it != workoutId }
+            reading.cancel()
+        }
     }
 
     // MARK: - Previous values
 
     /**
-     * `reloadPrevious()` — drops the caches so the next emission re-reads them. Called after the
-     * exercise picker closes, exactly where iOS re-runs it.
+     * `reloadPrevious()` — drops the caches (and the unit) so they are read again. Called each time
+     * the full screen appears and after the exercise picker closes, exactly where iOS re-runs it.
      */
     fun reloadPrevious() {
         previousRows.clear()
         previousLast.clear()
+        unitLoaded = false
         viewModelScope.launch {
             val current = graph ?: return@launch
             ensurePrevious(current)
@@ -113,31 +143,33 @@ class ActiveWorkoutViewModel(
     }
 
     /**
-     * One query per exercise fills both caches: the rows of the latest *finished* earlier
-     * workout that used it (`ex.usages … .max(by: startedAt)`) and the most recent completed
+     * One query per exercise fills both caches: the rows of the latest *finished* other session
+     * with a completed working set ([foldLatestEarlierWorkoutRows]) and the most recent completed
      * working set (`RecordService.lastSet(for:excluding:)`).
      */
     private suspend fun ensurePrevious(graph: WorkoutWithExercises) {
+        if (!unitLoaded) {
+            unit = units()
+            unitLoaded = true
+        }
         val myId = graph.workout.id
         for (section in graph.sortedExercises) {
             val exerciseId = section.workoutExercise.exerciseId ?: continue
             if (previousRows.containsKey(exerciseId)) continue
             val rows = workoutDao.completedSetsForExercise(exerciseId)
-            previousRows[exerciseId] = foldLatestEarlierWorkoutRows(rows, myId)
+            previousRows[exerciseId] = PreviousRows.of(foldLatestEarlierWorkoutRows(rows, myId))
             previousLast[exerciseId] = RecordService.lastSet(rows, excludingWorkoutId = myId)
                 ?.let { SetValue(it.weightKg, it.reps) }
         }
     }
 
     /**
-     * `previous(for:in:)` — the same-row set of the last earlier workout, else the most recent
-     * completed set of the exercise.
+     * `previous(for:in:)` — the same-position set of the last session (warm-ups against warm-ups,
+     * working sets by number), else, for a working set, the most recent completed set.
      */
-    private fun previous(exerciseId: String?, index: Int): SetValue? {
+    private fun previous(exerciseId: String?, slot: SetSlot): SetValue? {
         if (exerciseId == null) return null
-        val rows = previousRows[exerciseId].orEmpty()
-        if (index < rows.size) return SetValue(rows[index].weightKg, rows[index].reps)
-        return previousLast[exerciseId]
+        return previousValue(previousRows[exerciseId], previousLast[exerciseId], slot)
     }
 
     // MARK: - State fold
@@ -155,7 +187,7 @@ class ActiveWorkoutViewModel(
             section.toUi(
                 locale = locale,
                 previousLast = exerciseId?.let { previousLast[it] },
-                previous = { index -> previous(exerciseId, index) },
+                previous = { slot -> previous(exerciseId, slot) },
             )
         }
         _state.value = ActiveWorkoutUiState(
@@ -171,7 +203,7 @@ class ActiveWorkoutViewModel(
             hintBest = hintBest,
             upNext = upNext,
             showsDone = showsDone,
-            finishedAt = finishedAt,
+            unit = unit,
         )
     }
 
@@ -184,113 +216,166 @@ class ActiveWorkoutViewModel(
     }
 
     /**
-     * Ticks a set: prefills empty numbers from the previous workout, stamps `completedAt`,
-     * evaluates the records and starts the rest — unless the next set is a drop set or
-     * `nt.rest.autoStart` is off (`ActiveWorkoutModel.complete`).
+     * Ticks a set: an empty row takes Previous, `completedAt` is stamped, the records are evaluated
+     * and the rest starts — unless the next set is a drop set or `nt.rest.autoStart` is off
+     * (`ActiveWorkoutModel.complete`). A row that still has no reps is not logged (no "0 × 0" sets)
+     * and stays open: [onResult] gets `false`, so the screen can send the user to its reps cell.
      */
-    fun complete(setId: Long) {
+    fun complete(setId: Long, onResult: (logged: Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            val current = _state.value
-            val section = current.exercises.firstOrNull { ex -> ex.sets.any { it.id == setId } } ?: return@launch
-            val row = section.sets.first { it.id == setId }
-            val entity = workoutDao.set(setId) ?: return@launch
+            writes.withLock {
+                val current = _state.value
+                val section = current.exercises.firstOrNull { ex -> ex.sets.any { it.id == setId } } ?: return@launch
+                val row = section.sets.first { it.id == setId }
+                val entity = workoutDao.set(setId) ?: return@launch
 
-            var weight = entity.weightKg
-            var reps = entity.reps
-            if (weight == 0.0 && reps == 0) {
-                row.previous?.let { weight = it.weightKg; reps = it.reps }
+                val values = valuesToLog(entity.weightKg, entity.reps, row.previous)
+                if (values == null) {
+                    onResult(false)
+                    return@launch
+                }
+                val completed = entity.copy(weightKg = values.weightKg, reps = values.reps, completedAt = clock())
+                workoutDao.updateSet(completed)
+                onResult(true)
+
+                val result = recordService.mark(completed, section.exerciseId)
+                val best = result.bestBefore
+                if ((result.isPR || result.isSetRecord) && best != null) {
+                    hintSetId = setId
+                    hintBest = SetValue(best.weightKg, best.reps)
+                } else if (hintSetId == setId) {
+                    hintSetId = null
+                    hintBest = null
+                }
+
+                startRestIfNeeded(section, row, completed)
+                graph?.let(::publish)
             }
-            val completed = entity.copy(weightKg = weight, reps = reps, completedAt = System.currentTimeMillis())
-            workoutDao.updateSet(completed)
-
-            val result = recordService.mark(completed, section.exerciseId)
-            val best = result.bestBefore
-            if ((result.isPR || result.isSetRecord) && best != null) {
-                hintSetId = setId
-                hintBest = SetValue(best.weightKg, best.reps)
-            } else if (hintSetId == setId) {
-                hintSetId = null
-                hintBest = null
-            }
-
-            startRestIfNeeded(section, row, completed)
-            graph?.let(::publish)
         }
     }
 
     /** `uncomplete(_:)` — clears the stamp and both record flags. */
     fun uncomplete(setId: Long) {
         viewModelScope.launch {
-            val entity = workoutDao.set(setId) ?: return@launch
-            workoutDao.updateSet(entity.copy(completedAt = null, isPR = false, isSetRecord = false))
-            if (hintSetId == setId) {
-                hintSetId = null
-                hintBest = null
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                workoutDao.updateSet(entity.copy(completedAt = null, isPR = false, isSetRecord = false))
+                if (hintSetId == setId) {
+                    hintSetId = null
+                    hintBest = null
+                }
+                graph?.let(::publish)
             }
-            graph?.let(::publish)
         }
     }
 
     fun setKind(setId: Long, kind: SetKind) {
         viewModelScope.launch {
-            val entity = workoutDao.set(setId) ?: return@launch
-            if (entity.kind == kind) return@launch
-            workoutDao.updateSet(entity.copy(kind = kind))
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (entity.kind == kind) return@launch
+                workoutDao.updateSet(entity.copy(kind = kind))
+            }
         }
     }
 
-    /** Write-through of the kg cell. No-op when the parsed value already matches. */
+    /** Write-through of the weight cell (already kg). No-op when the value already matches. */
     fun setWeight(setId: Long, weightKg: Double) {
         viewModelScope.launch {
-            val entity = workoutDao.set(setId) ?: return@launch
-            if (entity.weightKg == weightKg) return@launch
-            workoutDao.updateSet(entity.copy(weightKg = weightKg))
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (entity.weightKg == weightKg) return@launch
+                workoutDao.updateSet(entity.copy(weightKg = weightKg))
+            }
         }
     }
 
     /** Write-through of the reps cell. */
     fun setReps(setId: Long, reps: Int) {
         viewModelScope.launch {
-            val entity = workoutDao.set(setId) ?: return@launch
-            if (entity.reps == reps) return@launch
-            workoutDao.updateSet(entity.copy(reps = reps))
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (entity.reps == reps) return@launch
+                workoutDao.updateSet(entity.copy(reps = reps))
+            }
+        }
+    }
+
+    /**
+     * `prefillFromPrevious(_:in:)` — a row that appears open with an empty cell takes Previous, so
+     * the table shows (and a tick logs) what it shows. Completed rows are never touched.
+     */
+    fun prefillFromPrevious(setId: Long) {
+        val previous = _state.value.exercises.firstNotNullOfOrNull { ex -> ex.sets.firstOrNull { it.id == setId } }
+            ?.previous ?: return
+        viewModelScope.launch {
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                val values = prefilledValues(entity.weightKg, entity.reps, entity.isCompleted, previous) ?: return@launch
+                workoutDao.updateSet(entity.copy(weightKg = values.weightKg, reps = values.reps))
+            }
         }
     }
 
     /** `addSet(to:)` — duplicates the last row (a warm-up duplicates as a normal set). */
     fun addSet(exerciseUiId: Long) {
         viewModelScope.launch {
-            val sets = workoutDao.sets(exerciseUiId)
-            val last = sets.maxByOrNull { it.order }
-            val order = (last?.order ?: -1) + 1
-            val next = if (last != null) {
-                SetEntryEntity(
-                    workoutExerciseId = exerciseUiId,
-                    order = order,
-                    kind = if (last.kind == SetKind.Warmup) SetKind.Normal else last.kind,
-                    weightKg = last.weightKg,
-                    reps = last.reps,
-                )
-            } else {
-                SetEntryEntity(workoutExerciseId = exerciseUiId, order = order)
+            writes.withLock {
+                val sets = workoutDao.sets(exerciseUiId)
+                val last = sets.maxByOrNull { it.order }
+                val order = (last?.order ?: -1) + 1
+                val next = if (last != null) {
+                    SetEntryEntity(
+                        workoutExerciseId = exerciseUiId,
+                        order = order,
+                        kind = if (last.kind == SetKind.Warmup) SetKind.Normal else last.kind,
+                        weightKg = last.weightKg,
+                        reps = last.reps,
+                    )
+                } else {
+                    SetEntryEntity(workoutExerciseId = exerciseUiId, order = order)
+                }
+                workoutDao.insertSet(next)
             }
-            workoutDao.insertSet(next)
+        }
+    }
+
+    /**
+     * `removeSet(_:in:)` — "Delete set" from the kind menu: removes the row and renumbers the rest.
+     * Records are re-derived on Finish.
+     */
+    fun removeSet(setId: Long) {
+        viewModelScope.launch {
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (hintSetId == setId) {
+                    hintSetId = null
+                    hintBest = null
+                }
+                workoutDao.deleteSet(entity)
+                workoutDao.sets(entity.workoutExerciseId)
+                    .sortedBy { it.order }
+                    .forEachIndexed { index, set ->
+                        if (set.order != index) workoutDao.updateSet(set.copy(order = index))
+                    }
+            }
         }
     }
 
     /** `remove(_:)` — deletes the exercise (sets cascade) and re-indexes the rest. */
     fun removeExercise(exerciseUiId: Long) {
         viewModelScope.launch {
-            val id = workoutId ?: return@launch
-            if (expandedExerciseId == exerciseUiId) expandedExerciseId = null
-            val rows = workoutDao.workoutExercises(id)
-            val target = rows.firstOrNull { it.id == exerciseUiId } ?: return@launch
-            workoutDao.deleteWorkoutExercise(target)
-            rows.filter { it.id != exerciseUiId }
-                .sortedBy { it.order }
-                .forEachIndexed { index, row ->
-                    if (row.order != index) workoutDao.updateWorkoutExercise(row.copy(order = index))
-                }
+            writes.withLock {
+                if (expandedExerciseId == exerciseUiId) expandedExerciseId = null
+                val rows = workoutDao.workoutExercises(workoutId)
+                val target = rows.firstOrNull { it.id == exerciseUiId } ?: return@launch
+                workoutDao.deleteWorkoutExercise(target)
+                rows.filter { it.id != exerciseUiId }
+                    .sortedBy { it.order }
+                    .forEachIndexed { index, row ->
+                        if (row.order != index) workoutDao.updateWorkoutExercise(row.copy(order = index))
+                    }
+            }
         }
     }
 
@@ -317,6 +402,7 @@ class ActiveWorkoutViewModel(
             row = row,
             fallback = SetValue(completed.weightKg, completed.reps),
             recordService = recordService,
+            unit = unit,
         ) ?: return
         if (target.isDrop) return
         if (!appPrefs.restAutoStartOnce()) return
@@ -325,7 +411,7 @@ class ActiveWorkoutViewModel(
         restTimer.start(
             seconds = section.restSeconds,
             exerciseName = target.upNext.exerciseName,
-            nextSetLabel = label + " · " + Fmt.set(target.upNext.weightKg, target.upNext.reps),
+            nextSetLabel = label + " · " + Fmt.set(target.upNext.weightKg, target.upNext.reps, unit),
             workoutName = _state.value.name,
         )
     }
@@ -333,74 +419,94 @@ class ActiveWorkoutViewModel(
     // MARK: - Finish
 
     /**
-     * `private(set) var finishedAt` — the moment Finish was tapped. Deliberately **not** written
-     * to Room: `endedAt IS NOT NULL` is the only definition of an active workout, so stamping it
-     * here would end the session while the summary is still on screen (and a process death there
-     * would lose a workout iOS would have resumed). `commitFinish()` writes it on Done.
-     */
-    private var finishedAt: Long? = null
-
-    /**
-     * `finish()` — remembers the finish time, marks today attended when it is a gym day and
-     * swaps the summary in. Nothing is persisted about the workout itself.
+     * `finish(now:)` — stamps the end now, so a kill on the summary can never stretch the workout,
+     * marks the day the workout **started** attended when at least one set was done — any day,
+     * scheduled or not (a rest day, an extra session, a make-up day), and the evening it began for
+     * a session that runs past midnight — reports it to the backend, and shows the summary. The session keeps the workout (by id, not by `endedAt IS NULL`) until Done.
+     * With nothing done the day is given back instead ([uncount]): a Finish after "Edit sets"
+     * unticked every set leaves no attended day behind, here or on the server.
+     * Records are re-derived for this workout's exercises, so a kind changed, a set unticked or
+     * deleted after its tick leaves no stale PR on the summary or in history.
+     *
+     * The summary flag goes up **before** the stamp: in between, nothing may mistake a workout
+     * with an `endedAt` and no summary for one to let go of.
      */
     fun finish() {
+        if (showsDone || !isSessionWorkout) return
+        showsDone = true
+        session.setShowsSummary(true)
+        graph?.let(::publish)
         viewModelScope.launch {
             restTimer.skip()
-            val now = System.currentTimeMillis()
-            finishedAt = now
-            val today = LocalDate.now(zone)
-            val schedule = attendanceService.schedule()
-            if (schedule != null && schedule.isGymDay(Fmt.isoWeekday(today))) {
-                attendanceService.markAttended(today)
+            val now = clock()
+            workoutDao.finishWorkout(workoutId, now)
+            recordService.rebuild(workoutDao.workoutExercises(workoutId).mapNotNull { it.exerciseId }.toSet())
+            val day = dayOf(workoutDao.workout(workoutId)?.startedAt ?: now)
+            if (workoutDao.completedSetCount(workoutId) > 0) {
+                attendanceService.markAttended(day)
+                reportAttendance.report(day, AttendanceStatus.Attended)
+            } else {
+                uncount(day)
             }
-            showsDone = true
+        }
+    }
+
+    /**
+     * `reopen()` — "Edit sets" from the summary: the workout is back in progress. The end is
+     * cleared **before** the summary flag drops, for the same reason as in [finish].
+     */
+    fun reopen() {
+        // A back press while the summary slides away after Done must not un-finish the workout.
+        if (!showsDone || !isSessionWorkout) return
+        viewModelScope.launch {
+            workoutDao.reopenWorkout(workoutId)
+            showsDone = false
+            session.setShowsSummary(false)
             graph?.let(::publish)
         }
     }
 
-    /** `reopen()` — "Edit sets" from the summary: back to the table, nothing to revert. */
-    fun reopen() {
-        finishedAt = null
-        showsDone = false
-        graph?.let(::publish)
+    /** This workout is still the session's — not one sliding away after Done or Discard. */
+    private val isSessionWorkout: Boolean get() = session.activeWorkoutId.value == workoutId
+
+    /** `commitFinish(session:)` — Done: release the session, which closes the full screen. The end is stamped already. */
+    fun commitFinish() {
+        if (isSessionWorkout) session.end()
     }
 
-    /** `commitFinish(session:)` — stamp the end, then release the session, which pops the screen. */
-    fun commitFinish() {
-        val id = workoutId
-        if (id == null) {
-            session.end()
-            return
-        }
+    /**
+     * `discard(session:)` — drops an empty workout. The session lets go at once and deletes the
+     * row once the full screen has animated out. The day it started is given back ([uncount]): a
+     * Discard after Finish and "Edit sets" leaves no attended day behind.
+     */
+    fun discard() {
+        if (!isSessionWorkout) return
+        restTimer.skip()
+        val startedAt = graph?.workout?.startedAt
+        session.discard(workoutId)
         viewModelScope.launch {
-            workoutDao.finishWorkout(id, finishedAt ?: System.currentTimeMillis())
-            session.end()
+            val start = startedAt ?: workoutDao.workout(workoutId)?.startedAt ?: return@launch
+            uncount(dayOf(start))
         }
     }
 
     /**
-     * `discard(session:)` — drops an empty workout. The row is deleted after the cover has
-     * animated out so nothing renders a deleted model.
+     * This workout no longer counts on [day] — `AttendanceService.applyWorkoutDayChange(from: day,
+     * to: nil, excluding: id)`: an attended [day] that no other finished workout keeps goes back
+     * to what it would be without it (missed, planned or cleared), and the change is reported.
+     * A day that is not attended, or that another finished workout keeps, is left alone.
      */
-    fun discard() {
-        val id = workoutId ?: return
-        restTimer.skip()
-        session.end()
-        // Deliberately **not** `viewModelScope`: the screen pops immediately and would cancel
-        // the delay, leaving the empty workout behind.
-        discardScope.launch {
-            delay(DISCARD_DELAY_MS)
-            workoutDao.deleteWorkoutById(id)
-        }
+    private suspend fun uncount(day: LocalDate) {
+        val today = dayOf(clock())
+        val changes = WorkoutEditor.correctAttendance(day, null, workoutId, workoutDao, attendanceService, zone, today)
+        WorkoutEditor.report(changes, attendanceService, reportAttendance)
     }
+
+    private fun dayOf(epochMillis: Long): LocalDate = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate()
 
     // MARK: - Helpers
 
     companion object {
-        /** `DispatchQueue.main.asyncAfter(deadline: .now() + 0.7)` in `discard`. */
-        const val DISCARD_DELAY_MS = 700L
-
         /** @see foldLatestEarlierWorkoutRows */
         fun latestEarlierWorkoutRows(
             rows: List<CompletedSetRow>,
@@ -410,5 +516,9 @@ class ActiveWorkoutViewModel(
         /** @see foldCurrentExerciseIndex */
         fun currentExerciseIndex(exercises: List<WorkoutExerciseUi>, expandedId: Long?): Int =
             foldCurrentExerciseIndex(exercises, expandedId)
+
+        /** @see foldCurrentExercise */
+        fun currentExercise(exercises: List<WorkoutExerciseUi>, expandedId: Long?): WorkoutExerciseUi? =
+            foldCurrentExercise(exercises, expandedId)
     }
 }

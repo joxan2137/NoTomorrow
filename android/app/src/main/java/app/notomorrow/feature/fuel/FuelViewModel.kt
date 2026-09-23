@@ -11,16 +11,22 @@ import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.dao.ProfileDao
 import app.notomorrow.data.relation.MealEntryWithFood
 import app.notomorrow.model.MealSlot
+import app.notomorrow.model.TrainingGoal
 import app.notomorrow.service.Days
 import app.notomorrow.service.FoodSearchService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -30,11 +36,17 @@ import java.time.ZoneId
 
 /**
  * `FuelModel` (`Features/Fuel/FuelModel.swift`) plus the two `@Query`s `FuelHomeView`
- * declares: the selected day's entries and the 120-day protein scan behind the streak chip.
+ * declares: the selected day's entries and the 120-day protein scan behind the streak chip,
+ * and the History sheet's kcal-per-day read ([calendarKcal]).
  *
  * iOS refreshes imperatively (`.task`, `onChange(of: day)`, and after every sheet closes);
- * Room `Flow`s make all three of those automatic, so [setDay] is the only trigger left —
- * it re-subscribes the day query through `flatMapLatest`.
+ * Room `Flow`s make all three of those automatic, so a move of [FuelDayNavigator] is the only
+ * trigger left — it re-subscribes the day and streak queries through `flatMapLatest`.
+ *
+ * Also owns the day boundary through the navigator: a model showing today follows midnight
+ * ([syncToday]), and a past day left in the background for more than 30 min returns to today
+ * ([appWillEnterForeground]). Deletes and copies to today leave one [pendingUndo] for the toast
+ * ([FuelEntryActions]).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FuelViewModel(
@@ -42,118 +54,199 @@ class FuelViewModel(
     private val foodDao: FoodDao,
     private val mealDao: MealDao,
     private val foodSearch: FoodSearchService,
-    private val zone: ZoneId = ZoneId.systemDefault(),
+    /** `AppState.fuelTodayRequests`: every new value lands Fuel on today (the Dashboard's Fuel row). */
+    todayRequests: Flow<Int> = emptyFlow(),
+    /**
+     * The device zone, read live: a time-zone change (`ACTION_TIMEZONE_CHANGED`) moves "today" and
+     * the stored-day bounds on the next [syncToday]. The tests swap it.
+     */
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
+    /** Epoch millis for the 30-minute snap-back; the tests move it. */
+    private val clock: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
-    private val day = MutableStateFlow(LocalDate.now(zone))
+    /**
+     * The zone the day queries are keyed in: the last one [today] read. The queries re-subscribe
+     * when it changes, so the same calendar day still lists its entries under the new zone's
+     * midnights.
+     */
+    private val keyZone = MutableStateFlow(zone())
 
-    /** Barcode lookup + the sheet it opens; `FuelHomeView` keeps these in `@State`. */
-    private val lookup = MutableStateFlow(FuelLookupState())
+    private val navigator = FuelDayNavigator(LocalDate.now(keyZone.value))
 
-    private val goals = profileDao.observeProfile().map { profile ->
-        profile?.let {
-            FuelGoals(
-                kcal = it.calorieGoal.toDouble(),
-                protein = it.proteinGoalG.toDouble(),
-                carbs = it.carbsGoalG.toDouble(),
-                fat = it.fatGoalG.toDouble(),
-            )
-        } ?: FuelGoals.Fallback
+    /** The calendar day now, in the zone read now; a new zone re-keys the day queries. */
+    private fun today(): LocalDate {
+        val current = zone()
+        keyZone.value = current
+        return LocalDate.now(current)
     }
 
-    private val entries = day.flatMapLatest { mealDao.observeDay(Days.millis(it, zone)) }
+    /** The meal a scan was opened for and the portion sheet it opens; `FuelHomeView` keeps these in `@State`. */
+    private val lookup = MutableStateFlow(FuelLookupState())
 
-    /** `computeStreak` scans 120 days back from *today*, not from the selected day. */
-    private val proteinByDay = mealDao
-        .observeProteinByDaySince(
-            Days.millis(LocalDate.now(zone).minusDays(FuelDerive.STREAK_WINDOW_DAYS), zone),
-        )
-        .map { rows -> rows.associate { Days.date(it.day, zone) to it.proteinG } }
+    private val targets = profileDao.observeProfile().map { profile ->
+        profile?.let {
+            FuelTargets(
+                goals = FuelGoals(
+                    kcal = it.calorieGoal.toDouble(),
+                    protein = it.proteinGoalG.toDouble(),
+                    carbs = it.carbsGoalG.toDouble(),
+                    fat = it.fatGoalG.toDouble(),
+                ),
+                trainingGoal = it.goal,
+            )
+        } ?: FuelTargets()
+    }
+
+    /** Same day key as the History grid ([FuelCalendar.storedDayBounds]). */
+    private val entries = combine(navigator.days.map { it.day }, keyZone) { a, b -> a to b }
+        .distinctUntilChanged()
+        .flatMapLatest { (day, dayZone) ->
+            val bounds = FuelCalendar.storedDayBounds(day, dayZone)
+            mealDao.observeDayRange(bounds.lower, bounds.upper)
+        }
+
+    /**
+     * `computeStreak` scans 120 days back from *today*, not from the selected day, and the window
+     * moves at midnight. Bucketed by [FuelCalendar.dayKey], so two stored midnights that fall on
+     * one day are summed rather than overwritten.
+     */
+    private val proteinByDay = combine(navigator.days.map { it.today }, keyZone) { a, b -> a to b }
+        .distinctUntilChanged()
+        .flatMapLatest { (today, dayZone) ->
+            val from = today.minusDays(FuelDerive.STREAK_WINDOW_DAYS)
+            mealDao.observeProteinByDaySince(FuelCalendar.storedDayBounds(from, dayZone).lower).map { rows ->
+                rows.groupingBy { FuelCalendar.dayKey(it.day, dayZone) }.fold(0.0) { sum, row -> sum + row.proteinG }
+            }
+        }
 
     val state: StateFlow<FuelUiState> =
-        combine(day, goals, entries, proteinByDay, lookup) { day, goals, entries, protein, lookup ->
-            build(day, goals, entries, protein, lookup)
+        combine(navigator.days, targets, entries, proteinByDay, lookup) { days, targets, entries, protein, lookup ->
+            build(days, targets, entries, protein, lookup)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = FuelUiState(day = day.value, today = LocalDate.now(zone)),
+            initialValue = FuelUiState(day = navigator.day, today = navigator.today),
         )
+
+    /**
+     * kcal per day (keyed by [FuelCalendar.dayKey]) over the History grid's 26 weeks: one
+     * `SUM … GROUP BY day` read. Observed only while the sheet collects it, so nothing runs while
+     * it is closed; Room re-emits after every edit.
+     */
+    val calendarKcal: StateFlow<Map<LocalDate, Double>> = combine(navigator.days.map { it.today }, keyZone) { a, b -> a to b }
+        .distinctUntilChanged()
+        .flatMapLatest { (today, dayZone) ->
+            val start = FuelCalendar.layout(today).start
+            mealDao.observeKcalByDaySince(FuelCalendar.storedDayBounds(start, dayZone).lower)
+                .map { rows -> FuelCalendar.kcalByDay(rows, dayZone) }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyMap(),
+        )
+
+    init {
+        // A request made before this model existed is already satisfied: it starts on today.
+        viewModelScope.launch { todayRequests.drop(1).collect { goToday() } }
+    }
 
     // MARK: - Day navigation
 
-    fun goPreviousDay() {
-        day.value = day.value.minusDays(1)
-    }
+    /** The four user moves return whether the day changed; the screen ticks the haptic on it. */
+    fun goPreviousDay(): Boolean = navigator.goPreviousDay()
 
-    fun goNextDay() {
-        val today = LocalDate.now(zone)
-        if (!FuelDerive.canGoForward(day.value, today)) return
-        day.value = day.value.plusDays(1)
-    }
+    fun goNextDay(): Boolean = navigator.goNextDay(today())
 
-    /** Re-key on a date change (midnight, or a resume on a new day). */
-    fun refreshToday() {
-        val today = LocalDate.now(zone)
-        if (day.value.isAfter(today)) day.value = today
-    }
+    /** Jump straight to a day (the History sheet). Future days clamp to today. */
+    fun goTo(date: LocalDate): Boolean = navigator.goTo(date, today())
+
+    fun goToday(): Boolean = navigator.goToday(today())
+
+    // MARK: - Day boundary
+
+    /**
+     * Midnight rollover: on appear, on a date/time/zone change and on every resume. Re-reads the
+     * zone, so a zone change alone re-keys the day queries.
+     */
+    fun syncToday() = navigator.syncToday(today())
+
+    /** The activity's `ON_STOP` — `UIApplication.didEnterBackgroundNotification`. */
+    fun appDidEnterBackground() = navigator.appDidEnterBackground(clock())
+
+    /** The activity's `ON_START` — `UIApplication.willEnterForegroundNotification`. */
+    fun appWillEnterForeground() =
+        navigator.appWillEnterForeground(clock(), today())
 
     // MARK: - Entries
 
-    /** `FuelModel.delete(_:in:)`. */
+    private val actions = FuelEntryActions(mealDao, foodDao, zone)
+
+    /**
+     * `FuelModel.pendingUndo`: the last delete or copy to today, for the toast. Kept out of
+     * [state] so the toast's comings and goings never rebuild the day.
+     */
+    val pendingUndo: StateFlow<FuelUndo?> = actions.pending
+
+    /** `FuelModel.delete(_:in:)` — leaves an undo. */
     fun delete(entryId: String) {
-        viewModelScope.launch { mealDao.deleteById(entryId) }
+        viewModelScope.launch { actions.delete(entryId) }
     }
+
+    /** "Log again today" (past days only): a copy of the entry in the same slot today. */
+    fun logAgainToday(entryId: String) {
+        viewModelScope.launch { actions.logAgainToday(entryId, System.currentTimeMillis()) }
+    }
+
+    /** "Copy to today" on a past day's slot header: [entryIds] are the slot's rows, in order. */
+    fun copyToToday(entryIds: List<String>) {
+        viewModelScope.launch { actions.copyToToday(entryIds, System.currentTimeMillis()) }
+    }
+
+    /** The toast's Undo. */
+    fun undo() {
+        viewModelScope.launch { actions.undo() }
+    }
+
+    /** The toast timed out (`FuelModel.expireUndo`). */
+    fun expireUndo(undoId: String) = actions.expire(undoId)
 
     // MARK: - Barcode
 
+    /** Scan → saved foods → Open Food Facts: the pill, the one alert and the label sheet. */
+    val barcode = BarcodeLookupFlow(foodDao, foodSearch, viewModelScope)
+
     /**
-     * `FuelHomeView.lookup(barcode:)`: show the pill, ask Open Food Facts, then either open
-     * the portion sheet on the hit or raise the "not found" alert.
+     * The scanner handed over a code: remember the meal **and the day** it was opened for and look
+     * it up; a hit opens the portion sheet ([openPortion]). The day is the one the scanner was
+     * opened on ([FuelSheet.Barcode.day]), so the portion or quick-add sheet that follows logs
+     * there even if a snap-back or midnight moves [FuelUiState.day] meanwhile.
      */
-    fun lookupBarcode(code: String, meal: MealSlot) {
-        lookup.value = lookup.value.copy(isLookingUp = true, meal = meal)
-        viewModelScope.launch {
-            try {
-                val forms = FoodSearchService.barcodeForms(code)
-                for (form in forms) {
-                    val saved = foodDao.byBarcode(form)
-                    if (saved != null) { lookup.value = FuelLookupState(meal = meal, portionFood = PortionFood.Item(saved)); return@launch }
-                }
-                val found = foodSearch.lookup(code)
-                lookup.value = if (found != null) FuelLookupState(meal = meal, portionFood = PortionFood.Candidate(found))
-                    else FuelLookupState(meal = meal, notFound = true, missingBarcode = forms.firstOrNull() ?: code)
-            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-            catch (_: Exception) { lookup.value = FuelLookupState(meal = meal, networkError = true) }
-        }
+    fun lookupBarcode(code: String, meal: MealSlot, day: LocalDate) {
+        lookup.update { it.copy(meal = meal, day = day) }
+        barcode.start(code, ::openPortion)
     }
 
-    fun dismissLookupError() { lookup.value = lookup.value.copy(networkError = false) }
-
-    suspend fun saveLabel(name: String, values: List<Double>) {
-        val code = lookup.value.missingBarcode
-        val item = app.notomorrow.data.entity.FoodItemEntity(id = "label:$code", name = name, source = app.notomorrow.model.FoodSource.Custom,
-            barcode = code, kcalPer100 = values[0], proteinPer100 = values[1], carbsPer100 = values[2], fatPer100 = values[3])
-        foodDao.upsert(item)
-        lookup.value = lookup.value.copy(notFound = false, portionFood = PortionFood.Item(item))
-    }
-
-    fun dismissNotFound() {
-        lookup.value = lookup.value.copy(notFound = false)
+    /** A lookup hit, or a label just saved: size it in the portion sheet. */
+    fun openPortion(food: PortionFood) {
+        lookup.update { it.copy(portionFood = food) }
     }
 
     fun clearPortionFood() {
-        lookup.value = lookup.value.copy(portionFood = null)
+        lookup.update { it.copy(portionFood = null) }
     }
 
     // MARK: - Building
 
     private fun build(
-        day: LocalDate,
-        goals: FuelGoals,
+        days: FuelDays,
+        targets: FuelTargets,
         entries: List<MealEntryWithFood>,
         proteinByDay: Map<LocalDate, Double>,
         lookup: FuelLookupState,
     ): FuelUiState {
+        val goals = targets.goals
         val slots = MealSlotOrdered.map { slot ->
             val rows = entries
                 .filter { it.entry.slot == slot }
@@ -169,36 +262,42 @@ class FuelViewModel(
                 }
             FuelSlotUi(slot = slot, entries = rows, kcal = rows.sumOf { it.kcal })
         }
-        val today = LocalDate.now(zone)
+        val today = days.today
         return FuelUiState(
-            day = day,
+            day = days.day,
             today = today,
             goals = goals,
+            trainingGoal = targets.trainingGoal,
             slots = slots,
             kcalEaten = entries.sumOf { it.entry.kcal },
             proteinEaten = entries.sumOf { it.entry.proteinG },
             carbsEaten = entries.sumOf { it.entry.carbsG },
             fatEaten = entries.sumOf { it.entry.fatG },
             proteinStreak = FuelDerive.proteinStreak(proteinByDay, goals.protein, today),
-            isLookingUpBarcode = lookup.isLookingUp,
-            barcodeNotFound = lookup.notFound,
-            lookupError = lookup.networkError,
-            missingBarcode = lookup.missingBarcode,
             lookupMeal = lookup.meal,
+            lookupDay = lookup.day ?: days.day,
             portionFood = lookup.portionFood,
         )
     }
 }
 
-/** The barcode round-trip, held apart so the day/goal flows never re-emit for it. */
+/** The profile's goals plus its training direction (`FuelModel.goals` / `trainingGoal`). */
+@Immutable
+private data class FuelTargets(
+    val goals: FuelGoals = FuelGoals.Fallback,
+    val trainingGoal: TrainingGoal = TrainingGoal.BuildMuscle,
+)
+
+/**
+ * What a barcode round-trip opens, held apart so the day/goal flows never re-emit for it. The
+ * lookup itself (pill, alert, label form) is [FuelViewModel.barcode].
+ */
 @Immutable
 private data class FuelLookupState(
-    val isLookingUp: Boolean = false,
-    val notFound: Boolean = false,
-    val networkError: Boolean = false,
-    val missingBarcode: String = "",
     /** `@State private var lookupMeal: MealSlot = .suggested()` — seeded once, never re-read. */
     val meal: MealSlot = suggestedMealSlot(),
+    /** The day the scanner was opened on; `null` before the first scan. */
+    val day: LocalDate? = null,
     val portionFood: PortionFood? = null,
 )
 
@@ -225,19 +324,23 @@ data class FuelSlotUi(
 @Immutable
 data class FuelUiState(
     val day: LocalDate = LocalDate.now(),
+    /** The calendar day this state treats as today ([FuelDayNavigator.today]). */
     val today: LocalDate = LocalDate.now(),
     val goals: FuelGoals = FuelGoals.Fallback,
+    /** `FuelModel.trainingGoal` — how the History grid scores a day. */
+    val trainingGoal: TrainingGoal = TrainingGoal.BuildMuscle,
     val slots: List<FuelSlotUi> = MealSlotOrdered.map { FuelSlotUi(it, emptyList(), 0.0) },
     val kcalEaten: Double = 0.0,
     val proteinEaten: Double = 0.0,
     val carbsEaten: Double = 0.0,
     val fatEaten: Double = 0.0,
     val proteinStreak: Int = 0,
-    val isLookingUpBarcode: Boolean = false,
-    val barcodeNotFound: Boolean = false,
-    val lookupError: Boolean = false,
-    val missingBarcode: String = "",
     val lookupMeal: MealSlot = suggestedMealSlot(),
+    /**
+     * The day a barcode round-trip logs to — captured when the scanner opened, not [day] at the
+     * time the portion sheet saves (the selected day before any scan).
+     */
+    val lookupDay: LocalDate = day,
     val portionFood: PortionFood? = null,
 ) {
     val canGoForward: Boolean get() = FuelDerive.canGoForward(day, today)
@@ -295,7 +398,8 @@ class PortionViewModel(
 
     /**
      * The same sheet re-opened on a logged row: the portion starts at the entry's own grams
-     * (not the pack's serving) and the meal slot becomes editable.
+     * (not the pack's serving), and the day and meal slot become editable. The day starts at the
+     * one the entry is listed under ([FuelCalendar.dayKey]).
      */
     fun bindEntry(entryId: String) {
         if (entry?.id == entryId) return
@@ -311,6 +415,8 @@ class PortionViewModel(
                 grams = row.grams,
                 gramsText = FuelDerive.portionText(row.grams, locale()),
                 slot = row.slot,
+                day = FuelCalendar.dayKey(row.day, zone),
+                today = LocalDate.now(zone),
                 isEditing = true,
             ).withMacros(food)
         }
@@ -318,6 +424,12 @@ class PortionViewModel(
 
     fun setSlot(slot: MealSlot) {
         _state.value = _state.value.copy(slot = slot)
+    }
+
+    /** `EntryDayStepper`: past days and today only. */
+    fun setDay(day: LocalDate) {
+        val current = _state.value
+        _state.value = current.copy(day = minOf(day, current.today))
     }
 
     /** The sheet closed: the next presentation starts from its own food's serving size. */
@@ -372,7 +484,8 @@ class PortionViewModel(
     }
 
     /**
-     * The edit-mode button: the macros are re-derived from the food, the row keeps its `id` and
+     * The edit-mode button ([FuelDerive.editedPortion]): the macros are re-derived from the food
+     * only when the grams really changed, the day and slot move, the row keeps its `id` and
      * `loggedAt`, and the food's usage stats stay where the original insert left them.
      */
     fun save(onSaved: () -> Unit) {
@@ -381,7 +494,9 @@ class PortionViewModel(
         val snapshot = _state.value
         if (snapshot.grams <= 0) return
         viewModelScope.launch {
-            mealDao.update(FuelDerive.resized(entry, item, snapshot.grams, snapshot.slot))
+            mealDao.update(
+                FuelDerive.editedPortion(entry, item, snapshot.grams, snapshot.slot, snapshot.day, zone),
+            )
             onSaved()
         }
     }
@@ -405,6 +520,10 @@ data class PortionUiState(
     val carbs: Double = 0.0,
     val fat: Double = 0.0,
     val slot: MealSlot = suggestedMealSlot(),
+    /** Edit mode only: the day the entry is listed under, movable with [EntryDayStepper]. */
+    val day: LocalDate = LocalDate.now(),
+    /** The stepper's upper bound, read when the entry was bound. */
+    val today: LocalDate = LocalDate.now(),
     val isEditing: Boolean = false,
 )
 

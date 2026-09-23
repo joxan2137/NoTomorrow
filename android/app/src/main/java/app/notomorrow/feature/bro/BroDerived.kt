@@ -131,6 +131,15 @@ object BroDerived {
         )
     }
 
+    /**
+     * The Kolega tab's "Can't make it" chip, by the Today card's rule
+     * (`NextSessionCard.offersCantMakeIt`): not once the session's day is attended. The sheet
+     * would promise a missed day and a message to the partner, and `AttendanceService.markMissed`
+     * keeps an attended day as it is, so Send could only close it. With no session line the
+     * sheet falls back to today, as before.
+     */
+    fun offersCantMakeIt(line: BroSessionLine?): Boolean = line?.myState != DayState.Attended
+
     private fun confirmedAt(record: AttendanceRecordEntity?): Long? {
         if (record == null) return null
         if (record.status != AttendanceStatus.Confirmed && record.status != AttendanceStatus.Attended) return null

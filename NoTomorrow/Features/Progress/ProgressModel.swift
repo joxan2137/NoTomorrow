@@ -13,6 +13,28 @@ struct E1RMPoint: Identifiable, Hashable {
     var id: PersistentIdentifier { workoutID }
 }
 
+/// One completed working set, copied out of SwiftData when the summary is built. A summary outlives the rows it was
+/// built from (a set deleted in the active table or the editor), so it never reads a `SetEntry` again.
+struct LiftSet: Hashable {
+    let weightKg: Double
+    let reps: Int
+    let completedAt: Date?
+    /// When it was done, for display: `completedAt`, else its workout's start.
+    let date: Date
+
+    init(weightKg: Double, reps: Int, completedAt: Date?, date: Date) {
+        self.weightKg = weightKg
+        self.reps = reps
+        self.completedAt = completedAt
+        self.date = date
+    }
+
+    init(_ set: SetEntry) {
+        self.init(weightKg: set.weightKg, reps: set.reps, completedAt: set.completedAt,
+                  date: set.completedAt ?? set.workoutExercise?.workout?.startedAt ?? .now)
+    }
+}
+
 /// One exercise the user has actually trained.
 struct LiftSummary: Identifiable {
     let exercise: Exercise
@@ -23,8 +45,8 @@ struct LiftSummary: Identifiable {
     let lastSession: Date
     /// Oldest first.
     let history: [E1RMPoint]
-    /// Sets that count: completed, working, reps > 0.
-    let sets: [SetEntry]
+    /// Sets that count: completed, working, reps > 0. Value copies, never live models.
+    let sets: [LiftSet]
 
     var id: PersistentIdentifier { exercise.persistentModelID }
     var current: Double { history.map(\.e1RM).max() ?? 0 }
@@ -63,14 +85,14 @@ struct LiftSummary: Identifiable {
             .reduce(0) { $0 + $1.weightKg * Double($1.reps) }
     }
 
-    var heaviest: SetEntry? {
+    var heaviest: LiftSet? {
         sets.max { lhs, rhs in
             if lhs.weightKg != rhs.weightKg { return lhs.weightKg < rhs.weightKg }
             return lhs.reps < rhs.reps
         }
     }
 
-    var mostReps: SetEntry? {
+    var mostReps: LiftSet? {
         sets.max { lhs, rhs in
             if lhs.reps != rhs.reps { return lhs.reps < rhs.reps }
             return lhs.weightKg < rhs.weightKg
@@ -167,7 +189,7 @@ final class ProgressModel {
                 lastPR: lastPR,
                 lastSession: last.date,
                 history: history,
-                sets: entry.sets
+                sets: entry.sets.map(LiftSet.init)
             )
         }
 

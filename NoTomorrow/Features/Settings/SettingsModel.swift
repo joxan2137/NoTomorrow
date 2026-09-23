@@ -28,10 +28,14 @@ final class SettingsModel {
 
     // Account flows
     var isDeleting = false
+    /// Set once the account is deleted: the Settings sheet is on its way out and must not re-create a profile or
+    /// schedule for its last renders (`SettingsView.profile`).
+    private(set) var didDeleteAccount = false
     var isUnpairing = false
     var isSigningOut = false
 
     /// "Use demo data (offline)": swaps the backend for the in-memory mock and forgets account-bound bro state.
+    /// Queued attendance stays with the backend it was made on (`AttendanceOutbox.Target`).
     var useDemoData: Bool {
         get { AppConfig.shared.useMockBackend }
         set {
@@ -128,33 +132,33 @@ final class SettingsModel {
         return String(localized: "settings.signedIn")
     }
 
-    /// Backend first (best effort), then every user-owned SwiftData object, then the Keychain, then back to onboarding.
-    func deleteAccount(in context: ModelContext, appState: AppState) async {
+    /// Backend first (best effort), then the session, the Keychain and the settings, then back to onboarding, and
+    /// every user-owned SwiftData object goes once the screens showing them are gone (`LocalDataWipe`).
+    /// The workout in progress is let go first (session, pending discards, rest timer, Live Activity), so nothing
+    /// keeps pointing at a row the wipe removes and a relaunch has no workout to adopt.
+    func deleteAccount(in context: ModelContext, appState: AppState,
+                       session: WorkoutSessionController, restTimer: RestTimerController) async {
         isDeleting = true
         defer { isDeleting = false }
+        // Read before the session goes: the queued attendance of this account goes with it.
+        let account = bro.syncTarget
         try? await AppConfig.shared.makeBackendClient().deleteAccount()
 
-        try? context.delete(model: HeadsUp.self)
-        try? context.delete(model: AttendanceRecord.self)
-        try? context.delete(model: BroPairing.self)
-        try? context.delete(model: BodyWeightEntry.self)
-        try? context.delete(model: MealEntry.self)
-        try? context.delete(model: FoodItem.self)
-        try? context.delete(model: SetEntry.self)
-        try? context.delete(model: WorkoutExercise.self)
-        try? context.delete(model: Workout.self)
-        try? context.delete(model: RoutineItem.self)
-        try? context.delete(model: Routine.self)
-        // The exercise library is bundled data, not the user's; custom entries are.
-        try? context.delete(model: Exercise.self, where: #Predicate { $0.isCustom })
-        try? context.delete(model: GymSchedule.self)
-        try? context.delete(model: UserProfile.self)
-        try? context.save()
+        restTimer.reset()
+        session.forgetAll()
+        LocalDataWipe.markPending()
+        didDeleteAccount = true
 
         auth.clear()
         auth.removeAnthropicKey()
         bro.resetSession()
+        // Queued attendance of the account that is gone; another account's waits for it (`AttendanceOutbox.Target`).
+        // Signed out (no account), everything goes, with the rest of the local data.
+        bro.attendanceOutbox.clear(target: account)
         UserDefaults.standard.removeObject(forKey: Self.restAutoStartKey)
+        // The next account starts its missed-day sweep from scratch, as on a fresh install.
+        let sweep = AttendanceService.SweepCursor()
+        sweep.sweptThrough = nil
         appState.hasOnboarded = false
     }
 }

@@ -1,7 +1,9 @@
 package app.notomorrow.util
 
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.Test
 
 /**
@@ -27,6 +29,24 @@ class ImageDownscalerSizeTest {
         assertNull(ImageDownscaler.targetSize(0, 10))
         assertNull(ImageDownscaler.targetSize(10, 0))
         assertNull(ImageDownscaler.targetSize(20_000, 3))   // the short edge would floor to 0
+    }
+
+    @Test
+    fun `a label photo keeps 1600 px on the long edge`() {
+        assertEquals(1600 to 1200, ImageDownscaler.targetSize(4032, 3024, ImageDownscaler.LABEL_LONG_EDGE))
+        assertEquals(1200 to 1600, ImageDownscaler.targetSize(3024, 4032, ImageDownscaler.LABEL_LONG_EDGE))
+        assertEquals(1024, ImageDownscaler.PLATE_LONG_EDGE)
+        assertEquals(ImageDownscaler.PLATE_LONG_EDGE, ImageDownscaler.MAX_LONG_EDGE)
+    }
+
+    @Test
+    fun `quarter turns swap the edges, half turns do not`() {
+        assertTrue(ImageDownscaler.isQuarterTurn(90))
+        assertTrue(ImageDownscaler.isQuarterTurn(270))
+        assertTrue(ImageDownscaler.isQuarterTurn(-90))
+        assertFalse(ImageDownscaler.isQuarterTurn(0))
+        assertFalse(ImageDownscaler.isQuarterTurn(180))
+        assertFalse(ImageDownscaler.isQuarterTurn(360))
     }
 
     @Test

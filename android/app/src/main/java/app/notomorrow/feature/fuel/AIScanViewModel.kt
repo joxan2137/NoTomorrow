@@ -9,19 +9,25 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.dao.MealDao
+import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.model.MealSlot
+import app.notomorrow.net.dto.AIDatabaseFood
 import app.notomorrow.net.dto.AIEstimate
 import app.notomorrow.net.dto.AIFood
 import app.notomorrow.service.AIEstimateError
 import app.notomorrow.service.AIEstimateProviders
+import app.notomorrow.service.AIEstimateService
 import app.notomorrow.service.AIUpload
 import app.notomorrow.service.Days
+import app.notomorrow.service.FoodSearchService
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.ImageDownscaler
 import app.notomorrow.util.LocaleProvider
+import app.notomorrow.util.Parsing
 import app.notomorrow.util.S
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +74,8 @@ data class AIScanUiState(
     val meal: MealSlot,
     val phase: AIScanPhase = AIScanPhase.PickSource,
     val photo: ImageBitmap? = null,
-    val foods: List<AIFood> = emptyList(),
+    /** The items on screen and the user's corrections to them. */
+    val edits: AIScanEdits = AIScanEdits(),
     val overallConfidence: Double = 0.0,
     val notes: String = "",
     val assumptions: List<String> = emptyList(),
@@ -83,8 +90,11 @@ data class AIScanUiState(
     val uploadResolved: Boolean = false,
     val showConsent: Boolean = false,
     val needsSignIn: Boolean = true,
+    /** "Recipes soon", or why a refine failed (the result stays). */
     @StringRes val toast: Int? = null,
 ) {
+    val foods: List<AIFood> get() = edits.foods
+
     val totalKcal: Double get() = AIScanDerive.total(foods) { it.kcal }
     val totalProtein: Double get() = AIScanDerive.total(foods) { it.protein }
     val totalCarbs: Double get() = AIScanDerive.total(foods) { it.carbs }
@@ -94,6 +104,12 @@ data class AIScanUiState(
 
     /** `AIScanView.showsRetake` — every phase but the source picker. */
     val showsRetake: Boolean get() = phase != AIScanPhase.PickSource
+
+    /**
+     * Log and Recalculate need an item: with every one removed, Log would write nothing yet still
+     * report success, and a refine would ask about a plate the user has emptied.
+     */
+    val hasItems: Boolean get() = AIScanDerive.loggable(foods).isNotEmpty()
 
     /** `fuel.ai.provider.google` / `fuel.ai.provider.anthropic`. */
     @get:StringRes
@@ -144,44 +160,102 @@ object AIScanDerive {
         Fmt.roundHalfAwayFromZero(grams * factor)
 
     /**
-     * `AIScanFoodRow.applyCustom` — comma decimal separators accepted, whitespace trimmed,
-     * non-positive and unparseable input ignored.
+     * `AIScanFoodRow.applyCustom` (`NumberInput.nonNegative`, then `> 0`) — comma decimal
+     * separators accepted, whitespace trimmed, non-positive and unparseable input ignored.
      */
-    fun customGrams(text: String): Double? {
-        val normalised = text.replace(",", ".").trim()
-        val value = normalised.toDoubleOrNull() ?: return null
-        return if (value > 0) value else null
-    }
-
-    /** `AIScanModel.setGrams(_:for:)` — a whole new list with the one food rescaled. */
-    fun applyGrams(foods: List<AIFood>, id: String, grams: Double): List<AIFood> {
-        if (grams <= 0) return foods
-        val index = foods.indexOfFirst { it.id == id }
-        if (index < 0) return foods
-        return foods.toMutableList().also { it[index] = it[index].scaled(grams) }
-    }
+    fun customGrams(text: String): Double? = Parsing.positive(text)
 
     /** `AIScanModel.log` — `for food in foods where food.kcal > 0 || food.grams > 0`. */
     fun loggable(foods: List<AIFood>): List<AIFood> = foods.filter { it.kcal > 0 || it.grams > 0 }
 }
 
 /**
- * `AIScanModel` (`Features/Fuel/AIScanModel.swift`): pick a source → analyse → edit the
+ * `AIScanModel.log(into:day:)`: one `MealEntry` per food. Model items log as AI estimates; items
+ * the user took from the food database log as ordinary food entries, and the product is saved to
+ * the library (or its usage bumped) the way the portion sheet does it.
+ */
+object AIScanLog {
+
+    suspend fun entries(
+        foods: List<AIFood>,
+        slot: MealSlot,
+        day: Long,
+        foodDao: FoodDao,
+        foodSearch: FoodSearchService,
+        now: Long = System.currentTimeMillis(),
+    ): List<MealEntryEntity> = AIScanDerive.loggable(foods).map { food ->
+        val item = databaseItem(food, foodDao, foodSearch, now)
+        if (item != null) {
+            val factor = food.grams / 100.0
+            MealEntryEntity(
+                id = UUID.randomUUID().toString(),
+                day = day,
+                slot = slot,
+                foodId = item.id,
+                grams = food.grams,
+                kcal = item.kcalPer100 * factor,
+                proteinG = item.proteinPer100 * factor,
+                carbsG = item.carbsPer100 * factor,
+                fatG = item.fatPer100 * factor,
+            )
+        } else {
+            MealEntryEntity(
+                id = UUID.randomUUID().toString(),
+                day = day,
+                slot = slot,
+                customName = food.name,
+                grams = food.grams,
+                kcal = food.kcal,
+                proteinG = food.protein,
+                carbsG = food.carbs,
+                fatG = food.fat,
+                isAIEstimate = true,
+                confidence = food.confidence,
+            )
+        }
+    }
+
+    /**
+     * `AIScanModel.databaseItem(for:in:)`: the library food behind a database pick, inserted on
+     * first use; null for the model's own items (or a saved food deleted in the meantime, which
+     * then logs with its figures as a custom row).
+     */
+    suspend fun databaseItem(
+        food: AIFood,
+        foodDao: FoodDao,
+        foodSearch: FoodSearchService,
+        now: Long = System.currentTimeMillis(),
+    ): FoodItemEntity? = when (val pick = food.databaseFood) {
+        is AIDatabaseFood.Item -> foodDao.byId(pick.id)?.also { foodDao.bumpUsage(it.id, now) }
+        is AIDatabaseFood.Candidate -> foodSearch.cacheOnTap(pick.candidate, foodDao, now)
+        null -> null
+    }
+}
+
+/**
+ * `AIScanModel` (`Features/Fuel/AIScanModel.swift`): pick a source → analyse → correct the
  * estimate → log one `MealEntry` per food.
  *
  * The photo never leaves this object un-downscaled: [ImageDownscaler] produces the same
  * ≤1024 px JPEG 0.8 iOS uploads, and that is both what the preview shows and what the
  * provider receives.
+ *
+ * [service] is for tests (iOS `injectedService`): it replaces the provider resolution, and the
+ * upload then counts as on-device (no consent).
  */
 class AIScanViewModel(
     private val application: Application,
     private val prefs: AppPrefs,
     private val providers: AIEstimateProviders,
     private val mealDao: MealDao,
+    private val foodDao: FoodDao,
+    private val foodSearch: FoodSearchService,
     needsSignIn: StateFlow<Boolean>,
     initialMeal: MealSlot,
     private val locale: () -> Locale = { LocaleProvider.current() },
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val cpu: CoroutineDispatcher = Dispatchers.Default,
+    private val service: AIEstimateService? = null,
 ) : ViewModel() {
 
     // Seeded from the flow's current value, so the signed-out gate never flashes on the first frame.
@@ -236,7 +310,7 @@ class AIScanViewModel(
     /** The system photo picker handed back a content URI. */
     fun pickedFromLibrary(uri: Uri) {
         viewModelScope.launch {
-            receive(withContext(io) { ImageDownscaler.jpeg(application, uri) })
+            receive(withContext(io) { ImageDownscaler.jpeg(application, uri, ImageDownscaler.PLATE_LONG_EDGE) })
         }
     }
 
@@ -255,7 +329,7 @@ class AIScanViewModel(
             return
         }
         jpeg = data
-        val preview = withContext(Dispatchers.Default) { decode(data) }
+        val preview = withContext(cpu) { decode(data) }
         _state.update { it.copy(photo = preview) }
 
         val upload = refreshUpload()
@@ -319,47 +393,57 @@ class AIScanViewModel(
             it.copy(
                 phase = AIScanPhase.PickSource,
                 photo = null,
-                foods = emptyList(),
+                edits = AIScanEdits(),
+                assumptions = emptyList(),
+                questions = emptyList(),
                 overallConfidence = 0.0,
                 showConsent = false,
             )
         }
     }
 
-    fun setNotes(notes: String) { _state.update { it.copy(notes = notes.take(1500)) } }
+    /** The typed details; the request cuts them further to make room for the corrections line. */
+    fun setNotes(notes: String) {
+        _state.update { it.copy(notes = AIScanCorrections.truncated(notes, AIScanCorrections.MAX_NOTES_LENGTH)) }
+    }
 
+    /**
+     * Sends the photo. From the result screen ("Recalculate with details") it also sends the
+     * user's corrections and merges them back into the answer; if that request fails, the
+     * current result stays and a toast says why.
+     */
     fun analyze() {
         val data = jpeg ?: return
-        _state.update { it.copy(phase = AIScanPhase.Analyzing) }
-        val notes = _state.value.notes
-        val meal = _state.value.meal
+        val current = _state.value
+        val refining = current.phase == AIScanPhase.Result
+        val previous = if (refining) Snapshot(current) else null
+        val notes = current.edits.outgoingNotes(current.notes, refining)
+        val meal = current.meal
         val language = locale().language.ifEmpty { "en" }
+        _state.update { it.copy(phase = AIScanPhase.Analyzing) }
         analysis?.cancel()
         analysis = viewModelScope.launch {
             try {
-                val estimate = providers.make().estimate(data, meal, language, notes)
-                apply(estimate)
+                val estimate = (service ?: providers.make()).estimate(data, meal, language, notes)
+                apply(estimate, refining, previous)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
-                val phase = if (error is AIEstimateError.NotAllowed) {
-                    AIScanPhase.NotAllowed
-                } else {
-                    AIScanPhase.Failed((error as? AIEstimateError)?.messageRes ?: S.fuel_ai_failed)
-                }
-                _state.update { it.copy(phase = phase) }
+                fail(error, previous)
             }
         }
     }
 
-    private fun apply(estimate: AIEstimate) {
-        if (estimate.foods.isEmpty()) {
-            _state.update { it.copy(phase = AIScanPhase.Failed(S.fuel_ai_failed)) }
+    private fun apply(estimate: AIEstimate, refining: Boolean, previous: Snapshot?) {
+        val merged = _state.value.edits.answered(estimate.foods, refining)
+        if (merged.isEmpty()) {
+            // The model found no food (an empty answer is not an error on the wire).
+            fail(null, previous)
             return
         }
         _state.update {
             it.copy(
-                foods = estimate.foods,
+                edits = it.edits.copy(foods = merged),
                 assumptions = estimate.assumptions,
                 questions = estimate.questions,
                 overallConfidence = estimate.overallConfidence,
@@ -368,56 +452,96 @@ class AIScanViewModel(
         }
     }
 
-    // MARK: - Editing
+    private fun fail(error: Throwable?, previous: Snapshot?) {
+        if (error is AIEstimateError.NotAllowed) {
+            _state.update { it.copy(phase = AIScanPhase.NotAllowed) }
+            return
+        }
+        val message = (error as? AIEstimateError)?.messageRes ?: S.fuel_ai_failed
+        if (previous != null) {
+            _state.update { previous.restore(it) }
+            showToast(message)
+        } else {
+            _state.update { it.copy(phase = AIScanPhase.Failed(message)) }
+        }
+    }
+
+    /** The result screen as it was before a refine, restored when the refine fails. */
+    private class Snapshot(state: AIScanUiState) {
+        private val edits = state.edits
+        private val assumptions = state.assumptions
+        private val questions = state.questions
+        private val overallConfidence = state.overallConfidence
+
+        fun restore(into: AIScanUiState): AIScanUiState = into.copy(
+            edits = edits,
+            assumptions = assumptions,
+            questions = questions,
+            overallConfidence = overallConfidence,
+            phase = AIScanPhase.Result,
+        )
+    }
+
+    // MARK: - Corrections
 
     fun setGrams(id: String, grams: Double) {
-        _state.update { it.copy(foods = AIScanDerive.applyGrams(it.foods, id, grams)) }
+        _state.update { it.copy(edits = it.edits.setGrams(id, grams)) }
     }
 
     fun scale(id: String, factor: Double) {
-        val food = _state.value.foods.firstOrNull { it.id == id } ?: return
-        setGrams(id, AIScanDerive.scaledGrams(food.grams, factor))
+        _state.update { it.copy(edits = it.edits.scale(id, factor)) }
     }
 
-    /** `AIScanModel.append` — the hook the "add something it missed" flow writes into. */
+    /** −1 / +1 unit ("6 szt." → "7 szt."), grams follow the unit weight. */
+    fun stepCount(id: String, up: Boolean) {
+        _state.update { it.copy(edits = it.edits.stepCount(id, up)) }
+    }
+
+    /** The item editor's copy (name, count, grams, or a food-database product); no change is no correction. */
+    fun update(edited: AIFood) {
+        _state.update { it.copy(edits = it.edits.update(edited)) }
+    }
+
+    /** Drops a wrong item; a removed model item is reported on refine. */
+    fun remove(id: String) {
+        _state.update { it.copy(edits = it.edits.remove(id)) }
+    }
+
+    /** "Add something it missed": a food-database product sized in the portion sheet. */
     fun append(food: AIFood) {
-        _state.update { it.copy(foods = it.foods + food) }
+        _state.update { it.copy(edits = it.edits.append(food)) }
     }
 
     // MARK: - Logging
 
     /**
-     * One `MealEntry` per food, flagged as an AI estimate. Returns the number of rows written,
-     * exactly like the `@discardableResult` Swift function.
+     * One `MealEntry` per food: model items as AI estimates, food-database picks as ordinary food
+     * entries. Returns the number of rows written, exactly like the `@discardableResult` Swift
+     * function.
      */
     suspend fun log(day: LocalDate): Int {
-        val slot = _state.value.meal
-        val midnight = Days.millis(day)
-        val entries = AIScanDerive.loggable(_state.value.foods).map { food ->
-            MealEntryEntity(
-                id = UUID.randomUUID().toString(),
-                day = midnight,
-                slot = slot,
-                customName = food.name,
-                grams = food.grams,
-                kcal = food.kcal,
-                proteinG = food.protein,
-                carbsG = food.carbs,
-                fatG = food.fat,
-                isAIEstimate = true,
-                confidence = food.confidence,
-            )
-        }
+        val entries = AIScanLog.entries(
+            foods = _state.value.foods,
+            slot = _state.value.meal,
+            day = Days.millis(day),
+            foodDao = foodDao,
+            foodSearch = foodSearch,
+        )
         if (entries.isNotEmpty()) mealDao.insertAll(entries)
         return entries.size
     }
 
     // MARK: - Stubs
 
-    /** `AIScanModel.saveAsRecipe()` — the toast iOS clears after two seconds. */
+    /** `AIScanModel.saveAsRecipe()`. */
     fun saveAsRecipe() {
+        showToast(S.fuel_ai_recipeSoon)
+    }
+
+    /** The toast `AIScanView.toastOverlay` clears after [TOAST_MILLIS]. */
+    private fun showToast(@StringRes message: Int) {
         toastJob?.cancel()
-        _state.update { it.copy(toast = S.fuel_ai_recipeSoon) }
+        _state.update { it.copy(toast = message) }
         toastJob = viewModelScope.launch {
             delay(TOAST_MILLIS)
             _state.update { it.copy(toast = null) }
@@ -425,13 +549,16 @@ class AIScanViewModel(
     }
 
     private suspend fun refreshUpload(): AIUpload {
-        val upload = providers.upload()
+        val upload = if (service != null) AIUpload.None else providers.upload()
         _state.update { it.copy(upload = upload, uploadResolved = true) }
         return upload
     }
 
-    private companion object {
-        /** `try? await Task.sleep(for: .seconds(2))` in `AIScanView.toastOverlay`. */
-        const val TOAST_MILLIS: Long = 2_000
+    companion object {
+        /**
+         * Long enough to read a failed refine's two-line reason (and for TalkBack to finish saying
+         * it) before it goes; two seconds was not.
+         */
+        const val TOAST_MILLIS: Long = 5_000
     }
 }

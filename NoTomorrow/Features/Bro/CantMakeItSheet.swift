@@ -26,7 +26,7 @@ struct CantMakeItSheet: View {
         case sick, work, tired, family, none
         var id: String { rawValue }
         var key: LocalizedStringKey { LocalizedStringKey(String("cant.reason.\(rawValue)")) }
-        var label: String { String(localized: String.LocalizationValue("cant.reason.\(rawValue)")) }
+        var label: String { String(localized: String.LocalizationValue("cant.reason." + rawValue)) }
     }
 
     enum MakeUpChoice: Equatable {
@@ -38,7 +38,6 @@ struct CantMakeItSheet: View {
     private var partnerName: String? {
         BroShared.service.partner?.name ?? pairings.first?.partnerName
     }
-    private var isPaired: Bool { partnerName != nil }
     private var makeUpDays: [Date] { BroDerived.nonGymDays(after: sessionDay, schedule: schedules.first) }
 
     var body: some View {
@@ -201,12 +200,24 @@ struct CantMakeItSheet: View {
         let noteValue: String? = trimmedNote.isEmpty ? nil : trimmedNote
         let makeUpDay = makeUp?.date
 
-        AttendanceService.markMissed(day: day, reason: reasonRaw, note: noteValue, makeUp: makeUpDay, context: modelContext)
+        // A day I already trained stays attended: nothing is cancelled, told to the partner or sent to the server.
+        let record = AttendanceService.markMissed(day: day, reason: reasonRaw, note: noteValue, makeUp: makeUpDay,
+                                                  context: modelContext)
+        guard record.status != .attended else {
+            onDone()
+            dismiss()
+            return
+        }
+        // The make-up day becomes a planned session here too (the server does the same with the cancellation), so
+        // training that day shows as attended and skipping it is swept to missed.
+        if let makeUpDay { AttendanceService.markPlanned(day: makeUpDay, context: modelContext) }
         let text = noteValue ?? reason?.label ?? ""
         modelContext.insert(HeadsUp(fromMe: true, kind: .cantMakeIt, text: text, sessionDay: day))
         try? modelContext.save()
 
-        if isPaired {
+        // Signed in is enough: the server's reminder and 21:00 skip check need the cancellation even with no partner
+        // (BroService only sends the heads-up when paired).
+        if !AuthStore.shared.needsSignIn {
             let context = modelContext
             Task { await BroShared.service.cantMakeIt(reason: reasonRaw, note: noteValue, makeUpDay: makeUpDay, sessionDay: day, in: context) }
         }

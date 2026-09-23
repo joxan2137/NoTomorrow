@@ -2,10 +2,14 @@ package app.notomorrow.feature.fuel
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.mlkit.vision.MlKitAnalyzer
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
@@ -31,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,16 +64,20 @@ import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
+import app.notomorrow.service.GTINExtractor
 import app.notomorrow.util.S
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.ZoomSuggestionOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 
 /**
- * Rear-camera barcode scanner (EAN-13 / EAN-8 / UPC-E / UPC-A) — the port of
- * `Features/Fuel/BarcodeScannerView.swift`. Calls [onCode] once, for the first recognised
- * barcode, and falls back to a manual code field where iOS falls back on the simulator:
- * no camera hardware, or `CAMERA` denied.
+ * Rear-camera barcode scanner — the port of `Features/Fuel/BarcodeScannerView.swift`. Reads
+ * EAN-13 / EAN-8 / UPC-A / UPC-E, and QR / DataMatrix only when they carry a GTIN (GS1 Digital
+ * Link or element string), so a promo QR on the same pack is ignored. ML Kit cannot read GS1
+ * DataBar, which iOS adds. Calls [onCode] once with the first product code ([GTINExtractor]),
+ * and falls back to a manual code field where iOS falls back on the simulator: no camera
+ * hardware, or `CAMERA` denied.
  */
 @Composable
 fun BarcodeScannerScreen(
@@ -124,14 +133,24 @@ fun BarcodeScannerScreen(
 // Camera
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * CameraX + ML Kit. The analysis stream asks for 1920×1080: at CameraX's default size a pack's
+ * EAN-13 falls under the ~190 px ML Kit needs unless the phone sits inside its focus distance.
+ * ML Kit's auto-zoom then zooms in on codes that are still too small to decode. Every barcode in
+ * a frame is tried, so a promo QR recognised first cannot hold the scanner while the EAN waits.
+ */
 @Composable
 private fun CameraPreview(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val controller = remember { LifecycleCameraController(context) }
+    val deliver by rememberUpdatedState(onCode)
 
     DisposableEffect(controller, lifecycleOwner) {
         val executor = ContextCompat.getMainExecutor(context)
+        // Written on main, read on main (inside the posted zoom block) — the flag is only ever
+        // checked where it can be trusted.
+        var disposed = false
         val scanner = BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
                 .setBarcodeFormats(
@@ -139,12 +158,35 @@ private fun CameraPreview(onCode: (String) -> Unit, modifier: Modifier = Modifie
                     Barcode.FORMAT_EAN_8,
                     Barcode.FORMAT_UPC_E,
                     Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_QR_CODE,
+                    Barcode.FORMAT_DATA_MATRIX,
                 )
                 .enableAllPotentialBarcodes()
+                // ML Kit asks for a zoom when every code in view is too small to decode, and asks
+                // for 1× again (every ~500 ms) once none is. It calls this from its own worker
+                // pool, NOT the main thread, and `CameraController` asserts main: called here
+                // directly, every request threw and ML Kit swallowed it — so the reset to 1× never
+                // happened and the preview stayed at 2–5× until the user pinched. Hop to main;
+                // the camera's own range is only known once it is bound, so read it there too.
+                .setZoomSuggestionOptions(
+                    ZoomSuggestionOptions.Builder { ratio ->
+                        executor.execute {
+                            if (!disposed) {
+                                controller.zoomState.value?.maxZoomRatio?.let { cameraMax ->
+                                    controller.setZoomRatio(ratio.coerceAtMost(cameraMax))
+                                }
+                            }
+                        }
+                        true
+                    }
+                        .setMaxSupportedZoomRatio(MAX_AUTO_ZOOM)
+                        .build(),
+                )
                 .build(),
         )
         controller.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         controller.setEnabledUseCases(CameraController.IMAGE_ANALYSIS)
+        controller.imageAnalysisResolutionSelector = ANALYSIS_RESOLUTION
         controller.setImageAnalysisAnalyzer(
             executor,
             MlKitAnalyzer(
@@ -152,13 +194,15 @@ private fun CameraPreview(onCode: (String) -> Unit, modifier: Modifier = Modifie
                 ImageAnalysis.COORDINATE_SYSTEM_ORIGINAL,
                 executor,
             ) { result ->
-                val payload = result.getValue(scanner)
-                    ?.firstNotNullOfOrNull { it.rawValue?.takeIf(String::isNotEmpty) }
-                if (payload != null) onCode(payload)
+                val code = result.getValue(scanner)?.firstNotNullOfOrNull { barcode ->
+                    barcode.rawValue?.let { GTINExtractor.gtin(it, symbology(barcode.format)) }
+                }
+                if (code != null) deliver(code)
             },
         )
         controller.bindToLifecycle(lifecycleOwner)
         onDispose {
+            disposed = true
             controller.clearImageAnalysisAnalyzer()
             controller.unbind()
             scanner.close()
@@ -174,6 +218,31 @@ private fun CameraPreview(onCode: (String) -> Unit, modifier: Modifier = Modifie
             }
         },
     )
+}
+
+/** 1920×1080 analysis frames (16:9), else the closest size below, else above. */
+private val ANALYSIS_RESOLUTION: ResolutionSelector = ResolutionSelector.Builder()
+    .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+    .setResolutionStrategy(
+        ResolutionStrategy(Size(1920, 1080), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER),
+    )
+    .build()
+
+/**
+ * The most ML Kit may ask for. Past about 5× the main camera's digital zoom only magnifies noise;
+ * a camera with a shorter range clamps the request to its own maximum.
+ */
+private const val MAX_AUTO_ZOOM = 5f
+
+/** ML Kit's format → what changes the payload parsing. */
+private fun symbology(format: Int): GTINExtractor.Symbology = when (format) {
+    Barcode.FORMAT_EAN_13 -> GTINExtractor.Symbology.Ean13
+    Barcode.FORMAT_EAN_8 -> GTINExtractor.Symbology.Ean8
+    Barcode.FORMAT_UPC_A -> GTINExtractor.Symbology.UpcA
+    Barcode.FORMAT_UPC_E -> GTINExtractor.Symbology.UpcE
+    Barcode.FORMAT_QR_CODE -> GTINExtractor.Symbology.Qr
+    Barcode.FORMAT_DATA_MATRIX -> GTINExtractor.Symbology.DataMatrix
+    else -> GTINExtractor.Symbology.Other
 }
 
 /** `BarcodeScannerView.cameraChrome` — the hint pill on top, Cancel on the bottom. */
@@ -228,7 +297,8 @@ private fun CameraChrome(onCancel: () -> Unit, onManual: () -> Unit) {
 private fun ManualBarcodeEntry(onCode: (String) -> Unit, onCancel: () -> Unit) {
     var code by remember { mutableStateOf("") }
     val digits = FuelDerive.barcodeDigits(code)
-    val valid = app.notomorrow.service.FoodSearchService.barcodeForms(digits).isNotEmpty()
+    // The code to look up: a GTIN whose check digit is right, or a UPC-E expanded.
+    val validCode = FuelDerive.manualBarcode(digits)
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
@@ -301,8 +371,15 @@ private fun ManualBarcodeEntry(onCode: (String) -> Unit, onCancel: () -> Unit) {
                             imeAction = ImeAction.Done,
                         ),
                         keyboardActions = KeyboardActions(
-                            onDone = { if (valid) onCode(digits) },
+                            onDone = { validCode?.let(onCode) },
                         ),
+                    )
+                }
+                if (FuelDerive.showsCheckDigits(digits)) {
+                    NtText(
+                        text = stringResource(S.fuel_scan_checkDigits),
+                        style = NT.Fonts.footnote,
+                        color = NT.Colors.ember,
                     )
                 }
             }
@@ -310,8 +387,8 @@ private fun ManualBarcodeEntry(onCode: (String) -> Unit, onCancel: () -> Unit) {
 
         PrimaryButton(
             title = stringResource(S.fuel_scan_useCode),
-            enabled = valid,
-            onClick = { onCode(digits) },
+            enabled = validCode != null,
+            onClick = { validCode?.let(onCode) },
         )
         Spacer(Modifier.weight(1f))
     }

@@ -9,11 +9,13 @@ import app.notomorrow.net.dto.AIEstimate
 import app.notomorrow.net.dto.AIFood
 import app.notomorrow.net.dto.AttendanceDto
 import app.notomorrow.net.dto.HeadsUpDto
+import app.notomorrow.net.dto.LabelReading
 import app.notomorrow.net.dto.Me
 import app.notomorrow.net.dto.Partner
 import app.notomorrow.net.dto.PartnerState
 import app.notomorrow.net.dto.ScheduleDto
 import app.notomorrow.net.dto.Session
+import app.notomorrow.service.MockAIEstimateService
 import io.ktor.http.Url
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -259,6 +261,12 @@ class MockBackendClient(
             ),
             overallConfidence = 0.78,
         )
+    }
+
+    /** The same fixed cottage-cheese table as the offline AI mock. */
+    override suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading {
+        delay(ESTIMATE_DELAY_MS)
+        return MockAIEstimateService.LABEL
     }
 
     override suspend fun deleteAccount() = mutex.withLock {

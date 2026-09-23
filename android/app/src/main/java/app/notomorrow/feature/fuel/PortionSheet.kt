@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,6 +37,7 @@ import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +56,7 @@ import app.notomorrow.designsystem.NumericText
 import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntClickable
+import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
@@ -104,13 +107,48 @@ fun PortionSheet(
 }
 
 /**
- * The same sheet re-opened on a logged row (`FuelEntryRow`'s tap): the portion and the meal
- * slot are seeded from the entry and the button writes the resized row back.
+ * Pick mode (`PortionSheet(picking:onPicked:)`): sizes a food the AI estimate missed, and
+ * "Add to this estimate" hands the grams back. Nothing is written — the food reaches the library
+ * only when the estimate is logged.
+ */
+@Composable
+fun PortionPickSheet(
+    food: PortionFood,
+    onPicked: (grams: Double) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val model = ntViewModel(key = "portion-pick") { container ->
+        PortionViewModel(
+            foodDao = container.db.foodDao(),
+            mealDao = container.db.mealDao(),
+            foodSearch = container.foodSearchService,
+        )
+    }
+    LaunchedEffect(food.id) { model.bind(food) }
+    DisposableEffect(Unit) { onDispose { model.unbind() } }
+    val state by model.state.collectAsStateWithLifecycle()
+
+    PortionSheetBody(
+        food = food,
+        state = state,
+        model = model,
+        buttonTitle = stringResource(S.fuel_ai_addMissed_pick),
+        onDismiss = onDismiss,
+        onSubmit = {
+            val grams = model.state.value.grams
+            if (grams > 0) onPicked(grams)
+        },
+    )
+}
+
+/**
+ * The same sheet re-opened on a logged row (`FuelEntryRow`'s tap): the portion, the day and the
+ * meal slot are seeded from the entry and the button writes the row back.
  *
  * Its own view-model key, so an interrupted add keeps its portion while this one runs.
  */
 @Composable
-fun PortionEditSheet(entryId: String, onDismiss: () -> Unit) {
+fun PortionEditSheet(entryId: String, onDismiss: () -> Unit, onDelete: () -> Unit) {
     val model = ntViewModel(key = "portion-edit") { container ->
         PortionViewModel(
             foodDao = container.db.foodDao(),
@@ -129,12 +167,14 @@ fun PortionEditSheet(entryId: String, onDismiss: () -> Unit) {
         buttonTitle = stringResource(S.common_save),
         onDismiss = onDismiss,
         onSubmit = { model.save(onSaved = onDismiss) },
+        onDelete = onDelete,
     )
 }
 
 /**
- * Both presentations share every row; edit mode adds the [MealSlotPicker] under the macros,
- * and waits for [PortionViewModel.bindEntry] to resolve the food before it has anything to draw.
+ * Both presentations share every row; edit mode adds a trash button to the title row
+ * ([onDelete]), the [EntryDayStepper] and the [MealSlotPicker] under the macros, and waits for
+ * [PortionViewModel.bindEntry] to resolve the food before it has anything to draw.
  */
 @Composable
 private fun PortionSheetBody(
@@ -144,6 +184,7 @@ private fun PortionSheetBody(
     buttonTitle: String,
     onDismiss: () -> Unit,
     onSubmit: () -> Unit,
+    onDelete: (() -> Unit)? = null,
 ) {
     val focus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -151,7 +192,8 @@ private fun PortionSheetBody(
     NtSheet(
         onDismiss = onDismiss,
         containerColor = NT.Colors.surface,
-        height = if (state.isEditing) PORTION_EDIT_SHEET_HEIGHT else PORTION_SHEET_HEIGHT,
+        height = (if (state.isEditing) PORTION_EDIT_SHEET_HEIGHT else PORTION_SHEET_HEIGHT) +
+            (if (food?.isEstimated == true) PORTION_ESTIMATE_ROW_HEIGHT else 0.dp),
         // `PortionSheet.swift:52` `.presentationCornerRadius(24)`.
         cornerRadius = 24.dp,
     ) {
@@ -166,7 +208,9 @@ private fun PortionSheetBody(
         ) {
             Grabber()
 
-            PortionTitleRow(food = food, kcal = state.kcal)
+            PortionTitleRow(food = food, kcal = state.kcal, onDelete = onDelete?.takeIf { state.isEditing })
+
+            if (food.isEstimated) EstimateCaption()
 
             PortionStepperRow(
                 gramsText = state.gramsText,
@@ -196,6 +240,8 @@ private fun PortionSheetBody(
             PortionMacroRow(protein = state.protein, carbs = state.carbs, fat = state.fat)
 
             if (state.isEditing) {
+                // Day first, then slot (the iOS order).
+                EntryDayStepper(day = state.day, today = state.today, onChange = model::setDay)
                 MealSlotPicker(slot = state.slot, onSelect = model::setSlot)
             }
 
@@ -211,11 +257,37 @@ private fun PortionSheetBody(
 /** `.presentationDetents([.height(376)])`. */
 val PORTION_SHEET_HEIGHT = 376.dp
 
-/** The add detent plus the slot picker: a 32 dp capsule row and the stack's 16 dp spacing. */
-val PORTION_EDIT_SHEET_HEIGHT = PORTION_SHEET_HEIGHT + 48.dp
+/**
+ * The add detent plus the edit rows, each with the stack's 16 dp spacing: the day stepper
+ * (44 + 16) and the slot picker's 32 dp capsule row (32 + 16) — 484 dp, as on iOS.
+ */
+val PORTION_EDIT_SHEET_HEIGHT = PORTION_SHEET_HEIGHT + 60.dp + 48.dp
 
+/** The two-line "estimated" caption (32) plus the stack spacing (16). */
+val PORTION_ESTIMATE_ROW_HEIGHT = 48.dp
+
+/** Open Food Facts had no label values and filled in its own estimate; the user should compare with the pack. */
 @Composable
-private fun PortionTitleRow(food: PortionFood, kcal: Double) {
+private fun EstimateCaption() {
+    Box(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
+        contentAlignment = Alignment.TopStart,
+    ) {
+        NtText(
+            text = stringResource(S.fuel_estimatedNutrition),
+            style = NT.Fonts.footnote,
+            color = NT.Colors.ink2,
+            maxLines = 2,
+        )
+    }
+}
+
+/**
+ * Name and source, then the kcal counter; in edit mode a trash button at the end ([onDelete]),
+ * which closes the sheet and goes through the Fuel tab's delete, so the undo toast offers it back.
+ */
+@Composable
+private fun PortionTitleRow(food: PortionFood, kcal: Double, onDelete: (() -> Unit)? = null) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -261,6 +333,21 @@ private fun PortionTitleRow(food: PortionFood, kcal: Double) {
                 color = NT.Colors.ink2,
                 maxLines = 1,
             )
+        }
+        if (onDelete != null) {
+            Box(
+                modifier = Modifier
+                    .size(NT.Size.control)
+                    .ntPlainClickable(role = Role.Button, onClick = onDelete),
+                contentAlignment = Alignment.Center,
+            ) {
+                NtIcon(
+                    icon = NtIcons.Trash,
+                    size = sfIconSize(17f),
+                    tint = NT.Colors.bad,
+                    contentDescription = stringResource(S.common_delete),
+                )
+            }
         }
     }
 }

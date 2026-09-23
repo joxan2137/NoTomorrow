@@ -34,6 +34,7 @@ import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.rememberSecondTicker
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.rest.RestTimerState
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
@@ -136,7 +137,7 @@ private fun Header(
             Eyebrow(stringResource(S.timer_rest), color = NT.Colors.ember)
             val elapsed = startedAt?.let { ((endedAt ?: now) - it) / 1000.0 }
             NtText(
-                text = if (elapsed != null) workoutName + " · " + Fmt.clock(elapsed) else workoutName,
+                text = if (elapsed != null) workoutName + " · " + Fmt.elapsed(elapsed) else workoutName,
                 style = if (elapsed != null) NT.Fonts.headline.tabular() else NT.Fonts.headline,
                 color = NT.Colors.ink,
                 maxLines = 1,
@@ -251,7 +252,7 @@ private fun UpNextCard(
         val bestKg = upNext.bestKg
         val bestReps = upNext.bestReps
         if (bestKg != null && bestReps != null) {
-            setLabel + " · " + stringResource(S.workout_best) + ": " + Fmt.set(bestKg, bestReps)
+            setLabel + " · " + stringResource(S.workout_best) + ": " + Fmt.set(bestKg, bestReps, upNext.unit)
         } else {
             setLabel
         }
@@ -290,13 +291,13 @@ private fun UpNextCard(
                         verticalAlignment = Alignment.Bottom,
                     ) {
                         TabularText(
-                            text = Fmt.weight(upNext.weightKg, withUnit = false),
+                            text = Fmt.weight(upNext.weightKg, upNext.unit, withUnit = false),
                             modifier = Modifier.alignByBaseline(),
                             style = NT.Fonts.display(32),
                             color = NT.Colors.ink,
                         )
                         NtText(
-                            text = KG_TIMES,
+                            text = upNext.unit.raw + UNIT_TIMES,
                             modifier = Modifier.alignByBaseline(),
                             style = NT.Fonts.footnote,
                             color = NT.Colors.ink2,
@@ -338,8 +339,8 @@ private fun LockNote(modifier: Modifier) {
 private const val MINUS_15 = "−15"
 private const val PLUS_15 = "+15"
 
-/** `Text(verbatim: "kg ×")`. */
-private const val KG_TIMES = "kg ×"
+/** `Text(verbatim: "\(upNext.unit.rawValue) ×")` — after "kg" or "lb". */
+private const val UNIT_TIMES = " ×"
 
 // MARK: - Target
 
@@ -355,4 +356,6 @@ data class UpNextTarget(
     val reps: Int,
     val bestKg: Double? = null,
     val bestReps: Int? = null,
+    /** The user's unit for the rest card (the weights above are kg). */
+    val unit: WeightUnit = WeightUnit.Kg,
 )
