@@ -1,0 +1,18 @@
+{
+ "code": "2050401935713",
+ "status": 1,
+ "product": {
+  "code": "2050401935713",
+  "product_name": "Łosoś świeży",
+  "product_name_pl": "Łosoś świeży",
+  "brands": "MOWI",
+  "quantity": "150 g",
+  "serving_size": "150 g",
+  "serving_quantity": 150,
+  "image_front_small_url": "https://images.openfoodfacts.org/images/products/205/040/193/5713/front_pl.16.200.jpg",
+  "countries_tags": [
+   "en:poland"
+  ],
+  "lang": "pl"
+ }
+}

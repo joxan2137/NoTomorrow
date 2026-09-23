@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,8 @@ fun LogToMealButton(
     onMeal: (MealSlot) -> Unit,
     onLog: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Off with nothing to log: no tap, no menu, and the 0.4 fade of a disabled `PrimaryButton`. */
+    enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val interaction = remember { MutableInteractionSource() }
@@ -63,10 +66,12 @@ fun LogToMealButton(
                 .combinedClickable(
                     interactionSource = interaction,
                     indication = NTPressScale,
+                    enabled = enabled,
                     role = Role.Button,
                     onClick = onLog,
                     onLongClick = { expanded = true },
                 )
+                .alpha(if (enabled) 1f else 0.4f)
                 .background(NT.Colors.ink, CircleShape)
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),

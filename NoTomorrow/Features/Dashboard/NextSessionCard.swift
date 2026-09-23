@@ -11,6 +11,8 @@ struct NextSessionCard: View {
     var partnerState: DayState
     var partnerTime: Date?
     var hasActiveWorkout: Bool
+    /// A finished workout with a completed set started today.
+    var trainedToday: Bool = false
     var isConfirming: Bool
     var onConfirm: () -> Void
     var onStart: () -> Void
@@ -122,10 +124,16 @@ struct NextSessionCard: View {
             } else {
                 PrimaryButton(title: "dashboard.imIn", height: NT.Size.cardButton, isEnabled: !isConfirming, action: onConfirm)
             }
-            if sessionIsToday && !isOut {
+            if Self.offersCantMakeIt(sessionIsToday: sessionIsToday, myState: myState, trainedToday: trainedToday) {
                 SecondaryButton(title: "dashboard.cantMakeIt", height: NT.Size.cardButton, action: onCantMakeIt)
             }
         }
+    }
+
+    /// "Can't make it" is for a session still ahead today: not once I am out, and not once I trained (it would
+    /// cancel a day that is already attended).
+    static func offersCantMakeIt(sessionIsToday: Bool, myState: DayState, trainedToday: Bool) -> Bool {
+        sessionIsToday && !myState.isMissedOrCancelled && myState != .attended && !trainedToday
     }
 
     // MARK: Keys

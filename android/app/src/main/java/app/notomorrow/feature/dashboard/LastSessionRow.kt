@@ -40,7 +40,8 @@ import java.time.ZoneId
 
 /**
  * "Last session" header (day · name · duration · n PRs) with one chip per PR set — the port
- * of `LastSessionRow` (`Features/Dashboard/LastSessionRow.swift`). Tapping goes to Train.
+ * of `LastSessionRow` (`Features/Dashboard/LastSessionRow.swift`). Tapping opens that workout's
+ * detail over Today (the Train tab when there is none yet).
  */
 @Composable
 fun LastSessionRow(

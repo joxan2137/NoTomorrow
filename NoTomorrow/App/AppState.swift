@@ -37,8 +37,17 @@ final class AppState {
         didSet { UserDefaults.standard.set(languageOverride, forKey: Keys.language) }
     }
 
-    /// Route requests from deep links / notifications.
+    /// Route requests from deep links / notifications, consumed (and cleared) by `MainTabView`.
     var pendingRoute: Route?
+
+    /// Bumped by the Dashboard's Fuel row; the Fuel tab jumps to today whenever it changes.
+    var fuelTodayRequests = 0
+
+    /// Opens the Fuel tab on today, whatever day it was left on.
+    func openFuelToday() {
+        fuelTodayRequests += 1
+        selectedTab = .fuel
+    }
 
     enum Route: Equatable {
         case restTimer
@@ -55,5 +64,25 @@ final class AppState {
     private enum Keys {
         static let hasOnboarded = "nt.hasOnboarded"
         static let language = "nt.language"
+    }
+}
+
+extension AppState.Route {
+    static let urlScheme = "notomorrow"
+
+    /// `notomorrow://workout` → the workout in progress, `notomorrow://workout/rest` → it plus the rest sheet
+    /// (Live Activity taps), `notomorrow://bro`, `notomorrow://settings`. Anything else is ignored.
+    init?(url: URL) {
+        guard url.scheme?.lowercased() == Self.urlScheme else { return nil }
+        let parts = ([url.host ?? ""] + url.pathComponents)
+            .map { $0.lowercased() }
+            .filter { !$0.isEmpty && $0 != "/" }
+        switch parts {
+        case ["workout"]: self = .activeWorkout
+        case ["workout", "rest"]: self = .restTimer
+        case ["bro"]: self = .bro
+        case ["settings"]: self = .settings
+        default: return nil
+        }
     }
 }

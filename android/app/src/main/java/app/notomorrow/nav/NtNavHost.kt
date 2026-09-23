@@ -8,30 +8,25 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import app.notomorrow.app.MainTabScaffold
-import app.notomorrow.designsystem.LocalNtBackdrop
 import app.notomorrow.designsystem.NT
-import app.notomorrow.designsystem.ntBackdropSource
 import app.notomorrow.feature.fuel.CameraCaptureScreen
 import app.notomorrow.feature.onboarding.OnboardingFlow
-import app.notomorrow.feature.workout.ActiveWorkoutScreen
 
 /**
- * The **root** graph: onboarding, the tab shell, and the two full-screen destinations that must
- * open from any tab. The five tab roots are not destinations at all any more: `MainTabScaffold`
- * keeps them composed and swaps placement, the way iOS's `TabView` keeps every tab alive.
+ * The **root** graph: onboarding, the tab shell, and the full-screen camera that must open from
+ * any tab. The five tab roots are not destinations at all any more: `MainTabScaffold` keeps them
+ * composed and swaps placement, the way iOS's `TabView` keeps every tab alive — and the workout in
+ * progress is a layer of that shell too, so it can collapse into the mini bar over every tab.
  *
- * `RootScreen` owns the controller and keeps it in step with `appState.hasOnboarded` and
- * `workoutSession.showsActiveWorkout`; this file only declares the destinations and their
- * transitions. iOS presents the active workout as a `fullScreenCover`, so it slides up and back
- * down rather than pushing horizontally.
+ * `RootScreen` owns the controller and keeps it in step with `appState.hasOnboarded`; this file
+ * only declares the destinations and their transitions. iOS presents the camera as a
+ * `fullScreenCover`, so it slides up and back down rather than pushing horizontally.
  */
 @Composable
 fun NtNavHost(
@@ -53,31 +48,6 @@ fun NtNavHost(
         composable(NtRoute.Onboarding.route) { OnboardingFlow() }
 
         composable(NtRoute.Main.route) { MainTabScaffold() }
-
-        // `fullScreenCover`: slide up on present, slide down on dismiss. The dismissal is driven
-        // by predictive back as well as by the Finish flow, so it must live on popExit too.
-        composable(
-            route = NtRoute.ActiveWorkout.route,
-            enterTransition = { slideUp() },
-            exitTransition = { ExitTransition.None },
-            popEnterTransition = { EnterTransition.None },
-            popExitTransition = { slideDown() },
-        ) {
-            // `workout/active` is root-hosted, so the tab shell's recording host
-            // (`MainTabScaffold`) is not on screen — without a recording here the set-kind
-            // `NtMenu`, the finish confirmation dialog and the keyboard-accessory Done would all
-            // fall back to their flat fill, where iOS draws real glass over the workout list
-            // (`docs/android-glass.md` §3.3). It is the *same* `NtBackdrop`, never a second one:
-            // the two hosts are siblings in the root graph, never nested.
-            val backdrop = LocalNtBackdrop.current
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .then(if (backdrop != null) Modifier.ntBackdropSource(backdrop) else Modifier),
-            ) {
-                ActiveWorkoutScreen(onClose = { navController.popBackStack() })
-            }
-        }
 
         composable(
             route = NtRoute.FuelCamera.route,

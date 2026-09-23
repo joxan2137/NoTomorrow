@@ -1,0 +1,102 @@
+{
+ "hits": [
+  {
+   "code": "0444444143006",
+   "brands": [
+    "Piątnica"
+   ],
+   "countries_tags": [
+    "en:poland"
+   ],
+   "nutriments": {
+    "sugars_100g": 1.5,
+    "proteins_100g": 11,
+    "fat_100g": 5,
+    "salt_100g": 0.7,
+    "saturated-fat_100g": 3.5,
+    "carbohydrates_100g": 2,
+    "sodium_100g": 0.28,
+    "energy-kcal_100g": 97
+   },
+   "product_name": "Serek wiejski",
+   "product_name_en": "Serek wiejski"
+  },
+  {
+   "code": "5900531000935",
+   "brands": [
+    "Piątnica"
+   ],
+   "countries_tags": [
+    "en:poland"
+   ],
+   "nutriments": {
+    "energy-kcal_100g": 110,
+    "carbohydrates_100g": 10,
+    "fat_100g": 4,
+    "proteins_100g": 8.4
+   },
+   "product_name": "Serek wiejski",
+   "product_name_en": "Serek wiejski"
+  },
+  {
+   "code": "5900531050015",
+   "brands": [
+    "Piątnica"
+   ],
+   "quantity": "200 g",
+   "countries_tags": [
+    "en:poland"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 2,
+    "energy-kcal_100g": 97,
+    "energy-kj_100g": 406,
+    "fat_100g": 5,
+    "proteins_100g": 11,
+    "salt_100g": 0.7,
+    "saturated-fat_100g": 3.5,
+    "sodium_100g": 0.28,
+    "sugars_100g": 1.5
+   },
+   "product_name": "Serek wiejski",
+   "product_name_en": "Serek wiejski",
+   "image_front_small_url": "https://images.openfoodfacts.org/images/products/590/053/105/0015/front_it.6.200.jpg"
+  },
+  {
+   "code": "5900512987378",
+   "quantity": "200g",
+   "countries_tags": [
+    "en:poland"
+   ],
+   "nutriments": {
+    "carbohydrates_100g": 2,
+    "energy-kcal_100g": 97,
+    "energy-kj_100g": 406,
+    "fat_100g": 5,
+    "fiber_100g": 0,
+    "proteins_100g": 11,
+    "salt_100g": 0.7,
+    "saturated-fat_100g": 3.3,
+    "sodium_100g": 0.28,
+    "sugars_100g": 2
+   },
+   "product_name_en": "Serek wiejski bez laktozy",
+   "image_front_small_url": "https://images.openfoodfacts.org/images/products/590/051/298/7378/front_pl.18.200.jpg"
+  },
+  {
+   "code": "5900512980966",
+   "brands": [
+    "Mlekovita"
+   ],
+   "countries_tags": [
+    "en:poland"
+   ],
+   "product_name": "Mlekovita Serek Wiejski Bez Laktozy",
+   "product_name_en": "Mlekovita Serek Wiejski Bez Laktozy",
+   "image_front_small_url": "https://images.openfoodfacts.org/images/products/590/051/298/0966/front_en.3.200.jpg"
+  }
+ ],
+ "page": 1,
+ "page_size": 24,
+ "count": 112
+}

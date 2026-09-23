@@ -1,9 +1,12 @@
 import SwiftUI
 import VisionKit
+import Vision
 import UIKit
 
-/// Rear-camera barcode scanner (EAN-13 / EAN-8 / UPC-E). Calls `onCode` once for the first recognised barcode.
-/// On the simulator or any device VisionKit cannot scan on, falls back to a manual code field.
+/// Rear-camera barcode scanner. Reads EAN-13 / EAN-8 / UPC-E, GS1 DataBar (produce and fresh-food stickers), and QR /
+/// DataMatrix only when they carry a GTIN (GS1 Digital Link or element string), so a promo QR on the same pack is
+/// ignored. Calls `onCode` once with the first product code (`GTINExtractor`). On the simulator or any device VisionKit
+/// cannot scan on, falls back to a manual code field.
 struct BarcodeScannerView: View {
     var onCode: (String) -> Void
 
@@ -69,13 +72,18 @@ private struct DataScannerRepresentable: UIViewControllerRepresentable {
     var onCode: (String) -> Void
     var onUnavailable: () -> Void
 
+    static let symbologies: [VNBarcodeSymbology] = [
+        .ean13, .ean8, .upce, .gs1DataBar, .gs1DataBarExpanded, .gs1DataBarLimited, .qr, .dataMatrix,
+    ]
+
     func makeCoordinator() -> Coordinator { Coordinator(onCode: onCode, onUnavailable: onUnavailable) }
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let controller = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.ean13, .ean8, .upce])],
+            recognizedDataTypes: [.barcode(symbologies: Self.symbologies)],
             qualityLevel: .balanced,
-            recognizesMultipleItems: false,
+            // Several codes at once, so a promo QR recognised first cannot hold the scanner while the EAN waits.
+            recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: false,
             isPinchToZoomEnabled: true,
             isGuidanceEnabled: true,
@@ -105,14 +113,24 @@ private struct DataScannerRepresentable: UIViewControllerRepresentable {
         init(onCode: @escaping (String) -> Void, onUnavailable: @escaping () -> Void) { self.onCode = onCode; self.onUnavailable = onUnavailable }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
+            deliverFirstProductCode(in: allItems, from: dataScanner)
+        }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didUpdate updatedItems: [RecognizedItem], allItems: [RecognizedItem]) {
+            deliverFirstProductCode(in: allItems, from: dataScanner)
+        }
+
+        /// Fires for the first item that carries a product code; anything else (promo QR, misread) keeps scanning.
+        private func deliverFirstProductCode(in items: [RecognizedItem], from dataScanner: DataScannerViewController) {
             guard !finished else { return }
-            for item in addedItems {
-                if case .barcode(let barcode) = item, let payload = barcode.payloadStringValue, !payload.isEmpty {
-                    finished = true
-                    dataScanner.stopScanning()
-                    onCode(payload)
-                    return
-                }
+            for item in items {
+                guard case .barcode(let barcode) = item, let payload = barcode.payloadStringValue,
+                      let code = GTINExtractor.gtin(payload: payload, symbology: .init(barcode.observation.symbology))
+                else { continue }
+                finished = true
+                dataScanner.stopScanning()
+                onCode(code)
+                return
             }
         }
 
@@ -132,8 +150,11 @@ private struct ManualBarcodeEntry: View {
     @State private var code = ""
     @FocusState private var focused: Bool
 
-    private var digits: String { code.filter(\.isNumber) }
-    private var isValid: Bool { !FoodSearchService.barcodeForms(digits).isEmpty }
+    private var digits: String { code.filter(\.isASCIIDigit) }
+    /// The code to look up: a GTIN whose check digit is right, or a UPC-E expanded. Nil while it cannot be a real code.
+    private var validCode: String? { GTINExtractor.manual(digits) }
+    /// A complete-looking code whose check digit is wrong: most likely a typo.
+    private var showsCheckDigits: Bool { [8, 12, 13, 14].contains(digits.count) && validCode == nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: NT.Spacing.section) {
@@ -169,15 +190,32 @@ private struct ManualBarcodeEntry: View {
                         .frame(height: NT.Size.control + 4)
                         .background(NT.Colors.surface2, in: RoundedRectangle(cornerRadius: NT.Radius.field, style: .continuous))
                         .submitLabel(.done)
-                        .onSubmit { if isValid { onCode(digits) } }
+                        .onSubmit { if let validCode { onCode(validCode) } }
+                    if showsCheckDigits {
+                        Text("fuel.scan.checkDigits").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ember)
+                    }
                 }
             }
 
-            PrimaryButton(title: "fuel.scan.useCode", isEnabled: isValid) { onCode(digits) }
+            PrimaryButton(title: "fuel.scan.useCode", isEnabled: validCode != nil) { if let validCode { onCode(validCode) } }
             Spacer()
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.top, 8)
         .onAppear { focused = true }
+    }
+}
+
+private extension GTINExtractor.Symbology {
+    init(_ symbology: VNBarcodeSymbology) {
+        switch symbology {
+        case .ean13: self = .ean13
+        case .ean8: self = .ean8
+        case .upce: self = .upce
+        case .gs1DataBar, .gs1DataBarExpanded, .gs1DataBarLimited: self = .gs1DataBar
+        case .qr: self = .qr
+        case .dataMatrix: self = .dataMatrix
+        default: self = .other
+        }
     }
 }

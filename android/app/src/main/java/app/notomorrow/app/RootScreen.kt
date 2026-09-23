@@ -9,7 +9,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.notomorrow.BuildConfig
 import app.notomorrow.designsystem.GlassDebug
@@ -31,12 +30,15 @@ import app.notomorrow.nav.NtRoute
 /**
  * The app's root — the port of `NoTomorrow/App/RootView.swift`.
  *
- * Three responsibilities, and nothing else:
- *  1. onboarding versus the tab shell, decided by `appState.hasOnboarded`;
- *  2. the active-workout full-screen cover, which iOS mounts on the tab shell "so starting a
- *     workout from any tab opens it reliably" and Android hosts on the **root** `NavHost`;
- *  3. `appState.pendingRoute` — a tapped notification or a deep link. iOS declares the type with
- *     no readers; Android implements it.
+ * Two responsibilities, and nothing else:
+ *  1. onboarding versus the tab shell, decided by `appState.hasOnboarded` — or, when the database
+ *     could not be opened, neither: [StoreErrorScreen] (`StoreLoader`);
+ *  2. `appState.pendingRoute` — a tapped notification or a deep link (`MainTabView`'s route
+ *     consumer on iOS). The workout opens over whatever tab is showing; no route switches tabs to
+ *     get to it.
+ *
+ * The active workout is not here any more: it is a layer of the tab shell ([MainTabScaffold]),
+ * which also shows it collapsed as the mini bar on every tab.
  *
  * The library import and routine seeding that `RootView.task` performs run in
  * `NoTomorrowApp`'s start-up coroutine instead, so they are not tied to a composition.
@@ -44,26 +46,25 @@ import app.notomorrow.nav.NtRoute
  * It is also where the app's **one** Liquid Glass backdrop, its tier and the single
  * [NtOverlayHost] are created (`docs/android-glass.md` §3.3: *"There is exactly one `NtBackdrop`
  * per app, created in `RootScreen`"*). Creating them here rather than in [MainTabScaffold] is what
- * gives the root-level destinations — `workout/active`, `fuel/camera` and the whole onboarding
- * graph — real glass instead of a flat fill: on iOS the set-kind `Menu`, the finish
- * `confirmationDialog` and the keyboard-accessory `Done` in `ActiveWorkoutView` all render as glass
- * over the workout list. The **recording** stays with whichever screen is mounted (the tab
- * `NavHost` in [MainTabScaffold]); the two are never nested.
+ * gives the root-level destinations — `fuel/camera` and the whole onboarding graph — real glass
+ * instead of a flat fill. The **recording** stays with whichever screen is mounted (the tab shell,
+ * whose recording also holds the workout layer, so the set-kind menu and the Finish dialog over it
+ * are glass as on iOS); the two are never nested.
  */
 @Composable
 fun RootScreen() {
     val container = LocalAppContainer.current
     val appState = container.appState
-    val session = container.workoutSession
 
     val isLoaded by appState.isLoaded.collectAsStateWithLifecycle()
     val hasOnboarded by appState.hasOnboarded.collectAsStateWithLifecycle()
-    val showsActiveWorkout by session.showsActiveWorkout.collectAsStateWithLifecycle()
     val pendingRoute by appState.pendingRoute.collectAsStateWithLifecycle()
+    // The database opens before `isLoaded` flips (`AppContainer.load`). Nothing below that reads it
+    // — the graph, the workout session, the route consumer — is composed until it is open.
+    val storeState by container.store.state.collectAsStateWithLifecycle()
+    val storeOpen = storeState == StoreLoader.State.Open
 
     val navController = rememberNavController()
-    val currentEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = currentEntry?.destination?.route
 
     val backdrop = rememberNtBackdrop()
     val glassTier by rememberGlassTier()
@@ -86,12 +87,17 @@ fun RootScreen() {
             // the default (false) would flash the Welcome screen at a returning user. The splash
             // screen is still up here — `MainActivity` keeps it on the same condition.
             if (isLoaded) {
-                NtNavHost(
-                    navController = navController,
-                    startDestination =
-                        if (hasOnboarded) NtRoute.Main.route else NtRoute.Onboarding.route,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                when (val store = storeState) {
+                    StoreLoader.State.Open -> NtNavHost(
+                        navController = navController,
+                        startDestination =
+                            if (hasOnboarded) NtRoute.Main.route else NtRoute.Onboarding.route,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    // Never the tabs or onboarding over a store that did not open (`RootView`).
+                    is StoreLoader.State.Failed -> StoreErrorScreen(store.message, Modifier.fillMaxSize())
+                    StoreLoader.State.Loading -> Unit
+                }
             }
 
             // Menus, alerts and action sheets are composed here — after the recorded subtree, so
@@ -106,11 +112,11 @@ fun RootScreen() {
 
     // Onboarding finishing (or a delete-account reset) swaps the whole graph, clearing the stack so
     // back cannot walk into the flow that no longer applies.
-    LaunchedEffect(isLoaded, hasOnboarded) {
-        if (!isLoaded) return@LaunchedEffect
+    LaunchedEffect(isLoaded, hasOnboarded, storeOpen) {
+        if (!isLoaded || !storeOpen) return@LaunchedEffect
         val target = if (hasOnboarded) NtRoute.Main.route else NtRoute.Onboarding.route
         val root = navController.currentBackStackEntry?.destination?.route
-        if (root != null && root != target && root != NtRoute.ActiveWorkout.route) {
+        if (root != null && root != target) {
             navController.navigate(target) {
                 popUpTo(navController.graph.id) { inclusive = true }
                 launchSingleTop = true
@@ -118,40 +124,29 @@ fun RootScreen() {
         }
     }
 
-    // `showsActiveWorkout` → the cover. Presenting is a navigate; dismissing is a pop.
-    LaunchedEffect(showsActiveWorkout, isLoaded) {
-        if (!isLoaded) return@LaunchedEffect
-        val onScreen = navController.currentBackStackEntry?.destination?.route ==
-            NtRoute.ActiveWorkout.route
-        when {
-            showsActiveWorkout && !onScreen ->
-                navController.navigate(NtRoute.ActiveWorkout.route) { launchSingleTop = true }
+    // A tap that arrives while the store error screen is up waits for the store to open.
+    if (isLoaded && storeOpen) PendingRouteConsumer(pendingRoute)
+}
 
-            !showsActiveWorkout && onScreen -> navController.popBackStack()
-        }
-    }
+/** `appState.pendingRoute` — a tapped notification or a deep link. Composed only over an open store. */
+@Composable
+private fun PendingRouteConsumer(pendingRoute: AppState.Route?) {
+    val container = LocalAppContainer.current
+    val appState = container.appState
+    val session = container.workoutSession
 
-    // …and back, so predictive back (or the screen popping itself) clears the flag.
-    LaunchedEffect(currentRoute) {
-        if (currentRoute != NtRoute.ActiveWorkout.route && session.showsActiveWorkout.value) {
-            session.hide()
-        }
-    }
-
-    LaunchedEffect(pendingRoute, isLoaded) {
+    LaunchedEffect(pendingRoute) {
         val route = pendingRoute ?: return@LaunchedEffect
-        if (!isLoaded) return@LaunchedEffect
         when (route) {
-            // The rest timer lives inside the active workout; `feature/workout` observes the flag.
-            AppState.Route.RestTimer -> {
-                appState.select(AppTab.Train)
-                if (session.activeWorkoutId.value != null) session.show()
-                appState.showsRestTimer.value = true
-            }
-
-            AppState.Route.ActiveWorkout -> {
-                appState.select(AppTab.Train)
-                if (session.activeWorkoutId.value != null) session.show()
+            // The rest notifications: the workout expands over whatever tab is showing — plus the
+            // rest sheet when the running-rest one was tapped and the rest is still going. After
+            // a cold start the persisted id is read back (and, if need be, adopted) first.
+            AppState.Route.RestTimer, AppState.Route.ActiveWorkout -> {
+                if (session.activeWorkout() != null) {
+                    container.restTimer.awaitRestored()
+                    val restRunning = container.restTimer.state.value.isRunning()
+                    session.expand(restSheet = route == AppState.Route.RestTimer && restRunning)
+                }
             }
 
             AppState.Route.Bro -> appState.select(AppTab.Bro)

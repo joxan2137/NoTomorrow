@@ -40,6 +40,9 @@ struct FuelHeroView: View {
 
 // MARK: - Meal slot rows (header, entries, empty hint, hairline)
 
+/// One meal slot on the Fuel home. Entry rows: tap or swipe right to edit, swipe left to delete, long-press for the
+/// menu. On a past day (`onLogAgain` / `onCopyToToday` set) the menu adds "Log again today" and a non-empty slot
+/// header gets a "Copy to today" button.
 struct FuelMealRows: View {
     var slot: MealSlot
     var entries: [MealEntry]
@@ -49,26 +52,44 @@ struct FuelMealRows: View {
     var onOpen: () -> Void
     var onEdit: (MealEntry) -> Void
     var onDelete: (MealEntry) -> Void
+    /// Past days only: copy one entry into the same slot today.
+    var onLogAgain: ((MealEntry) -> Void)? = nil
+    /// Past days only: copy the whole slot into the same slot today.
+    var onCopyToToday: (() -> Void)? = nil
 
     private var rowInsets: EdgeInsets {
         EdgeInsets(top: 0, leading: NT.Spacing.screenH, bottom: 0, trailing: NT.Spacing.screenH)
     }
 
     var body: some View {
-        Button(action: onOpen) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(slot.titleKey).font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
-                Spacer()
-                if entries.isEmpty {
-                    Text("fuel.nothingYet").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink3)
-                } else {
-                    KcalLabel(kcal: kcal)
+        HStack(spacing: 4) {
+            Button(action: onOpen) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(slot.titleKey).font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
+                    Spacer()
+                    if entries.isEmpty {
+                        Text("fuel.nothingYet").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink3)
+                    } else {
+                        KcalLabel(kcal: kcal)
+                    }
                 }
+                .frame(minHeight: NT.Size.control)
+                .contentShape(Rectangle())
             }
-            .frame(minHeight: NT.Size.control)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+
+            if let onCopyToToday, !entries.isEmpty {
+                Button(action: onCopyToToday) {
+                    Image(systemName: "plus.square.on.square")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(NT.Colors.ink2)
+                        .frame(width: NT.Size.control, height: NT.Size.control, alignment: .trailing)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("fuel.copyToToday"))
+            }
         }
-        .buttonStyle(.plain)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 4, leading: NT.Spacing.screenH, bottom: 0, trailing: NT.Spacing.screenH))
@@ -76,10 +97,23 @@ struct FuelMealRows: View {
         ForEach(entries, id: \.id) { entry in
             Button { onEdit(entry) } label: { FuelEntryRow(entry: entry) }
                 .buttonStyle(.plain)
+                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: NT.Radius.field, style: .continuous))
+                .contextMenu { entryMenu(entry) }
                 .accessibilityHint(Text("common.edit"))
+                .accessibilityActions {
+                    if let onLogAgain {
+                        Button("fuel.logAgainToday") { onLogAgain(entry) }
+                    }
+                }
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(rowInsets)
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button { onEdit(entry) } label: {
+                        Label("common.edit", systemImage: "pencil")
+                    }
+                    .tint(NT.Colors.surface3)
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) { onDelete(entry) } label: {
                         Label("common.delete", systemImage: "trash")
@@ -110,6 +144,17 @@ struct FuelMealRows: View {
                 .listRowInsets(rowInsets)
         }
     }
+
+    /// Long-press menu of an entry row: Edit · Log again today (past days) · Delete.
+    @ViewBuilder
+    private func entryMenu(_ entry: MealEntry) -> some View {
+        Button { onEdit(entry) } label: { Label("common.edit", systemImage: "pencil") }
+        if let onLogAgain {
+            Button { onLogAgain(entry) } label: { Label("fuel.logAgainToday", systemImage: "plus.square.on.square") }
+        }
+        Divider()
+        Button(role: .destructive) { onDelete(entry) } label: { Label("common.delete", systemImage: "trash") }
+    }
 }
 
 struct FuelEntryRow: View {
@@ -126,6 +171,11 @@ struct FuelEntryRow: View {
             }
             Spacer(minLength: 8)
             Text(Fmt.kcal(entry.kcal, withUnit: false)).font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular()
+            // Tells the row opens something; the text alone read as a static list.
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(NT.Colors.ink3)
+                .accessibilityHidden(true)
         }
         .frame(minHeight: 30)
         .contentShape(Rectangle())

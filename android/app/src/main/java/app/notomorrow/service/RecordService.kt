@@ -89,7 +89,109 @@ class RecordService(private val workoutDao: WorkoutDao) {
     suspend fun lastPRDate(exerciseId: String): Long? =
         lastPRDate(workoutDao.completedSetsForExercise(exerciseId))
 
+    // MARK: - Rebuild
+
+    /**
+     * Re-derives the flags of every set of these exercises (all workouts) with [rebuildFlags] and
+     * writes the ones that changed; an open set still carrying a flag is cleared. Run after a
+     * finished workout is edited or deleted, and on Finish. Returns the rows changed.
+     *
+     * One query per exercise on the flat completed-set projection, like every other lookup here.
+     */
+    suspend fun rebuild(exerciseIds: Set<String>): Int {
+        if (exerciseIds.isEmpty()) return 0
+        var changed = 0
+        for (exerciseId in exerciseIds) {
+            val sets = workoutDao.completedSetsForExercise(exerciseId)
+            val flags = rebuildFlags(
+                sets.map { set ->
+                    RecordRow(
+                        id = set.setId,
+                        group = set.workoutExerciseId,
+                        order = set.setOrder,
+                        completedAt = set.completedAt,
+                        kind = set.kind,
+                        weightKg = set.weightKg,
+                        reps = set.reps,
+                    )
+                },
+            )
+            for (set in sets) {
+                val f = flags[set.setId] ?: continue
+                if (set.isPR == f.isPR && set.isSetRecord == f.isSetRecord) continue
+                workoutDao.updateSetRecords(set.setId, f.isPR, f.isSetRecord)
+                changed += 1
+            }
+        }
+        changed += workoutDao.clearOpenSetRecords(exerciseIds.toList())
+        return changed
+    }
+
+    /** One set of one exercise, as the records rule sees it — `RecordService.RecordRow`. */
+    data class RecordRow(
+        val id: Long,
+        /** The `WorkoutExercise` it belongs to: sets ticked at the same instant are ordered by row only inside it. */
+        val group: Long,
+        val order: Int,
+        val completedAt: Long?,
+        val kind: SetKind,
+        val weightKg: Double,
+        val reps: Int,
+    ) {
+        val estimatedOneRepMax: Double get() = epley(weightKg, reps)
+    }
+
+    data class RecordFlags(val isPR: Boolean, val isSetRecord: Boolean)
+
     companion object {
+
+        /**
+         * Flags for every row of ONE exercise, exactly as [evaluate] would have set them had each
+         * completed working set been ticked in `completedAt` order — the same tie rule as
+         * [previousSets]: equal timestamps only see earlier rows of the same `WorkoutExercise`.
+         * Open sets, warm-ups and 0-rep sets get no flag.
+         */
+        fun rebuildFlags(rows: List<RecordRow>): Map<Long, RecordFlags> {
+            val result = HashMap<Long, RecordFlags>()
+            for (row in rows) result[row.id] = RecordFlags(isPR = false, isSetRecord = false)
+
+            val byInstant = rows
+                .filter { it.completedAt != null && it.kind != SetKind.Warmup && it.reps > 0 }
+                .groupBy { it.completedAt!! }
+            var seen = 0
+            var maxE1RM = 0.0
+            var maxWeight = 0.0
+            val repsAtWeight = HashMap<Double, Int>()
+
+            for (instant in byInstant.keys.sorted()) {
+                val tie = byInstant.getValue(instant)
+                for (row in tie) {
+                    val local = tie.filter { it.group == row.group && it.order < row.order }
+                    // The first logged working set of an exercise is its first record.
+                    if (seen + local.size == 0) {
+                        result[row.id] = RecordFlags(isPR = true, isSetRecord = false)
+                        continue
+                    }
+                    val priorE1RM = maxOf(maxE1RM, local.maxOfOrNull { it.estimatedOneRepMax } ?: 0.0)
+                    val priorWeight = maxOf(maxWeight, local.maxOfOrNull { it.weightKg } ?: 0.0)
+                    val isPR = row.estimatedOneRepMax > priorE1RM || row.weightKg > priorWeight
+                    var isSetRecord = false
+                    if (!isPR) {
+                        val localReps = local.filter { it.weightKg == row.weightKg }.maxOfOrNull { it.reps }
+                        val best = listOfNotNull(repsAtWeight[row.weightKg], localReps).maxOrNull()
+                        if (best != null) isSetRecord = row.reps > best
+                    }
+                    result[row.id] = RecordFlags(isPR = isPR, isSetRecord = isSetRecord)
+                }
+                for (row in tie) {
+                    seen += 1
+                    maxE1RM = maxOf(maxE1RM, row.estimatedOneRepMax)
+                    maxWeight = maxOf(maxWeight, row.weightKg)
+                    repsAtWeight[row.weightKg] = maxOf(repsAtWeight[row.weightKg] ?: 0, row.reps)
+                }
+            }
+            return result
+        }
 
         /**
          * Epley estimated one-rep max — `SetEntry.estimatedOneRepMax`. 0 when reps or
@@ -168,11 +270,27 @@ class RecordService(private val workoutDao: WorkoutDao) {
                 compareBy<CompletedSetRow> { it.reps }.thenBy { it.weightKg },
             )
 
-        /** Most recently completed working set, optionally ignoring one workout. */
+        /**
+         * Most recently completed working set, optionally ignoring one workout. Sets sharing one
+         * `completedAt` (batch-ticked, or added in the workout editor, which gives a new row its
+         * neighbour's time) resolve by position ([COMPLETED_EARLIER]): the set done last, not
+         * whichever the query returned first.
+         */
         fun lastSet(rows: List<CompletedSetRow>, excludingWorkoutId: String? = null): CompletedSetRow? =
             completedSets(rows)
                 .filter { excludingWorkoutId == null || it.workoutId != excludingWorkoutId }
-                .maxByOrNull { it.completedAt }
+                .maxWithOrNull(COMPLETED_EARLIER)
+
+        /**
+         * Completion order — `RecordService.completedEarlier`: by `completedAt`; sets done at the
+         * same instant by their exercise's position in the workout, then by row. So the last of
+         * them is the bottom row, the way the records rule orders ties.
+         */
+        val COMPLETED_EARLIER: Comparator<CompletedSetRow> = compareBy(
+            { it.completedAt },
+            { it.workoutExerciseOrder },
+            { it.setOrder },
+        )
 
         /** Best e1RM per workout, oldest first, dated at the workout start. */
         fun e1RMHistory(rows: List<CompletedSetRow>): List<E1RMSample> {

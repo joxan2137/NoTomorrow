@@ -16,15 +16,12 @@ import app.notomorrow.data.entity.BroPairingEntity
 import app.notomorrow.data.entity.GymScheduleEntity
 import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.data.entity.RoutineEntity
-import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.UserProfileEntity
-import app.notomorrow.data.entity.WorkoutEntity
-import app.notomorrow.data.entity.WorkoutExerciseEntity
-import app.notomorrow.data.relation.CompletedSetRow
 import app.notomorrow.data.relation.WorkoutWithExercises
+import app.notomorrow.feature.fuel.FuelCalendar
+import app.notomorrow.feature.workout.WorkoutStarter
 import app.notomorrow.model.AppTab
 import app.notomorrow.model.Participant
-import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.AttendanceService
 import app.notomorrow.service.BroService
@@ -54,7 +51,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
-import java.util.UUID
 
 /**
  * The Dashboard's state and write side — the port of `DashboardModel`
@@ -87,6 +83,8 @@ class DashboardViewModel(
     private val zone: ZoneId = ZoneId.systemDefault(),
 ) : ViewModel() {
 
+    private val stores = WorkoutStarter.Stores(routineDao, workoutDao, exerciseDao, profileDao)
+
     private val day = MutableStateFlow(LocalDate.now(zone))
     private val isConfirming = MutableStateFlow(false)
     private val showsCantMakeIt = MutableStateFlow(false)
@@ -98,11 +96,16 @@ class DashboardViewModel(
         val to = Days.millis(weekStart.plusDays(7), zone)
         combine(
             attendanceDao.observeRange(from, to),
-            mealDao.observeDayEntries(Days.millis(today, zone)),
+            todayMeals(mealDao, today, zone),
             workoutDao.observeFinishedWorkoutsWithExercises(limit = 1).map { it.firstOrNull() },
-            workoutDao.observeActiveWorkouts().map { it.isNotEmpty() },
-        ) { records, meals, lastWorkout, hasActive ->
-            Live(today, records, meals, lastWorkout, hasActive)
+            // `session.isWorkoutInProgress`: not "any unfinished row" — a workout on its summary
+            // or being discarded is not one to resume.
+            session.isWorkoutInProgress,
+            // `DashboardView.trainedToday`: a finished workout with a completed set started today.
+            workoutDao.observeCountedWorkoutsBetween(Days.millis(today, zone), Days.millis(today.plusDays(1), zone))
+                .map { it > 0 },
+        ) { records, meals, lastWorkout, hasActive, trainedToday ->
+            Live(today, records, meals, lastWorkout, hasActive, trainedToday)
         }
     }
 
@@ -111,9 +114,9 @@ class DashboardViewModel(
         scheduleDao.observeSchedule(),
         pairingDao.observePairing(),
         routineDao.observeRoutines(),
-        workoutDao.observeFinishedCount(),
-    ) { profile, schedule, pairing, routines, finishedCount ->
-        Basis(profile, schedule, pairing, routines, finishedCount)
+        workoutDao.observeLastRoutineWorkoutName(),
+    ) { profile, schedule, pairing, routines, lastRoutineWorkout ->
+        Basis(profile, schedule, pairing, routines, listOfNotNull(lastRoutineWorkout))
     }
 
     private val local: Flow<Local> = combine(
@@ -180,49 +183,30 @@ class DashboardViewModel(
         }
     }
 
+    /** A start is being resolved: a second tap in that window is dropped, never a second workout. */
+    private var starting = false
+
     /**
-     * `DashboardModel.startWorkout` — resume the running workout, or build one from the
-     * suggested routine (one row per target set, weight prefilled from the last completed
-     * working set) and switch to the Train tab.
+     * `DashboardModel.startWorkout` — starts the suggested routine through the shared
+     * [WorkoutStarter] path (the Train tab's), or brings back the workout already in progress.
+     * Either way the full screen opens over Today: no tab switch.
      */
     fun startWorkout() {
+        if (starting) return
+        starting = true
         viewModelScope.launch {
-            session.activeWorkout()?.let { active ->
-                session.begin(active.id)
-                appState.select(AppTab.Train)
-                return@launch
-            }
-            val routine = uiState.value.suggestedRoutineId?.let { routineDao.routineWithItems(it) }
-            val workout = WorkoutEntity(
-                id = UUID.randomUUID().toString(),
-                name = routine?.routine?.name ?: strings.string(S.workout_untitled),
-                startedAt = System.currentTimeMillis(),
-            )
-            workoutDao.insertWorkout(workout)
-            for (item in routine?.sortedItems.orEmpty()) {
-                val exercise = item.exercise ?: continue
-                val lastWeight = lastCompletedWeight(workoutDao.completedSetsForExercise(exercise.id)) ?: 0.0
-                val sets = (0 until maxOf(1, item.item.targetSets)).map { index ->
-                    SetEntryEntity(
-                        workoutExerciseId = 0,
-                        order = index,
-                        weightKg = lastWeight,
-                        reps = item.item.targetReps,
-                    )
+            try {
+                if (session.activeWorkout() != null) {
+                    session.expand()
+                    return@launch
                 }
-                workoutDao.insertWorkoutExerciseWithSets(
-                    WorkoutExerciseEntity(
-                        workoutId = workout.id,
-                        exerciseId = exercise.id,
-                        order = item.item.order,
-                        restSeconds = item.item.restSeconds,
-                    ),
-                    sets,
-                )
-                exerciseDao.markUsed(exercise.id, System.currentTimeMillis())
+                val request = uiState.value.suggestedRoutineId
+                    ?.let { WorkoutStarter.Request.Routine(it) }
+                    ?: WorkoutStarter.Request.Empty(strings.string(S.workout_defaultName))
+                WorkoutStarter.start(request, stores, session)
+            } finally {
+                starting = false
             }
-            session.begin(workout.id)
-            appState.select(AppTab.Train)
         }
     }
 
@@ -251,7 +235,8 @@ class DashboardViewModel(
         viewModelScope.launch { bro.refresh() }
     }
 
-    fun selectFuelTab() = appState.select(AppTab.Fuel)
+    /** The Fuel summary row: Fuel always opens on today (`AppState.openFuelToday`). */
+    fun selectFuelTab() = appState.openFuelToday()
 
     fun selectTrainTab() = appState.select(AppTab.Train)
 
@@ -261,28 +246,28 @@ class DashboardViewModel(
         const val BRO_REFRESH_MILLIS: Long = 15_000L
 
         /**
-         * `DashboardModel.suggestedRoutine` — rotate by how many workouts have been
-         * finished: 0 → first, 1 → second, …
+         * The Fuel row's entries for [today]: the stored-day range the Fuel tab and the History
+         * grid read ([FuelCalendar.storedDayBounds]), not the exact midnight, so an entry stored
+         * at another zone's midnight counts here exactly when Fuel lists it on today.
          */
-        fun suggestedRoutine(routines: List<RoutineEntity>, finishedCount: Int): RoutineEntity? {
-            if (routines.isEmpty()) return null
-            return routines[Math.floorMod(finishedCount, routines.size)]
+        fun todayMeals(mealDao: MealDao, today: LocalDate, zone: ZoneId): Flow<List<MealEntryEntity>> {
+            val bounds = FuelCalendar.storedDayBounds(today, zone)
+            return mealDao.observeDayRange(bounds.lower, bounds.upper).map { rows -> rows.map { it.entry } }
         }
 
         /**
-         * `DashboardModel.lastCompletedWeight` — weight of the most recently completed
-         * working set. The rows are already `completedAt IS NOT NULL`; warm-ups are
-         * excluded and, like Swift's `max(by:)` — which replaces the incumbent only when
-         * `areInIncreasingOrder(result, e)` is strictly true — the **first** of equal
-         * timestamps wins.
+         * `DashboardModel.suggestedRoutine(routines:recentWorkoutNames:)` — the routine after the
+         * one done most recently, wrapping around; the first routine when no finished workout came
+         * from a routine. [recentWorkoutNames] is newest first; ad-hoc workouts (no matching
+         * routine) are skipped, so they do not shift the rotation.
          */
-        fun lastCompletedWeight(rows: List<CompletedSetRow>): Double? {
-            var best: CompletedSetRow? = null
-            for (row in rows) {
-                if (row.kind == SetKind.Warmup) continue
-                if (best == null || row.completedAt > best.completedAt) best = row
+        fun suggestedRoutine(routines: List<RoutineEntity>, recentWorkoutNames: List<String>): RoutineEntity? {
+            if (routines.isEmpty()) return null
+            for (name in recentWorkoutNames) {
+                val index = routines.indexOfFirst { it.name == name }
+                if (index >= 0) return routines[(index + 1) % routines.size]
             }
-            return best?.weightKg
+            return routines.first()
         }
 
         /**
@@ -316,7 +301,9 @@ class DashboardViewModel(
                 )
             }
 
-            val routine = suggestedRoutine(basis.routines, basis.finishedCount)
+            val routine = suggestedRoutine(basis.routines, basis.recentRoutineWorkoutNames)
+            val myState = today?.myState ?: DayState.Rest
+            val sessionIsToday = session?.isToday == true
 
             return DashboardUiState(
                 day = day,
@@ -324,16 +311,18 @@ class DashboardViewModel(
                     ?: DashboardUiState.FALLBACK_INITIAL,
                 week = week,
                 session = session,
-                routineName = routine?.name,
+                routineName = sessionRoutineName(sessionIsToday, live.lastWorkout, day, zone) ?: routine?.name,
                 suggestedRoutineId = routine?.id,
+                sessionDone = sessionDone(sessionIsToday, myState, live.trainedToday),
                 isPaired = isPaired,
                 partnerName = partnerName,
-                myState = today?.myState ?: DayState.Rest,
+                myState = myState,
                 myTime = record(live.weekRecords, Participant.Me, day, zone)?.let { Instant.ofEpochMilli(it.updatedAt) },
                 partnerState = today?.partnerState ?: DayState.Rest,
                 partnerTime = record(live.weekRecords, Participant.Partner, day, zone)
                     ?.let { Instant.ofEpochMilli(it.updatedAt) },
                 hasActiveWorkout = live.hasActiveWorkout,
+                trainedToday = live.trainedToday,
                 isConfirming = local.isConfirming,
                 totals = FuelTotals.of(live.meals),
                 goals = FuelGoals.of(basis.profile),
@@ -341,6 +330,32 @@ class DashboardViewModel(
                 units = basis.profile?.units ?: WeightUnit.Kg,
                 showsCantMakeIt = local.showsCantMakeIt,
             )
+        }
+
+        /**
+         * Today's session is behind me: the day is attended, or a finished workout with a completed
+         * set started today. The card then says so instead of counting down to a session already
+         * trained.
+         */
+        internal fun sessionDone(sessionIsToday: Boolean, myState: DayState, trainedToday: Boolean): Boolean =
+            sessionIsToday && (myState == DayState.Attended || trainedToday)
+
+        /**
+         * The card's routine for a session today that already has a finished workout: that workout's
+         * name, the Kolega tab's rule (`BroDerived.routineName`, the workout done that day), so both
+         * tabs name today's session alike. `null` otherwise — the card shows the suggested routine.
+         * [lastWorkout] is the newest finished workout by start, so it is today's when there is one.
+         */
+        internal fun sessionRoutineName(
+            sessionIsToday: Boolean,
+            lastWorkout: WorkoutWithExercises?,
+            day: LocalDate,
+            zone: ZoneId,
+        ): String? {
+            if (!sessionIsToday) return null
+            val workout = lastWorkout?.workout ?: return null
+            if (workout.endedAt == null || Days.date(workout.startedAt, zone) != day) return null
+            return workout.name
         }
 
         /** `DashboardScreen.record(_:)` — the row for one participant on the screen's day. */
@@ -366,6 +381,7 @@ class DashboardViewModel(
                 }
             }
             return LastSession(
+                workoutId = workout.workout.id,
                 name = workout.workout.name,
                 at = Instant.ofEpochMilli(ended ?: workout.workout.startedAt),
                 durationSeconds = ((ended ?: System.currentTimeMillis()) - workout.workout.startedAt) / 1000.0,
@@ -382,7 +398,8 @@ internal data class Basis(
     val schedule: GymScheduleEntity?,
     val pairing: BroPairingEntity?,
     val routines: List<RoutineEntity>,
-    val finishedCount: Int,
+    /** Newest first; the query keeps only the latest finished workout named after a routine. */
+    val recentRoutineWorkoutNames: List<String>,
 )
 
 /** The day-scoped queries, re-subscribed when the calendar day rolls over. */
@@ -392,6 +409,8 @@ internal data class Live(
     val meals: List<MealEntryEntity>,
     val lastWorkout: WorkoutWithExercises?,
     val hasActiveWorkout: Boolean,
+    /** A finished workout with a completed set started on [day]. */
+    val trainedToday: Boolean = false,
 )
 
 /** State that is neither in Room nor day-scoped: the partner, the session and the sheet flags. */

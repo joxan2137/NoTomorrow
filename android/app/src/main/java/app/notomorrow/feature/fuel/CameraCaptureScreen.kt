@@ -3,9 +3,9 @@ package app.notomorrow.feature.fuel
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.os.Handler
 import android.os.Looper
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -13,6 +13,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
@@ -37,6 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -61,14 +66,16 @@ import kotlin.coroutines.resumeWithException
  * `FileProvider`, so this is CameraX `ImageCapture` under the app's own chrome.
  *
  * The capture is downscaled here (the rotation only exists on the `ImageProxy`), so the caller
- * receives exactly what the provider will upload: ≤1024 px long edge, JPEG 0.8.
+ * receives exactly what the provider will upload: ≤[maxLongEdge] px long edge (1024 for a plate,
+ * [ImageDownscaler.LABEL_LONG_EDGE] for a nutrition label), JPEG 0.8.
  */
 @Composable
 fun CameraCaptureScreen(
     onCaptured: (ByteArray?) -> Unit,
     onClose: () -> Unit,
+    maxLongEdge: Int = ImageDownscaler.PLATE_LONG_EDGE,
 ) {
-    CameraCaptureContent(onCaptured = onCaptured, onCancel = onClose)
+    CameraCaptureContent(onCaptured = onCaptured, onCancel = onClose, maxLongEdge = maxLongEdge)
 }
 
 /** `.fullScreenCover(isPresented: $showCamera) { CameraPicker … }`. */
@@ -76,9 +83,10 @@ fun CameraCaptureScreen(
 fun CameraCaptureCover(
     onCaptured: (ByteArray?) -> Unit,
     onCancel: () -> Unit,
+    maxLongEdge: Int = ImageDownscaler.PLATE_LONG_EDGE,
 ) {
     NtFullScreenCover(visible = true, onDismiss = onCancel) {
-        CameraCaptureContent(onCaptured = onCaptured, onCancel = onCancel)
+        CameraCaptureContent(onCaptured = onCaptured, onCancel = onCancel, maxLongEdge = maxLongEdge)
     }
 }
 
@@ -86,6 +94,7 @@ fun CameraCaptureCover(
 private fun CameraCaptureContent(
     onCaptured: (ByteArray?) -> Unit,
     onCancel: () -> Unit,
+    maxLongEdge: Int,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -114,6 +123,18 @@ private fun CameraCaptureContent(
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            // The upload is ≤ 1600 px; a 2048×1536 capture keeps the decode small (the sensor's
+            // 12–50 MP maximum would be decoded only to be thrown away).
+            .setResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        ResolutionStrategy(
+                            CAPTURE_SIZE,
+                            ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
+                        ),
+                    )
+                    .build(),
+            )
             .build()
     }
     val executor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
@@ -151,6 +172,7 @@ private fun CameraCaptureContent(
                 .navigationBarsPadding(),
         ) {
             if (granted) {
+                val shutterLabel = stringResource(S.fuel_ai_takePhoto)
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -159,13 +181,15 @@ private fun CameraCaptureContent(
                         .border(4.dp, NT.Colors.ink, CircleShape)
                         .padding(6.dp)
                         .background(NT.Colors.ink, CircleShape)
-                        .ntPlainClickable(enabled = !capturing) {
+                        .ntPlainClickable(enabled = !capturing, role = Role.Button) {
                             capturing = true
-                            capture(imageCapture, executor) { jpeg ->
+                            capture(imageCapture, executor, maxLongEdge) { jpeg ->
                                 capturing = false
                                 deliver(jpeg)
                             }
-                        },
+                        }
+                        // The shutter is a bare circle: without a label TalkBack says only "Button".
+                        .semantics { contentDescription = shutterLabel },
                 )
             } else {
                 NtText(
@@ -192,10 +216,14 @@ private fun CameraCaptureContent(
     }
 }
 
-/** `takePicture` → upright, downscaled JPEG bytes on the main thread. */
+/** The capture resolution asked of CameraX (closest lower, then higher). */
+private val CAPTURE_SIZE = Size(2048, 1536)
+
+/** `takePicture` → upright, downscaled JPEG bytes on the main thread (the work runs on [executor]). */
 private fun capture(
     imageCapture: ImageCapture,
     executor: ExecutorService,
+    maxLongEdge: Int,
     onResult: (ByteArray?) -> Unit,
 ) {
     val main = Handler(Looper.getMainLooper())
@@ -207,10 +235,8 @@ private fun capture(
                 val buffer = image.planes[0].buffer
                 val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
                 image.close()
-                val bitmap = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
-                    .getOrNull()
-                val jpeg = bitmap?.let { ImageDownscaler.jpeg(it, rotation) }
-                bitmap?.recycle()
+                // Sub-sampled decode, scale, then rotate: never a full-resolution bitmap.
+                val jpeg = runCatching { ImageDownscaler.jpeg(bytes, rotation, maxLongEdge) }.getOrNull()
                 main.post { onResult(jpeg) }
             }
 

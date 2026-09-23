@@ -317,4 +317,7 @@ data class BroUiState(
     val cantMakeItDay: LocalDate = LocalDate.now(),
 ) {
     val canPair: Boolean get() = BroViewModel.canPair(codeEntry)
+
+    /** The "Can't make it" chip: not for a session already trained ([BroDerived.offersCantMakeIt]). */
+    val offersCantMakeIt: Boolean get() = BroDerived.offersCantMakeIt(session)
 }

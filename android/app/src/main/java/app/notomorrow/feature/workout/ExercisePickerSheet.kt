@@ -76,7 +76,7 @@ fun ExercisePickerSheet(
     alreadyIn: Set<String> = emptySet(),
     onAdd: (List<String>) -> Unit = {},
 ) {
-    val model = ntViewModel(key = workoutId ?: "picker") { container ->
+    val model = ntViewModel(key = workoutId?.let { "picker/$it" } ?: "picker") { container ->
         ExercisePickerViewModel(container, workoutId, alreadyIn)
     }
     val state by model.state.collectAsStateWithLifecycle()

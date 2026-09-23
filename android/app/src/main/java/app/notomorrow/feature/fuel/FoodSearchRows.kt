@@ -198,7 +198,9 @@ fun FoodStateRow(
             }
 
             FoodStateKind.NotFound -> {
-                StateMessage(stringResource(S.fuel_notFound))
+                // "Add it by hand" only where there is a Quick add; a pick for an AI estimate
+                // has none, so it points at another name or the barcode instead.
+                StateMessage(stringResource(if (onQuickAdd != null) S.fuel_notFound else S.fuel_notFound_pick))
                 if (onQuickAdd != null) {
                     GhostButton(
                         title = stringResource(S.fuel_quickAdd),

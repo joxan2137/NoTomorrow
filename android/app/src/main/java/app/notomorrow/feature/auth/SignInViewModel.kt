@@ -206,7 +206,7 @@ class SignInViewModel(
          */
         @StringRes
         fun messageFor(error: BackendError, mode: SignInMode): Int = when (error) {
-            BackendError.Network -> S.error_network
+            BackendError.Network, BackendError.TimedOut -> S.error_network
             is BackendError.Http -> when {
                 error.code == "username_taken" -> S.auth_error_usernameTaken
                 error.code == "username_invalid" -> S.auth_hint_username

@@ -42,6 +42,16 @@ object SettingsFormat {
     fun canStepRest(seconds: Int, delta: Int): Boolean =
         seconds + delta in REST_RANGE
 
+    /**
+     * `AppVersion.label` — the installed build as "0.2.1 (57)": `versionName`, then the
+     * `versionCode` CI stamps from its run number (local builds keep 1). Just the name when there
+     * is no positive code, and "–" when there is no name.
+     */
+    fun versionLabel(name: String?, code: Long?): String {
+        val version = name?.takeIf { it.isNotBlank() } ?: "–"
+        return if (code != null && code > 0) "$version ($code)" else version
+    }
+
     /** " · " — the separator iOS joins these value strings with. */
     const val SEPARATOR: String = " · "
 

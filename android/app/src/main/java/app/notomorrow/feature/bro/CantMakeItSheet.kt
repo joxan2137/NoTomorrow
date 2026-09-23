@@ -54,8 +54,9 @@ import app.notomorrow.util.rememberNtStrings
  * "Can't make it today" — the port of `CantMakeItSheet` (`Features/Bro/CantMakeItSheet.swift`),
  * opened from the Dashboard and from the Bro tab.
  *
- * Sending writes my `AttendanceRecord(.cancelled)`, a local `HeadsUp(.cantMakeIt)` and, when
- * paired, tells the partner through `BroService`.
+ * Sending writes my `AttendanceRecord(.cancelled)`, the make-up day as planned and a local
+ * `HeadsUp(.cantMakeIt)`, then tells the backend through `BroService` whenever I am signed in (the
+ * partner hears about it only when paired).
  */
 @Composable
 fun CantMakeItSheet(onDismiss: () -> Unit, onSent: () -> Unit = {}) {

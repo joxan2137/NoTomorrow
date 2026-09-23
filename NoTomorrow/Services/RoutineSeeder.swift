@@ -37,14 +37,22 @@ enum RoutineSeeder {
 
     static let defaultSets = 3
     static let defaultReps = 8
+    /// Rest before the user has a profile (Settings > Rest timer > Rest length overrides it).
     static let defaultRestSeconds = 90
-    static let heavyRestSeconds = 120
+    /// Squat / deadlift / bench variants rest this much longer than the user's default.
+    static let heavyExtraRestSeconds = 30
+    /// `RoutineItem.restSeconds` value meaning "use the user's default when the workout starts".
+    static let inheritRest = 0
 
-    /// Squat / deadlift / bench variants rest longer.
-    static func restSeconds(for exerciseId: String) -> Int {
+    static func isHeavy(_ exerciseId: String) -> Bool {
         let id = exerciseId.lowercased()
-        let heavy = ["squat", "deadlift", "bench_press"]
-        return heavy.contains(where: id.contains) ? heavyRestSeconds : defaultRestSeconds
+        return ["squat", "deadlift", "bench_press"].contains(where: id.contains)
+    }
+
+    /// Rest for an exercise given the user's default rest: heavy compounds get 30 s more (capped at the
+    /// setting's 10 min maximum). With the stock 1:30 default that is 1:30 / 2:00.
+    static func restSeconds(for exerciseId: String, defaultRest: Int = defaultRestSeconds) -> Int {
+        isHeavy(exerciseId) ? min(600, defaultRest + heavyExtraRestSeconds) : defaultRest
     }
 
     /// Idempotent: only runs when no `Routine` exists yet.
@@ -66,12 +74,28 @@ enum RoutineSeeder {
                 guard let exercise = byId[id] else { continue }
                 let item = RoutineItem(order: order, exercise: exercise,
                                        targetSets: defaultSets, targetReps: defaultReps,
-                                       restSeconds: restSeconds(for: id))
+                                       restSeconds: inheritRest)
                 item.routine = routine
                 context.insert(item)
                 order += 1
             }
         }
         try? context.save()
+    }
+
+    /// One-time: routine items still holding the fixed rest older builds seeded (90 s, 120 s for heavy lifts)
+    /// switch to "inherit", so the Rest length setting drives them too. Items with any other value are left alone.
+    static func inheritDefaultRestIfNeeded(context: ModelContext, defaults: UserDefaults = .standard) {
+        let key = "nt.routines.inheritRest"
+        guard !defaults.bool(forKey: key) else { return }
+        let items = (try? context.fetch(FetchDescriptor<RoutineItem>())) ?? []
+        var changed = false
+        for item in items {
+            guard let id = item.exercise?.id, item.restSeconds == restSeconds(for: id) else { continue }
+            item.restSeconds = inheritRest
+            changed = true
+        }
+        if changed { try? context.save() }
+        defaults.set(true, forKey: key)
     }
 }

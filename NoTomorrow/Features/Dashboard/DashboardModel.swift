@@ -54,47 +54,26 @@ final class DashboardModel {
 
     // MARK: Workout
 
-    /// Starts (or resumes) a workout. Builds a `Workout` from `routine` with one row per target set,
-    /// weight prefilled from the last completed set of that exercise, then hands it to the session controller
-    /// and switches to the Train tab where the active workout is presented.
-    func startWorkout(routine: Routine?, context: ModelContext, session: WorkoutSessionController, appState: AppState) {
-        if let active = session.activeWorkout(in: context) {
-            session.begin(active)
-            appState.selectedTab = .train
+    /// Starts the suggested routine through the shared `WorkoutStarter` path, or brings back the workout already in
+    /// progress. Either way the full screen opens over the current tab (no tab switch).
+    func startWorkout(routine: Routine?, context: ModelContext, session: WorkoutSessionController) {
+        if session.activeWorkout(in: context) != nil {
+            session.expand()
             return
         }
-        let workout = Workout(name: routine?.name ?? String(localized: "workout.untitled"))
-        context.insert(workout)
-        for item in routine?.sortedItems ?? [] {
-            guard let exercise = item.exercise else { continue }
-            let entry = WorkoutExercise(order: item.order, exercise: exercise, restSeconds: item.restSeconds)
-            entry.workout = workout
-            context.insert(entry)
-            let lastWeight = Self.lastCompletedWeight(for: exercise) ?? 0
-            for index in 0..<max(1, item.targetSets) {
-                let set = SetEntry(order: index, weightKg: lastWeight, reps: item.targetReps)
-                set.workoutExercise = entry
-                context.insert(set)
-            }
-            exercise.lastUsedAt = .now
-        }
-        try? context.save()
-        session.begin(workout)
-        appState.selectedTab = .train
+        WorkoutStarter.start(routine.map { .routine($0) } ?? .empty, in: context, session: session)
     }
 
-    /// Rotates through the routines by how many workouts have been finished: 0 → first, 1 → second, …
-    static func suggestedRoutine(routines: [Routine], finishedCount: Int) -> Routine? {
+    /// The routine after the one done most recently, wrapping around; the first routine when no finished workout
+    /// came from a routine. `recentWorkoutNames` is newest first; ad-hoc workouts (no matching routine) are skipped,
+    /// so they do not shift the rotation.
+    static func suggestedRoutine(routines: [Routine], recentWorkoutNames: some Sequence<String>) -> Routine? {
         guard !routines.isEmpty else { return nil }
-        return routines[finishedCount % routines.count]
-    }
-
-    /// Weight of the most recently completed working set of `exercise`, in kg.
-    static func lastCompletedWeight(for exercise: Exercise) -> Double? {
-        exercise.usages
-            .flatMap(\.sets)
-            .filter { $0.isCompleted && $0.kind != .warmup }
-            .max { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }?
-            .weightKg
+        for name in recentWorkoutNames {
+            if let index = routines.firstIndex(where: { $0.name == name }) {
+                return routines[(index + 1) % routines.count]
+            }
+        }
+        return routines.first
     }
 }

@@ -4,8 +4,11 @@ import app.notomorrow.data.entity.ExerciseEntity
 import java.io.File
 import java.util.Locale
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.Test
 
@@ -111,6 +114,92 @@ class ExerciseLibraryTest {
         assertTrue(ExerciseLibrary.filter(list, "row", ExerciseLibrary.MuscleGroup.Chest).isEmpty())
     }
 
+    @Test
+    fun `folding flattens every Polish letter, the stroked l included, whatever the phone's locale`() {
+        assertEquals("acelnoszz acelnoszz", ExerciseLibrary.fold("ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ"))
+        val turkish = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+            assertEquals("lydki i wioslowanie", ExerciseLibrary.fold("ŁYDKI I WIOSŁOWANIE"))
+        } finally {
+            Locale.setDefault(turkish)
+        }
+    }
+
+    @Test
+    fun `Polish names are found typed without diacritics`() {
+        val list = listOf(
+            exercise("bench", "Barbell Bench Press - Medium Grip", namePL = "Wyciskanie sztangi na ławce płaskiej"),
+            exercise("row", "Alternating Kettlebell Row", namePL = "Naprzemienne wiosłowanie kettlebell"),
+            exercise("calf", "Standing Calf Raises", namePL = "Wspięcia na łydki stojąc"),
+        )
+        assertEquals(listOf("row"), ExerciseLibrary.filter(list, "wioslowanie").map { it.id })
+        assertEquals(listOf("bench"), ExerciseLibrary.filter(list, "lawce plaskiej").map { it.id })
+        assertEquals(listOf("bench"), ExerciseLibrary.filter(list, "WYCISKANIE ławce").map { it.id })
+        assertEquals(listOf("calf"), ExerciseLibrary.filter(list, "lydki").map { it.id })
+    }
+
+    // MARK: Import, once per library version
+
+    private fun bundled(vararg ids: String, polish: Map<String, String> = emptyMap()) =
+        ExerciseLibrary.Bundled(ids.map { ExerciseLibrary.Record(id = it, name = it.uppercase()) }, polish)
+
+    @Test
+    fun `the import runs when the stamp differs or the library is empty`() {
+        assertTrue(ExerciseLibrary.needsImport(null, 876))
+        assertTrue(ExerciseLibrary.needsImport(ExerciseLibrary.LIBRARY_VERSION - 1, 876))
+        assertTrue(ExerciseLibrary.needsImport(ExerciseLibrary.LIBRARY_VERSION, 0))
+        assertFalse(ExerciseLibrary.needsImport(ExerciseLibrary.LIBRARY_VERSION, 876))
+    }
+
+    @Test
+    fun `the import runs once per library version, not on every launch`() = runBlocking {
+        val dao = FakeExerciseDao()
+        val stamp = ExerciseLibrary.VersionStamp.InMemory()
+        var loads = 0
+        val load: suspend () -> ExerciseLibrary.Bundled? = { loads++; bundled("a", "b", polish = mapOf("a" to "Ą")) }
+
+        ExerciseLibrary(dao, stamp, load).importIfNeeded()
+        assertEquals(1, loads)
+        assertEquals(ExerciseLibrary.LIBRARY_VERSION, stamp.value)
+        assertEquals(listOf("a", "b"), dao.rows.value.map { it.id })
+        assertEquals("Ą", dao.rows.value.first { it.id == "a" }.namePL)
+
+        // A cold launch: a new instance, the same stamp.
+        ExerciseLibrary(dao, stamp, load).importIfNeeded()
+        assertEquals(1, loads, "the 1 MB parse is skipped")
+    }
+
+    @Test
+    fun `a new library version backfills without duplicates`() = runBlocking {
+        val dao = FakeExerciseDao(
+            listOf(
+                ExerciseEntity(id = "a", name = "A", lastUsedAt = 5),
+                ExerciseEntity(id = "custom-1", name = "Mine", isCustom = true),
+            ),
+        )
+        val stamp = ExerciseLibrary.VersionStamp.InMemory(ExerciseLibrary.LIBRARY_VERSION - 1)
+
+        ExerciseLibrary(dao, stamp) { bundled("a", "b", polish = mapOf("a" to "Ą", "b" to "Bę")) }.importIfNeeded()
+
+        assertEquals(listOf("a", "custom-1", "b"), dao.rows.value.map { it.id })
+        assertEquals(5L, dao.rows.value.first { it.id == "a" }.lastUsedAt, "an existing row keeps its history")
+        assertEquals("Ą", dao.rows.value.first { it.id == "a" }.namePL, "the Polish name is backfilled")
+        assertEquals(ExerciseLibrary.LIBRARY_VERSION, stamp.value)
+    }
+
+    @Test
+    fun `an empty library imports despite the stamp, and a failed read leaves the stamp alone`() = runBlocking {
+        val dao = FakeExerciseDao(listOf(ExerciseEntity(id = "custom-1", name = "Mine", isCustom = true)))
+        val stamp = ExerciseLibrary.VersionStamp.InMemory(ExerciseLibrary.LIBRARY_VERSION)
+        ExerciseLibrary(dao, stamp) { bundled("a") }.importIfNeeded()
+        assertEquals(setOf("a", "custom-1"), dao.rows.value.map { it.id }.toSet(), "custom rows do not count as the library")
+
+        val broken = ExerciseLibrary.VersionStamp.InMemory()
+        ExerciseLibrary(FakeExerciseDao(), broken) { null }.importIfNeeded()
+        assertNull(broken.value, "the next launch tries again")
+    }
+
     // MARK: localizedName
 
     @Test
@@ -134,7 +223,7 @@ class ExerciseLibraryTest {
         if (!file.exists()) return // running outside the module directory
         val json = Json { ignoreUnknownKeys = true }
         val records = json.decodeFromString<List<ExerciseLibrary.Record>>(file.readText())
-        assertEquals(900, records.size)
+        assertEquals(989, records.size)
         assertTrue(records.all { it.id.isNotEmpty() && it.name.isNotEmpty() })
 
         val plFile = File("src/main/assets/${ExerciseLibrary.EXERCISES_PL_ASSET}")

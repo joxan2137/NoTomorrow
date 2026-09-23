@@ -16,6 +16,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -187,6 +188,55 @@ class BroDerivedTest {
     }
 
     // MARK: - Log
+
+    // MARK: - Can't make it
+
+    @Test
+    fun `the cant make it chip goes once today's session is trained`() {
+        // Pull A done this morning: the day is attended, the line still shows today until 20:00.
+        val line = BroDerived.sessionLine(
+            schedule = schedule,
+            records = listOf(record(wednesday, AttendanceStatus.Attended, updatedAt = 1_000L)),
+            routines = routines("Push A", "Pull A"),
+            workouts = listOf(workout(wednesday, "Pull A")),
+            now = Days.at(wednesday, 12 * 60, zone),
+            zone = zone,
+        )
+        requireNotNull(line)
+        assertEquals(wednesday, line.day)
+        assertEquals(DayState.Attended, line.myState)
+        assertEquals("Pull A", line.routineName)
+        assertFalse(BroDerived.offersCantMakeIt(line), "Send could only close the sheet")
+        assertFalse(BroUiState(session = line).offersCantMakeIt)
+    }
+
+    @Test
+    fun `the cant make it chip stays for a session still ahead`() {
+        for (status in listOf(AttendanceStatus.Planned, AttendanceStatus.Confirmed, AttendanceStatus.Cancelled)) {
+            val line = BroDerived.sessionLine(
+                schedule = schedule,
+                records = listOf(record(wednesday, status)),
+                routines = routines("Push A"),
+                workouts = emptyList(),
+                now = Days.at(wednesday, 9 * 60, zone),
+                zone = zone,
+            )
+            assertTrue(BroDerived.offersCantMakeIt(line), "offered when $status")
+        }
+        // Past the grace the line moves on to Friday, which nobody trained yet.
+        val later = BroDerived.sessionLine(
+            schedule = schedule,
+            records = listOf(record(wednesday, AttendanceStatus.Attended)),
+            routines = routines("Push A"),
+            workouts = listOf(workout(wednesday, "Push A")),
+            now = Days.at(wednesday, 21 * 60, zone),
+            zone = zone,
+        )
+        assertEquals(friday, later?.day)
+        assertTrue(BroDerived.offersCantMakeIt(later))
+        // No schedule, no line: the sheet falls back to today, as before.
+        assertTrue(BroDerived.offersCantMakeIt(null))
+    }
 
     @Test
     fun `logRows lists past gym days newest first and stops at the pairing`() {

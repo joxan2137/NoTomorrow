@@ -129,6 +129,9 @@ enum class NtIcons(
     /** SF `doc.on.doc`. */
     DocOnDoc(R.drawable.ic_copy),
 
+    /** SF `plus.square.on.square` — custom vector; Fuel's "Log again today" / "Copy to today". */
+    PlusSquareOnSquare(R.drawable.ic_plus_square_on_square),
+
     /** SF `lock`. */
     Lock(R.drawable.ic_lock),
 
@@ -153,6 +156,9 @@ enum class NtIcons(
     /** SF `trash`. */
     Trash(R.drawable.ic_trash),
 
+    /** SF `scalemass` — "Custom grams…" in the AI-scan row menu. */
+    Scalemass(R.drawable.ic_scalemass),
+
     /** SF `camera`. */
     Camera(R.drawable.ic_camera),
 
@@ -170,6 +176,9 @@ enum class NtIcons(
 
     /** SF `person.crop.circle.badge.exclamationmark` — custom vector. */
     PersonBadgeExclamation(R.drawable.ic_person_badge_exclamation),
+
+    /** SF `exclamationmark.triangle.fill` — custom vector, the store error screen's badge. */
+    ExclamationTriangleFill(R.drawable.ic_exclamation_triangle_fill),
 
     /** SF `moon.zzz` — custom vector (Material `bedtime` has no "zzz"). */
     MoonZzz(R.drawable.ic_moon_zzz),
@@ -193,6 +202,9 @@ enum class NtIcons(
 
     /** SF `barcode.viewfinder` — custom vector, bars inside corner brackets. */
     BarcodeViewfinder(R.drawable.ic_barcode_viewfinder),
+
+    /** SF `calendar` — custom vector, the Fuel header's date button. */
+    Calendar(R.drawable.ic_calendar),
 
     /** SF `calendar.badge.minus` — custom vector; the badge is a −, not an ✕. */
     CalendarBadgeMinus(R.drawable.ic_calendar_badge_minus),

@@ -122,6 +122,8 @@ class FakeExerciseDao(initial: List<ExerciseEntity> = emptyList()) : ExerciseDao
 
     override suspend fun count(): Int = rows.value.size
 
+    override suspend fun libraryCount(): Int = rows.value.count { !it.isCustom }
+
     override suspend fun byId(id: String): ExerciseEntity? = rows.value.firstOrNull { it.id == id }
 
     override suspend fun byIds(ids: List<String>): List<ExerciseEntity> = rows.value.filter { it.id in ids }
@@ -152,12 +154,19 @@ class FakeExerciseDao(initial: List<ExerciseEntity> = emptyList()) : ExerciseDao
         rows.value = rows.value.filterNot { it.isCustom }
     }
 
+    override suspend fun clearLastUsed() {
+        rows.value = rows.value.map { it.copy(lastUsedAt = null) }
+    }
+
     override suspend fun deleteAll() {
         rows.value = emptyList()
     }
 }
 
-class FakeRoutineDao : RoutineDao {
+/** [exercise] resolves an item's exercise for the `@Relation` reads (none by default). */
+class FakeRoutineDao(
+    private val exercise: (String) -> ExerciseEntity? = { null },
+) : RoutineDao {
 
     val routines = MutableStateFlow<List<RoutineEntity>>(emptyList())
     val items = MutableStateFlow<List<RoutineItemEntity>>(emptyList())
@@ -169,7 +178,7 @@ class FakeRoutineDao : RoutineDao {
                 routine,
                 items.value
                     .filter { it.routineId == routine.id }
-                    .map { RoutineItemWithExercise(it, exercise = null) },
+                    .map { RoutineItemWithExercise(it, exercise = it.exerciseId?.let(exercise)) },
             )
         }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// "Last session" header (day · name · duration · n PRs) with one chip per PR set. Tapping goes to the Train tab.
+/// "Last session" header (day · name · duration · n PRs) with one chip per PR set. Tapping opens that workout's
+/// detail (the Train tab when there is none yet).
 struct LastSessionRow: View {
     var workout: Workout?
     var units: WeightUnit = .kg

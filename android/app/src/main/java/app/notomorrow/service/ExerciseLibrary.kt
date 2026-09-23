@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.StringRes
 import app.notomorrow.data.dao.ExerciseDao
 import app.notomorrow.data.entity.ExerciseEntity
+import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.S
 import kotlinx.coroutines.Dispatchers
@@ -18,24 +19,31 @@ import java.util.Locale
 import java.util.UUID
 
 /**
- * Loads the bundled free-exercise-db (The Unlicense, 876 exercises) into Room on first
- * launch — 1:1 port of `NoTomorrow/Services/ExerciseLibrary.swift`.
+ * Loads the bundled free-exercise-db (The Unlicense) plus the app's own `nt_` additions
+ * (989 exercises) into Room — 1:1 port of `NoTomorrow/Services/ExerciseLibrary.swift`.
  *
- * Polish names come from `assets/exercises_pl.json` (id → name). The import is guarded
- * by a once-per-process flag; when the table is already populated it only **backfills**
- * Polish names added by a later build. Any parse failure aborts silently — a missing
- * library is an empty picker, never a crash.
+ * Polish names come from `assets/exercises_pl.json` (id → name). The import runs once per
+ * bundled library version: [LIBRARY_VERSION] is stamped in `nt.exerciseLibrary.version` after a
+ * successful import, and a later launch skips the 1 MB parse unless the stamp differs or the
+ * library has no rows (a new or emptied database). A run inserts what is missing and
+ * **backfills** Polish names added by a later build. Any parse failure aborts silently — a missing
+ * library is an empty picker, never a crash — and leaves the stamp alone, so the next launch
+ * tries again.
  *
  * It also owns the picker's derivations (search folding, muscle-group filter, custom
  * exercises), which the iOS picker view model reaches for through `ExerciseLibrary`
  * and `WorkoutStrings`.
  */
 class ExerciseLibrary(
-    context: Context,
     private val dao: ExerciseDao,
+    private val stamp: VersionStamp,
+    /** Reads both bundled files, off the main thread; `null` when the library cannot be parsed. */
+    private val load: suspend () -> Bundled?,
 ) {
 
-    private val appContext = context.applicationContext
+    constructor(context: Context, dao: ExerciseDao, stamp: VersionStamp) :
+        this(dao, stamp, assetLoader(context.applicationContext))
+
     private val lock = Mutex()
     private var didRun = false
 
@@ -55,38 +63,54 @@ class ExerciseLibrary(
         @SerialName("images") val images: List<String>? = null,
     )
 
+    /** The two bundled files, decoded: the records and the Polish names by id. */
+    class Bundled(val records: List<Record>, val polish: Map<String, String>)
+
     /**
-     * `importIfNeeded(into:)`. Runs at most once per process; safe to call from every
-     * screen that needs the library.
+     * The imported library version — `nt.exerciseLibrary.version` in the app ([prefs]),
+     * [InMemory] in tests.
+     */
+    interface VersionStamp {
+        suspend fun version(): Int?
+        suspend fun setVersion(version: Int)
+
+        class InMemory(var value: Int? = null) : VersionStamp {
+            override suspend fun version(): Int? = value
+            override suspend fun setVersion(version: Int) {
+                value = version
+            }
+        }
+
+        companion object {
+            fun prefs(prefs: AppPrefs): VersionStamp = object : VersionStamp {
+                override suspend fun version(): Int? = prefs.exerciseLibraryVersionOnce()
+                override suspend fun setVersion(version: Int) = prefs.setExerciseLibraryVersion(version)
+            }
+        }
+    }
+
+    /**
+     * `importIfNeeded(into:defaults:load:)`. Checks the stamp at most once per process; safe to
+     * call from every screen that needs the library. The stamp is written only after every row
+     * landed.
      */
     suspend fun importIfNeeded() {
         lock.withLock {
             if (didRun) return
-            val polish = readPolishNames()
-            val records = readRecords() ?: return
-            // IGNORE preserves custom rows, history and recent-use ordering on upgrades.
-            dao.insertAllIgnoring(records.map { it.toEntity(polish[it.id]) })
-            for (row in dao.missingPolishNames(BACKFILL_LIMIT)) {
-                polish[row.id]?.let { dao.updatePolishName(row.id, it) }
+            if (!needsImport(stamp.version(), dao.libraryCount())) {
+                didRun = true
+                return
             }
+            val bundled = load() ?: return
+            // IGNORE preserves custom rows, history and recent-use ordering on upgrades.
+            dao.insertAllIgnoring(bundled.records.map { it.toEntity(bundled.polish[it.id]) })
+            for (row in dao.missingPolishNames(BACKFILL_LIMIT)) {
+                bundled.polish[row.id]?.let { dao.updatePolishName(row.id, it) }
+            }
+            stamp.setVersion(LIBRARY_VERSION)
             didRun = true
         }
     }
-
-    private suspend fun readRecords(): List<Record>? = withContext(Dispatchers.IO) {
-        runCatching {
-            json.decodeFromString<List<Record>>(readAsset(EXERCISES_ASSET))
-        }.getOrNull()
-    }
-
-    private suspend fun readPolishNames(): Map<String, String> = withContext(Dispatchers.IO) {
-        runCatching {
-            json.decodeFromString<Map<String, String>>(readAsset(EXERCISES_PL_ASSET))
-        }.getOrElse { emptyMap() }
-    }
-
-    private fun readAsset(name: String): String =
-        appContext.assets.open(name).bufferedReader().use { it.readText() }
 
     // MARK: - Custom exercises
 
@@ -170,6 +194,40 @@ class ExerciseLibrary(
         const val EXERCISES_PL_ASSET = "exercises_pl.json"
         const val BACKFILL_LIMIT = 2000
 
+        /**
+         * The bundled library's version. **Bump it whenever `exercises.json` or
+         * `exercises_pl.json` changes**, or existing installs never see the new rows or names.
+         * Kept equal to iOS's `ExerciseLibrary.libraryVersion`.
+         */
+        const val LIBRARY_VERSION = 2
+
+        /**
+         * `needsImport(storedVersion:libraryRows:)` — import when the stamp is not this build's
+         * version, or when the library (non-custom) table is empty whatever the stamp says.
+         */
+        fun needsImport(storedVersion: Int?, libraryRows: Int): Boolean =
+            storedVersion != LIBRARY_VERSION || libraryRows == 0
+
+        /** Both assets, parsed off the main thread; `null` when `exercises.json` cannot be read. */
+        private fun assetLoader(context: Context): suspend () -> Bundled? = {
+            withContext(Dispatchers.IO) {
+                val records = runCatching {
+                    json.decodeFromString<List<Record>>(readAsset(context, EXERCISES_ASSET))
+                }.getOrNull()
+                if (records == null) {
+                    null
+                } else {
+                    val polish = runCatching {
+                        json.decodeFromString<Map<String, String>>(readAsset(context, EXERCISES_PL_ASSET))
+                    }.getOrElse { emptyMap() }
+                    Bundled(records, polish)
+                }
+            }
+        }
+
+        private fun readAsset(context: Context, name: String): String =
+            context.assets.open(name).bufferedReader().use { it.readText() }
+
         private val json = Json {
             ignoreUnknownKeys = true
             explicitNulls = false
@@ -185,8 +243,9 @@ class ExerciseLibrary(
         fun fold(text: String): String =
             Normalizer.normalize(text.lowercase(Locale.ROOT), Normalizer.Form.NFKD)
                 .replace(DIACRITICS, "")
-                // NFKD decomposes ą ć ę ń ó ś ź ż but not the stroked ł, which Foundation's
-                // diacriticInsensitive folding does flatten — "lawka" has to find "ławka".
+                // NFKD decomposes ą ć ę ń ó ś ź ż but not the stroked ł, which has no
+                // decomposition (Foundation's diacriticInsensitive keeps it too, so iOS replaces it
+                // the same way) — "lawka" has to find "ławka". Ł is already lower-cased above.
                 .replace('ł', 'l')
 
         /**

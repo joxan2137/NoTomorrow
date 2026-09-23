@@ -2,6 +2,7 @@ package app.notomorrow.feature.workout
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,19 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,11 +32,14 @@ import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
 import app.notomorrow.designsystem.NtAlertAction
 import app.notomorrow.designsystem.NtAlertRole
+import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
+import app.notomorrow.designsystem.ntOnUserScroll
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.rememberSecondTicker
+import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
@@ -56,6 +55,8 @@ internal fun WorkoutTable(
     state: ActiveWorkoutUiState,
     restRunning: Boolean,
     focus: SetFieldFocus,
+    scroll: ScrollState,
+    onMinimize: () -> Unit,
     onFinish: () -> Unit,
     onAddExercise: () -> Unit,
     onToggleExpanded: (Long) -> Unit,
@@ -65,22 +66,25 @@ internal fun WorkoutTable(
     onWeight: (Long, Double) -> Unit,
     onReps: (Long, Int) -> Unit,
     onToggleSet: (SetRowUi) -> Unit,
+    onDeleteSet: (Long) -> Unit,
+    onRowAppear: (Long) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    val dismissKeyboard = rememberKeyboardDismissOnDrag(focusManager) { focus.focused != null }
     Column(Modifier.fillMaxSize()) {
         Header(
             state = state,
             modifier = Modifier
                 .padding(horizontal = NT.Spacing.screenH)
                 .padding(top = 8.dp),
+            onMinimize = onMinimize,
             onFinish = onFinish,
         )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(dismissKeyboard)
-                .verticalScroll(rememberScrollState())
+                .dismissKeyboardOnDrag(focusManager) { focus.focused != null }
+                // Hoisted by the shell: expanding from the mini bar lands where the user left off.
+                .verticalScroll(scroll)
                 .padding(horizontal = NT.Spacing.screenH),
         ) {
             for (exercise in state.exercises) {
@@ -92,6 +96,7 @@ internal fun WorkoutTable(
                     hintSetId = state.hintSetId,
                     hintBest = state.hintBest,
                     focus = focus,
+                    unit = state.unit,
                     onToggleExpanded = { onToggleExpanded(exercise.id) },
                     onRemove = { onRemove(exercise.id) },
                     onAddSet = { onAddSet(exercise.id) },
@@ -99,6 +104,8 @@ internal fun WorkoutTable(
                     onWeight = onWeight,
                     onReps = onReps,
                     onToggleSet = onToggleSet,
+                    onDeleteSet = onDeleteSet,
+                    onRowAppear = onRowAppear,
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }
@@ -113,19 +120,25 @@ internal fun WorkoutTable(
     }
 }
 
-/** Routine name, ember dot + elapsed clock + "Exercise i of n", and the Finish capsule. */
+/**
+ * The collapse chevron, routine name, ember dot + elapsed clock + "Exercise i of n", and the
+ * Finish capsule.
+ */
 @Composable
 private fun Header(
     state: ActiveWorkoutUiState,
     modifier: Modifier,
+    onMinimize: () -> Unit,
     onFinish: () -> Unit,
 ) {
     val now by rememberSecondTicker()
     val elapsed = ((state.endedAt ?: now) - state.startedAt) / 1000.0
     Row(
         modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        MinimizeButton(onClick = onMinimize)
         Column(
             modifier = Modifier.weight(1f),
             // `VStack(spacing: 2)`: the 22/28 title2 line box already carries that leading in
@@ -139,7 +152,7 @@ private fun Header(
             ) {
                 Box(Modifier.size(6.dp).background(NT.Colors.ember, CircleShape))
                 TabularText(
-                    text = Fmt.clock(elapsed),
+                    text = Fmt.elapsed(elapsed),
                     style = NT.Fonts.footnote,
                     color = NT.Colors.ember,
                 )
@@ -162,6 +175,7 @@ private fun Header(
                 }
             }
         }
+        // `Spacer(minLength: 12)` between the `HStack(spacing: 8)` gaps.
         Spacer(Modifier.width(12.dp))
         Box(
             modifier = Modifier
@@ -180,6 +194,43 @@ private fun Header(
         }
     }
 }
+
+/**
+ * The leading `chevron.down`: a 36 dp `surface2` circle in a 44 dp hit area — the rest sheet's
+ * close button — pulled 4 dp into the margin so the circle, not the hit area, lines up with the
+ * 20 dp screen edge (`.padding(.leading, -(NT.Size.control - 36) / 2)`).
+ */
+@Composable
+private fun MinimizeButton(onClick: () -> Unit) {
+    val label = stringResource(S.workout_minimize)
+    Box(
+        modifier = Modifier
+            .layout { measurable, constraints ->
+                val inset = ((NT.Size.control - MINIMIZE_CIRCLE) / 2).roundToPx()
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width - inset, placeable.height) { placeable.place(-inset, 0) }
+            }
+            .size(NT.Size.control)
+            // Named by the chevron's description; TalkBack's default "double-tap to activate"
+            // follows it (the title is not an action phrase).
+            .pressScale(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier.size(MINIMIZE_CIRCLE).background(NT.Colors.surface2, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            NtIcon(
+                icon = NtIcons.ChevronDown,
+                size = sfIconSize(15f),
+                tint = NT.Colors.ink,
+                contentDescription = label,
+            )
+        }
+    }
+}
+
+private val MINIMIZE_CIRCLE = 36.dp
 
 /**
  * `.confirmationDialog("workout.finishConfirm")` — on iOS 26 an anchored glass card with
@@ -222,19 +273,15 @@ private const val MIDDLE_DOT = "·"
 
 /**
  * `.scrollDismissesKeyboard(.interactively)` — Compose has no interactive variant, so the
- * closest behaviour is putting the keyboard down on the first drag of the table.
+ * closest behaviour is putting the keyboard down on the first drag of the table (the workout
+ * editor's list too).
+ *
+ * Only a finger's drag counts ([ntOnUserScroll]): the scroll that lifts a low set cell above the
+ * opening keyboard reaches the nested-scroll chain as `UserInput` too, and used to clear the focus
+ * it was scrolling for — the keyboard closed within a second and kg / reps could not be typed.
  */
 @Composable
-private fun rememberKeyboardDismissOnDrag(
+internal fun Modifier.dismissKeyboardOnDrag(
     focusManager: FocusManager,
     isFocused: () -> Boolean,
-): NestedScrollConnection = remember(focusManager) {
-    object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (source == NestedScrollSource.UserInput && available.y != 0f && isFocused()) {
-                focusManager.clearFocus()
-            }
-            return Offset.Zero
-        }
-    }
-}
+): Modifier = ntOnUserScroll { if (isFocused()) focusManager.clearFocus() }

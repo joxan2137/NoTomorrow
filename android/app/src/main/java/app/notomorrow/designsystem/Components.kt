@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -150,6 +151,8 @@ fun NtText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     textAlign: androidx.compose.ui.text.style.TextAlign? = null,
+    /** Shrinks the text to fit instead of cutting it off — SwiftUI's `minimumScaleFactor`. */
+    autoSize: TextAutoSize? = null,
 ) {
     androidx.compose.foundation.text.BasicText(
         text = text,
@@ -157,6 +160,7 @@ fun NtText(
         style = style.copy(color = color, textAlign = textAlign ?: style.textAlign),
         maxLines = maxLines,
         overflow = overflow,
+        autoSize = autoSize,
     )
 }
 
@@ -168,12 +172,14 @@ fun TabularText(
     style: androidx.compose.ui.text.TextStyle = NT.Fonts.body,
     color: Color = NT.Colors.ink,
     maxLines: Int = 1,
+    autoSize: TextAutoSize? = null,
 ) = NtText(
     text = text,
     modifier = modifier,
     style = style.tabular(),
     color = color,
     maxLines = maxLines,
+    autoSize = autoSize,
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,7 +207,12 @@ fun NTCard(
     )
 }
 
-/** Small stat tile: eyebrow label over a headline value. */
+/**
+ * Small stat tile: eyebrow label over a headline value. The value shrinks to fit, down to
+ * [STAT_TILE_MIN_SCALE] of the headline size, instead of truncating — three tiles in a row leave a
+ * value about 72 dp on a 360 dp phone, and "1 h 12 min" or "12 500 kg" must stay whole
+ * (`StatTile`'s `minimumScaleFactor(0.6)` on iOS).
+ */
 @Composable
 fun StatTile(
     label: String,
@@ -218,9 +229,21 @@ fun StatTile(
         horizontalAlignment = Alignment.Start,
     ) {
         Eyebrow(label)
-        TabularText(value, style = NT.Fonts.headline, color = valueColor, maxLines = 1)
+        TabularText(
+            value,
+            style = NT.Fonts.headline,
+            color = valueColor,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = NT.Fonts.headline.fontSize * STAT_TILE_MIN_SCALE,
+                maxFontSize = NT.Fonts.headline.fontSize,
+            ),
+        )
     }
 }
+
+/** The smallest a [StatTile] value shrinks to, as a share of the headline size. */
+private const val STAT_TILE_MIN_SCALE = 0.6f
 
 /**
  * 1 dp horizontal rule. Not `Dp.Hairline` — that is `Dp(0f)` and draws nothing;

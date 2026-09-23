@@ -21,7 +21,9 @@ data class HealthState(
 
 /** `ExportView`'s three fields. */
 data class ExportState(
-    val isPreparing: Boolean = true,
+    // false until prepareExport() starts: it returns early while a build is in flight, so a
+    // true default meant the export was never built. The view shows "preparing" while files is empty.
+    val isPreparing: Boolean = false,
     val files: List<File> = emptyList(),
     val counts: SettingsExportFiles.Counts = SettingsExportFiles.Counts(),
 )

@@ -1,10 +1,12 @@
 package app.notomorrow.feature.settings
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.notomorrow.app.AppState
 import app.notomorrow.data.db.NoTomorrowDatabase
+import app.notomorrow.data.db.wipeUserData
 import app.notomorrow.data.entity.BodyWeightEntryEntity
 import app.notomorrow.data.entity.GymScheduleEntity
 import app.notomorrow.data.entity.UserProfileEntity
@@ -21,6 +23,7 @@ import app.notomorrow.service.BroService
 import app.notomorrow.service.Days
 import app.notomorrow.service.HealthService
 import app.notomorrow.service.TargetCalculator
+import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.service.toDto
 import app.notomorrow.util.S
 import kotlinx.coroutines.CancellationException
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.LocalDate
 
 /**
@@ -50,6 +54,10 @@ class SettingsViewModel(
     private val health: HealthService,
     private val appState: AppState,
     private val pushRegistrar: PushRegistrar,
+    /** Deleting the account lets go of the workout in progress (`session.end()` on iOS). */
+    private val workoutSession: WorkoutSessionController,
+    /** `restTimer.skip()`: no alarm or rest notification outlives the account. */
+    private val stopRestTimer: () -> Unit,
 ) : ViewModel() {
 
     private val profileDao = db.profileDao()
@@ -287,7 +295,10 @@ class SettingsViewModel(
         viewModelScope.launch { authStore.removeGeminiKey() }
     }
 
-    /** "Use demo data (offline)": swaps the backend and forgets account-bound bro state. */
+    /**
+     * "Use demo data (offline)": swaps the backend and forgets account-bound bro state. Queued
+     * attendance stays with the backend it was made on (`AttendanceOutbox.Target`).
+     */
     fun setUseDemoData(value: Boolean) {
         if (appConfig.useMockBackend.value == value) return
         appConfig.setUseMockBackend(value)
@@ -363,36 +374,34 @@ class SettingsViewModel(
     }
 
     /**
-     * Backend first (best effort), then every user-owned row, then both secure-store records,
-     * then back to onboarding. The bundled exercise library survives; custom exercises do not.
+     * Backend first (best effort), then the rest timer, the workout session and every user-owned
+     * row ([AccountDataReset]), the CSV exports, then both secure-store records, then back to
+     * onboarding. The bundled exercise library survives; custom exercises do not.
      */
     fun deleteAccount(onDone: () -> Unit) {
         viewModelScope.launch {
             busy.value = busy.value.copy(isDeleting = true)
+            // Read before the session goes: the queued attendance of this account goes with it.
+            val account = bro.syncTarget
             runCatching { appConfig.makeBackendClient().deleteAccount() }
                 .onFailure { if (it is CancellationException) throw it }
 
-            runCatching {
-                db.headsUpDao().deleteAll()
-                db.attendanceDao().deleteAll()
-                db.broPairingDao().deleteAll()
-                db.bodyWeightDao().deleteAll()
-                db.mealDao().deleteAll()
-                db.foodDao().deleteAll()
-                db.workoutDao().deleteAllSets()
-                db.workoutDao().deleteAllWorkoutExercises()
-                db.workoutDao().deleteAllWorkouts()
-                db.routineDao().deleteAllItems()
-                db.routineDao().deleteAllRoutines()
-                db.exerciseDao().deleteCustom()
-                scheduleDao.deleteAll()
-                profileDao.deleteAll()
-            }
+            val wiped = AccountDataReset.run(
+                stopRestTimer = stopRestTimer,
+                session = workoutSession,
+                wipe = { db.wipeUserData() },
+            )
+            if (!wiped) Log.w(TAG, "Delete account: the local wipe failed and was rolled back")
+            // Exported CSVs (and a shared copy of a broken store) are the old account's data too.
+            runCatching { File(app.cacheDir, SettingsExportFiles.EXPORT_DIR).deleteRecursively() }
 
             authStore.clearAwait()
             authStore.removeAnthropicKey()
             authStore.removeGeminiKey()
             bro.resetSession()
+            // Queued attendance of the account that is gone; another account's waits for it.
+            runCatching { bro.clearAttendanceOutbox(account) }
+                .onFailure { if (it is CancellationException) throw it }
             prefs.removeRestAutoStart()
             appState.setHasOnboarded(false)
             busy.value = busy.value.copy(isDeleting = false)
@@ -411,6 +420,8 @@ class SettingsViewModel(
         scheduleDao.schedule() ?: GymScheduleEntity().also { scheduleDao.save(it) }
 
     companion object {
+        private const val TAG = "Settings"
+
         fun create(container: AppContainer): SettingsViewModel = SettingsViewModel(
             app = container.app,
             db = container.db,
@@ -421,6 +432,8 @@ class SettingsViewModel(
             health = container.healthService,
             appState = container.appState,
             pushRegistrar = container.pushRegistrar,
+            workoutSession = container.workoutSession,
+            stopRestTimer = { container.restTimer.skip() },
         )
     }
 }

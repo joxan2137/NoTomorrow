@@ -4,6 +4,7 @@ import app.notomorrow.model.AttendanceStatus
 import app.notomorrow.model.HeadsUpKind
 import app.notomorrow.model.MealSlot
 import app.notomorrow.net.dto.AIEstimate
+import app.notomorrow.net.dto.LabelReading
 import app.notomorrow.net.dto.Me
 import app.notomorrow.net.dto.Partner
 import app.notomorrow.net.dto.PartnerState
@@ -83,6 +84,12 @@ interface BackendClient {
         anthropicKey: String? = null,
         notes: String = "",
     ): AIEstimate
+
+    /**
+     * `POST ai/label`: a photo of a pack's nutrition table → per-100 g values. `legible: false` is a
+     * 200 answer, not an error. Shares the estimate's daily quota and error codes.
+     */
+    suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading
 
     suspend fun deleteAccount()
 

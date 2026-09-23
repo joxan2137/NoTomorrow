@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.di.AppContainer
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.RecordService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,6 +33,8 @@ data class WorkoutDoneUiState(
     val previousVolumeKg: Double? = null,
     val records: List<WorkoutRecordItem> = emptyList(),
     val partnerName: String? = null,
+    /** The user's unit for the hero, the delta, the share text and the records (volumes are kg). */
+    val unit: WeightUnit = WeightUnit.Kg,
     val loaded: Boolean = false,
 )
 
@@ -65,15 +68,17 @@ class WorkoutDoneViewModel(
     val state: StateFlow<WorkoutDoneUiState> = combine(
         workoutDao.observeWorkoutWithExercises(workoutId),
         container.db.broPairingDao().observePairing(),
-    ) { workout, pairing -> workout to pairing?.partnerName }
-        .mapLatest { (workout, partner) -> build(workout, partner) }
+        container.db.profileDao().observeProfile(),
+    ) { workout, pairing, profile -> Triple(workout, pairing?.partnerName, profile?.units ?: WeightUnit.Kg) }
+        .mapLatest { (workout, partner, unit) -> build(workout, partner, unit) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDoneUiState())
 
     private suspend fun build(
         workout: WorkoutWithExercises?,
         partnerName: String?,
+        unit: WeightUnit,
     ): WorkoutDoneUiState {
-        if (workout == null) return WorkoutDoneUiState(partnerName = partnerName)
+        if (workout == null) return WorkoutDoneUiState(partnerName = partnerName, unit = unit)
         val row = workout.workout
         val byId = workout.exercises.associateBy { it.workoutExercise.id }
 
@@ -108,6 +113,7 @@ class WorkoutDoneViewModel(
             )?.totalVolumeKg,
             records = records,
             partnerName = partnerName,
+            unit = unit,
             loaded = true,
         )
     }

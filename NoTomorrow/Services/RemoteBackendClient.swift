@@ -92,19 +92,31 @@ final class RemoteBackendClient: BackendClient, @unchecked Sendable {
 
     // MARK: AI
 
-    /// Multipart `image` + `meal` + `locale`. The server answers `{foods, overallConfidence}` with `proteinG`-style
-    /// keys, which `AIFood`'s tolerant decoder accepts. Errors surface as `BackendError.http` with the server code
-    /// (`ai_daily_limit`, `ai_upstream_error`, `ai_unavailable`, …) for the AI service to map.
+    /// Multipart `image` + `meal` + `locale` + `notes`. The server answers the v2 estimate (per-100 g values, portions,
+    /// totals); an older server's `{foods, overallConfidence}` still decodes. Errors surface as `BackendError.http` with
+    /// the server code (`ai_daily_limit`, `ai_busy`, `ai_timeout`, …) for the AI service to map.
     func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
         let body = MultipartBody()
             .field("meal", meal.rawValue)
             .field("locale", locale)
-            .field("notes", String(notes.prefix(1500)))
+            // The server counts UTF-16 units and refuses more than 1500 with a 400.
+            .field("notes", AIEstimateSpec.prefixUTF16(notes, 1500))
             .file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG)
         var headers: [String: String] = [:]
         if let anthropicKey, !anthropicKey.isEmpty { headers["X-Anthropic-Key"] = anthropicKey }
         let request = RemoteTransport.Request(method: "POST", path: "ai/estimate", auth: .required,
                                               payload: .multipart(body), headers: headers, timeout: 90)
+        return try transport.decode(try await transport.perform(request))
+    }
+
+    /// Multipart `image` (a label shot, up to 1600 px) + `locale`. `legible: false` is a 200, not an error. The server
+    /// gives up after 65 s, so 75 s here leaves room for the upload.
+    func readLabel(imageJPEG: Data, locale: String) async throws -> LabelReading {
+        let body = MultipartBody()
+            .field("locale", locale)
+            .file("image", filename: "label.jpg", mimeType: "image/jpeg", data: imageJPEG)
+        let request = RemoteTransport.Request(method: "POST", path: "ai/label", auth: .required,
+                                              payload: .multipart(body), timeout: 75)
         return try transport.decode(try await transport.perform(request))
     }
 }

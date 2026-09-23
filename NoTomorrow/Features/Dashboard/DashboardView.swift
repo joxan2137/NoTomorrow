@@ -3,16 +3,28 @@ import SwiftData
 
 /// "Today" tab. Owns the day boundary: the inner screen is rebuilt (and its day-scoped queries re-created)
 /// whenever the calendar day changes, so a dashboard left open overnight does not keep yesterday's data.
+/// Sheets that hold unsaved work live out here, above the rebuilt screen: a workout being edited at midnight stays
+/// open (and a delete confirmed in it still happens) instead of being torn down with the old day.
 @MainActor
 struct DashboardView: View {
     @State private var day = Calendar.current.startOfDay(for: .now)
     @State private var model = DashboardModel()
+    @State private var selectedWorkout: Workout?
+
+    @Query private var profiles: [UserProfile]
 
     var body: some View {
-        DashboardScreen(day: day, model: model)
+        DashboardScreen(day: day, model: model, selectedWorkout: $selectedWorkout)
             .id(day)
+            .workoutDetailSheet($selectedWorkout, unit: profiles.first?.units ?? .kg)
             .onAppear { refreshDay() }
-            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in refreshDay() }
+            // Either can arrive off the main thread.
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+                refreshDay()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange).receive(on: RunLoop.main)) { _ in
+                refreshDay()
+            }
     }
 
     private func refreshDay() {
@@ -26,6 +38,8 @@ struct DashboardView: View {
 struct DashboardScreen: View {
     let day: Date
     @Bindable var model: DashboardModel
+    /// Owned by `DashboardView`, outside the per-day rebuild.
+    @Binding var selectedWorkout: Workout?
 
     @Environment(AppState.self) private var appState
     @Environment(WorkoutSessionController.self) private var session
@@ -38,20 +52,20 @@ struct DashboardScreen: View {
     @Query private var weekRecords: [AttendanceRecord]
     @Query private var todayMeals: [MealEntry]
     @Query private var finishedWorkouts: [Workout]
-    @Query private var activeWorkouts: [Workout]
 
-    init(day: Date, model: DashboardModel) {
+    init(day: Date, model: DashboardModel, selectedWorkout: Binding<Workout?>) {
         self.day = day
         self.model = model
+        _selectedWorkout = selectedWorkout
         let cal = Calendar.current
         let weekStart = cal.startOfISOWeek(for: day)
         let weekEnd = cal.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
         _weekRecords = Query(filter: #Predicate<AttendanceRecord> { $0.day >= weekStart && $0.day < weekEnd },
                              sort: \AttendanceRecord.day)
-        _todayMeals = Query(filter: #Predicate<MealEntry> { $0.day == day }, sort: \MealEntry.loggedAt)
+        // The Fuel day view's window, not `day ==`: meals logged before a time-zone change still count as today's.
+        _todayMeals = Query(filter: FuelCalendar.entriesPredicate(for: day, calendar: cal), sort: \MealEntry.loggedAt)
         _finishedWorkouts = Query(filter: #Predicate<Workout> { $0.endedAt != nil },
                                   sort: \Workout.startedAt, order: .reverse)
-        _activeWorkouts = Query(filter: #Predicate<Workout> { $0.endedAt == nil })
     }
 
     // MARK: Derived
@@ -75,7 +89,12 @@ struct DashboardScreen: View {
     }
 
     private var suggestedRoutine: Routine? {
-        DashboardModel.suggestedRoutine(routines: routines, finishedCount: finishedWorkouts.count)
+        DashboardModel.suggestedRoutine(routines: routines, recentWorkoutNames: finishedWorkouts.lazy.map(\.name))
+    }
+
+    /// A finished workout with a completed set started today (newest first, so the scan stops at yesterday).
+    private var trainedToday: Bool {
+        finishedWorkouts.prefix { $0.startedAt >= day }.contains { $0.completedSetCount > 0 }
     }
 
     private func record(_ participant: Participant) -> AttendanceRecord? {
@@ -99,7 +118,8 @@ struct DashboardScreen: View {
                     myTime: record(.me)?.updatedAt,
                     partnerState: today?.partnerState ?? .rest,
                     partnerTime: record(.partner)?.updatedAt,
-                    hasActiveWorkout: !activeWorkouts.isEmpty,
+                    hasActiveWorkout: session.isWorkoutInProgress,
+                    trainedToday: trainedToday,
                     isConfirming: model.isConfirming,
                     onConfirm: confirm,
                     onStart: startWorkout,
@@ -107,13 +127,17 @@ struct DashboardScreen: View {
                 )
                 .padding(.top, NT.Spacing.section)
                 FuelSummaryRow(totals: FuelTotals(entries: todayMeals), goals: FuelGoals(profile: profile)) {
-                    appState.selectedTab = .fuel
+                    appState.openFuelToday()
                 }
                 .padding(.top, 26)
                 Hairline()
                     .padding(.top, NT.Spacing.section)
                 LastSessionRow(workout: finishedWorkouts.first, units: profile?.units ?? .kg) {
-                    appState.selectedTab = .train
+                    if let last = finishedWorkouts.first {
+                        selectedWorkout = last
+                    } else {
+                        appState.selectedTab = .train
+                    }
                 }
                 .padding(.top, 18)
             }
@@ -167,6 +191,6 @@ struct DashboardScreen: View {
     }
 
     private func startWorkout() {
-        model.startWorkout(routine: suggestedRoutine, context: modelContext, session: session, appState: appState)
+        model.startWorkout(routine: suggestedRoutine, context: modelContext, session: session)
     }
 }

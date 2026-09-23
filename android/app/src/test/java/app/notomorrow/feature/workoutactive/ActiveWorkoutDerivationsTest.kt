@@ -6,9 +6,6 @@ import app.notomorrow.feature.workout.ActiveWorkoutViewModel
 import app.notomorrow.feature.workout.SetRowUi
 import app.notomorrow.feature.workout.SetValue
 import app.notomorrow.feature.workout.WorkoutExerciseUi
-import app.notomorrow.feature.workout.parseReps
-import app.notomorrow.feature.workout.repsText
-import app.notomorrow.feature.workout.weightText
 import app.notomorrow.model.SetKind
 import app.notomorrow.util.LocaleProvider
 import java.util.Locale
@@ -18,9 +15,9 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * The pure derivations of `ActiveWorkoutModel.swift` and `SetRowView.swift`:
- * "Exercise i of n", the previous-workout row selection, the set-number rule (warm-ups do
- * not count) and the two text ↔ model converters of the numeric cells.
+ * The pure derivations of `ActiveWorkoutModel.swift`: "Exercise i of n", the previous-workout
+ * row selection and the completed-set count. The set cells and Previous alignment are in
+ * `SetTableTest`.
  */
 class ActiveWorkoutDerivationsTest {
 
@@ -90,6 +87,16 @@ class ActiveWorkoutDerivationsTest {
     }
 
     @Test
+    fun `a session with warm-ups only is not the previous one`() {
+        val rows = listOf(
+            row(workoutId = "old", startedAt = 100, endedAt = 200, order = 0, weight = 60.0),
+            row(workoutId = "new", startedAt = 300, endedAt = 400, order = 0, weight = 20.0, kind = SetKind.Warmup),
+        )
+        val previous = ActiveWorkoutViewModel.latestEarlierWorkoutRows(rows, excludingWorkoutId = "mine")
+        assertEquals(listOf(60.0), previous.map { it.weightKg })
+    }
+
+    @Test
     fun `warm-ups stay in the previous rows`() {
         val rows = listOf(
             row(workoutId = "old", startedAt = 100, endedAt = 200, order = 0, weight = 20.0, kind = SetKind.Warmup),
@@ -116,31 +123,6 @@ class ActiveWorkoutDerivationsTest {
             ),
         )
         assertEquals(2, state.completedSetCount)
-    }
-
-    // MARK: - Cell text
-
-    @Test
-    fun `the kg cell shows the model value, else the previous ghost`() {
-        assertEquals("82.5", weightText(setRow(id = 1, weight = 82.5)))
-        assertEquals("80", weightText(setRow(id = 1, weight = 0.0, previous = SetValue(80.0, 8))))
-        assertEquals("", weightText(setRow(id = 1, weight = 0.0)))
-    }
-
-    @Test
-    fun `the reps cell ignores a previous count of zero`() {
-        assertEquals("8", repsText(setRow(id = 1, reps = 8)))
-        assertEquals("6", repsText(setRow(id = 1, reps = 0, previous = SetValue(60.0, 6))))
-        assertEquals("", repsText(setRow(id = 1, reps = 0, previous = SetValue(60.0, 0))))
-    }
-
-    @Test
-    fun `reps parse as an integer, else as a rounded decimal`() {
-        assertEquals(8, parseReps(" 8 "))
-        assertEquals(9, parseReps("8,5"))
-        assertEquals(8, parseReps("8.4"))
-        assertEquals(0, parseReps(""))
-        assertEquals(0, parseReps("abc"))
     }
 
     // MARK: - Fixtures

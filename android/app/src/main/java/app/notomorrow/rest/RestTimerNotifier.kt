@@ -12,7 +12,9 @@ import androidx.core.app.NotificationManagerCompat
 import app.notomorrow.MainActivity
 import app.notomorrow.NtChannels
 import app.notomorrow.R
+import app.notomorrow.app.AppState
 import app.notomorrow.designsystem.NT
+import app.notomorrow.push.NtPushIntents
 import java.util.Locale
 
 /**
@@ -22,6 +24,11 @@ import java.util.Locale
  * end-of-rest alert that replaces iOS's `interruptionLevel = .timeSensitive`.
  *
  * Posted once per state change (start, ±15, skip, end) — never per second.
+ *
+ * Tapping either one opens the workout in progress, expanded (`AppState.Route` on the launch
+ * intent, as the Live Activity's `notomorrow://workout/rest` and the notification delegate do on
+ * iOS): the running countdown asks for the rest sheet too, the "Rest is over" alert for the
+ * workout alone.
  *
  * On API 36+ the ongoing notification asks to be promoted to a Live Update
  * (status-bar chip / Now Bar). That is decoration: the timer is complete and
@@ -45,7 +52,7 @@ class RestTimerNotifier(context: Context) {
             .setSmallIcon(SMALL_ICON)
             .setContentTitle(title)
             .setContentText(nextSetLabel)
-            .setContentIntent(contentIntent())
+            .setContentIntent(contentIntent(RUNNING_ROUTE, REQUEST_CONTENT_RUNNING))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -57,6 +64,8 @@ class RestTimerNotifier(context: Context) {
             .setWhen(endAt)
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
+            // Gone at 0 rather than counting negative until a late (inexact) alarm clears it.
+            .setTimeoutAfter((endAt - now).coerceAtLeast(1L))
             .addAction(
                 0,
                 appContext.getString(R.string.rest_action_plus15),
@@ -75,6 +84,11 @@ class RestTimerNotifier(context: Context) {
         manager.cancel(ID_RUNNING)
     }
 
+    /** Clears a delivered "Rest is over" — a new rest, or a Skip, makes it stale. */
+    fun cancelDone() {
+        manager.cancel(ID_DONE)
+    }
+
     /**
      * The end-of-rest alert. Title and body are the iOS content verbatim:
      * `timer.notification.title` and `"exercise · nextSetLabel"` (exercise alone
@@ -90,7 +104,7 @@ class RestTimerNotifier(context: Context) {
             .setSmallIcon(SMALL_ICON)
             .setContentTitle(appContext.getString(R.string.timer_notification_title))
             .setContentText(body)
-            .setContentIntent(contentIntent())
+            .setContentIntent(contentIntent(DONE_ROUTE, REQUEST_CONTENT_DONE))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -149,12 +163,17 @@ class RestTimerNotifier(context: Context) {
         }
     }
 
-    private fun contentIntent(): PendingIntent? {
+    /**
+     * Opens the app on [route]. Each notification has its own request code: `FLAG_UPDATE_CURRENT`
+     * with a shared one would overwrite the other's route extra.
+     */
+    private fun contentIntent(route: AppState.Route, requestCode: Int): PendingIntent? {
         val intent = Intent(appContext, MainActivity::class.java)
             .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .putExtra(NtPushIntents.EXTRA_ROUTE, route.wire)
         return PendingIntent.getActivity(
             appContext,
-            REQUEST_CONTENT,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -184,9 +203,16 @@ class RestTimerNotifier(context: Context) {
         /** `Build.VERSION_CODES.BAKLAVA`; spelled out so this compiles on any compileSdk. */
         private const val API_LIVE_UPDATES = 36
 
+        /** The running countdown opens the workout and its rest sheet. */
+        val RUNNING_ROUTE = AppState.Route.RestTimer
+
+        /** "Rest is over" opens the workout. */
+        val DONE_ROUTE = AppState.Route.ActiveWorkout
+
         private const val REQUEST_PLUS15 = 0x2E52
         private const val REQUEST_SKIP = 0x2E53
-        private const val REQUEST_CONTENT = 0x2E54
+        private const val REQUEST_CONTENT_RUNNING = 0x2E54
+        private const val REQUEST_CONTENT_DONE = 0x2E55
 
         private val SMALL_ICON = R.drawable.ic_stat_rest
     }

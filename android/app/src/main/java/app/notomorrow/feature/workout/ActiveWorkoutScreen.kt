@@ -1,5 +1,7 @@
 package app.notomorrow.feature.workout
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
@@ -11,6 +13,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,49 +26,47 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.rememberSecondTicker
 import app.notomorrow.di.LocalAppContainer
-import app.notomorrow.di.ntViewModel
-import app.notomorrow.util.NtStrings
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 
 /**
  * The workout in progress — 1:1 port of `ActiveWorkoutView.swift`.
  *
- * Hosted by the **root** NavHost (`workout/active`) so it opens from any tab, exactly as iOS
- * mounts the `fullScreenCover` on the tab shell. It pops itself ([onClose]) when there is no
- * active workout, and swaps `WorkoutDoneScreen` in **in place** rather than pushing a
- * destination.
+ * A layer of the tab shell (`MainTabScaffold`), over whatever tab is showing, not a destination of
+ * its own: the shell hosts [model] (one per workout) so the mini bar reads the same state, and
+ * slides this screen up and down. The chevron in the header, and back, collapse it into the mini
+ * bar ([onMinimize]); `WorkoutDoneScreen` is swapped in **in place** on Finish.
+ *
+ * @param scroll the set table's scroll position, hoisted by the shell so a collapse keeps it.
  */
 @Composable
-fun ActiveWorkoutScreen(onClose: () -> Unit) {
-    val container = LocalAppContainer.current
-    val appState = container.appState
-    val model = ntViewModel { c ->
-        ActiveWorkoutViewModel(
-            workoutDao = c.db.workoutDao(),
-            recordService = c.recordService,
-            attendanceService = c.attendanceService,
-            restTimer = c.restTimer,
-            session = c.workoutSession,
-            appPrefs = c.appPrefs,
-            strings = NtStrings.from(c.app),
-        )
-    }
+fun ActiveWorkoutScreen(
+    model: ActiveWorkoutViewModel,
+    scroll: ScrollState,
+    onMinimize: () -> Unit,
+) {
+    val session = LocalAppContainer.current.workoutSession
     val state by model.state.collectAsStateWithLifecycle()
     val rest by model.restState.collectAsStateWithLifecycle()
     val haptics = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
 
     // `@FocusState private var focus: SetField?` — one shared focus for the whole set table.
     val focus = remember { SetFieldFocus() }
@@ -76,23 +77,61 @@ fun ActiveWorkoutScreen(onClose: () -> Unit) {
     var showsPicker by remember { mutableStateOf(false) }
     var showsRestSheet by remember { mutableStateOf(false) }
 
-    // No workout is running: close the cover rather than render an empty table.
-    LaunchedEffect(state.missing) { if (state.missing) onClose() }
+    // History may have been edited (or the unit changed) while the workout sat in the mini bar.
+    LaunchedEffect(model) { model.reloadPrevious() }
 
-    // A tapped rest-timer notification (`AppState.Route.RestTimer`) opens the sheet here.
-    val pendingRest by appState.showsRestTimer.collectAsStateWithLifecycle()
-    LaunchedEffect(pendingRest) {
-        if (pendingRest) {
-            showsRestSheet = true
-            appState.showsRestTimer.value = false
+    // A rest-notification tap asks for the rest sheet; it opens once this screen has slid up.
+    val wantsRestSheet by session.wantsRestSheet.collectAsStateWithLifecycle()
+    LaunchedEffect(wantsRestSheet) {
+        if (!wantsRestSheet) return@LaunchedEffect
+        delay(REST_SHEET_DELAY_MS)
+        session.consumeRestSheet()
+        if (model.restState.value.isRunning() && !model.state.value.showsDone) showsRestSheet = true
+    }
+
+    // Hands the workout to the mini bar; everything already typed is written through.
+    val minimize = {
+        focusManager.clearFocus()
+        onMinimize()
+    }
+
+    // Back on the summary is "Edit sets" — the summary slid in over the table. Anywhere else it
+    // collapses the workout into the mini bar, the screen following the predictive-back gesture.
+    BackHandler(enabled = state.showsDone, onBack = model::reopen)
+    // The predictive-back preview (0…1), one per presentation: a completed gesture hands where the
+    // finger let go to the collapsed presentation ([released]), so the screen slides down from
+    // there. Asking the screen up again — even by tapping the mini bar before the slide-down has
+    // finished, this layer still composed — starts at full size in that same frame, so the
+    // workout never comes back shrunk and shifted. A collapse by the chevron carries nothing.
+    val expanded by session.showsActiveWorkout.collectAsStateWithLifecycle()
+    val released = remember { floatArrayOf(0f) }
+    var backProgress by remember(expanded) {
+        if (expanded) released[0] = 0f
+        mutableFloatStateOf(released[0])
+    }
+    PredictiveBackHandler(enabled = !state.showsDone) { events ->
+        try {
+            events.collect { backProgress = it.progress }
+            released[0] = backProgress
+            minimize()
+        } catch (e: CancellationException) {
+            backProgress = 0f
+            throw e
         }
     }
 
-    RestExpiryWatcher(state = rest, onElapsed = model::finishRestIfElapsed)
+    // Android only: the rest-over alert needs exact alarms (and notifications) to be on time.
+    RestAlertPermissionPrompt(restRunning = restRunning && !state.showsDone)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer {
+                val scale = 1f - BACK_SCALE * backProgress
+                scaleX = scale
+                scaleY = scale
+                translationY = BACK_TRAVEL.toPx() * backProgress
+            }
             .background(NT.Colors.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical)),
     ) {
@@ -116,17 +155,17 @@ fun ActiveWorkoutScreen(onClose: () -> Unit) {
             if (showsDone) {
                 WorkoutDoneScreen(
                     workoutId = state.workoutId,
-                    // `commitFinish` releases the session, and `RootScreen` pops the destination
-                    // off the back of that flag — popping here as well would take `main` with it.
+                    // `commitFinish` releases the session, and the shell slides this layer away.
                     onDone = model::commitFinish,
-                    endedAt = state.finishedAt,
                     onEditSets = model::reopen,
                 )
-            } else if (!state.loading) {
+            } else if (!state.loading && !state.missing) {
                 WorkoutTable(
                     state = state,
                     restRunning = restRunning,
                     focus = focus,
+                    scroll = scroll,
+                    onMinimize = minimize,
                     onFinish = {
                         focusManager.clearFocus()
                         showsFinishDialog = true
@@ -143,10 +182,22 @@ fun ActiveWorkoutScreen(onClose: () -> Unit) {
                             model.uncomplete(row.id)
                         } else {
                             focusManager.clearFocus()
-                            model.complete(row.id)
-                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            model.complete(row.id) { logged ->
+                                if (logged) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                } else {
+                                    // Nothing to log yet: the row stays open and the reps cell asks for a number.
+                                    haptics.performHapticFeedback(HapticFeedbackType.Reject)
+                                    focus.request(SetField(row.id, isReps = true), keyboard)
+                                }
+                            }
                         }
                     },
+                    onDeleteSet = { setId ->
+                        focusManager.clearFocus()
+                        model.removeSet(setId)
+                    },
+                    onRowAppear = model::prefillFromPrevious,
                 )
             }
         }
@@ -179,7 +230,7 @@ fun ActiveWorkoutScreen(onClose: () -> Unit) {
                 model.finish()
                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
             },
-            // Same as Done: `discard` ends the session and `RootScreen` does the popping.
+            // Same as Done: `discard` ends the session and the shell slides this layer away.
             onDiscard = model::discard,
         )
     }
@@ -214,6 +265,13 @@ fun ActiveWorkoutScreen(onClose: () -> Unit) {
         )
     }
 }
+
+/** How long a notification's rest-sheet request waits for the screen to finish sliding up. */
+private const val REST_SHEET_DELAY_MS = 350L
+
+/** The predictive-back preview: the screen sinks and shrinks a little as the gesture goes. */
+private val BACK_TRAVEL = 64.dp
+private const val BACK_SCALE = 0.06f
 
 /** `spring(response: 0.35, dampingFraction: 0.85)` (`ActiveWorkoutView.swift:76`) — the pill in and out. */
 private val PILL_SPRING_FLOAT = NT.Anim.spring085

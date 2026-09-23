@@ -12,6 +12,8 @@ enum SettingsRoute: Hashable {
 /// Settings sheet (from the Dashboard avatar): grouped rows per design/Settings.dc.html, each pushing a small editor.
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
+    @Environment(WorkoutSessionController.self) private var session
+    @Environment(RestTimerController.self) private var restTimer
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -58,7 +60,7 @@ struct SettingsView: View {
         .alert("settings.delete.confirm", isPresented: $showsDelete) {
             Button("common.delete", role: .destructive) {
                 Task {
-                    await model.deleteAccount(in: modelContext, appState: appState)
+                    await model.deleteAccount(in: modelContext, appState: appState, session: session, restTimer: restTimer)
                     dismiss()
                 }
             }
@@ -70,8 +72,14 @@ struct SettingsView: View {
 
     // MARK: Root
 
-    private var profile: UserProfile { profiles.first ?? SettingsModel.profile(in: modelContext) }
-    private var schedule: GymSchedule { schedules.first ?? SettingsModel.schedule(in: modelContext) }
+    /// Fetch-or-create, except once the account is deleted: the sheet's last renders get a detached placeholder,
+    /// so the next onboarding does not find a stray profile or schedule next to its own.
+    private var profile: UserProfile {
+        profiles.first ?? (model.didDeleteAccount ? UserProfile(name: "") : SettingsModel.profile(in: modelContext))
+    }
+    private var schedule: GymSchedule {
+        schedules.first ?? (model.didDeleteAccount ? GymSchedule() : SettingsModel.schedule(in: modelContext))
+    }
 
     private var content: some View {
         ScrollView {
@@ -81,6 +89,7 @@ struct SettingsView: View {
                 appGroup
                 broGroup
                 accountGroup
+                versionFooter
             }
             .padding(.horizontal, NT.Spacing.screenH)
             .padding(.top, 12)
@@ -149,6 +158,15 @@ struct SettingsView: View {
         .stFootnote("settings.delete.footnote")
     }
 
+    /// "Version 0.2.1 (57)": tells which build is installed.
+    private var versionFooter: some View {
+        Text("settings.version \(AppVersion.label())")
+            .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3).tabular()
+            .frame(maxWidth: .infinity)
+            .padding(.top, 12)
+            .textSelection(.enabled)
+    }
+
     // MARK: Destinations
 
     @ViewBuilder
@@ -167,6 +185,17 @@ struct SettingsView: View {
         case .ai: AIProviderEditor(model: model)
         case .partner: PartnerEditor(model: model, onUnpaired: { path.removeAll() })
         }
+    }
+}
+
+// MARK: - Version
+
+/// The installed build as "0.2.1 (57)": marketing version, then the build number CI stamps from its run number.
+enum AppVersion {
+    static func label(info: [String: Any]? = Bundle.main.infoDictionary) -> String {
+        let version = info?["CFBundleShortVersionString"] as? String ?? "–"
+        guard let build = info?["CFBundleVersion"] as? String, !build.isEmpty else { return version }
+        return "\(version) (\(build))"
     }
 }
 

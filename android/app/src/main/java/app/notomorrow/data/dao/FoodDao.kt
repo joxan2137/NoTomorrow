@@ -27,8 +27,24 @@ interface FoodDao {
     @Query("SELECT * FROM food_item WHERE id = :id")
     suspend fun byId(id: String): FoodItemEntity?
 
-    @Query("SELECT * FROM food_item WHERE barcode = :barcode LIMIT 1")
-    suspend fun byBarcode(barcode: String): FoodItemEntity?
+    /**
+     * The saved food for a scanned code, under any of [keys] (its EAN/UPC forms and in-store item
+     * key, `BarcodeKey.localKeys`). Several can share them: the user's own label (`custom`) wins,
+     * then the most recently used (never used last), then the id — `BarcodeKey.preferred`.
+     */
+    @Query(
+        "SELECT * FROM food_item WHERE barcode IN (:keys) " +
+            "ORDER BY CASE WHEN source = 'custom' THEN 0 ELSE 1 END, lastUsedAt IS NULL, lastUsedAt DESC, id " +
+            "LIMIT 1",
+    )
+    suspend fun preferredByBarcode(keys: List<String>): FoodItemEntity?
+
+    /**
+     * The whole saved-food library, most recently used first and never-used labels last: the
+     * search sheet matches a typed query against all of it (`FoodSearchView.savedItems`).
+     */
+    @Query("SELECT * FROM food_item ORDER BY lastUsedAt IS NULL, lastUsedAt DESC")
+    fun observeLibrary(): Flow<List<FoodItemEntity>>
 
     @Upsert
     suspend fun upsert(food: FoodItemEntity)

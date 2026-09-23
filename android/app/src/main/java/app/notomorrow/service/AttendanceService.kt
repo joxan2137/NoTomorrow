@@ -6,6 +6,7 @@ import app.notomorrow.data.dao.ProfileDao
 import app.notomorrow.data.dao.ScheduleDao
 import app.notomorrow.data.entity.AttendanceRecordEntity
 import app.notomorrow.data.entity.GymScheduleEntity
+import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.model.AttendanceStatus
 import app.notomorrow.model.Participant
 import app.notomorrow.util.Fmt
@@ -31,6 +32,8 @@ class AttendanceService(
     private val scheduleDao: ScheduleDao,
     private val profileDao: ProfileDao,
     private val zone: ZoneId = ZoneId.systemDefault(),
+    /** How far [markPastPlannedAsMissed] has judged; DataStore in the app ([SweepCursor.prefs]). */
+    private val sweepCursor: SweepCursor = SweepCursor.InMemory(),
 ) {
 
     // MARK: - Writes (me)
@@ -43,9 +46,36 @@ class AttendanceService(
         setStatus(day, AttendanceStatus.Attended)
 
     /**
+     * A make-up session on [day] (picked in the Can't make it sheet): the day becomes planned for
+     * me — the server's rule, so both sides agree. An empty day, or one that was cancelled or
+     * missed, turns planned (reason, note and make-up cleared); a planned, confirmed or attended day
+     * is left alone. A make-up day that passes untrained is swept to missed.
+     */
+    suspend fun markPlanned(day: LocalDate): AttendanceRecordEntity {
+        val dayMillis = Days.millis(day, zone)
+        val existing = attendanceDao.forDay(dayMillis, Participant.Me)
+        if (existing != null &&
+            existing.status != AttendanceStatus.Cancelled &&
+            existing.status != AttendanceStatus.Missed
+        ) {
+            return existing
+        }
+        return attendanceDao.upsert(
+            day = dayMillis,
+            participant = Participant.Me,
+            scheduledMinuteOfDay = existing?.scheduledMinuteOfDay ?: minuteOfDay(day),
+            status = AttendanceStatus.Planned,
+        )
+    }
+
+    /**
      * Records that I am not coming. [status] is [AttendanceStatus.Cancelled] for an
      * announced skip (the "Can't make it" sheet); pass [AttendanceStatus.Missed] for a
      * silent no-show. An empty note is stored as `null`, exactly as iOS.
+     *
+     * A day I already trained is never cancelled (the server's rule): the attended record comes
+     * back unchanged, and the caller sends nothing. Only a workout edit or delete turns attended
+     * into missed.
      */
     suspend fun markMissed(
         day: LocalDate,
@@ -56,6 +86,7 @@ class AttendanceService(
     ): AttendanceRecordEntity {
         val dayMillis = Days.millis(day, zone)
         val existing = attendanceDao.forDay(dayMillis, Participant.Me)
+        if (status == AttendanceStatus.Cancelled && existing?.status == AttendanceStatus.Attended) return existing
         return attendanceDao.upsert(
             day = dayMillis,
             participant = Participant.Me,
@@ -105,36 +136,106 @@ class AttendanceService(
     private suspend fun minuteOfDay(day: LocalDate): Int =
         scheduleDao.schedule()?.minuteOfDay(Fmt.isoWeekday(day)) ?: DEFAULT_MINUTE_OF_DAY
 
+    /** Drops my record for [day], so the day derives from the schedule again. */
+    suspend fun clearMine(day: LocalDate) {
+        attendanceDao.forDay(Days.millis(day, zone), Participant.Me)?.let { attendanceDao.delete(it) }
+    }
+
     /**
-     * Turns every past gym day (since the profile was created, at most 30 days back,
-     * before today) that has no attended/cancelled record into `missed`. Call from the
-     * dashboard on appear.
+     * My record for [day] back to planned, whatever it held ([markPlanned] leaves an attended day
+     * alone) — a make-up day whose workout was edited away or deleted.
+     */
+    private suspend fun restorePlanned(day: LocalDate) {
+        val dayMillis = Days.millis(day, zone)
+        val existing = attendanceDao.forDay(dayMillis, Participant.Me)
+        attendanceDao.upsert(
+            day = dayMillis,
+            participant = Participant.Me,
+            scheduledMinuteOfDay = existing?.scheduledMinuteOfDay ?: minuteOfDay(day),
+            status = AttendanceStatus.Planned,
+        )
+    }
+
+    /** One of my records (a cancellation with a make-up day) names [day] as its make-up day. */
+    suspend fun isMakeUpDay(day: LocalDate): Boolean =
+        attendanceDao.allDesc().any { record ->
+            record.participant == Participant.Me && record.makeUpDay?.let { Days.date(it, zone) } == day
+        }
+
+    // MARK: - Workout edited or deleted
+
+    /**
+     * Applies [workoutDayChanges] for a finished workout that counted on [oldDay] and now counts on
+     * [newDay] (already saved in its new state, or deleted), and returns them. [oldDayStillAttended]:
+     * another finished workout with a completed set started on [oldDay] — the caller asks the
+     * workout store.
+     */
+    suspend fun applyWorkoutDayChange(
+        oldDay: LocalDate?,
+        newDay: LocalDate?,
+        oldDayStillAttended: Boolean,
+        today: LocalDate = LocalDate.now(zone),
+    ): List<WorkoutDayChange> {
+        if (oldDay == newDay) return emptyList()
+        val schedule = scheduleDao.schedule()
+        val statuses = listOfNotNull(oldDay, newDay).associateWith { record(it, Participant.Me)?.status }
+        val oldIsMakeUpDay = oldDay != null && isMakeUpDay(oldDay)
+        val changes = workoutDayChanges(
+            oldDay = oldDay,
+            newDay = newDay,
+            oldDayStillAttended = oldDayStillAttended,
+            isGymDay = { schedule?.isGymDay(Fmt.isoWeekday(it)) ?: false },
+            myStatus = { statuses[it] },
+            today = today,
+            isMakeUpDay = { it == oldDay && oldIsMakeUpDay },
+        )
+        for (change in changes) {
+            when (change) {
+                is WorkoutDayChange.MarkAttended -> markAttended(change.day)
+                is WorkoutDayChange.MarkMissed ->
+                    markMissed(change.day, reason = null, note = null, makeUp = null, status = AttendanceStatus.Missed)
+                is WorkoutDayChange.MarkPlanned -> restorePlanned(change.day)
+                is WorkoutDayChange.Clear -> clearMine(change.day)
+            }
+        }
+        return changes
+    }
+
+    /**
+     * Judges the days that ended since the last sweep: a gym day with no record of mine, and any
+     * day whose record is still planned or confirmed (a make-up day included), becomes `missed`.
+     * Each day is judged once, by the schedule in force the first time the app opened after it
+     * ([sweepCursor]), so changing the gym days never turns past rest days into misses. Bounded by
+     * the profile's creation and [SWEEP_LOOKBACK_DAYS] back. Call from the dashboard on appear.
+     *
+     * The first sweep with a cursor judges yesterday alone, by the schedule in force now: earlier
+     * builds already judged the days before it on every appear, and today's schedule must not
+     * re-judge them. The cursor only moves forward, and it moves even without a schedule.
      */
     suspend fun markPastPlannedAsMissed(
         schedule: GymScheduleEntity?,
         today: LocalDate = LocalDate.now(zone),
     ) {
-        if (schedule == null || schedule.weekdays.isEmpty()) return
+        val yesterday = today.minusDays(1)
+        // No cursor yet: as if everything up to the day before yesterday had been judged.
+        val sweptThrough = sweepCursor.sweptThrough() ?: yesterday.minusDays(1)
         val lookback = today.minusDays(SWEEP_LOOKBACK_DAYS)
         val createdAt = profileDao.createdAt()?.let { Days.date(it, zone) } ?: lookback
-        val from = maxOf(lookback, createdAt)
-        if (!from.isBefore(today)) return
+        val from = maxOf(lookback, createdAt, sweptThrough.plusDays(1))
+        if (from.isBefore(today)) sweep(from, today, schedule)
+        if (sweptThrough.isBefore(yesterday)) sweepCursor.setSweptThrough(yesterday)
+    }
 
+    /** The loop of [markPastPlannedAsMissed] over `from <= day < today`. */
+    private suspend fun sweep(from: LocalDate, today: LocalDate, schedule: GymScheduleEntity?) {
         val existing = attendanceDao.range(Days.millis(from, zone), Days.millis(today, zone))
         var day = from
         while (day.isBefore(today)) {
             val iso = Fmt.isoWeekday(day)
-            if (schedule.isGymDay(iso)) {
-                val dayMillis = Days.millis(day, zone)
-                val mine = existing.firstOrNull { it.participant == Participant.Me && it.day == dayMillis }
-                if (mine == null) {
-                    attendanceDao.upsert(
-                        day = dayMillis,
-                        participant = Participant.Me,
-                        scheduledMinuteOfDay = schedule.minuteOfDay(iso),
-                        status = AttendanceStatus.Missed,
-                    )
-                } else if (mine.status == AttendanceStatus.Planned || mine.status == AttendanceStatus.Confirmed) {
+            val dayMillis = Days.millis(day, zone)
+            val mine = existing.firstOrNull { it.participant == Participant.Me && it.day == dayMillis }
+            if (mine != null) {
+                if (mine.status == AttendanceStatus.Planned || mine.status == AttendanceStatus.Confirmed) {
                     attendanceDao.upsert(
                         day = dayMillis,
                         participant = Participant.Me,
@@ -145,6 +246,13 @@ class AttendanceService(
                         makeUpDay = mine.makeUpDay,
                     )
                 }
+            } else if (schedule != null && schedule.isGymDay(iso)) {
+                attendanceDao.upsert(
+                    day = dayMillis,
+                    participant = Participant.Me,
+                    scheduledMinuteOfDay = schedule.minuteOfDay(iso),
+                    status = AttendanceStatus.Missed,
+                )
             }
             day = day.plusDays(1)
         }
@@ -176,6 +284,43 @@ class AttendanceService(
     /** The Mon…Sun strip for the week containing [today], read from the store. */
     suspend fun currentWeek(today: LocalDate = LocalDate.now(zone)): List<WeekDay> =
         currentWeek(scheduleDao.schedule(), weekRecords(today), today, zone)
+
+    /** One write to my attendance after a finished workout moved to another day, was deleted, or stopped counting. */
+    sealed interface WorkoutDayChange {
+        data class MarkAttended(val day: LocalDate) : WorkoutDayChange
+        data class MarkMissed(val day: LocalDate) : WorkoutDayChange
+
+        /** A make-up day that is today or later goes back to the plan the Can't make it sheet made. */
+        data class MarkPlanned(val day: LocalDate) : WorkoutDayChange
+        data class Clear(val day: LocalDate) : WorkoutDayChange
+    }
+
+    /**
+     * The last day [markPastPlannedAsMissed] has judged — `AttendanceService.SweepCursor`. The app
+     * keeps it in DataStore ([prefs], `nt.attendance.sweptThrough`); tests pass [InMemory].
+     */
+    interface SweepCursor {
+        suspend fun sweptThrough(): LocalDate?
+        suspend fun setSweptThrough(day: LocalDate)
+
+        class InMemory(var day: LocalDate? = null) : SweepCursor {
+            override suspend fun sweptThrough(): LocalDate? = day
+            override suspend fun setSweptThrough(day: LocalDate) {
+                this.day = day
+            }
+        }
+
+        companion object {
+            /** `nt.attendance.sweptThrough`, stored as an epoch day. */
+            fun prefs(prefs: AppPrefs): SweepCursor = object : SweepCursor {
+                override suspend fun sweptThrough(): LocalDate? =
+                    prefs.attendanceSweptThroughOnce()?.let(LocalDate::ofEpochDay)
+
+                override suspend fun setSweptThrough(day: LocalDate) =
+                    prefs.setAttendanceSweptThrough(day.toEpochDay())
+            }
+        }
+    }
 
     companion object {
 
@@ -275,6 +420,61 @@ class AttendanceService(
             minuteOfDay: Int,
             zone: ZoneId = ZoneId.systemDefault(),
         ): Instant = Days.at(day, minuteOfDay, zone)
+
+        // MARK: - Workout edited or deleted
+
+        /**
+         * What a workout that counted on [oldDay] and now counts on [newDay] does to my attendance.
+         * A workout counts on its start day when it has a completed set; `null` = it did not count
+         * or no longer counts (deleted, every set unticked). The new day is marked attended with
+         * Finish's rule (any day, scheduled or not, that is not in the future) unless it already
+         * is. Only `attended` is ever reverted, and only when no other finished workout keeps the
+         * old day: a make-up day (one of my cancellations points at it) returns to its plan —
+         * planned today or later, missed once past (what the sweep would write); a past gym day
+         * becomes missed; today or a rest day loses the record and derives from the schedule again.
+         */
+        fun workoutDayChanges(
+            oldDay: LocalDate?,
+            newDay: LocalDate?,
+            oldDayStillAttended: Boolean,
+            isGymDay: (LocalDate) -> Boolean,
+            myStatus: (LocalDate) -> AttendanceStatus?,
+            today: LocalDate,
+            isMakeUpDay: (LocalDate) -> Boolean = { false },
+        ): List<WorkoutDayChange> {
+            if (oldDay == newDay) return emptyList()
+            val changes = mutableListOf<WorkoutDayChange>()
+            if (newDay != null && !newDay.isAfter(today) && myStatus(newDay) != AttendanceStatus.Attended) {
+                changes += WorkoutDayChange.MarkAttended(newDay)
+            }
+            if (oldDay != null && !oldDayStillAttended && myStatus(oldDay) == AttendanceStatus.Attended) {
+                changes += when {
+                    isMakeUpDay(oldDay) -> if (oldDay.isBefore(today)) {
+                        WorkoutDayChange.MarkMissed(oldDay)
+                    } else {
+                        WorkoutDayChange.MarkPlanned(oldDay)
+                    }
+                    oldDay.isBefore(today) && isGymDay(oldDay) -> WorkoutDayChange.MarkMissed(oldDay)
+                    else -> WorkoutDayChange.Clear(oldDay)
+                }
+            }
+            return changes
+        }
+
+        /**
+         * The status the server should hold after a local change (it has no delete): attended,
+         * missed and planned as written; a cleared gym day is planned again, so the 21:00 skip
+         * check can still ask. A cleared rest day has no server equivalent and is not reported.
+         */
+        fun wireStatus(
+            change: WorkoutDayChange,
+            isGymDay: (LocalDate) -> Boolean,
+        ): Pair<LocalDate, AttendanceStatus>? = when (change) {
+            is WorkoutDayChange.MarkAttended -> change.day to AttendanceStatus.Attended
+            is WorkoutDayChange.MarkMissed -> change.day to AttendanceStatus.Missed
+            is WorkoutDayChange.MarkPlanned -> change.day to AttendanceStatus.Planned
+            is WorkoutDayChange.Clear -> if (isGymDay(change.day)) change.day to AttendanceStatus.Planned else null
+        }
 
         // MARK: - Streaks & counts
 

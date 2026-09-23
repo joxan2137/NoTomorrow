@@ -37,12 +37,16 @@ import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.MealSlot
+import app.notomorrow.net.dto.AIFood
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
+import java.time.LocalDate
+import java.util.Locale
 
 /**
  * `AIScanResultView` (`Features/Fuel/AIScanResultView.swift`) — the editable estimate: photo
- * with detection tags, hero total, one row per food, the disclaimer, and the log bar.
+ * with detection tags, hero total, one row per food (grams, count, edit, remove), "add something
+ * it missed" from the food database, details + recalculate, the disclaimer, and the log bar.
  */
 @Composable
 fun AIScanResultView(
@@ -51,12 +55,17 @@ fun AIScanResultView(
     onRefine: () -> Unit = {},
     onScale: (String, Double) -> Unit,
     onSetGrams: (String, Double) -> Unit,
+    onStepCount: (String, Boolean) -> Unit,
+    onUpdate: (AIFood) -> Unit,
+    onRemove: (String) -> Unit,
+    onAppend: (AIFood) -> Unit,
     onMeal: (MealSlot) -> Unit,
     onSaveRecipe: () -> Unit,
     onLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showAddMissed by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<AIFood?>(null) }
 
     Column(modifier.fillMaxSize()) {
         Column(
@@ -83,6 +92,9 @@ fun AIScanResultView(
                             food = food,
                             onScale = { factor -> onScale(food.id, factor) },
                             onSetGrams = { grams -> onSetGrams(food.id, grams) },
+                            onStepCount = { up -> onStepCount(food.id, up) },
+                            onEdit = { editing = food },
+                            onRemove = { onRemove(food.id) },
                         )
                     }
                 }
@@ -90,15 +102,21 @@ fun AIScanResultView(
 
             AIScanAddMissedRow(onClick = { showAddMissed = true })
 
-            state.assumptions.forEach { NtText(it, style = NT.Fonts.footnote) }
-            state.questions.forEach { NtText(it, style = NT.Fonts.subheadline) }
-            AIMealNotes(state.notes, onNotes)
-            SecondaryButton(title = stringResource(app.notomorrow.R.string.fuel_ai_refine), onClick = onRefine)
+            Column(
+                modifier = Modifier.padding(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                state.assumptions.forEach { NtText(it, style = NT.Fonts.footnote) }
+                state.questions.forEach { NtText(it, style = NT.Fonts.subheadline) }
+                AIMealNotes(state.notes, onNotes)
+                SecondaryButton(title = stringResource(S.fuel_ai_refine), enabled = state.hasItems, onClick = onRefine)
+            }
             AIScanDisclaimer(Modifier.padding(top = 6.dp))
         }
 
         AIScanBottomBar(
             meal = state.meal,
+            canLog = state.hasItems,
             onSaveRecipe = onSaveRecipe,
             onMeal = onMeal,
             onLog = onLog,
@@ -106,10 +124,35 @@ fun AIScanResultView(
     }
 
     if (showAddMissed) {
-        AIScanAddMissedSheet(
+        FoodSearchSheet(
             meal = state.meal,
+            day = LocalDate.now(),
             onDismiss = { showAddMissed = false },
+            pick = FoodSearchPick(
+                mode = FoodSearchPick.Mode.Add,
+                title = stringResource(S.fuel_ai_addMissed),
+            ) { food, grams ->
+                onAppend(AIScanCorrections.fromDatabase(food, grams ?: food.servingSizeG ?: 100.0))
+            },
         )
+    }
+
+    editing?.let { food ->
+        key(food.id) {
+            AIScanItemSheet(
+                food = food,
+                meal = state.meal,
+                onDone = { edited ->
+                    onUpdate(edited)
+                    editing = null
+                },
+                onRemove = {
+                    onRemove(food.id)
+                    editing = null
+                },
+                onDismiss = { editing = null },
+            )
+        }
     }
 }
 
@@ -223,6 +266,7 @@ private fun AIScanDisclaimer(modifier: Modifier = Modifier) {
 @Composable
 private fun AIScanBottomBar(
     meal: MealSlot,
+    canLog: Boolean,
     onSaveRecipe: () -> Unit,
     onMeal: (MealSlot) -> Unit,
     onLog: () -> Unit,
@@ -245,13 +289,25 @@ private fun AIScanBottomBar(
             onMeal = onMeal,
             onLog = onLog,
             modifier = Modifier.weight(1f),
+            enabled = canLog,
         )
     }
 }
 
-/** `AIScanFormat` (`AIScanResultView.swift:271`) — whole grams, grouped, no unit. */
+/** `AIScanFormat` (`AIScanResultView.swift`) — whole grams, grouped, no unit; the portion line. */
 object AIScanFormat {
 
     /** `Int(value.rounded()).formatted(.number.grouping(.automatic))` — the unit is the caller's. */
     fun wholeGrams(value: Double): String = Fmt.whole(value)
+
+    /**
+     * The two arguments of `fuel.ai.portionBasis` ("6 szt. × 35 g"): the count with its unit and
+     * the grams of one unit, as edit-field figures. Null for a single unit or a mass, where the
+     * grams cell says it all.
+     */
+    fun portionBasis(food: AIFood, locale: Locale): Pair<String, String>? {
+        val unit = food.unitName ?: return null
+        if (food.units == 1.0) return null
+        return "${FuelDerive.portionText(food.units, locale)} $unit" to FuelDerive.portionText(food.unitGrams, locale)
+    }
 }

@@ -93,6 +93,17 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // The shared AI spec (`backend/data/ai`, contract §1): the app reads `estimate-spec.json` from
+    // its assets, the JVM tests read the spec and `fixtures/` from the classpath. Never copied.
+    sourceSets {
+        getByName("main") {
+            assets.srcDir("../../backend/data/ai")
+        }
+        getByName("test") {
+            resources.srcDir("../../backend/data/ai")
+        }
+    }
 }
 
 kotlin {

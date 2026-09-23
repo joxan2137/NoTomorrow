@@ -102,7 +102,20 @@ enum RecordService {
                 guard let workout else { return true }
                 return set.workoutExercise?.workout?.persistentModelID != workout.persistentModelID
             }
-            .max { ($0.completedAt ?? .distantPast) < ($1.completedAt ?? .distantPast) }
+            .max(by: completedEarlier)
+    }
+
+    /// Completion order: by `completedAt`; sets done at the same instant (logged in the workout editor, which gives
+    /// added rows their neighbour's time) by their exercise's position in the workout, then by row. So the last of
+    /// them is the bottom row, the way the records rule orders ties.
+    static func completedEarlier(_ lhs: SetEntry, _ rhs: SetEntry) -> Bool {
+        let l = lhs.completedAt ?? .distantPast
+        let r = rhs.completedAt ?? .distantPast
+        if l != r { return l < r }
+        let lEntry = lhs.workoutExercise?.order ?? 0
+        let rEntry = rhs.workoutExercise?.order ?? 0
+        if lEntry != rEntry { return lEntry < rEntry }
+        return lhs.order < rhs.order
     }
 
     /// Best e1RM per workout, oldest first. Date = workout start.
@@ -130,5 +143,108 @@ enum RecordService {
     static func records(in workout: Workout) -> [SetEntry] {
         let all = workout.sortedExercises.flatMap(\.sortedSets).filter { $0.isCompleted && ($0.isPR || $0.isSetRecord) }
         return all.filter(\.isPR) + all.filter { !$0.isPR }
+    }
+
+    // MARK: - Rebuild
+
+    /// One set of one exercise, as the records rule sees it.
+    struct RecordRow {
+        var id: AnyHashable
+        /// The `WorkoutExercise` it belongs to: sets ticked at the same instant are ordered by row only inside it.
+        var group: AnyHashable
+        var order: Int
+        var completedAt: Date?
+        var kind: SetKind
+        var weightKg: Double
+        var reps: Int
+
+        /// Epley, as `SetEntry.estimatedOneRepMax`.
+        var estimatedOneRepMax: Double {
+            guard reps > 0, weightKg > 0 else { return 0 }
+            if reps == 1 { return weightKg }
+            return weightKg * (1 + Double(reps) / 30)
+        }
+    }
+
+    struct RecordFlags: Equatable {
+        var isPR: Bool
+        var isSetRecord: Bool
+    }
+
+    /// Flags for every row of ONE exercise, exactly as `evaluate` would have set them had each completed working set
+    /// been ticked in `completedAt` order (same tie rule: equal timestamps only see earlier rows of the same
+    /// `WorkoutExercise`). Open sets, warm-ups and 0-rep sets get no flag.
+    static func rebuildFlags(_ rows: [RecordRow]) -> [AnyHashable: RecordFlags] {
+        var result: [AnyHashable: RecordFlags] = [:]
+        for row in rows { result[row.id] = RecordFlags(isPR: false, isSetRecord: false) }
+
+        let working = rows.filter { $0.completedAt != nil && $0.kind != .warmup && $0.reps > 0 }
+        let byInstant = Dictionary(grouping: working) { $0.completedAt ?? .distantPast }
+        var seen = 0
+        var maxE1RM = 0.0
+        var maxWeight = 0.0
+        var repsAtWeight: [Double: Int] = [:]
+
+        for instant in byInstant.keys.sorted() {
+            let tie = byInstant[instant] ?? []
+            for row in tie {
+                let local = tie.filter { $0.group == row.group && $0.order < row.order }
+                // The first logged working set of an exercise is its first record.
+                guard seen + local.count > 0 else {
+                    result[row.id] = RecordFlags(isPR: true, isSetRecord: false)
+                    continue
+                }
+                let priorE1RM = max(maxE1RM, local.map(\.estimatedOneRepMax).max() ?? 0)
+                let priorWeight = max(maxWeight, local.map(\.weightKg).max() ?? 0)
+                let isPR = row.estimatedOneRepMax > priorE1RM || row.weightKg > priorWeight
+                var isSetRecord = false
+                if !isPR {
+                    let localReps = local.filter { $0.weightKg == row.weightKg }.map(\.reps).max()
+                    if let best = [repsAtWeight[row.weightKg], localReps].compactMap({ $0 }).max() {
+                        isSetRecord = row.reps > best
+                    }
+                }
+                result[row.id] = RecordFlags(isPR: isPR, isSetRecord: isSetRecord)
+            }
+            for row in tie {
+                seen += 1
+                maxE1RM = max(maxE1RM, row.estimatedOneRepMax)
+                maxWeight = max(maxWeight, row.weightKg)
+                repsAtWeight[row.weightKg] = max(repsAtWeight[row.weightKg] ?? 0, row.reps)
+            }
+        }
+        return result
+    }
+
+    /// Re-derives the flags of every set of these exercises (all workouts) and writes the ones that changed.
+    /// Run after a finished workout is edited or deleted, and on Finish. The caller saves. Returns the rows changed.
+    @discardableResult
+    static func rebuild(exerciseIDs: Set<String>, in context: ModelContext) -> Int {
+        guard !exerciseIDs.isEmpty else { return 0 }
+        // Grouped from one fetch rather than `Exercise.usages`, whose inverse can come back empty on iOS 17.
+        let all = (try? context.fetch(FetchDescriptor<SetEntry>())) ?? []
+        var byExercise: [String: [SetEntry]] = [:]
+        for set in all {
+            guard let id = set.workoutExercise?.exercise?.id, exerciseIDs.contains(id) else { continue }
+            byExercise[id, default: []].append(set)
+        }
+        var changed = 0
+        for sets in byExercise.values {
+            let rows = sets.map { set in
+                RecordRow(id: set.persistentModelID,
+                          group: set.workoutExercise.map { AnyHashable($0.persistentModelID) } ?? AnyHashable(0),
+                          order: set.order, completedAt: set.completedAt, kind: set.kind,
+                          weightKg: set.weightKg, reps: set.reps)
+            }
+            let flags = rebuildFlags(rows)
+            for set in sets {
+                guard let f = flags[set.persistentModelID],
+                      set.isPR != f.isPR || set.isSetRecord != f.isSetRecord else { continue }
+                set.isPR = f.isPR
+                set.isSetRecord = f.isSetRecord
+                changed += 1
+            }
+        }
+        return changed
     }
 }

@@ -5,8 +5,7 @@ import SwiftData
 /// Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets.
 struct WorkoutDoneView: View {
     let workout: Workout
-    /// Provisional end while the workout is still technically active (the cover flow stamps `endedAt` on Done).
-    var endedAt: Date? = nil
+    var unit: WeightUnit = .kg
     /// When nil, Done just dismisses the presenting view.
     var onDone: (() -> Void)? = nil
     /// When nil, the "Edit sets" link is hidden.
@@ -18,7 +17,8 @@ struct WorkoutDoneView: View {
     @State private var previousVolume: Double?
 
     private var volume: Double { workout.totalVolumeKg }
-    private var duration: TimeInterval { (endedAt ?? workout.endedAt ?? .now).timeIntervalSince(workout.startedAt) }
+    /// `endedAt` is stamped on Finish, before this screen shows.
+    private var duration: TimeInterval { (workout.endedAt ?? .now).timeIntervalSince(workout.startedAt) }
     private var records: [SetEntry] { RecordService.records(in: workout) }
     private var exerciseCount: Int { workout.exercises.filter { $0.sets.contains(where: \.isCompleted) }.count }
 
@@ -79,7 +79,7 @@ struct WorkoutDoneView: View {
     }
 
     private var shareText: String {
-        String(localized: "workout.done.shareText \(workout.name) \(Fmt.duration(duration)) \(Fmt.volume(volume))")
+        String(localized: "workout.done.shareText \(workout.name) \(Fmt.duration(duration)) \(Fmt.volume(volume, unit: unit))")
     }
 
     // MARK: Hero
@@ -88,9 +88,10 @@ struct WorkoutDoneView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("workout.done.title").font(NT.Fonts.display(72)).foregroundStyle(NT.Colors.ink)
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(Fmt.weight(volume.rounded(), withUnit: false))
+                Text(Fmt.volume(volume, unit: unit, withUnit: false))
                     .font(NT.Fonts.display(56)).foregroundStyle(NT.Colors.ink).tabular()
-                Text("workout.done.kgMoved").font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink2)
+                Text(unit == .lb ? LocalizedStringKey("workout.done.lbMoved") : "workout.done.kgMoved")
+                    .font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink2)
             }
             if let previousVolume, previousVolume != volume {
                 deltaChip(delta: volume - previousVolume)
@@ -103,9 +104,9 @@ struct WorkoutDoneView: View {
         return HStack(spacing: 6) {
             Image(systemName: up ? "arrow.up" : "arrow.down").font(.system(size: 12, weight: .bold))
             if up {
-                Text("workout.done.moreThanLast \(Fmt.volume(delta)) \(workout.name)")
+                Text("workout.done.moreThanLast \(Fmt.volume(delta, unit: unit)) \(workout.name)")
             } else {
-                Text("workout.done.lessThanLast \(Fmt.volume(-delta)) \(workout.name)")
+                Text("workout.done.lessThanLast \(Fmt.volume(-delta, unit: unit)) \(workout.name)")
             }
         }
         .font(NT.Fonts.footnoteBold).tabular()
@@ -137,7 +138,7 @@ struct WorkoutDoneView: View {
                     .padding(.vertical, 12)
             } else {
                 ForEach(Array(records.enumerated()), id: \.element.persistentModelID) { index, set in
-                    WorkoutRecordRow(entry: set)
+                    WorkoutRecordRow(entry: set, unit: unit)
                     if index < records.count - 1 { Hairline() }
                 }
             }
@@ -181,6 +182,7 @@ struct WorkoutDoneView: View {
 /// 60 pt record row: trophy (PR, ember) or medal (set record, grey), "Exercise · 85 × 7", detail line, trailing tag.
 struct WorkoutRecordRow: View {
     let entry: SetEntry
+    var unit: WeightUnit = .kg
 
     private var exerciseName: String { entry.workoutExercise?.exercise?.localizedName ?? "" }
 
@@ -194,7 +196,7 @@ struct WorkoutRecordRow: View {
             }
             .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(exerciseName) · \(Fmt.set(entry.weightKg, entry.reps))")
+                Text("\(exerciseName) · \(Fmt.set(entry.weightKg, entry.reps, unit: unit))")
                     .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1)
                 detail
                     .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular().lineLimit(1)
@@ -213,8 +215,8 @@ struct WorkoutRecordRow: View {
         if entry.isPR {
             let before = entry.workoutExercise?.exercise.map { RecordService.previousSets(for: $0, before: entry) }?
                 .map(\.estimatedOneRepMax).max() ?? 0
-            return Text("workout.done.prDetail \(Fmt.weight(entry.estimatedOneRepMax)) \(Fmt.weight(before, withUnit: false))")
+            return Text("workout.done.prDetail \(Fmt.weight(entry.estimatedOneRepMax, unit: unit)) \(Fmt.weight(before, unit: unit, withUnit: false))")
         }
-        return Text("workout.done.setRecordDetail \(Fmt.weight(entry.weightKg))")
+        return Text("workout.done.setRecordDetail \(Fmt.weight(entry.weightKg, unit: unit))")
     }
 }

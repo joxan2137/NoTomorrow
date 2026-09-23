@@ -5,42 +5,52 @@ import android.content.res.Configuration
 import androidx.annotation.StringRes
 import app.notomorrow.R
 import app.notomorrow.model.MealSlot
+import app.notomorrow.net.BackendError
 import app.notomorrow.net.dto.AIEstimate
 import app.notomorrow.net.dto.AIFood
-import app.notomorrow.net.dto.NtJson
+import app.notomorrow.net.dto.AIPer100
+import app.notomorrow.net.dto.LabelReading
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
 import java.util.Locale
+import java.util.concurrent.CancellationException
+
+// `AIEstimate` / `AIFood` / `LabelReading` are the backend contract types in `net/dto/AiDto.kt`.
+// Prompts, schemas and post-processing for the bring-your-own-key paths come from the shared spec
+// (`AIEstimateSpec`, `AIFinalizer`), so the backend and both providers agree on every answer.
 
 /**
- * Who turns a plate photo into macros — the port of the `AIEstimateService` protocol in
- * `NoTomorrow/Services/AIEstimateService.swift`. Four implementations:
- * [BackendAIEstimateService], [DirectAnthropicEstimateService], [DirectGeminiEstimateService]
- * (all three in `AIEstimateProviders.kt`) and [MockAIEstimateService].
+ * Who turns a plate photo into macros, or a pack photo into label values — the port of the
+ * `AIEstimateService` protocol in `NoTomorrow/Services/AIEstimateService.swift`. Four
+ * implementations: [BackendAIEstimateService], [DirectAnthropicEstimateService],
+ * [DirectGeminiEstimateService] (all three in `AIEstimateProviders.kt`) and [MockAIEstimateService].
+ *
+ * Every failure is an [AIEstimateError] (cancellation excepted).
  */
 interface AIEstimateService {
 
+    /** [notes] is the full notes string (typed details plus any corrections line), ≤ 1500 UTF-16 units. */
     suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String = ""): AIEstimate
+
+    /**
+     * A photo of a pack's nutrition table (≤ 1600 px, [app.notomorrow.util.ImageDownscaler.LABEL_LONG_EDGE])
+     * → per-100 g values for the label form. `legible == false` is an answer, not an error.
+     */
+    suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading
 }
 
-/** `AIEstimateError` (`AIEstimateService.swift:12`). */
+/**
+ * `AIEstimateError` (contract §10): one taxonomy for the photo estimate and the label read; each case
+ * maps to one message ([messageRes]; [labelMessageRes] for the label read).
+ */
 sealed class AIEstimateError(message: String? = null) : Exception(message) {
 
-    data object MissingKey : AIEstimateError()
+    /** No answer at all (no connection, DNS, TLS, reset). */
+    data object Offline : AIEstimateError()
 
-    data object MissingGeminiKey : AIEstimateError()
+    /** App-side timeout, or backend 504 `ai_timeout`. */
+    data object Timeout : AIEstimateError()
 
-    /** The user's own Anthropic or Gemini key was rejected. */
-    data object Unauthorized : AIEstimateError()
-
-    /** No account session (or it expired and could not be refreshed) for the backend path. */
-    data object SignedOut : AIEstimateError()
-
-    /** Backend 429 (`ai_busy`), 502 (`ai_upstream_error`, `ai_unparseable`) or 503 (`ai_unavailable`). */
+    /** Backend 503 `ai_busy`; the user's provider answered 429 / 5xx / 529. */
     data object Busy : AIEstimateError()
 
     /** Backend 429 `ai_daily_limit`. */
@@ -49,113 +59,68 @@ sealed class AIEstimateError(message: String? = null) : Exception(message) {
     /** Backend 403 `ai_not_allowed`: the account is not on the server's AI whitelist. */
     data object NotAllowed : AIEstimateError()
 
-    data class BadResponse(val status: Int, val serverMessage: String?) : AIEstimateError(serverMessage)
+    /** No account session (or it expired and could not be refreshed) for the backend path. */
+    data object SignedOut : AIEstimateError()
 
-    data object InvalidJson : AIEstimateError()
+    data object MissingKey : AIEstimateError()
 
-    data object Network : AIEstimateError()
+    data object MissingGeminiKey : AIEstimateError()
+
+    /** The user's own Anthropic or Gemini key was rejected. */
+    data object KeyRejected : AIEstimateError()
+
+    /** No usable JSON in the answer (backend 502 `ai_unparseable`, BYOK parse failure, Claude `max_tokens`). */
+    data object Unreadable : AIEstimateError()
+
+    /**
+     * Any other provider or server error (backend `ai_upstream_error`, `ai_unavailable`, another 4xx;
+     * BYOK 4xx; Claude `refusal`). [serverMessage] is for logs, never shown.
+     */
+    data class ProviderError(val status: Int, val serverMessage: String?) : AIEstimateError(serverMessage)
 
     @get:StringRes
     val messageRes: Int
         get() = when (this) {
-            MissingKey -> R.string.fuel_ai_error_missingKey
-            MissingGeminiKey -> R.string.fuel_ai_error_missingGeminiKey
-            Unauthorized -> R.string.fuel_ai_error_unauthorized
-            SignedOut -> R.string.fuel_ai_error_signedOut
+            Offline -> R.string.error_network
+            Timeout -> R.string.fuel_ai_error_timeout
             Busy -> R.string.fuel_ai_error_busy
             DailyLimit -> R.string.fuel_ai_error_dailyLimit
             NotAllowed -> R.string.fuel_ai_error_notAllowed
-            Network -> R.string.error_network
-            is BadResponse -> R.string.fuel_ai_failed
-            InvalidJson -> R.string.fuel_ai_error_unreadable
+            SignedOut -> R.string.fuel_ai_error_signedOut
+            MissingKey -> R.string.fuel_ai_error_missingKey
+            MissingGeminiKey -> R.string.fuel_ai_error_missingGeminiKey
+            KeyRejected -> R.string.fuel_ai_error_unauthorized
+            Unreadable -> R.string.fuel_ai_error_unreadable
+            is ProviderError -> R.string.fuel_ai_error_provider
         }
+
+    /** The label read words "couldn't read" as the nutrition table, not the estimate. */
+    @get:StringRes
+    val labelMessageRes: Int
+        get() = if (this == Unreadable) R.string.fuel_label_unreadable else messageRes
 
     fun localizedMessage(context: Context): String = context.getString(messageRes)
-}
 
-// MARK: - Shared prompt
-
-object AIEstimatePrompt {
-
-    /** The scale-reference ladder and output contract. Shared by the backend (documented) and the direct Claude path. */
-    fun text(meal: MealSlot, locale: String): String {
-        val language = if (locale.lowercase(Locale.ROOT).startsWith("pl")) "Polish" else "English"
-        return """
-        You estimate the food on a plate from one photo for a calorie-tracking app.
-        Meal slot: ${meal.raw}. Write food names in $language, short and specific (e.g. "Grilled chicken breast").
-
-        Use these scale references when judging portions:
-        - a dinner plate is 26–28 cm across; a fork is about 19 cm long
-        - a fist ≈ 150 g of cooked rice or pasta
-        - a palm (no fingers) ≈ 100–120 g of cooked meat or fish
-        - a thumb ≈ 1 tablespoon (≈ 14 g) of fat, butter or oil
-        Photos tend to hide oil and sauces: include cooking fat as a separate guessed item (confidence ≤ 0.4) whenever the food looks fried, roasted or glossy.
-        Give macros for the whole portion (not per 100 g), in grams. kcal should be consistent with the macros (4/4/9).
-        confidence and overall_confidence are 0–1.
-
-        Respond with strict JSON only, no prose, no code fences:
-        {"foods":[{"name":"","grams":0,"kcal":0,"protein_g":0,"carbs_g":0,"fat_g":0,"confidence":0}],"overall_confidence":0}
-        """.trimIndent()
-    }
-
-    /** Accepts ```json fences, leading prose and trailing commentary; returns the outermost JSON object. */
-    fun extractJson(text: String): String? {
-        var s = text.trim()
-        if (s.startsWith("```")) s = s.replace("```json", "").replace("```", "")
-        val start = s.indexOf('{')
-        val end = s.lastIndexOf('}')
-        if (start < 0 || end < 0 || start >= end) return null
-        return s.substring(start, end + 1)
-    }
-}
-
-/**
- * Wire shape requested from Claude (snake_case, whole-portion macros), mapped to [AIFood] —
- * the port of `AIEstimateWire`. Swift's `.convertFromSnakeCase` means `protein_g` and `proteinG`
- * both land on the same property; the lookup lists below reproduce that, and additionally tolerate
- * numbers arriving as JSON strings.
- */
-object AIEstimateWire {
-
-    fun decode(json: String): AIEstimate {
-        val root = runCatching { NtJson.parseToJsonElement(json).jsonObject }.getOrNull()
-            ?: throw AIEstimateError.InvalidJson
-        val array = root["foods"] as? JsonArray ?: throw AIEstimateError.InvalidJson
-        val items = array.map { element ->
-            val o = element as? JsonObject ?: throw AIEstimateError.InvalidJson
-            val name = string(o, "name") ?: string(o, "name_en") ?: throw AIEstimateError.InvalidJson
-            val confidence = (number(o, "confidence") ?: 0.5).coerceIn(0.0, 1.0)
-            AIFood(
-                name = name,
-                grams = number(o, "grams") ?: number(o, "estimated_grams") ?: number(o, "estimatedGrams") ?: 0.0,
-                kcal = number(o, "kcal") ?: number(o, "calories") ?: 0.0,
-                protein = number(o, "protein_g") ?: number(o, "proteinG") ?: number(o, "protein") ?: 0.0,
-                carbs = number(o, "carbs_g") ?: number(o, "carbsG") ?: number(o, "carbs") ?: 0.0,
-                fat = number(o, "fat_g") ?: number(o, "fatG") ?: number(o, "fat") ?: 0.0,
-                confidence = confidence,
-                isGuess = bool(o, "is_guess") ?: bool(o, "isGuess") ?: (confidence < 0.5),
-            )
+    companion object {
+        /**
+         * Transport failures of a direct provider call: a timeout is its own case, anything else is
+         * "no connection". Cancellation is rethrown.
+         */
+        fun transport(error: Throwable): AIEstimateError {
+            if (BackendError.isTimeout(error)) return Timeout
+            if (error is CancellationException) throw error
+            return Offline
         }
-        val declared = number(root, "overall_confidence") ?: number(root, "overallConfidence")
-        val overall = declared
-            ?: if (items.isEmpty()) 0.0 else items.sumOf { it.confidence } / items.size
-        return AIEstimate(foods = items, overallConfidence = overall.coerceIn(0.0, 1.0))
-    }
 
-    private fun primitive(o: JsonObject, key: String): JsonPrimitive? =
-        (o[key] as? JsonPrimitive)?.takeIf { it !is JsonNull }
-
-    private fun number(o: JsonObject, key: String): Double? {
-        val p = primitive(o, key) ?: return null
-        return if (p.isString) p.content.replace(',', '.').trim().toDoubleOrNull() else p.content.toDoubleOrNull()
-    }
-
-    private fun string(o: JsonObject, key: String): String? = primitive(o, key)?.content
-
-    private fun bool(o: JsonObject, key: String): Boolean? = when (primitive(o, key)?.content?.lowercase(Locale.ROOT)) {
-        "true" -> true
-        "false" -> false
-        else -> null
+        /**
+         * Any error from an [AIEstimateService] call as an [AIEstimateError]; cancellation is rethrown.
+         * Services already throw only these, so this is a net for the unexpected.
+         */
+        fun from(error: Throwable): AIEstimateError = when (error) {
+            is AIEstimateError -> error
+            is CancellationException -> throw error
+            else -> BackendAIEstimateService.map(BackendError.wrap(error))
+        }
     }
 }
 
@@ -167,7 +132,7 @@ fun interface AIEstimateStrings {
     fun string(@StringRes id: Int, locale: String): String
 }
 
-/** `AIEstimateLocalizer` (`AIEstimateService.swift:151`). */
+/** `AIEstimateLocalizer` (`AIEstimateService.swift`). */
 object AIEstimateLocalizer {
 
     fun language(locale: String): String =
@@ -190,7 +155,11 @@ object AIEstimateLocalizer {
 
 // MARK: - Mock
 
-/** Offline stand-in: a plausible plate after 1.2 s, matching the AIScan canvas. */
+/**
+ * Offline stand-in: a plausible plate after 1.2 s, matching the AIScan canvas, in the v2 shape
+ * (per-100 g values and counted portions, totals computed like the finalizer); and a fixed, legible
+ * cottage-cheese label.
+ */
 class MockAIEstimateService(
     private val strings: AIEstimateStrings,
     private val delayMillis: Long = MOCK_DELAY_MS,
@@ -199,36 +168,79 @@ class MockAIEstimateService(
     override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate {
         delay(delayMillis)
         val t = { id: Int -> strings.string(id, locale) }
-        return when (meal) {
-            MealSlot.Breakfast -> AIEstimate(
+        val pl = AIEstimateSpec.languageCode(locale) == "pl"
+        val piece = if (pl) "szt." else "piece"
+        val slice = if (pl) "kromka" else "slice"
+        val portion = if (pl) "porcja" else "portion"
+        val spoon = if (pl) "łyżka" else "tbsp"
+        val foods: List<AIFood>
+        val overall: Double
+        when (meal) {
+            MealSlot.Breakfast -> {
                 foods = listOf(
-                    AIFood.of(t(R.string.fuel_ai_mock_eggs), 150.0, 232.0, 19.0, 2.0, 16.0, 0.85),
-                    AIFood.of(t(R.string.fuel_ai_mock_toast), 70.0, 186.0, 6.0, 34.0, 2.0, 0.8),
-                    AIFood.of(t(R.string.fuel_ai_mock_butter), 10.0, 72.0, 0.0, 0.0, 8.0, 0.35, isGuess = true),
-                ),
-                overallConfidence = 0.7,
-            )
-            MealSlot.Snack -> AIEstimate(
+                    AIFood.mock(t(R.string.fuel_ai_mock_eggs), AIPer100(155.0, 12.7, 1.3, 10.7), 1.0, portion, 150.0, 0.65),
+                    AIFood.mock(t(R.string.fuel_ai_mock_toast), AIPer100(266.0, 8.6, 48.6, 2.9), 2.0, slice, 35.0, 0.65),
+                    AIFood.mock(
+                        t(R.string.fuel_ai_mock_butter), AIPer100(740.0, 0.7, 0.7, 82.0), 2.0, piece, 5.0, 0.35,
+                        isGuess = true,
+                    ),
+                )
+                overall = 0.6
+            }
+            MealSlot.Snack -> {
                 foods = listOf(
-                    AIFood.of(t(R.string.fuel_ai_mock_skyr), 200.0, 126.0, 22.0, 8.0, 0.0, 0.75),
-                    AIFood.of(t(R.string.fuel_ai_mock_banana), 120.0, 107.0, 1.0, 27.0, 0.0, 0.9),
-                    AIFood.of(t(R.string.fuel_ai_mock_almonds), 20.0, 116.0, 4.0, 4.0, 10.0, 0.55),
-                ),
-                overallConfidence = 0.7,
-            )
-            MealSlot.Lunch, MealSlot.Dinner -> AIEstimate(
+                    AIFood.mock(t(R.string.fuel_ai_mock_skyr), AIPer100(63.0, 11.0, 4.0, 0.2), 1.0, portion, 200.0, 0.65),
+                    AIFood.mock(t(R.string.fuel_ai_mock_banana), AIPer100(95.0, 1.1, 21.0, 0.3), 1.0, piece, 120.0, 0.65),
+                    AIFood.mock(t(R.string.fuel_ai_mock_almonds), AIPer100(579.0, 21.0, 9.7, 50.0), 1.0, portion, 20.0, 0.55),
+                )
+                overall = 0.6
+            }
+            MealSlot.Lunch, MealSlot.Dinner -> {
                 foods = listOf(
-                    AIFood.of(t(R.string.fuel_ai_mock_chicken), 180.0, 297.0, 56.0, 0.0, 6.0, 0.8),
-                    AIFood.of(t(R.string.fuel_ai_mock_rice), 220.0, 286.0, 6.0, 62.0, 1.0, 0.7),
-                    AIFood.of(t(R.string.fuel_ai_mock_broccoli), 90.0, 31.0, 3.0, 6.0, 0.0, 0.85),
-                    AIFood.of(t(R.string.fuel_ai_mock_oliveOil), 14.0, 119.0, 0.0, 0.0, 14.0, 0.3, isGuess = true),
-                ),
-                overallConfidence = 0.6,
-            )
+                    AIFood.mock(t(R.string.fuel_ai_mock_chicken), AIPer100(160.0, 31.0, 0.0, 3.6), 1.0, portion, 180.0, 0.65),
+                    AIFood.mock(t(R.string.fuel_ai_mock_rice), AIPer100(130.0, 2.7, 28.2, 0.3), 1.0, portion, 220.0, 0.6),
+                    AIFood.mock(t(R.string.fuel_ai_mock_broccoli), AIPer100(35.0, 2.4, 4.4, 0.4), 1.0, portion, 90.0, 0.65),
+                    AIFood.mock(
+                        t(R.string.fuel_ai_mock_oliveOil), AIPer100(884.0, 0.0, 0.0, 100.0), 1.0, spoon, 10.0, 0.3,
+                        isGuess = true,
+                    ),
+                )
+                overall = 0.55
+            }
         }
+        return AIEstimate(
+            foods = foods,
+            overallConfidence = overall,
+            assumptions = emptyList(),
+            questions = emptyList(),
+            scaleReferenceUsed = "none",
+            version = 2,
+            totals = AIFinalizer.computeTotals(foods),
+            skipped = emptyList(),
+        )
+    }
+
+    /** A fixed, legible cottage-cheese table: 97 kcal, P 11 · C 2 · F 5. */
+    override suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading {
+        delay(delayMillis)
+        return LABEL
     }
 
     companion object {
         const val MOCK_DELAY_MS: Long = 1_200
+
+        val LABEL: LabelReading = LabelReading(
+            legible = true,
+            basis = "per100g",
+            energyFrom = "kcal",
+            name = "Serek wiejski",
+            brand = "",
+            per100 = LabelReading.Per100(kcal = 97.0, protein = 11.0, carbs = 2.0, fat = 5.0, sugar = 2.0, salt = 0.6),
+            servingSizeG = 200.0,
+            packageSizeG = 200.0,
+            barcode = "",
+            confidence = 0.9,
+            needsReview = false,
+        )
     }
 }

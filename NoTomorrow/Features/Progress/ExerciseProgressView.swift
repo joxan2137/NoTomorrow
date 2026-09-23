@@ -35,6 +35,7 @@ struct ExerciseProgressView: View {
         .ntScreenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { model.reload(modelContext) }
+        .onReceive(NotificationCenter.default.publisher(for: .workoutHistoryDidChange)) { _ in model.reload(modelContext) }
     }
 
     // MARK: Header (back · name · 1M 3M 1Y All)
@@ -134,7 +135,7 @@ struct ExerciseProgressView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
 
-            StatTile(label: "progress.thisWeek", value: Fmt.volume(lift.thisWeekVolume))
+            StatTile(label: "progress.thisWeek", value: Fmt.volume(lift.thisWeekVolume, unit: model.unit))
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 0) {
@@ -161,7 +162,7 @@ struct ExerciseProgressView: View {
                 Text("progress.weeklyVolume").font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
                 Spacer()
                 HStack(spacing: 0) {
-                    Text(Fmt.volume(model.thisWeekVolume))
+                    Text(Fmt.volume(model.thisWeekVolume, unit: model.unit))
                     if let ratio = model.weekOverWeek {
                         Text(" · ")
                         Text(Fmt.signedPercent(ratio) + " ").foregroundStyle(ratio >= 0 ? NT.Colors.ember : NT.Colors.ink2)
@@ -194,7 +195,7 @@ struct ExerciseProgressView: View {
         }
     }
 
-    private func recordRow(label: LocalizedStringKey, set: SetEntry) -> some View {
+    private func recordRow(label: LocalizedStringKey, set: LiftSet) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "trophy")
                 .font(.system(size: 16, weight: .semibold))
@@ -204,7 +205,7 @@ struct ExerciseProgressView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("\(Fmt.weight(set.weightKg, unit: model.unit)) × \(set.reps.formatted())")
                 .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
-            Text(Fmt.dayMonth(set.completedAt ?? set.workoutExercise?.workout?.startedAt ?? .now))
+            Text(Fmt.dayMonth(set.date))
                 .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular()
                 .frame(width: 52, alignment: .trailing)
         }

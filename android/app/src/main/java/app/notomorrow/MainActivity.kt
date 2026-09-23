@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import app.notomorrow.app.AppVisibility
 import app.notomorrow.app.RootScreen
 import app.notomorrow.designsystem.NTTheme
 import app.notomorrow.di.AppContainer
@@ -47,7 +48,10 @@ class MainActivity : AppCompatActivity() {
         // (or worse, Welcome) before it lands would flash the wrong screen at a returning user.
         splash.setKeepOnScreenCondition { !container.appState.isLoaded.value }
 
-        handlePushIntent(intent)
+        // A recreated Activity (process death, a config change) carries the intent it was first
+        // started with; a task relaunched from Recents carries the last notification's. Neither
+        // is a new tap, so neither may replay its route (`onNewIntent` delivers the real ones).
+        if (savedInstanceState == null && !isLaunchedFromHistory(intent)) handlePushIntent(intent)
         handleDebugIntent(intent)
 
         setContent {
@@ -57,6 +61,16 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppVisibility.onStart()
+    }
+
+    override fun onStop() {
+        AppVisibility.onStop()
+        super.onStop()
     }
 
     /** `singleTask`: a running app gets the notification tap here, not through a fresh `onCreate`. */
@@ -75,7 +89,12 @@ class MainActivity : AppCompatActivity() {
     private fun handlePushIntent(intent: Intent?) {
         val route = intent?.getStringExtra(NtPushIntents.EXTRA_ROUTE) ?: return
         container.appState.requestRoute(route)
+        // Consumed: the intent stays attached to the Activity and must not route twice.
+        intent.removeExtra(NtPushIntents.EXTRA_ROUTE)
     }
+
+    private fun isLaunchedFromHistory(intent: Intent?): Boolean =
+        intent != null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
 
     /**
      * Debug builds only: force the Liquid Glass tier from adb, so the material's cost and look can

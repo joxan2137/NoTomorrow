@@ -1,0 +1,31 @@
+{
+ "code": "5900783000134",
+ "status": 1,
+ "product": {
+  "code": "5900783000134",
+  "product_name": "",
+  "product_name_pl": "",
+  "brands": "Pudliszki",
+  "quantity": "200 g",
+  "serving_size": "200g",
+  "serving_quantity": 200,
+  "nutriments": {
+   "carbohydrates_100g": 18,
+   "energy-kcal_100g": 104,
+   "energy-kj_100g": 439,
+   "energy_100g": 439,
+   "fat_100g": 0.8,
+   "fiber_100g": 2.5,
+   "proteins_100g": 4.9
+  },
+  "image_front_small_url": "https://images.openfoodfacts.org/images/products/590/078/300/0134/front_pl.4.200.jpg",
+  "countries_tags": [
+   "en:poland"
+  ],
+  "product_name_en": "",
+  "generic_name": "",
+  "generic_name_pl": "",
+  "lang": "pl",
+  "nutriments_estimated": {}
+ }
+}

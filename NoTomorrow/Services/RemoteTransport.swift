@@ -211,7 +211,13 @@ final class RemoteTransport: @unchecked Sendable {
         }
 
         let (data, response): (Data, URLResponse)
-        do { (data, response) = try await urlSession.data(for: urlRequest) } catch { throw BackendError.network }
+        do {
+            (data, response) = try await urlSession.data(for: urlRequest)
+        } catch let error as URLError where error.code == .timedOut {
+            throw BackendError.timedOut
+        } catch {
+            throw BackendError.network
+        }
         guard let http = response as? HTTPURLResponse else { throw BackendError.network }
         let reply = Reply(status: http.statusCode, data: data)
         return request.auth == .none ? Reply(status: reply.status, data: try unwrap(reply, auth: .none)) : reply

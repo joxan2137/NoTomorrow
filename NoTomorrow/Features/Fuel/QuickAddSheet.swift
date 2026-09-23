@@ -9,6 +9,11 @@ struct QuickAddSheet: View {
     var onAdded: (() -> Void)? = nil
     /// Set when the sheet rewrites an entry that is already logged (quick-add or AI row) instead of inserting one.
     private let editing: MealEntry?
+    /// Edit mode: the texts the number fields started with. Fields still showing them save the entry's exact figures,
+    /// so a rename, slot or day move keeps an AI row's badge and numbers.
+    private let prefill: MealEntry.EditTexts?
+    /// Edit mode: Delete in the header. The presenter closes the sheet and deletes through `FuelModel`, so Undo shows.
+    private let onDelete: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -19,6 +24,11 @@ struct QuickAddSheet: View {
     @State private var carbsText = ""
     @State private var fatText = ""
     @State private var slot: MealSlot
+    /// Edit mode only: the day the entry is listed under, movable with `EntryDayStepper`.
+    @State private var entryDay: Date
+    /// Edit mode: the figure texts the sheet itself last put in the fields (the prefill, then each rescale). While the
+    /// fields still show them, changing the grams rescales kcal and macros; once the user types a figure, it stays.
+    @State private var writtenFigures: MealEntry.EditTexts?
     @FocusState private var focus: Field?
 
     enum Field: Hashable { case name, grams, kcal, protein, carbs, fat }
@@ -29,31 +39,49 @@ struct QuickAddSheet: View {
         self.initialName = initialName
         self.onAdded = onAdded
         self.editing = nil
+        self.prefill = nil
+        self.onDelete = nil
         _name = State(initialValue: initialName)
         _slot = State(initialValue: meal)
+        _entryDay = State(initialValue: Calendar.current.startOfDay(for: day))
     }
 
-    /// Edit mode: every field starts at the entry's figures, the slot can be changed, and Save rewrites the entry in place.
-    init(editing entry: MealEntry, onSaved: @escaping () -> Void) {
+    /// Edit mode: every field starts at the entry's figures, the day and slot can be changed, and Save rewrites the
+    /// entry in place.
+    init(editing entry: MealEntry, onSaved: @escaping () -> Void, onDelete: (() -> Void)? = nil) {
         self.meal = entry.slot
         self.day = entry.day
         self.initialName = entry.displayName
         self.onAdded = onSaved
+        self.onDelete = onDelete
         self.editing = entry
+        let texts = entry.editTexts()
+        self.prefill = texts
         _name = State(initialValue: entry.displayName)
-        _gramsText = State(initialValue: entry.grams > 0 ? FuelText.fieldText(entry.grams) : "")
-        _kcalText = State(initialValue: FuelText.fieldText(entry.kcal))
-        _proteinText = State(initialValue: FuelText.fieldText(entry.proteinG))
-        _carbsText = State(initialValue: FuelText.fieldText(entry.carbsG))
-        _fatText = State(initialValue: FuelText.fieldText(entry.fatG))
+        _gramsText = State(initialValue: texts.grams)
+        _kcalText = State(initialValue: texts.kcal)
+        _proteinText = State(initialValue: texts.protein)
+        _carbsText = State(initialValue: texts.carbs)
+        _fatText = State(initialValue: texts.fat)
         _slot = State(initialValue: entry.slot)
+        _entryDay = State(initialValue: FuelCalendar.dayKey(entry.day))
+        _writtenFigures = State(initialValue: texts)
     }
 
     private var isEditing: Bool { editing != nil }
     /// AI rows carry a portion; quick-add rows do not, so the grams field only shows when there is something to edit.
     private var showsGrams: Bool { (editing?.grams ?? 0) > 0 }
     private var kcal: Double? { Self.number(kcalText) }
-    private var canAdd: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && (kcal ?? 0) > 0 }
+    private var currentTexts: MealEntry.EditTexts {
+        MealEntry.EditTexts(grams: gramsText, kcal: kcalText, protein: proteinText, carbs: carbsText, fat: fatText)
+    }
+    /// The kcal and macro fields still show what the sheet filled in.
+    private var figuresUntouched: Bool { writtenFigures.map { currentTexts.sameFigures(as: $0) } ?? false }
+    /// A new quick add needs a name and some kcal. An edit needs a name and a kcal figure that parses, 0 included.
+    private var canAdd: Bool {
+        if let editing, let prefill { return editing.canSaveEdit(name: name, kcalText: kcalText, prefill: prefill) }
+        return !name.trimmingCharacters(in: .whitespaces).isEmpty && (kcal ?? 0) > 0
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -71,7 +99,8 @@ struct QuickAddSheet: View {
                         numberRow("fuel.macro.f", text: $fatText, field: .fat, unit: "unit.g")
                     }
                     if isEditing {
-                        MealSlotPicker(slot: $slot).padding(.top, 4)
+                        EntryDayStepper(day: $entryDay, height: 52, background: NT.Colors.surface).padding(.top, 4)
+                        MealSlotPicker(slot: $slot)
                     }
                     Text("fuel.quickAdd.hint").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,12 +116,34 @@ struct QuickAddSheet: View {
         }
         .ntScreenBackground()
         .onAppear { if !isEditing { focus = name.isEmpty ? .name : .kcal } }
+        .onChange(of: gramsText) { _, text in rescaleFigures(for: text) }
+    }
+
+    /// Weighing an AI or quick-add portion afterwards: kcal and macros follow the grams proportionally, unless the user
+    /// already typed over one of them.
+    private func rescaleFigures(for text: String) {
+        guard let editing, let prefill, showsGrams, figuresUntouched,
+              let next = editing.rescaledTexts(gramsText: text, prefill: prefill) else { return }
+        kcalText = next.kcal
+        proteinText = next.protein
+        carbsText = next.carbs
+        fatText = next.fat
+        writtenFigures = next
     }
 
     private var header: some View {
         HStack {
             Text(isEditing ? "fuel.editEntry" : "fuel.quickAdd").font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink)
             Spacer()
+            if isEditing, let onDelete {
+                Button(action: onDelete) {
+                    Text("common.delete").font(NT.Fonts.body).foregroundStyle(NT.Colors.bad)
+                        .padding(.horizontal, 8)
+                        .frame(minHeight: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
             Button { dismiss() } label: {
                 Text("common.cancel").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
                     .frame(minHeight: NT.Size.control)
@@ -139,20 +190,20 @@ struct QuickAddSheet: View {
     }
 
     private static func number(_ text: String) -> Double? {
-        Double(text.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
+        NumberInput.nonNegative(text)
     }
 
     private func add() {
-        guard canAdd, let kcal else { return }
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let protein = Self.number(proteinText) ?? 0
-        let carbs = Self.number(carbsText) ?? 0
-        let fat = Self.number(fatText) ?? 0
-        if let editing {
-            let grams = showsGrams ? max(0, Self.number(gramsText) ?? editing.grams) : 0
-            editing.overwrite(name: trimmedName, grams: grams, kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
-            editing.slot = slot
+        guard canAdd else { return }
+        if let editing, let prefill {
+            guard editing.applyEdit(name: name, texts: currentTexts, prefill: prefill,
+                                    figuresUntouched: figuresUntouched, slot: slot, day: entryDay) else { return }
         } else {
+            guard let kcal else { return }
+            let trimmedName = name.trimmingCharacters(in: .whitespaces)
+            let protein = Self.number(proteinText) ?? 0
+            let carbs = Self.number(carbsText) ?? 0
+            let fat = Self.number(fatText) ?? 0
             let entry = MealEntry(day: day, slot: slot, customName: trimmedName,
                                   grams: 0, kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
             modelContext.insert(entry)

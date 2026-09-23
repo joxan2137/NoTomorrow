@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
@@ -44,30 +45,45 @@ import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.net.dto.AIFood
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.S
 
 /**
- * `AIScanFoodRow` (`Features/Fuel/AIScanFoodRow.swift`) — one recognised food: name + macros, a
- * grams cell with a rescale menu, kcal on the right. 58 dp, hairline below.
+ * `AIScanFoodRow` (`Features/Fuel/AIScanFoodRow.swift`) — one recognised food: name, portion
+ * ("6 szt. × 35 g") and macros, a grams cell with the correction menu, kcal on the right. At least
+ * 58 dp, hairline below. Tapping the name opens the item editor.
  */
 @Composable
 fun AIScanFoodRow(
     food: AIFood,
     onScale: (Double) -> Unit,
     onSetGrams: (Double) -> Unit,
+    onStepCount: (up: Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showCustom by remember { mutableStateOf(false) }
     var customText by remember { mutableStateOf("") }
+    val basis = AIScanFormat.portionBasis(food, LocaleProvider.current())
 
-    Box(modifier.fillMaxWidth().height(58.dp)) {
+    Box(modifier.fillMaxWidth().heightIn(min = 58.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(58.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 58.dp)
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .ntPlainClickable(
+                        // TalkBack: "Double-tap to <action>", an infinitive phrase, not the menu title.
+                        onClickLabel = stringResource(S.fuel_ai_editItem_action),
+                        onClick = onEdit,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Row(
@@ -85,6 +101,14 @@ fun AIScanFoodRow(
                         Badge(text = stringResource(S.fuel_ai_guess), color = NT.Colors.ink2)
                     }
                 }
+                if (basis != null) {
+                    TabularText(
+                        text = stringResource(S.fuel_ai_portionBasis, basis.first, basis.second),
+                        style = NT.Fonts.footnote,
+                        color = NT.Colors.ink2,
+                        maxLines = 1,
+                    )
+                }
                 TabularText(
                     text = stringResource(
                         S.fuel_ai_macrosRow,
@@ -98,12 +122,15 @@ fun AIScanFoodRow(
             }
 
             AIScanGramsCell(
-                grams = food.grams,
+                food = food,
                 onScale = onScale,
+                onStepCount = onStepCount,
                 onCustom = {
                     customText = AIScanFormat.wholeGrams(food.grams)
                     showCustom = true
                 },
+                onEdit = onEdit,
+                onRemove = onRemove,
             )
 
             Box(Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd) {
@@ -146,26 +173,63 @@ fun AIScanFoodRow(
 
 /**
  * `AIScanFoodRow.gramsMenu` — a 36 dp `surface2` cell (grams · "g" · chevron) in a 44 dp hit
- * box. The menu rescales kcal and macros proportionally.
+ * box. The menu rescales kcal and macros, steps the count, opens the editor or removes the item:
+ * −25 %, −10 %, +10 %, +25 % | +1 unit, −1 unit (only with a unit), Custom…, Edit… | Remove.
  */
 @Composable
 private fun AIScanGramsCell(
-    grams: Double,
+    food: AIFood,
     onScale: (Double) -> Unit,
+    onStepCount: (up: Boolean) -> Unit,
     onCustom: () -> Unit,
+    onEdit: () -> Unit,
+    onRemove: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val items = AIScanDerive.ScaleDeltas.map { delta ->
+    val unit = food.unitName
+    val percents = AIScanDerive.ScaleDeltas.map { delta ->
         NtMenuItem(
             title = Fmt.signedPercent(delta),
             onClick = { onScale(1 + delta) },
         )
-    } + NtMenuItem(
-        title = stringResource(S.fuel_ai_grams_custom),
-        onClick = onCustom,
-        icon = NtIcons.Pencil,
-        // `Divider()` between the ±% group and "Custom…" — the only one in the iOS codebase.
-        separatorBefore = true,
+    }
+    val counts = if (unit != null) {
+        listOf(
+            NtMenuItem(
+                title = stringResource(S.fuel_ai_item_plusOne, unit),
+                onClick = { onStepCount(true) },
+                icon = NtIcons.Plus,
+                separatorBefore = true,
+            ),
+            NtMenuItem(
+                title = stringResource(S.fuel_ai_item_minusOne, unit),
+                onClick = { onStepCount(false) },
+                icon = NtIcons.Minus,
+                enabled = food.units > 0.5,
+            ),
+        )
+    } else {
+        emptyList()
+    }
+    val items = percents + counts + listOf(
+        NtMenuItem(
+            title = stringResource(S.fuel_ai_grams_custom),
+            onClick = onCustom,
+            icon = NtIcons.Scalemass,
+            separatorBefore = counts.isEmpty(),
+        ),
+        NtMenuItem(
+            title = stringResource(S.fuel_ai_editItem),
+            onClick = onEdit,
+            icon = NtIcons.Pencil,
+        ),
+        NtMenuItem(
+            title = stringResource(S.fuel_ai_removeItem),
+            onClick = onRemove,
+            destructive = true,
+            icon = NtIcons.Trash,
+            separatorBefore = true,
+        ),
     )
 
     // iOS draws the pill at 36 pt but hangs `.contentShape(Rectangle())` off the 44 pt box, so
@@ -185,7 +249,7 @@ private fun AIScanGramsCell(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NumericText(
-                text = AIScanFormat.wholeGrams(grams),
+                text = AIScanFormat.wholeGrams(food.grams),
                 style = NT.Fonts.subheadline.tabular(),
                 color = NT.Colors.ink,
                 durationMs = 200,

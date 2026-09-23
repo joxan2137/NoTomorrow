@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -26,10 +26,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.app.LocalTabBarHeight
+import app.notomorrow.app.LocalTabPageVisible
 import app.notomorrow.designsystem.Eyebrow
 import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
+import app.notomorrow.designsystem.NtActionSheet
+import app.notomorrow.designsystem.NtAlertAction
+import app.notomorrow.designsystem.NtAlertRole
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.SectionHeader
 import app.notomorrow.data.relation.WorkoutWithExercises
@@ -40,8 +44,9 @@ import app.notomorrow.util.S
 import java.time.LocalDate
 
 /**
- * Train tab: resume banner, routines with Start, empty-workout ghost button, finished-workout
- * history — 1:1 port of `NoTomorrow/Features/Workout/TrainView.swift`.
+ * Train tab: routines with Start, empty-workout ghost button, finished-workout history — 1:1 port
+ * of `NoTomorrow/Features/Workout/TrainView.swift`. A workout in progress lives in the mini bar
+ * above the tab bar; Start while one runs asks first.
  *
  * The library import and routine seeding that iOS runs from `.task` here happen once in
  * `NoTomorrowApp`'s start-up coroutine (`AppContainer.seed()`), so this screen only reads.
@@ -56,14 +61,12 @@ import java.time.LocalDate
 fun TrainScreen() {
     val model = ntViewModel { container -> TrainViewModel(container) }
     val state by model.state.collectAsStateWithLifecycle()
+    val blocked by model.blockedStart.collectAsStateWithLifecycle()
     val defaultWorkoutName = stringResource(S.workout_defaultName)
 
-    // `@State private var selectedWorkout: Workout?` — the id survives a rotation, the graph is
-    // re-read from the flow.
+    // `@State private var selectedWorkout: Workout?` — the id survives a rotation; the sheet reads
+    // the workout itself, so it follows an edit and closes on a delete.
     var selectedWorkoutId by rememberSaveable { mutableStateOf<String?>(null) }
-    val selected = remember(state.history, selectedWorkoutId) {
-        state.history.firstOrNull { it.workout.id == selectedWorkoutId }
-    }
 
     Box(Modifier.fillMaxSize().background(NT.Colors.ground)) {
         LazyColumn(
@@ -79,16 +82,6 @@ fun TrainScreen() {
             ),
         ) {
             item(key = "header") { TrainHeader() }
-
-            state.active?.let { active ->
-                item(key = "resume") {
-                    ResumeWorkoutBanner(
-                        workout = active,
-                        onClick = { model.resume(active.id) },
-                        modifier = Modifier.padding(top = 18.dp),
-                    )
-                }
-            }
 
             item(key = "routines") {
                 RoutinesSection(
@@ -121,13 +114,64 @@ fun TrainScreen() {
         }
     }
 
-    if (selected != null) {
-        WorkoutDetailSheet(
-            workout = selected,
-            unit = state.unit,
-            onDismiss = { selectedWorkoutId = null },
-        )
+    WorkoutDetailPresenter(
+        workoutId = selectedWorkoutId,
+        unit = state.unit,
+        host = "train",
+        onDismiss = { selectedWorkoutId = null },
+    )
+
+    // The dialog lives in the activity's overlay while this tab stays composed on every other tab:
+    // leaving Train (or the workout covering it) cancels it, the way a confirmation dialog goes with
+    // its view on iOS, instead of following the user to Fuel.
+    val pageVisible = LocalTabPageVisible.current
+    LaunchedEffect(pageVisible) {
+        if (!pageVisible) model.dismissBlockedStart()
     }
+    if (pageVisible) {
+        blocked?.let { start ->
+            AlreadyActiveDialog(
+                blocked = start,
+                onResume = model::resumeActive,
+                // The captured start: the sheet clears `blockedStart` before it runs an action.
+                onDiscardAndStart = { model.discardActiveAndStart(start) },
+                onDismiss = model::dismissBlockedStart,
+            )
+        }
+    }
+}
+
+/**
+ * `.confirmationDialog("workout.inProgress")` — a Start while another workout runs: Resume,
+ * "Discard it and start new" (only while the running workout has no completed sets, the Finish
+ * dialog's rule) and the implicit Cancel.
+ */
+@Composable
+private fun AlreadyActiveDialog(
+    blocked: BlockedStart,
+    onResume: () -> Unit,
+    onDiscardAndStart: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val actions = buildList {
+        add(NtAlertAction(title = stringResource(S.dashboard_resumeWorkout), onClick = onResume))
+        if (blocked.canDiscard) {
+            add(
+                NtAlertAction(
+                    title = stringResource(S.workout_alreadyActive_discardAndStart),
+                    role = NtAlertRole.Destructive,
+                    onClick = onDiscardAndStart,
+                ),
+            )
+        }
+    }
+    NtActionSheet(
+        actions = actions,
+        cancel = stringResource(S.common_cancel),
+        onDismiss = onDismiss,
+        title = stringResource(S.workout_inProgress),
+        message = stringResource(S.workout_alreadyActive_message_s, blocked.activeName),
+    )
 }
 
 /** Eyebrow date over the tab title. */

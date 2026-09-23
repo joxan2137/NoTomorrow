@@ -7,10 +7,10 @@ import androidx.lifecycle.viewModelScope
 import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.model.FoodCandidate
+import app.notomorrow.service.FoodMatch
 import app.notomorrow.service.FoodSearchError
 import app.notomorrow.service.FoodSearchService
 import app.notomorrow.util.LocaleProvider
-import app.notomorrow.util.S
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +23,8 @@ import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * `FoodSearchModel` (`Features/Fuel/FoodSearchModel.swift`) plus the `@Query` for the
- * recent list that `FoodSearchView` declares.
+ * `FoodSearchModel` (`Features/Fuel/FoodSearchModel.swift`) plus the saved-food `@Query` that
+ * `FoodSearchView` declares, and the sheet's own barcode lookup ([barcode]).
  *
  * Debounce and the ≥2-character minimum live here, not in [FoodSearchService] — exactly
  * as on iOS. `alreadyInFlight` means an identical query is still running from a previous
@@ -38,31 +38,23 @@ class FoodSearchViewModel(
 
     private val query = MutableStateFlow("")
     private val phase = MutableStateFlow<FoodSearchPhase>(FoodSearchPhase.Idle)
-    private val lookingUp = MutableStateFlow(false)
+
+    /** Scan → saved foods → Open Food Facts, from the field's barcode tile. */
+    val barcode = BarcodeLookupFlow(foodDao, service, viewModelScope)
 
     private var searchJob: Job? = null
     private var lastQuery: String = ""
 
-    /**
-     * iOS sorts every used food by `lastUsedAt`, filters by the query and *then* keeps 10,
-     * so the DAO has to hand over more than ten rows.
-     */
-    private val recent = foodDao.observeRecent(RECENT_POOL)
+    /** The whole saved-food library, most recently used first (never-used labels last). */
+    private val library = foodDao.observeLibrary()
 
     val state: StateFlow<FoodSearchUiState> =
-        combine(query, phase, lookingUp, recent) { query, phase, lookingUp, recent ->
+        combine(query, phase, library) { query, phase, library ->
             val trimmed = query.trim()
-            val needle = trimmed.lowercase(locale())
-            val filtered = if (needle.isEmpty()) {
-                recent
-            } else {
-                recent.filter { it.name.lowercase(locale()).contains(needle) }
-            }
             FoodSearchUiState(
                 query = query,
                 phase = phase,
-                recent = filtered.take(RECENT_SHOWN),
-                isLookingUpBarcode = lookingUp,
+                recent = savedFoods(library, trimmed),
                 canSearch = trimmed.length >= FoodSearchService.MINIMUM_QUERY_LENGTH,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FoodSearchUiState())
@@ -105,56 +97,42 @@ class FoodSearchViewModel(
                 if (hits.isEmpty()) FoodSearchPhase.Empty else FoodSearchPhase.Results(hits)
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (error: FoodSearchError) {
-            if (error is FoodSearchError.AlreadyInFlight) {
-                delay(FuelDerive.IN_FLIGHT_RETRY_MS)
-                run(q)
-            } else {
-                phase.value = FoodSearchPhase.Error(error.messageRes)
-            }
+        } catch (_: FoodSearchError.AlreadyInFlight) {
+            delay(FuelDerive.IN_FLIGHT_RETRY_MS)
+            run(q)
         } catch (@Suppress("TooGenericExceptionCaught") error: Throwable) {
-            phase.value = FoodSearchPhase.Error(S.fuel_search_error_network)
+            phase.value = FoodSearchPhase.Error(FoodSearchError.messageRes(error))
         }
     }
 
-    /** The sheet closed: drop the query and the phase, as a fresh `@State` model would. */
+    /** The sheet closed: drop the query, the phase and the lookup, as a fresh `@State` model would. */
     fun reset() {
         searchJob?.cancel()
         searchJob = null
         lastQuery = ""
         query.value = ""
         phase.value = FoodSearchPhase.Idle
-        lookingUp.value = false
+        barcode.reset()
     }
 
-    /** `FoodSearchModel.lookup(barcode:)` — nil when neither EAN/UPC form is known. */
-    suspend fun lookup(barcode: String): FoodCandidate? {
-        lookingUp.value = true
-        return try {
-            service.lookup(barcode)
-        } finally {
-            lookingUp.value = false
-        }
-    }
-
-    suspend fun savedBarcode(barcode: String): FoodItemEntity? {
-        for (code in FoodSearchService.barcodeForms(barcode)) foodDao.byBarcode(code)?.let { return it }
-        return null
-    }
-
-    suspend fun saveLabel(barcode: String, name: String, values: List<Double>): FoodItemEntity {
-        val item = FoodItemEntity(id = "label:$barcode", name = name, source = app.notomorrow.model.FoodSource.Custom,
-            barcode = barcode, kcalPer100 = values[0], proteinPer100 = values[1], carbsPer100 = values[2], fatPer100 = values[3])
-        foodDao.upsert(item)
-        return item
-    }
-
-    private companion object {
-        /** Rows read from Room before the query filter; iOS filters the whole table. */
-        const val RECENT_POOL = 200
-
-        /** `Array(filtered.prefix(10))` */
+    companion object {
+        /** `Array(matches.prefix(10))` */
         const val RECENT_SHOWN = 10
+
+        /**
+         * `FoodSearchView.recent`. No query: the 10 most recently used foods. A query: saved foods
+         * whose name or brand contains every typed word, ignoring case and Polish diacritics, so
+         * they stay reachable offline and when Open Food Facts is down.
+         */
+        fun savedFoods(library: List<FoodItemEntity>, query: String): List<FoodItemEntity> {
+            val q = query.trim()
+            val matches = if (q.isEmpty()) {
+                library.asSequence().filter { it.lastUsedAt != null }
+            } else {
+                library.asSequence().filter { FoodMatch.matches(q, it.name, it.brand) }
+            }
+            return matches.take(RECENT_SHOWN).toList()
+        }
     }
 }
 
@@ -177,7 +155,10 @@ sealed interface FoodSearchPhase {
 data class FoodSearchUiState(
     val query: String = "",
     val phase: FoodSearchPhase = FoodSearchPhase.Idle,
+    /** The saved foods on show: recent ones, or the ones matching the query. */
     val recent: List<FoodItemEntity> = emptyList(),
-    val isLookingUpBarcode: Boolean = false,
     val canSearch: Boolean = false,
-)
+) {
+    /** The saved-food section reads "Your foods" while a query filters it, "Recent" otherwise. */
+    val hasQuery: Boolean get() = query.isNotBlank()
+}

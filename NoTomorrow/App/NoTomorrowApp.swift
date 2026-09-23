@@ -3,31 +3,34 @@ import SwiftData
 
 @main
 struct NoTomorrowApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appState = AppState()
     @State private var restTimer = RestTimerController()
     @State private var session = WorkoutSessionController()
 
-    let container: ModelContainer = {
-        let schema = Schema(NoTomorrowSchema.models)
-        let config = ModelConfiguration("NoTomorrow", schema: schema, isStoredInMemoryOnly: false)
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            // A broken store on a dev build is not worth a crash loop; fall back to memory.
-            let memory = ModelConfiguration(isStoredInMemoryOnly: true)
-            return try! ModelContainer(for: schema, configurations: [memory])
-        }
-    }()
+    /// The SwiftData store. When it cannot be opened the app shows `StoreErrorView` instead of silently running on
+    /// an empty in-memory store (see `StoreLoader`).
+    @State private var store = StoreLoader()
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            StoreRoot(store: store)
+                .environment(store)
                 .environment(appState)
                 .environment(restTimer)
                 .environment(session)
                 .preferredColorScheme(.dark)
                 .tint(NT.Colors.ink)
         }
-        .modelContainer(container)
+    }
+}
+
+/// Puts the loader's current container into the environment. A view (not the scene) reads it, so a recovered store
+/// replaces the placeholder for the whole hierarchy.
+private struct StoreRoot: View {
+    let store: StoreLoader
+
+    var body: some View {
+        RootView().modelContainer(store.container)
     }
 }

@@ -7,7 +7,7 @@ struct WorkoutHistoryRow: View {
     var action: () -> Void
 
     private var meta: String {
-        [Fmt.dayMonth(workout.startedAt), Fmt.duration(workout.duration), Fmt.volume(workout.totalVolumeKg)]
+        [Fmt.dayMonth(workout.startedAt), Fmt.duration(workout.duration), Fmt.volume(workout.totalVolumeKg, unit: unit)]
             .joined(separator: " · ")
     }
 

@@ -3,10 +3,11 @@ import PhotosUI
 import UIKit
 
 /// Step 1 of the AI flow: where the photo comes from. Camera when the device has one, photo library always.
+/// A library pick hands over the file's bytes, so the full-size image is never decoded on the main thread.
 struct AIScanSourceView: View {
     @Binding var notes: String
     var meal: MealSlot
-    var onPicked: (UIImage) -> Void
+    var onPicked: (PickedPhoto) -> Void
 
     @State private var libraryItem: PhotosPickerItem?
     @State private var showCamera = false
@@ -51,7 +52,7 @@ struct AIScanSourceView: View {
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
                 showCamera = false
-                if let image { onPicked(image) }
+                if let image { onPicked(.image(image)) }
             }
             .ignoresSafeArea()
         }
@@ -61,7 +62,7 @@ struct AIScanSourceView: View {
                 let data = try? await item.loadTransferable(type: Data.self)
                 await MainActor.run {
                     libraryItem = nil
-                    if let data, let image = UIImage(data: data) { onPicked(image) }
+                    if let data { onPicked(.data(data)) }
                 }
             }
         }

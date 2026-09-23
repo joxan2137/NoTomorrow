@@ -41,6 +41,7 @@ struct ProgressHomeView: View {
             LogWeightSheet(unit: model.unit, suggestedKg: model.body.latest?.kg) { model.reload(modelContext) }
         }
         .onAppear { model.reload(modelContext) }
+        .onReceive(NotificationCenter.default.publisher(for: .workoutHistoryDidChange)) { _ in model.reload(modelContext) }
     }
 
     // MARK: Header

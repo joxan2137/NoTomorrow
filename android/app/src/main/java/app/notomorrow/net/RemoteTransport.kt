@@ -171,7 +171,8 @@ class RemoteTransport(
         } catch (e: BackendError) {
             throw e
         } catch (e: Throwable) {
-            throw BackendError.Network
+            // A reply that did not come in time is not "no connection" (the AI flows word it apart).
+            throw if (BackendError.isTimeout(e)) BackendError.TimedOut else BackendError.Network
         }
         // A public route's non-2xx is a plain server reply; surface it straight away.
         return if (request.auth == Auth.NONE) Reply(reply.status, unwrap(reply)) else reply
@@ -220,5 +221,8 @@ class RemoteTransport(
 
         /** `POST ai/estimate` uploads a photo and waits on a vision model. */
         const val AI_TIMEOUT_MS: Long = 90_000
+
+        /** `POST ai/label`: the server gives up at 65 s (contract §8). */
+        const val AI_LABEL_TIMEOUT_MS: Long = 75_000
     }
 }

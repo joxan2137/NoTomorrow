@@ -144,6 +144,7 @@ final class OnboardingModel {
 
     func pair(in context: ModelContext) async {
         guard canPair else { return }
+        LocalDataWipe.runPending(in: context)   // before the pairing row is written, see `finish`
         isPairing = true
         pairFailed = false
         let ok = await bro.pair(code: normalizedCode, in: context)
@@ -155,6 +156,8 @@ final class OnboardingModel {
     // MARK: Finish
 
     func finish(in context: ModelContext, appState: AppState) async {
+        // A deleted account's data goes before the new profile is written, never after it.
+        LocalDataWipe.runPending(in: context)
         let t = targets
         let profileName = trimmedName.isEmpty ? String(localized: "bro.you") : trimmedName
         let profile = UserProfile(name: profileName, bodyWeightKg: bodyWeightKg, goal: goal, units: unit,

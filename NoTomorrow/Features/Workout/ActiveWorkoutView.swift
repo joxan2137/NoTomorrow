@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 
 /// Full-screen cover for the workout in progress (presented on `session.showsActiveWorkout`).
-/// Header · exercise sections with the set table · floating rest pill · finish → `WorkoutDoneView` inside the same cover.
+/// Header (collapse · title · Finish) · exercise sections with the set table · floating rest pill ·
+/// finish → `WorkoutDoneView` inside the same cover. Collapsing hands the workout to the mini bar on every tab.
 struct ActiveWorkoutView: View {
     let workout: Workout
 
@@ -11,9 +12,10 @@ struct ActiveWorkoutView: View {
     @Environment(WorkoutSessionController.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    /// The session's model for this workout (owned by `WorkoutSessionController`, so it outlives a collapse);
+    /// kept here too so the cover can finish animating out after the session lets go.
     @State private var model: ActiveWorkoutModel?
     @State private var showsFinishDialog = false
-    @State private var showsDone = false
     @State private var showsPicker = false
     @State private var showsRestSheet = false
     @FocusState private var focus: SetField?
@@ -21,13 +23,12 @@ struct ActiveWorkoutView: View {
     var body: some View {
         ZStack {
             if let model {
-                if showsDone {
-                    WorkoutDoneView(workout: workout, endedAt: model.finishedAt, onDone: {
+                if model.showsSummary {
+                    WorkoutDoneView(workout: workout, unit: model.unit, onDone: {
                         model.commitFinish(session: session)
                         dismiss()
                     }, onEditSets: {
-                        model.reopen()
-                        withAnimation(.easeInOut(duration: 0.25)) { showsDone = false }
+                        withAnimation(.easeInOut(duration: 0.25)) { model.reopen() }
                     })
                     .transition(.move(edge: .trailing).combined(with: .opacity))
                 } else {
@@ -37,8 +38,25 @@ struct ActiveWorkoutView: View {
             }
         }
         .ntScreenBackground()
-        .onAppear { if model == nil { model = ActiveWorkoutModel(workout: workout, context: context) } }
+        .onAppear {
+            guard model == nil else { return }
+            let shared = session.model(for: workout, context: context)
+            // History may have been edited (or the unit changed) while the workout sat in the mini bar.
+            shared.reloadPrevious()
+            model = shared
+        }
         .background { RestTimerExpiryWatcher() }
+        .sheet(isPresented: $showsRestSheet) {
+            RestTimerView(workout: workout, upNext: model?.upNext)
+        }
+        // A rest notification / Live Activity tap asks for the rest sheet; wait for the cover to finish presenting.
+        .task(id: session.wantsRestSheet) {
+            guard session.wantsRestSheet else { return }
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            session.wantsRestSheet = false
+            if restTimer.isRunning, model?.showsSummary != true { showsRestSheet = true }
+        }
     }
 
     // MARK: Workout
@@ -48,22 +66,30 @@ struct ActiveWorkoutView: View {
             header(model)
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.top, 8)
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(model.exercises) { exercise in
-                        let expanded = model.expandedExerciseID == exercise.persistentModelID
-                        WorkoutExerciseSection(exercise: exercise, model: model, isExpanded: expanded, focus: $focus) { set in
-                            toggle(set, in: exercise, model: model)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(model.exercises) { exercise in
+                            let expanded = model.expandedExerciseID == exercise.persistentModelID
+                            WorkoutExerciseSection(exercise: exercise, model: model, isExpanded: expanded, focus: $focus,
+                                                   onToggleSet: { toggle($0, in: exercise, model: model) },
+                                                   onDeleteSet: { deleteSet($0, in: exercise, model: model) })
+                            .id(exercise.persistentModelID)
+                            Hairline().padding(.top, expanded ? 8 : 0)
                         }
-                        Hairline().padding(.top, expanded ? 8 : 0)
+                        GhostButton(title: "workout.addExercise", systemImage: "plus") { showsPicker = true }
+                            .padding(.top, 14)
+                        Color.clear.frame(height: restTimer.isRunning ? 96 : 24)
                     }
-                    GhostButton(title: "workout.addExercise", systemImage: "plus") { showsPicker = true }
-                        .padding(.top, 14)
-                    Color.clear.frame(height: restTimer.isRunning ? 96 : 24)
+                    .padding(.horizontal, NT.Spacing.screenH)
                 }
-                .padding(.horizontal, NT.Spacing.screenH)
+                .scrollDismissesKeyboard(.interactively)
+                // Expanding from the mini bar lands on the exercise the user was on.
+                .onAppear {
+                    guard let id = model.expandedExerciseID, id != model.exercises.first?.persistentModelID else { return }
+                    proxy.scrollTo(id, anchor: .top)
+                }
             }
-            .scrollDismissesKeyboard(.interactively)
         }
         .overlay(alignment: .bottom) {
             if restTimer.isRunning {
@@ -82,7 +108,9 @@ struct ActiveWorkoutView: View {
                     .font(NT.Fonts.headline)
             }
         }
-        .confirmationDialog("workout.finishConfirm", isPresented: $showsFinishDialog, titleVisibility: .visible) {
+        // An alert, not a confirmation dialog: on iOS 26 a dialog here turns into a popover floating over the
+        // exercise list, pointing at nothing, and drops its Cancel. The alert keeps Cancel on screen.
+        .alert("workout.finishConfirm", isPresented: $showsFinishDialog) {
             Button("workout.finish") { finish(model) }
             if workout.completedSetCount == 0 {
                 Button("workout.discard", role: .destructive) {
@@ -96,19 +124,28 @@ struct ActiveWorkoutView: View {
         .sheet(isPresented: $showsPicker, onDismiss: { model.reloadPrevious() }) {
             ExercisePickerView(workout: workout)
         }
-        .sheet(isPresented: $showsRestSheet) {
-            RestTimerView(workout: workout, upNext: model.upNext)
-        }
     }
 
     private func header(_ model: ActiveWorkoutModel) -> some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 8) {
+            Button(action: collapse) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(NT.Colors.ink)
+                    .frame(width: 36, height: 36)
+                    .background(NT.Colors.surface2, in: Circle())
+                    .frame(width: NT.Size.control, height: NT.Size.control)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressScale())
+            .accessibilityLabel(Text("workout.minimize"))
+            .padding(.leading, -(NT.Size.control - 36) / 2)
             VStack(alignment: .leading, spacing: 2) {
                 Text(workout.name).font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink).lineLimit(1)
                 HStack(spacing: 6) {
                     Circle().fill(NT.Colors.ember).frame(width: 6, height: 6)
                     TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                        Text(Fmt.clock((workout.endedAt ?? ctx.date).timeIntervalSince(workout.startedAt)))
+                        Text(Fmt.elapsed((workout.endedAt ?? ctx.date).timeIntervalSince(workout.startedAt)))
                             .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ember).tabular()
                     }
                     if !model.exercises.isEmpty {
@@ -135,21 +172,37 @@ struct ActiveWorkoutView: View {
 
     // MARK: Actions
 
+    /// Hands the workout to the mini bar; everything already typed is saved.
+    private func collapse() {
+        focus = nil
+        session.collapse(context: context)
+    }
+
     private func toggle(_ set: SetEntry, in exercise: WorkoutExercise, model: ActiveWorkoutModel) {
         if set.isCompleted {
             model.uncomplete(set)
         } else {
             focus = nil
             model.complete(set, in: exercise, restTimer: restTimer)
-            Haptics.tap()
+            if set.isCompleted {
+                Haptics.tap()
+            } else {
+                // Nothing to log yet: the row stays open and the reps cell asks for a number.
+                Haptics.warning()
+                focus = SetField(setID: set.persistentModelID, isReps: true)
+            }
         }
+    }
+
+    private func deleteSet(_ set: SetEntry, in exercise: WorkoutExercise, model: ActiveWorkoutModel) {
+        focus = nil
+        withAnimation(.easeInOut(duration: 0.2)) { model.removeSet(set, in: exercise) }
     }
 
     private func finish(_ model: ActiveWorkoutModel) {
         focus = nil
         restTimer.skip()
-        model.finish()
         Haptics.success()
-        withAnimation(.easeInOut(duration: 0.3)) { showsDone = true }
+        withAnimation(.easeInOut(duration: 0.3)) { model.finish() }
     }
 }

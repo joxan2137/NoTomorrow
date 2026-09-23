@@ -40,9 +40,16 @@ enum FuelText {
     /// Wraps an already-localised string so components that take a `LocalizedStringKey` show it verbatim.
     static func verbatim(_ text: String) -> LocalizedStringKey { "\(text)" }
 
-    /// A figure as it should appear in an editable field: whole numbers plain, otherwise one decimal in the user's locale.
-    static func fieldText(_ value: Double) -> String {
-        value.rounded() == value ? String(Int(value)) : value.formatted(.number.precision(.fractionLength(1)))
+    /// A figure as it should appear in an editable field: at most one decimal in the user's locale and never grouped,
+    /// so it parses back through `NumberInput` ("1234,5", not "1 234,5" or "1,234.5").
+    static func fieldText(_ value: Double, locale: Locale = Fmt.locale) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)).grouping(.never).locale(locale))
+    }
+
+    /// The value of an edit field that was prefilled from a stored figure. The field shows the figure rounded, so text
+    /// the user left alone keeps the exact figure; anything else is parsed (nil when it is not a number).
+    static func editedFigure(_ text: String, prefill: String, original: Double) -> Double? {
+        text == prefill ? original : NumberInput.nonNegative(text)
     }
 
     static var locale: String {
@@ -115,6 +122,13 @@ enum PortionFood: Identifiable {
         case .item(let i): i.servingLabel
         }
     }
+    /// Open Food Facts estimated the figures from the ingredients; the portion sheet says so.
+    var isEstimated: Bool {
+        switch self {
+        case .candidate(let c): c.isEstimated
+        case .item: false
+        }
+    }
 
     /// Returns the persisted `FoodItem` for this food, inserting it on first use, and bumps its usage stats.
     func resolveItem(in context: ModelContext) -> FoodItem {
@@ -183,6 +197,150 @@ extension MealEntry {
             confidence = nil
         }
     }
+
+    /// Moves the entry to another calendar day. Slot, figures and `loggedAt` stay: the slot is the "time" the UI shows,
+    /// and the row sorts by `loggedAt` inside it. Picking the day it is already listed under changes nothing, so a
+    /// midnight stored in another time zone is not rewritten.
+    func move(to newDay: Date, calendar: Calendar = .current) {
+        let target = calendar.startOfDay(for: newDay)
+        guard FuelCalendar.dayKey(day, calendar: calendar) != target else { return }
+        day = target
+    }
+
+    /// A new entry with this one's slot, food, name and figures (AI flags included) on the calendar day of `newDay`
+    /// in `calendar`, logged at `loggedAt`. Pass a moment of that day (e.g. now), not a midnight computed elsewhere:
+    /// the day is taken once, here, so a midnight from another zone cannot slide onto the day before.
+    func copy(to newDay: Date, loggedAt: Date = .now, calendar: Calendar = .current) -> MealEntry {
+        let copy = MealEntry(day: newDay, slot: slot, food: food, customName: customName, grams: grams, kcal: kcal,
+                             proteinG: proteinG, carbsG: carbsG, fatG: fatG,
+                             isAIEstimate: isAIEstimate, confidence: confidence)
+        copy.day = calendar.startOfDay(for: newDay)   // the init reads Calendar.current; the caller's calendar wins
+        copy.loggedAt = loggedAt
+        return copy
+    }
+
+    /// Every stored property, so a delete can be undone with the same id, day and row order.
+    struct Snapshot {
+        let id: UUID
+        let day: Date
+        let slot: MealSlot
+        let food: FoodItem?
+        let customName: String?
+        let grams: Double
+        let kcal: Double
+        let proteinG: Double
+        let carbsG: Double
+        let fatG: Double
+        let isAIEstimate: Bool
+        let confidence: Double?
+        let loggedAt: Date
+        /// The name the row showed, for the rare restore whose food was deleted in the meantime.
+        let displayName: String
+
+        /// The entry again, ready to insert. A food deleted in the meantime is dropped; the row keeps its name and figures.
+        func restore() -> MealEntry {
+            let liveFood = food?.modelContext == nil ? nil : food
+            let name = food != nil && liveFood == nil ? displayName : customName
+            let entry = MealEntry(day: day, slot: slot, food: liveFood, customName: name,
+                                  grams: grams, kcal: kcal, proteinG: proteinG, carbsG: carbsG, fatG: fatG,
+                                  isAIEstimate: isAIEstimate, confidence: confidence)
+            entry.id = id
+            entry.day = day   // exact: the init normalises to this zone's midnight
+            entry.loggedAt = loggedAt
+            return entry
+        }
+    }
+
+    var snapshot: Snapshot {
+        Snapshot(id: id, day: day, slot: slot, food: food, customName: customName, grams: grams, kcal: kcal,
+                 proteinG: proteinG, carbsG: carbsG, fatG: fatG, isAIEstimate: isAIEstimate, confidence: confidence,
+                 loggedAt: loggedAt, displayName: displayName)
+    }
+
+    /// What the quick-add edit sheet prefills: grams only when the row has a portion (AI rows), figures ungrouped.
+    struct EditTexts: Equatable {
+        var grams: String
+        var kcal: String
+        var protein: String
+        var carbs: String
+        var fat: String
+    }
+
+    func editTexts(locale: Locale = Fmt.locale) -> EditTexts {
+        EditTexts(grams: grams > 0 ? FuelText.fieldText(grams, locale: locale) : "",
+                  kcal: FuelText.fieldText(kcal, locale: locale),
+                  protein: FuelText.fieldText(proteinG, locale: locale),
+                  carbs: FuelText.fieldText(carbsG, locale: locale),
+                  fat: FuelText.fieldText(fatG, locale: locale))
+    }
+
+    struct Figures: Equatable {
+        var kcal: Double
+        var protein: Double
+        var carbs: Double
+        var fat: Double
+    }
+
+    /// This entry's kcal and macros at `newGrams`, keeping its figures per gram: an AI or quick-add row whose portion
+    /// is weighed later scales like a food would. Nil when the row has no portion to scale from.
+    func figures(atGrams newGrams: Double) -> Figures? {
+        guard grams > 0, newGrams > 0 else { return nil }
+        let factor = newGrams / grams
+        return Figures(kcal: kcal * factor, protein: proteinG * factor, carbs: carbsG * factor, fat: fatG * factor)
+    }
+
+    /// The edit sheet's figure texts after its grams field changed to `gramsText`: rescaled from this entry, or the
+    /// prefill again when the grams are back at theirs. Nil when the grams are not a positive number (leave the fields).
+    func rescaledTexts(gramsText: String, prefill: EditTexts, locale: Locale = Fmt.locale) -> EditTexts? {
+        if gramsText == prefill.grams { return prefill }
+        guard let newGrams = NumberInput.nonNegative(gramsText), let f = figures(atGrams: newGrams) else { return nil }
+        return EditTexts(grams: gramsText,
+                         kcal: FuelText.fieldText(f.kcal, locale: locale),
+                         protein: FuelText.fieldText(f.protein, locale: locale),
+                         carbs: FuelText.fieldText(f.carbs, locale: locale),
+                         fat: FuelText.fieldText(f.fat, locale: locale))
+    }
+
+    /// Whether the quick-add edit sheet can save this custom (quick-add / AI) row: a name and a kcal figure that
+    /// parses. 0 kcal is fine here, unlike a new quick add: AI logging keeps 0 kcal rows that have a portion (water,
+    /// black coffee), and they must still be movable, re-slottable and renamable.
+    func canSaveEdit(name: String, kcalText: String, prefill: EditTexts) -> Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && FuelText.editedFigure(kcalText, prefill: prefill.kcal, original: kcal) != nil
+    }
+
+    /// The quick-add edit sheet's Save on this custom row. Fields still showing their prefill keep the exact figures;
+    /// new grams with untouched figures save the exact rescale. Then the slot and the day move. Returns false and
+    /// writes nothing when `canSaveEdit` says no.
+    @discardableResult
+    func applyEdit(name: String, texts: EditTexts, prefill: EditTexts, figuresUntouched: Bool,
+                   slot newSlot: MealSlot, day newDay: Date, calendar: Calendar = .current) -> Bool {
+        let figure = FuelText.editedFigure
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let newKcal = figure(texts.kcal, prefill.kcal, kcal) else { return false }
+        let hasPortion = grams > 0
+        let newGrams = hasPortion ? (figure(texts.grams, prefill.grams, grams) ?? grams) : 0
+        if hasPortion, newGrams != grams, figuresUntouched, let exact = figures(atGrams: newGrams) {
+            // The fields show the rescale rounded; save it exact.
+            overwrite(name: trimmed, grams: newGrams, kcal: exact.kcal, proteinG: exact.protein,
+                      carbsG: exact.carbs, fatG: exact.fat)
+        } else {
+            overwrite(name: trimmed, grams: newGrams, kcal: newKcal,
+                      proteinG: figure(texts.protein, prefill.protein, proteinG) ?? 0,
+                      carbsG: figure(texts.carbs, prefill.carbs, carbsG) ?? 0,
+                      fatG: figure(texts.fat, prefill.fat, fatG) ?? 0)
+        }
+        slot = newSlot
+        move(to: newDay, calendar: calendar)
+        return true
+    }
+}
+
+extension MealEntry.EditTexts {
+    /// Same kcal and macro texts (grams ignored): the user has not typed over what the sheet filled in.
+    func sameFigures(as other: MealEntry.EditTexts) -> Bool {
+        kcal == other.kcal && protein == other.protein && carbs == other.carbs && fat == other.fat
+    }
 }
 
 /// Four capsules (Breakfast · Lunch · Snack · Dinner), the selected one on surface3. The edit sheets use it to move an entry.
@@ -207,5 +365,60 @@ struct MealSlotPicker: View {
             }
         }
         .accessibilityLabel(Text("fuel.mealSlot"))
+    }
+}
+
+/// "Day   ‹ Yesterday ›": moves an entry to another day from the edit sheets. Past days only, so `›` stops at today.
+/// VoiceOver reads one adjustable element (swipe up = next day).
+struct EntryDayStepper: View {
+    @Binding var day: Date
+    var today: Date = Calendar.current.startOfDay(for: .now)
+    var height: CGFloat = NT.Size.control
+    var background: Color = NT.Colors.surface2
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("fuel.day").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+            Spacer(minLength: 8)
+            chevron("chevron.left", enabled: true) { day = Self.step(day, by: -1, today: today) }
+            Text(Fmt.dayTitle(day, now: today))
+                .font(NT.Fonts.footnoteBold).foregroundStyle(NT.Colors.ink)
+                .lineLimit(1).minimumScaleFactor(0.8)
+                .frame(minWidth: 88)
+            chevron("chevron.right", enabled: day < today) { day = Self.step(day, by: 1, today: today) }
+        }
+        .padding(.leading, 14)
+        .frame(height: height)
+        .background(background, in: RoundedRectangle(cornerRadius: NT.Radius.field, style: .continuous))
+        .sensoryFeedback(.selection, trigger: day)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("fuel.day"))
+        .accessibilityValue(Text(Fmt.longDay(day)))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: day = Self.step(day, by: 1, today: today)
+            case .decrement: day = Self.step(day, by: -1, today: today)
+            @unknown default: break
+            }
+        }
+    }
+
+    private func chevron(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(enabled ? NT.Colors.ink : NT.Colors.ink3.opacity(0.4))
+                .frame(width: NT.Size.control, height: NT.Size.control)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    /// `days` from `day`, as a start of day, never past `today`.
+    static func step(_ day: Date, by days: Int, today: Date, calendar: Calendar = .current) -> Date {
+        let start = calendar.startOfDay(for: day)
+        let moved = calendar.date(byAdding: .day, value: days, to: start) ?? start
+        return min(calendar.startOfDay(for: moved), calendar.startOfDay(for: today))
     }
 }

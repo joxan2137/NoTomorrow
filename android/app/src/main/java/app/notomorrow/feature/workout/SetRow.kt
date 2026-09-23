@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +28,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,9 +46,14 @@ import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.SetKind
+import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.Parsing
 import app.notomorrow.util.S
+import java.text.DecimalFormat
+import java.text.NumberFormat
+import java.util.Locale
 
 /** Column widths of the set table — load-bearing, `WorkoutExerciseSection.columnHeader`. */
 internal object SetTable {
@@ -57,7 +64,9 @@ internal object SetTable {
 }
 
 /**
- * Identifies one numeric cell for the shared keyboard focus — `SetField` (`SetRowView.swift:5`).
+ * Identifies one numeric cell for the shared keyboard focus — `SetField` (`SetCells.swift`).
+ * [setId] is the `set_entry` row id in the active workout, and the draft row's id (negative
+ * while unsaved) in the workout editor.
  */
 data class SetField(val setId: Long, val isReps: Boolean)
 
@@ -89,74 +98,88 @@ class SetFieldFocus {
         }
     }
 
-    /** `focus = field` — moves the keyboard onto one cell. */
-    fun request(field: SetField) {
-        requesters[field]?.requestFocus()
+    /**
+     * `focus = field` — moves the keyboard onto one cell. With [keyboard] the keyboard also comes
+     * up when that cell had kept the focus after back only hid it (a refocus alone would not bring
+     * it back, and the digits typed next would go nowhere).
+     */
+    fun request(field: SetField, keyboard: SoftwareKeyboardController? = null) {
+        val requester = requesters[field] ?: return
+        requester.requestFocus()
+        keyboard?.show()
     }
 }
 
 /**
  * One 44 dp row of the set table — 1:1 port of `SetRowView.swift`:
- * kind/number menu · previous ghost · kg cell · reps cell · check.
+ * kind/number menu · previous ghost · weight cell · reps cell · check.
  *
- * The two cells keep their own text state and reconcile it with the model exactly as the
- * SwiftUI `onChange` pair does: typing writes through to Room, and a model value that no
- * longer parses back to the text replaces it (an undo, a prefill on tick).
+ * Weights show and parse in the user's [unit] (stored in kg). The two cells keep their own text
+ * and reconcile it with the model **in display space**, as `SetNumberCell` does: typing writes
+ * through, and a model value the text no longer reads as (a prefill, a tick's fallback) replaces
+ * it — so a rounded or lb-converted number is never written back.
+ *
+ * [editing] is the workout editor's row: never dimmed or locked, the Previous column left blank.
+ * [onDelete] adds "Delete set" to the kind menu. [onAppear] runs once per row, like `.onAppear`
+ * (the active table prefills an open row from Previous there).
  */
 @Composable
 fun SetRow(
     row: SetRowUi,
     focus: SetFieldFocus,
+    unit: WeightUnit,
     modifier: Modifier = Modifier,
+    editing: Boolean = false,
     onKind: (SetKind) -> Unit,
     onWeight: (Double) -> Unit,
     onReps: (Int) -> Unit,
     onToggle: () -> Unit,
+    onDelete: (() -> Unit)? = null,
+    onAppear: () -> Unit = {},
 ) {
+    LaunchedEffect(row.id) { onAppear() }
     Row(
         modifier = modifier
             .height(NT.Size.control)
-            .alpha(if (row.isCompleted) 0.55f else 1f),
+            .alpha(if (row.isCompleted && !editing) 0.55f else 1f),
         horizontalArrangement = Arrangement.spacedBy(SetTable.spacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        KindMenu(row = row, onKind = onKind)
+        KindMenu(row = row, onKind = onKind, onDelete = onDelete)
 
-        NtText(
-            text = row.previous?.let { Fmt.set(it.weightKg, it.reps) } ?: EM_DASH,
-            modifier = Modifier.weight(1f),
-            style = NT.Fonts.subheadline.tabular(),
-            color = NT.Colors.ink2,
-            maxLines = 1,
-            textAlign = TextAlign.Center,
-        )
+        if (editing) {
+            Spacer(Modifier.weight(1f).height(1.dp))
+        } else {
+            NtText(
+                text = row.previous?.let { Fmt.set(it.weightKg, it.reps, unit) } ?: EM_DASH,
+                modifier = Modifier.weight(1f),
+                style = NT.Fonts.subheadline.tabular(),
+                color = NT.Colors.ink2,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+            )
+        }
 
         NumericCell(
             rowId = row.id,
             field = SetField(row.id, isReps = false),
             focus = focus,
-            value = row.weightKg,
-            enabled = !row.isCompleted,
+            text = SetInput.text(row.weightKg, unit),
+            enabled = editing || !row.isCompleted,
             isCurrent = row.isCurrent,
             keyboardType = KeyboardType.Decimal,
-            initialText = { weightText(row) },
-            format = { if (it > 0) Fmt.weight(it, withUnit = false) else "" },
-            parse = { Parsing.decimal(it) ?: 0.0 },
-            onValue = onWeight,
+            onEdit = { onWeight(SetInput.weightKg(it, unit)) },
         )
 
         NumericCell(
             rowId = row.id,
             field = SetField(row.id, isReps = true),
             focus = focus,
-            value = row.reps.toDouble(),
-            enabled = !row.isCompleted,
+            text = SetInput.text(row.reps),
+            enabled = editing || !row.isCompleted,
             isCurrent = row.isCurrent,
             keyboardType = KeyboardType.Number,
-            initialText = { repsText(row) },
-            format = { if (it > 0) it.toInt().toString() else "" },
-            parse = { parseReps(it).toDouble() },
-            onValue = { onReps(it.toInt()) },
+            onEdit = { onReps(SetInput.reps(it)) },
         )
 
         CheckButton(isCompleted = row.isCompleted, onToggle = onToggle)
@@ -165,16 +188,29 @@ fun SetRow(
 
 // MARK: - Set column
 
-/** 36 × 44 cell: the row number, or the kind letter in a 24 dp `surface2` circle. */
+/**
+ * 36 × 44 cell: the row number, or the kind letter in a 24 dp `surface2` circle. The menu ends
+ * with a destructive "Delete set" after a divider when [onDelete] is set.
+ */
 @Composable
-private fun KindMenu(row: SetRowUi, onKind: (SetKind) -> Unit) {
+private fun KindMenu(row: SetRowUi, onKind: (SetKind) -> Unit, onDelete: (() -> Unit)?) {
     var expanded by remember { mutableStateOf(false) }
-    val items = listOf(
-        NtMenuItem(title = stringResource(S.workout_warmup), onClick = { onKind(SetKind.Warmup) }),
-        NtMenuItem(title = stringResource(S.workout_dropset), onClick = { onKind(SetKind.Drop) }),
-        NtMenuItem(title = stringResource(S.workout_failure), onClick = { onKind(SetKind.Failure) }),
-        NtMenuItem(title = stringResource(S.workout_normalSet), onClick = { onKind(SetKind.Normal) }),
-    )
+    val items = buildList {
+        add(NtMenuItem(title = stringResource(S.workout_warmup), onClick = { onKind(SetKind.Warmup) }))
+        add(NtMenuItem(title = stringResource(S.workout_dropset), onClick = { onKind(SetKind.Drop) }))
+        add(NtMenuItem(title = stringResource(S.workout_failure), onClick = { onKind(SetKind.Failure) }))
+        add(NtMenuItem(title = stringResource(S.workout_normalSet), onClick = { onKind(SetKind.Normal) }))
+        if (onDelete != null) {
+            add(
+                NtMenuItem(
+                    title = stringResource(S.workout_edit_deleteSet),
+                    onClick = onDelete,
+                    destructive = true,
+                    separatorBefore = true,
+                ),
+            )
+        }
+    }
     Box(
         modifier = Modifier
             .size(width = SetTable.setColumn, height = NT.Size.control)
@@ -200,8 +236,8 @@ private fun KindMenu(row: SetRowUi, onKind: (SetKind) -> Unit) {
     }
 }
 
-/** `kindLetter` — W / D / F, never localized (`SetRowView.swift:73`). */
-private fun kindLetter(kind: SetKind): String = when (kind) {
+/** `SetKindMenu.letter(for:)` — W / D / F, never localized; the detail sheet uses the same glyphs. */
+internal fun kindLetter(kind: SetKind): String = when (kind) {
     SetKind.Warmup -> "W"
     SetKind.Drop -> "D"
     SetKind.Failure -> "F"
@@ -211,43 +247,27 @@ private fun kindLetter(kind: SetKind): String = when (kind) {
 // MARK: - Cells
 
 /**
- * One 60 × 44 numeric cell. Border: `ink` 1.5 dp while focused, `border` on the current
- * (first uncompleted) row, transparent otherwise.
+ * One 60 × 44 numeric cell — `SetNumberCell`. [text] is the stored value formatted for display.
+ * Only the user's own edits reach [onEdit], compared with [text] in display space. Border: `ink`
+ * 1.5 dp while focused, `border` on the current (first uncompleted) row, transparent otherwise.
  */
 @Composable
 private fun NumericCell(
     rowId: Long,
     field: SetField,
     focus: SetFieldFocus,
-    value: Double,
+    text: String,
     enabled: Boolean,
     isCurrent: Boolean,
     keyboardType: KeyboardType,
-    initialText: () -> String,
-    format: (Double) -> String,
-    parse: (String) -> Double,
-    onValue: (Double) -> Unit,
+    onEdit: (String) -> Unit,
 ) {
-    var text by remember(rowId) { mutableStateOf(initialText()) }
-    // Not state: flipping it must not recompose, it only suppresses the first run of the
-    // model→text effect (SwiftUI's `onChange` does not fire on appear).
-    val firstModelSync = remember(rowId) { booleanArrayOf(true) }
+    var typed by remember(rowId) { mutableStateOf(text) }
     val focusManager = LocalFocusManager.current
 
-    // `onAppear` + the `onChange(of: weightText)` it triggers: a cell prefilled from the
-    // previous workout pushes that number into the model, so the row reads what it shows.
-    LaunchedEffect(rowId) {
-        val parsed = parse(text)
-        if (parsed != value) onValue(parsed)
-    }
-
-    // `onChange(of: set.weightKg)` — an external change (undo, tick prefill) rewrites the text.
-    LaunchedEffect(rowId, value) {
-        if (firstModelSync[0]) {
-            firstModelSync[0] = false
-            return@LaunchedEffect
-        }
-        if (parse(text) != value) text = format(value)
+    // `onChange(of: text)` — a model change the typed text no longer reads as replaces it.
+    LaunchedEffect(rowId, text) {
+        if (SetInput.number(typed) != SetInput.number(text)) typed = text
     }
 
     val border: Color = when {
@@ -257,11 +277,10 @@ private fun NumericCell(
     }
 
     BasicTextField(
-        value = text,
+        value = typed,
         onValueChange = { new ->
-            text = new
-            val parsed = parse(new)
-            if (parsed != value) onValue(parsed)
+            typed = new
+            if (SetInput.number(new) != SetInput.number(text)) onEdit(new)
         },
         modifier = Modifier
             .size(width = SetTable.cell, height = NT.Size.control)
@@ -313,23 +332,41 @@ private fun CheckButton(isCompleted: Boolean, onToggle: () -> Unit) {
 
 // MARK: - Text ↔ model
 
-/** `syncFromModel` for the kg cell: the model value, else the previous workout's ghost. */
-internal fun weightText(row: SetRowUi): String = when {
-    row.weightKg > 0 -> Fmt.weight(row.weightKg, withUnit = false)
-    row.previous != null -> Fmt.weight(row.previous.weightKg, withUnit = false)
-    else -> ""
-}
+/** Text ↔ number for the set cells — `SetInput`. Weights are stored in kg and typed / shown in the user's unit. */
+object SetInput {
 
-/** `syncFromModel` for the reps cell. A previous rep count of 0 is not offered. */
-internal fun repsText(row: SetRowUi): String = when {
-    row.reps > 0 -> row.reps.toString()
-    row.previous != null && row.previous.reps > 0 -> row.previous.reps.toString()
-    else -> ""
-}
+    /** kg → the number shown in [unit]. */
+    fun display(kg: Double, unit: WeightUnit): Double = if (unit == WeightUnit.Kg) kg else kg * Fmt.LB_PER_KG
 
-/** `parseReps` — a plain integer, else the rounded decimal parse. */
-internal fun parseReps(text: String): Int =
-    text.trim().toIntOrNull() ?: Fmt.roundHalfAwayFromZero(Parsing.decimal(text) ?: 0.0).toInt()
+    /** A number typed in [unit] → kg. */
+    fun kg(fromDisplay: Double, unit: WeightUnit): Double =
+        if (unit == WeightUnit.Kg) fromDisplay else fromDisplay / Fmt.LB_PER_KG
+
+    /** Cell text for a weight: up to two decimals ("81,25" — plates come in 1.25), empty for none. */
+    fun text(weightKg: Double, unit: WeightUnit, locale: Locale = LocaleProvider.current()): String {
+        if (weightKg <= 0) return ""
+        val format = (NumberFormat.getNumberInstance(locale) as DecimalFormat).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 2
+            isGroupingUsed = false
+        }
+        return format.format(display(weightKg, unit))
+    }
+
+    fun text(reps: Int): String = if (reps > 0) reps.toString() else ""
+
+    /** Lenient parse of what was typed: "82,5", "82.5", "1 000". Anything else (or ≤ 0) is 0. */
+    fun number(text: String): Double = Parsing.decimal(text)?.takeIf { it > 0 } ?: 0.0
+
+    /** Typed weight in [unit] → kg to store. */
+    fun weightKg(text: String, unit: WeightUnit): Double = kg(minOf(number(text), MAX_WEIGHT), unit)
+
+    /** Typed reps, rounded half away from zero and capped (never overflows). */
+    fun reps(text: String): Int = Fmt.roundHalfAwayFromZero(minOf(number(text), MAX_REPS)).toInt()
+
+    private const val MAX_WEIGHT = 10_000.0
+    private const val MAX_REPS = 9_999.0
+}
 
 /** The em dash the Previous column shows when the exercise was never done. */
 private const val EM_DASH = "—"
@@ -346,6 +383,7 @@ data class SetRowUi(
     val kind: SetKind,
     val weightKg: Double,
     val reps: Int,
+    /** The ✓: completed in the active table; ticked and with reps (`SetDraft.isLogged`) in the editor. */
     val isCompleted: Boolean,
     /** Row number in the Set column — warm-ups do not count (`setNumber(for:in:)`). */
     val number: Int,

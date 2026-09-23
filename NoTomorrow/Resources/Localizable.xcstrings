@@ -141,7 +141,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "za %1$lld godz. %2$lld min"
+            "value": "za %1$lld h %2$lld min"
           }
         }
       }
@@ -157,7 +157,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "za %1$lld dn. %2$lld godz."
+            "value": "za %1$lld dn. %2$lld h"
           }
         }
       }
@@ -179,6 +179,7 @@
       }
     },
     "%lld h %lld min": {
+      "comment": "Workout duration from one hour on. Short on purpose: it has to fit a third of the screen.",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -189,7 +190,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld godz. %2$lld min"
+            "value": "%1$lld h %2$lld min"
           }
         }
       }
@@ -5235,17 +5236,18 @@
       }
     },
     "fuel.ai.consent.body": {
+      "comment": "%@ = provider name (Google / Anthropic).",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The photo (without location or other metadata), the meal slot and your language leave your phone and go to %@ to estimate the food. Nothing else is sent. You can change the provider in Settings."
+            "value": "The photo (without location or other metadata), the meal details you typed, the meal slot and your language leave your phone and go to %@ to estimate the food. Nothing else is sent. You can change the provider in Settings."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zdjęcie (bez lokalizacji i innych metadanych), pora posiłku i język opuszczają telefon i trafiają do %@, żeby oszacować jedzenie. Nic więcej nie jest wysyłane. Dostawcę zmienisz w ustawieniach."
+            "value": "Zdjęcie (bez lokalizacji i innych metadanych), wpisane szczegóły posiłku, pora posiłku i język opuszczają telefon i trafiają do %@, żeby oszacować jedzenie. Nic więcej nie jest wysyłane. Dostawcę zmienisz w ustawieniach."
           }
         }
       }
@@ -8901,7 +8903,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Parowanie wymaga konta. Zalogujesz się i sparujesz później w zakładce Bro."
+            "value": "Parowanie wymaga konta. Zalogujesz się i sparujesz później w zakładce Kolega."
           }
         }
       }
@@ -9366,6 +9368,1628 @@
           "stringUnit": {
             "state": "translated",
             "value": "To klucz API z Google AI Studio. Użycie jest rozliczane na twoim własnym koncie Google."
+          }
+        }
+      }
+    },
+    "fuel.barcodePartial": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This product is in the database but has no nutrition values yet. Add them from the label."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten produkt jest w bazie, ale nie ma jeszcze wartości odżywczych. Dodaj je z etykiety."
+          }
+        }
+      }
+    },
+    "fuel.estimatedNutrition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Values estimated by Open Food Facts from the ingredients. Check the label."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartości oszacowane przez Open Food Facts na podstawie składu. Sprawdź etykietę."
+          }
+        }
+      }
+    },
+    "fuel.search.error.busy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The food database is busy. Try again in a minute."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baza produktów jest teraz przeciążona. Spróbuj ponownie za minutę."
+          }
+        }
+      }
+    },
+    "fuel.scan.checkDigits": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This code doesn't look right. Check the digits."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten kod wygląda na błędny. Sprawdź cyfry."
+          }
+        }
+      }
+    },
+    "fuel.label.photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photograph the label"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób zdjęcie etykiety"
+          }
+        }
+      }
+    },
+    "fuel.label.reading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the label…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytuję etykietę…"
+          }
+        }
+      }
+    },
+    "fuel.label.aiFilled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filled in from the photo. Check the numbers before saving."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełniono ze zdjęcia. Sprawdź liczby przed zapisaniem."
+          }
+        }
+      }
+    },
+    "fuel.label.checkMacros": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These numbers don't add up. Check kcal and macros."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te liczby się nie zgadzają. Sprawdź kcal i makro."
+          }
+        }
+      }
+    },
+    "fuel.label.unreadable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't read the nutrition table. Take a sharp, straight-on photo or type the values."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać tabeli wartości odżywczych. Zrób ostre zdjęcie na wprost albo wpisz wartości."
+          }
+        }
+      }
+    },
+    "fuel.label.storeCode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Store label: saved for this item's code. Check the weight each time."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etykieta sklepowa: zapisano pod kodem tego towaru. Za każdym razem sprawdzaj wagę."
+          }
+        }
+      }
+    },
+    "fuel.label.servingSize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serving (g)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porcja (g)"
+          }
+        }
+      }
+    },
+    "fuel.label.searchByName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search by name"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj po nazwie"
+          }
+        }
+      }
+    },
+    "fuel.ai.removeItem": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń"
+          }
+        }
+      }
+    },
+    "fuel.ai.editItem": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj…"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit item"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj pozycję"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.count": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Count"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.gramsPerUnit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grams per unit"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gramy na sztukę"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.totalGrams": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total grams"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gramy łącznie"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.per100": {
+      "comment": "%@ = kcal per 100 g, already formatted.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kcal per 100 g"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kcal na 100 g"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.findInDatabase": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find in food database"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź w bazie produktów"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.plusOne": {
+      "comment": "Menu item. %@ = the item's portion unit as the AI returned it (szt., kromka, łyżka).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+1 %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+1 %@"
+          }
+        }
+      }
+    },
+    "fuel.ai.item.minusOne": {
+      "comment": "Menu item. %@ = the item's portion unit as the AI returned it (szt., kromka, łyżka).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−1 %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−1 %@"
+          }
+        }
+      }
+    },
+    "fuel.ai.portionBasis": {
+      "comment": "Under an AI item's name. %1$@ = portion count (with unit), %2$@ = grams per unit.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ × %2$@ g"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ × %2$@ g"
+          }
+        }
+      }
+    },
+    "fuel.ai.addMissed.pick": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to this estimate"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do tego szacunku"
+          }
+        }
+      }
+    },
+    "settings.ai.plateSize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dinner plate diameter"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Średnica talerza obiadowego"
+          }
+        }
+      }
+    },
+    "settings.ai.plateSize.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Helps the AI judge portions. Measure the plate you usually eat from."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pomaga AI ocenić porcje. Zmierz talerz, z którego zwykle jesz."
+          }
+        }
+      }
+    },
+    "settings.ai.plateSize.unset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ustawiono"
+          }
+        }
+      }
+    },
+    "settings.ai.plateSize.placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 26"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "np. 26"
+          }
+        }
+      }
+    },
+    "fuel.ai.addSidePhoto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a side photo (optional)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj zdjęcie z boku (opcjonalnie)"
+          }
+        }
+      }
+    },
+    "workout.minimize": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimize workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zminimalizuj trening"
+          }
+        }
+      }
+    },
+    "workout.miniBar.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera trening"
+          }
+        }
+      }
+    },
+    "workout.miniBar.label %@ %@": {
+      "comment": "Accessibility label of the minimized-workout bar. %1$@ = workout name, %2$@ = elapsed time.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ in progress, %2$@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ w toku, %2$@"
+          }
+        }
+      }
+    },
+    "workout.alreadyActive.message %@": {
+      "comment": "%@ = name of the workout that is already running.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish or discard “%@” before starting another workout."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ lub odrzuć „%@”, zanim zaczniesz kolejny trening."
+          }
+        }
+      }
+    },
+    "workout.alreadyActive.discardAndStart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard it and start new"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzuć i zacznij nowy"
+          }
+        }
+      }
+    },
+    "workout.edit.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj trening"
+          }
+        }
+      }
+    },
+    "workout.edit.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa"
+          }
+        }
+      }
+    },
+    "workout.edit.date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        }
+      }
+    },
+    "workout.edit.startTime": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start time"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godzina rozpoczęcia"
+          }
+        }
+      }
+    },
+    "workout.edit.duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas trwania"
+          }
+        }
+      }
+    },
+    "workout.edit.endsInFuture": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends in the future. Move the start or shorten the duration."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koniec wypada w przyszłości. Przesuń początek albo skróć czas trwania."
+          }
+        }
+      }
+    },
+    "workout.edit.delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń trening"
+          }
+        }
+      }
+    },
+    "workout.edit.deleteConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this workout? Its sets and records will disappear from your history and progress."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten trening? Jego serie i rekordy znikną z historii i postępów."
+          }
+        }
+      }
+    },
+    "workout.edit.discardConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard your changes?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzucić zmiany?"
+          }
+        }
+      }
+    },
+    "workout.edit.discard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard changes"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzuć zmiany"
+          }
+        }
+      }
+    },
+    "workout.edit.keepEditing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep editing"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj dalej"
+          }
+        }
+      }
+    },
+    "workout.edit.deleteSet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete set"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń serię"
+          }
+        }
+      }
+    },
+    "workout.edit.moveUp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move up"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń wyżej"
+          }
+        }
+      }
+    },
+    "workout.edit.moveDown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move down"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń niżej"
+          }
+        }
+      }
+    },
+    "fuel.day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzień"
+          }
+        }
+      }
+    },
+    "day.yesterday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczoraj"
+          }
+        }
+      }
+    },
+    "fuel.logAgainToday": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log again today"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj ponownie dziś"
+          }
+        }
+      }
+    },
+    "fuel.entryDeleted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry deleted"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpis usunięty"
+          }
+        }
+      }
+    },
+    "common.undo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnij"
+          }
+        }
+      }
+    },
+    "fuel.editValues": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit values"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj wartości"
+          }
+        }
+      }
+    },
+    "settings.version %@": {
+      "comment": "Settings footer. %@ = version and build, e.g. 0.2.1 (57).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wersja %@"
+          }
+        }
+      }
+    },
+    "fuel.chooseDay": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose day"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz dzień"
+          }
+        }
+      }
+    },
+    "fuel.goToToday": {
+      "comment": "Accessibility label of the Today pill in the Fuel header (shown on past days).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to today"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wróć do dziś"
+          }
+        }
+      }
+    },
+    "fuel.calendar.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "History"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historia"
+          }
+        }
+      }
+    },
+    "fuel.calendar.goalNote": {
+      "comment": "%1$@ = goal name (goal.*), %2$@ = daily kcal goal, formatted.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current goal: %1$@ · %2$@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obecny cel: %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "fuel.calendar.legend.none": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not logged"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak wpisów"
+          }
+        }
+      }
+    },
+    "fuel.calendar.legend.off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off target"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poza celem"
+          }
+        }
+      }
+    },
+    "fuel.calendar.onTarget": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On target"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zgodnie z celem"
+          }
+        }
+      }
+    },
+    "fuel.calendar.avg7": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7-day avg"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śr. 7 dni"
+          }
+        }
+      }
+    },
+    "fuel.calendar.avg30": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30-day avg"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Śr. 30 dni"
+          }
+        }
+      }
+    },
+    "fuel.calendar.ofDays": {
+      "comment": "Stat tile value: %1$lld = days on target, %2$lld = days in the window (30). No noun, so no plural.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld of %2$lld"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld z %2$lld"
+          }
+        }
+      }
+    },
+    "fuel.calendar.cell": {
+      "comment": "Accessibility label of a past calendar day. %1$@ = long date, %2$@ = kcal eaten, %3$@ = percent of goal.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@, %3$@ of goal"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@, %3$@ celu"
+          }
+        }
+      }
+    },
+    "fuel.calendar.cell.today": {
+      "comment": "Accessibility label of today's calendar cell. %1$@ = long date, %2$@ = kcal eaten, %3$@ = percent of goal.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@ so far, %3$@ of goal"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: na razie %2$@, %3$@ celu"
+          }
+        }
+      }
+    },
+    "fuel.calendar.cell.empty": {
+      "comment": "Accessibility label of a calendar day with no entries. %@ = long date.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: nothing logged"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: brak wpisów"
+          }
+        }
+      }
+    },
+    "fuel.calendar.cell.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens this day"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera ten dzień"
+          }
+        }
+      }
+    },
+    "fuel.copyToToday": {
+      "comment": "Button on a past day's meal slot header (icon only, this is its accessibility label): copies every entry of the slot into the same slot today.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy to today"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiuj na dziś"
+          }
+        }
+      }
+    },
+    "fuel.addedToToday": {
+      "comment": "Undo toast after 'Log again today' or 'Copy to today' on a past day. Followed by the Undo button (common.undo).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to today"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodano do dziś"
+          }
+        }
+      }
+    },
+    "fuel.yourFoods": {
+      "comment": "Food search section above the Open Food Facts results while a query is typed: saved foods whose name or brand matches it.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your foods"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje produkty"
+          }
+        }
+      }
+    },
+    "fuel.ai.error.timeout": {
+      "comment": "AI photo estimate or label read timed out (app timeout or backend 504 ai_timeout).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI took too long to answer. Try again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI zbyt długo nie odpowiadało. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "fuel.ai.error.provider": {
+      "comment": "AI provider answered with an error that is not busy/rate-limited, not a key problem and not unreadable output (backend 502 ai_upstream_error / 503 ai_unavailable, BYOK 4xx, Claude refusal).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The AI service returned an error. Try again later."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usługa AI zwróciła błąd. Spróbuj ponownie później."
+          }
+        }
+      }
+    },
+    "workout.edit.notes": {
+      "comment": "Workout notes: field label in the workout editor and section title in the workout detail.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notes"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki"
+          }
+        }
+      }
+    },
+    "workout.edit.notesPlaceholder": {
+      "comment": "Placeholder of the workout notes field in the workout editor.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How did it go?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak poszło?"
+          }
+        }
+      }
+    },
+    "workout.done.lbMoved": {
+      "comment": "Workout summary hero, after the total volume, for users who log in pounds (pairs with workout.done.kgMoved).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lb moved"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lb przerzucone"
+          }
+        }
+      }
+    },
+    "timer.exactAlarm.title": {
+      "comment": "Android only. Title of the one-time prompt shown when the first rest of a workout starts and exact alarms or notifications are off.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get the rest-over alert on time"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punktualny alert o końcu przerwy"
+          }
+        }
+      }
+    },
+    "timer.exactAlarm.message": {
+      "comment": "Android only. Body of the exact-alarm prompt. 'Exact timers' matches the Android Settings row of the same name.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With the phone locked, Android can hold the alert back by a minute or more. Allow notifications and exact timers so it goes off the moment your rest ends."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy telefon jest zablokowany, Android może opóźnić alert o minutę lub dłużej. Zezwól na powiadomienia i dokładne minutniki, żeby odezwał się dokładnie wtedy, gdy kończy się przerwa."
+          }
+        }
+      }
+    },
+    "timer.exactAlarm.allow": {
+      "comment": "Android only. Opens the system permission for notifications or exact alarms.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól"
+          }
+        }
+      }
+    },
+    "timer.exactAlarm.notNow": {
+      "comment": "Android only. Dismisses the exact-alarm prompt for good.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie teraz"
+          }
+        }
+      }
+    },
+    "store.error.title": {
+      "comment": "Full-screen error when the app's database cannot be opened at launch.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't open your data"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się otworzyć danych"
+          }
+        }
+      }
+    },
+    "store.error.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Tomorrow can't open the workouts, meals and everything else saved on this phone. Nothing has been deleted. Try again, or save a copy of the data first."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Tomorrow nie może otworzyć treningów, posiłków i reszty danych zapisanych na tym telefonie. Nic nie zostało usunięte. Spróbuj ponownie albo najpierw zapisz kopię danych."
+          }
+        }
+      }
+    },
+    "store.error.retry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie"
+          }
+        }
+      }
+    },
+    "store.error.share": {
+      "comment": "Opens the share sheet with the database files.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save a copy of the data"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz kopię danych"
+          }
+        }
+      }
+    },
+    "store.error.startFresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start with empty data"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od pustych danych"
+          }
+        }
+      }
+    },
+    "store.error.startFresh.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start with empty data?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacząć od pustych danych?"
+          }
+        }
+      }
+    },
+    "store.error.startFresh.message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The data that can't be opened is moved to a backup folder on this phone, not deleted. The app then starts over from setup."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane, których nie da się otworzyć, trafią do folderu kopii zapasowej na tym telefonie. Nic nie zostanie usunięte. Aplikacja zacznie od nowa, od konfiguracji."
+          }
+        }
+      }
+    },
+    "fuel.calendar.cell.action": {
+      "comment": "Android TalkBack click action of a History calendar day, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase. iOS uses fuel.calendar.cell.hint instead.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open this day"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "otworzyć ten dzień"
+          }
+        }
+      }
+    },
+    "fuel.label.missing": {
+      "comment": "Under the product label form while Save is disabled. %@ = the empty required fields as the form labels them, comma-separated (Name, kcal, Protein, Carbs, Fat).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To save, fill in: %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aby zapisać, uzupełnij: %@"
+          }
+        }
+      }
+    },
+    "fuel.notFound.pick": {
+      "comment": "Food search empty state when picking a food for an AI estimate ('Add something it missed'), where there is no manual add.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not in the database yet. Try another name or scan the barcode."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma go jeszcze w bazie. Spróbuj innej nazwy albo zeskanuj kod kreskowy."
+          }
+        }
+      }
+    },
+    "store.error.details": {
+      "comment": "Store error screen: collapsed disclosure that reveals the raw (untranslated) error text for a bug report.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły"
+          }
+        }
+      }
+    },
+    "workout.miniBar.action": {
+      "comment": "Android TalkBack click action of the minimized-workout bar, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase. iOS uses workout.miniBar.hint instead.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "open the workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "otworzyć trening"
+          }
+        }
+      }
+    },
+    "fuel.ai.editItem.action": {
+      "comment": "Android TalkBack click action of an item row in the AI estimate, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "edit this item"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "edytować pozycję"
+          }
+        }
+      }
+    },
+    "fuel.editEntry.action": {
+      "comment": "Android TalkBack click action of a logged meal row, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "edit this entry"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "edytować wpis"
+          }
+        }
+      }
+    },
+    "workout.edit.date.action": {
+      "comment": "Android TalkBack click action of the Date row in Edit workout, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "change the date"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zmienić datę"
+          }
+        }
+      }
+    },
+    "workout.edit.startTime.action": {
+      "comment": "Android TalkBack click action of the Start time row in Edit workout, read as \"Double-tap to …\" / \"Kliknij dwukrotnie, aby …\", so it is a lowercase infinitive phrase.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "change the start time"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zmienić godzinę rozpoczęcia"
+          }
+        }
+      }
+    },
+    "dashboard.todaysSession": {
+      "comment": "Today card eyebrow once today's session is trained (replaces \"Next session\").",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's session"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejszy trening"
+          }
+        }
+      }
+    },
+    "dashboard.sessionDone": {
+      "comment": "Today card, under the relative day once today's session is trained, in place of the countdown. Polish agrees with \"trening\" (masculine).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaliczony"
           }
         }
       }

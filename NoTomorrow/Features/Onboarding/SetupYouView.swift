@@ -106,6 +106,12 @@ struct SetupYouView: View {
     }
 }
 
+extension TrainingGoal {
+    /// "Build muscle" / "Masa". Looked up by the literal key: an interpolated `String.LocalizationValue("goal.\(x)")`
+    /// becomes the key "goal.%@", which the catalog does not have, so the raw key would show.
+    var localizedName: String { String(localized: String.LocalizationValue(SetupYouView.goalKey(self))) }
+}
+
 /// The one card on the screen: suggested kcal + protein line + formula note.
 struct OBTargetCard: View {
     var model: OnboardingModel

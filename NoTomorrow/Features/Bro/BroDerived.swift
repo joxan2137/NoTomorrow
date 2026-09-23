@@ -147,7 +147,7 @@ enum BroDerived {
         let known = ["sick", "work", "tired", "family", "none"]
         let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmed.isEmpty else { return nil }
-        if known.contains(trimmed) { return String(localized: String.LocalizationValue("cant.reason.\(trimmed)")) }
+        if known.contains(trimmed) { return String(localized: String.LocalizationValue("cant.reason." + trimmed)) }
         return reason
     }
 

@@ -13,7 +13,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,8 +35,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -170,8 +171,9 @@ private val ActionSheetTitleGap: Dp = 9.dp
  * so it is `ink`, not `ink2`.
  *
  * Cancel is the bold one and sits **leading** in a two-up row (SwiftUI's
- * ordering, and what the iOS 26 render shows); destructive is `bad`. Three or
- * more actions stack full width. Tapping any action runs it and then dismisses.
+ * ordering, and what the iOS 26 render shows); destructive is `bad`. Two actions
+ * whose labels do not both fit their half, and three or more actions, stack full
+ * width with Cancel last. Tapping any action runs it and then dismisses.
  *
  * The panel is drawn in the app's [NtOverlayHost] so it can sample [NtBackdrop] —
  * a `Dialog` is a second window and can never do that — behind a black @ 0.48
@@ -201,6 +203,8 @@ fun NtAlert(
             Column(
                 modifier = Modifier
                     .width(AlertWidth)
+                    // A tap on the card's own text must not reach the dismiss layer around it.
+                    .pointerInput(Unit) { detectTapGestures { } }
                     .ntPanelSurface(shape, GlassStyle.Alert, glass),
             ) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = AlertTextPadding)) {
@@ -234,25 +238,15 @@ fun NtAlert(
 
 @Composable
 private fun NtAlertActions(actions: List<NtAlertAction>, onDismiss: () -> Unit) {
-    val ordered = orderedForAlert(actions)
     val padding = Modifier
         .fillMaxWidth()
         .padding(horizontal = AlertActionPadding)
         .padding(bottom = AlertActionPadding)
-    if (ordered.size == 2) {
-        Row(padding, horizontalArrangement = Arrangement.spacedBy(AlertButtonGap)) {
-            ordered.forEach { action ->
-                NtCapsuleButton(
-                    action = action,
-                    fill = AlertButtonFill,
-                    onDismiss = onDismiss,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
+    if (actions.size == 2) {
+        NtAlertPairActions(actions, onDismiss, padding)
     } else {
         Column(padding, verticalArrangement = Arrangement.spacedBy(AlertButtonGap)) {
-            ordered.forEach { action ->
+            stackedForAlert(actions) { it.role }.forEach { action ->
                 NtCapsuleButton(
                     action = action,
                     fill = AlertButtonFill,
@@ -264,24 +258,69 @@ private fun NtAlertActions(actions: List<NtAlertAction>, onDismiss: () -> Unit) 
     }
 }
 
-/** SwiftUI puts the cancel role leading when an alert has exactly two buttons. */
-private fun orderedForAlert(actions: List<NtAlertAction>): List<NtAlertAction> {
+/**
+ * Two actions sit side by side when both labels fit their half on one line, and stack full width
+ * when either does not — `UIAlertController` does the same, so "Dodaj z etykiety" / "Anuluj" is
+ * never cut to "Dodaj z etyki…". Side by side, Cancel leads ([orderedForAlert]); stacked, it goes
+ * last ([stackedForAlert]).
+ *
+ * The buttons are composed once, in [actions] order; only where they are placed changes. Each
+ * button's single-line width is its max-intrinsic width (label plus its 12 dp insets).
+ */
+@Composable
+private fun NtAlertPairActions(actions: List<NtAlertAction>, onDismiss: () -> Unit, modifier: Modifier) {
+    val pairOrder = orderedForAlert(actions.indices.toList()) { actions[it].role }
+    val stackedOrder = stackedForAlert(actions.indices.toList()) { actions[it].role }
+    Layout(
+        modifier = modifier,
+        content = {
+            actions.forEach { action ->
+                NtCapsuleButton(action = action, fill = AlertButtonFill, onDismiss = onDismiss)
+            }
+        },
+    ) { measurables, constraints ->
+        val width = constraints.maxWidth
+        val gap = AlertButtonGap.roundToPx()
+        val height = AlertButtonHeight.roundToPx()
+        val half = (width - gap) / 2
+        val fits = measurables.all { it.maxIntrinsicWidth(height) <= half }
+        if (fits) {
+            val placeables = measurables.map { it.measure(Constraints.fixed(half, height)) }
+            layout(width, height) {
+                pairOrder.forEachIndexed { slot, index -> placeables[index].place(slot * (half + gap), 0) }
+            }
+        } else {
+            val placeables = measurables.map { it.measure(Constraints.fixed(width, height)) }
+            val total = placeables.size * height + (placeables.size - 1) * gap
+            layout(width, total) {
+                stackedOrder.forEachIndexed { slot, index -> placeables[index].place(0, slot * (height + gap)) }
+            }
+        }
+    }
+}
+
+/** SwiftUI puts the cancel role leading when an alert has exactly two buttons side by side. */
+private fun <T> orderedForAlert(actions: List<T>, role: (T) -> NtAlertRole): List<T> {
     if (actions.size != 2) return actions
-    val cancelIndex = actions.indexOfFirst { it.role == NtAlertRole.Cancel }
+    val cancelIndex = actions.indexOfFirst { role(it) == NtAlertRole.Cancel }
     return if (cancelIndex == 1) listOf(actions[1], actions[0]) else actions
 }
+
+/** Stacked, the cancel role goes to the bottom, as `UIAlertController` lays it out. */
+private fun <T> stackedForAlert(actions: List<T>, role: (T) -> NtAlertRole): List<T> =
+    actions.filter { role(it) != NtAlertRole.Cancel } + actions.filter { role(it) == NtAlertRole.Cancel }
 
 /**
  * iOS 26 `confirmationDialog` — no longer a bottom-anchored two-group stack.
  * It is a **centred 240 dp glass card** with a centred title and **stacked
  * full-width 208 × 48 capsules**, over **no scrim**.
  *
- * §1.7 and Apple, *Adopting Liquid Glass*: *"an action sheet also lets people
- * interact with other parts of the interface"*. So this is **not** a `Dialog`:
- * a dialog window swallows every touch even at `dimAmount = 0`, which is the
- * opposite of what iOS does. It is composed in the app's [NtOverlayHost], the
- * only pointer-consuming region is the card itself, and the screen underneath
- * stays live. Back dismisses it, as tapping outside does on iOS.
+ * It is composed in the app's [NtOverlayHost] rather than a `Dialog` window, so
+ * the card is real glass over the backdrop. Outside the card sits a clear,
+ * full-screen tap catcher: a tap anywhere else dismisses the sheet (that tap is
+ * the implicit Cancel) instead of falling through to the screen, as on iOS
+ * 26 — without it nothing caught an outside tap and the sheet could only be
+ * closed by one of its own buttons or back. Back dismisses it too.
  *
  * [cancel] is kept for API stability and is deliberately **not rendered**:
  * WWDC25 284 — "Action sheets presented inline don't have a cancel button
@@ -315,8 +354,8 @@ fun NtActionSheet(
             Column(
                 modifier = Modifier
                     .width(ActionSheetWidth)
-                    // The card is the ONLY thing that eats touches: a tap on its padding must not
-                    // fall through to the screen, and everything outside it must still reach it.
+                    // A tap on the card's padding must neither fall through to the screen nor
+                    // reach the outside-tap catcher under the card (which would dismiss it).
                     .pointerInput(Unit) { detectTapGestures { } }
                     // iOS darkens the ground around the card — `ground` drops from (10,10,11) to
                     // (7,10,7) within ~40 px of every edge on `16-finish-confirm.png`, and the
@@ -418,8 +457,8 @@ private fun NtCapsuleButton(
  * Where a centred panel is drawn.
  *
  * Preferred: the app's [NtOverlayHost] — same window as [NtBackdrop], so `GlassStyle.Popover` /
- * `.Panel` are actually evaluated, and (for [scrim] `0`) no full-screen layer, so the rest of the
- * UI stays interactive exactly as §1.7 requires.
+ * `.Panel` are actually evaluated. A full-screen layer under the panel dismisses on a tap outside
+ * it; [scrim] only decides whether that layer also dims.
  *
  * Fallback: the old `Dialog`, for a caller inside a sheet (its own window, stacked above the host).
  * The content is told which it got, because glass is only possible in the first.
@@ -442,16 +481,16 @@ private fun NtPanelHost(
         LaunchedEffect(Unit) { transition.targetState = true }
         BackHandler(onBack = onDismiss)
         Box(Modifier.fillMaxSize()) {
-            if (scrim > 0f) {
-                // An alert is modal: the scrim both dims and blocks. It stays full-bleed —
-                // only the PANEL is centred in the safe area.
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = scrim))
-                        .pointerInput(onDismiss) { detectTapGestures { onDismiss() } },
-                )
-            }
+            // A tap anywhere outside the panel dismisses it, as it does on iOS — for an action
+            // sheet too, where there is no Cancel button and "tap elsewhere" IS the cancel. An
+            // alert's scrim also dims; an action sheet's catcher is clear. Either way it stays
+            // full-bleed — only the PANEL is centred in the safe area.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .then(if (scrim > 0f) Modifier.background(Color.Black.copy(alpha = scrim)) else Modifier)
+                    .pointerInput(onDismiss) { detectTapGestures { onDismiss() } },
+            )
             // SwiftUI centres an alert/dialog in the SAFE AREA, not the display: the iOS card's
             // centre y is exactly ((177 + 2520) / 2), 39 px below the full-screen centre this
             // used to use.
@@ -491,6 +530,13 @@ private fun NtDialogWindow(
     ) {
         val provider = LocalView.current.parent as? DialogWindowProvider
         SideEffect { provider?.window?.setDimAmount(dimAmount) }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content(transition) }
+        // The window is full-bleed, so the platform's `dismissOnClickOutside` never sees an
+        // outside: the tap around the panel is caught here instead (the panel eats its own).
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(onDismiss) { detectTapGestures { onDismiss() } },
+            contentAlignment = Alignment.Center,
+        ) { content(transition) }
     }
 }

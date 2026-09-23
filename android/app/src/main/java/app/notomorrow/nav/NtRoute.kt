@@ -15,9 +15,9 @@ import app.notomorrow.model.AppTab
  *    [ExerciseProgress].
  *  - [Settings] is modal, hosted by `SettingsSheet`'s own `NavHost`.
  *
- * [ActiveWorkout] and [FuelCamera] are hosted by the **root** host, not by a tab, mirroring iOS
- * mounting the `fullScreenCover` on the tab shell so starting a workout from any tab opens it
- * reliably.
+ * [FuelCamera] is hosted by the **root** host, not by a tab, mirroring iOS mounting the
+ * `fullScreenCover` on the tab shell so it opens from any tab. [ActiveWorkout] keeps its name for
+ * the contract but is no longer a destination (see its KDoc).
  */
 sealed class NtRoute(val route: String) {
 
@@ -49,6 +49,11 @@ sealed class NtRoute(val route: String) {
 
     // MARK: - Full-screen destinations (root-hosted)
 
+    /**
+     * `workout/active` — no longer a destination: the workout is a layer of the tab shell
+     * (`MainTabScaffold`), expanded full screen or collapsed into the mini bar over every tab.
+     * The name stays because the route strings are a documented contract.
+     */
     data object ActiveWorkout : NtRoute("workout/active")
     data object FuelCamera : NtRoute("fuel/camera")
 

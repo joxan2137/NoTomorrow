@@ -2,6 +2,7 @@ package app.notomorrow.service
 
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.RoutineEntity
+import app.notomorrow.data.entity.RoutineItemEntity
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
@@ -43,6 +44,7 @@ class RoutineSeederTest {
         assertEquals(RoutineSeeder.TEMPLATES[0].exerciseIds, items.map { it.exerciseId })
         assertEquals(listOf(0, 1, 2, 3, 4), items.map { it.order })
         assertTrue(items.all { it.targetSets == 3 && it.targetReps == 8 })
+        assertTrue(items.all { it.restSeconds == RoutineSeeder.INHERIT_REST }, "rest follows the setting")
     }
 
     @Test
@@ -52,6 +54,35 @@ class RoutineSeederTest {
         assertEquals(120, RoutineSeeder.restSeconds("Barbell_Bench_Press_-_Medium_Grip"))
         assertEquals(90, RoutineSeeder.restSeconds("Triceps_Pushdown"))
         assertEquals(90, RoutineSeeder.restSeconds("Leg_Press"))
+    }
+
+    @Test
+    fun `heavy lifts rest 30 s over the default, capped at 10 min`() {
+        assertEquals(180, RoutineSeeder.restSeconds("Barbell_Squat", defaultRest = 150))
+        assertEquals(150, RoutineSeeder.restSeconds("Leg_Press", defaultRest = 150))
+        assertEquals(600, RoutineSeeder.restSeconds("Barbell_Deadlift", defaultRest = 600))
+        assertEquals(45, RoutineSeeder.restSeconds("Barbell_Bench_Press_-_Medium_Grip", defaultRest = 15))
+    }
+
+    @Test
+    fun `legacy seeded rests switch to inherit, custom ones stay`() = runBlocking {
+        val routines = FakeRoutineDao()
+        routines.insertRoutineWithItems(
+            RoutineEntity(id = "push", name = "Push A", order = 0),
+            listOf(
+                RoutineItemEntity(routineId = "push", exerciseId = "Barbell_Bench_Press_-_Medium_Grip", order = 0, restSeconds = 120),
+                RoutineItemEntity(routineId = "push", exerciseId = "Triceps_Pushdown", order = 1, restSeconds = 90),
+                RoutineItemEntity(routineId = "push", exerciseId = "Side_Lateral_Raise", order = 2, restSeconds = 75),
+                RoutineItemEntity(routineId = "push", exerciseId = "Barbell_Shoulder_Press", order = 3, restSeconds = 120),
+                RoutineItemEntity(routineId = "push", exerciseId = null, order = 4, restSeconds = 90),
+            ),
+        )
+
+        val changed = RoutineSeeder(routines, library()).inheritDefaultRest()
+
+        assertEquals(2, changed)
+        assertEquals(listOf(0, 0, 75, 120, 90), routines.items("push").map { it.restSeconds })
+        assertEquals(0, RoutineSeeder(routines, library()).inheritDefaultRest(), "a second pass finds nothing")
     }
 
     @Test

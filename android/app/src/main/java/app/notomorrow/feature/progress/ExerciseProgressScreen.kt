@@ -265,7 +265,7 @@ private fun ExerciseTiles(state: ExerciseProgressUiState, modifier: Modifier = M
 
         StatTile(
             label = stringResource(S.progress_thisWeek),
-            value = Fmt.volume(state.thisWeekVolume),
+            value = Fmt.volume(state.thisWeekVolume, state.unit),
             modifier = Modifier.weight(1f),
         )
 

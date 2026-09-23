@@ -79,25 +79,44 @@ abstract class NoTomorrowDatabase : RoomDatabase() {
 }
 
 /**
- * "Delete account and data" (`SettingsModel.deleteAccount`): every user-owned table,
- * in child-before-parent order, **except non-custom `exercise` rows** — the bundled
- * library is not the user's data.
+ * "Delete account and data" (`SettingsModel.deleteAccount`): every user-owned table, in
+ * child-before-parent order (Room enforces the foreign keys), in **one transaction** — all of it
+ * goes or none of it does, never a store with the meals gone and the workouts left. The bundled
+ * exercise library stays (it is not the user's data), without the user's trace on it: custom
+ * exercises are deleted and the library's "last used" stamps cleared.
  *
- * The secure store, `nt.rest.autoStart` and `hasOnboarded` are the caller's job.
+ * The workout session, the rest timer, the secure store, `nt.rest.autoStart` and `hasOnboarded`
+ * are the caller's job (`AccountDataReset`, `SettingsViewModel.deleteAccount`).
  */
 suspend fun NoTomorrowDatabase.wipeUserData() = withTransaction {
-    headsUpDao().deleteAll()
-    attendanceDao().deleteAll()
-    broPairingDao().deleteAll()
-    bodyWeightDao().deleteAll()
-    mealDao().deleteAll()
-    foodDao().deleteAll()
-    workoutDao().deleteAllSets()
-    workoutDao().deleteAllWorkoutExercises()
-    workoutDao().deleteAllWorkouts()
-    routineDao().deleteAllItems()
-    routineDao().deleteAllRoutines()
-    exerciseDao().deleteCustom()
-    scheduleDao().deleteAll()
-    profileDao().deleteAll()
+    for (step in UserDataWipe.steps) step.run(this)
+}
+
+/**
+ * The steps of [wipeUserData], one per table in the order they run, so a test can hold them
+ * against the exported schema: every table covered, every child before its parent.
+ */
+internal object UserDataWipe {
+
+    class Step(val table: String, val run: suspend (NoTomorrowDatabase) -> Unit)
+
+    val steps: List<Step> = listOf(
+        Step("heads_up") { it.headsUpDao().deleteAll() },
+        Step("attendance_record") { it.attendanceDao().deleteAll() },
+        Step("bro_pairing") { it.broPairingDao().deleteAll() },
+        Step("body_weight_entry") { it.bodyWeightDao().deleteAll() },
+        Step("meal_entry") { it.mealDao().deleteAll() },
+        Step("food_item") { it.foodDao().deleteAll() },
+        Step("set_entry") { it.workoutDao().deleteAllSets() },
+        Step("workout_exercise") { it.workoutDao().deleteAllWorkoutExercises() },
+        Step("workout") { it.workoutDao().deleteAllWorkouts() },
+        Step("routine_item") { it.routineDao().deleteAllItems() },
+        Step("routine") { it.routineDao().deleteAllRoutines() },
+        Step("exercise") {
+            it.exerciseDao().deleteCustom()
+            it.exerciseDao().clearLastUsed()
+        },
+        Step("gym_schedule") { it.scheduleDao().deleteAll() },
+        Step("user_profile") { it.profileDao().deleteAll() },
+    )
 }

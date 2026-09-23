@@ -31,8 +31,64 @@ interface WorkoutDao {
     @Query("SELECT * FROM workout WHERE endedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     suspend fun newestActiveWorkout(): WorkoutEntity?
 
+    /** Every unfinished workout, newest first — adoption and the launch-time orphan repair. */
+    @Query("SELECT * FROM workout WHERE endedAt IS NULL ORDER BY startedAt DESC")
+    suspend fun activeWorkouts(): List<WorkoutEntity>
+
+    /** `Workout.completedSetCount` without loading the graph — gates Discard. Warm-ups count. */
+    @Query(
+        """
+        SELECT COUNT(*) FROM set_entry s
+        JOIN workout_exercise we ON we.id = s.workoutExerciseId
+        WHERE we.workoutId = :workoutId AND s.completedAt IS NOT NULL
+        """
+    )
+    suspend fun completedSetCount(workoutId: String): Int
+
+    /** The last `completedAt` in a workout — where the orphan repair ends an abandoned one. */
+    @Query(
+        """
+        SELECT MAX(s.completedAt) FROM set_entry s
+        JOIN workout_exercise we ON we.id = s.workoutExerciseId
+        WHERE we.workoutId = :workoutId AND s.completedAt IS NOT NULL
+        """
+    )
+    suspend fun lastCompletedAt(workoutId: String): Long?
+
     @Query("SELECT * FROM workout WHERE id = :id")
     suspend fun workout(id: String): WorkoutEntity?
+
+    /**
+     * Finished workouts other than [excludingId] that started in `[from, to)` and have a completed
+     * set — the ones that keep a day attended when an edited or deleted workout leaves it.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM workout w
+        WHERE w.endedAt IS NOT NULL AND w.startedAt >= :from AND w.startedAt < :to AND w.id != :excludingId
+          AND EXISTS (
+            SELECT 1 FROM set_entry s JOIN workout_exercise we ON we.id = s.workoutExerciseId
+            WHERE we.workoutId = w.id AND s.completedAt IS NOT NULL
+          )
+        """
+    )
+    suspend fun countedWorkoutsBetween(from: Long, to: Long, excludingId: String): Int
+
+    /**
+     * Finished workouts with a completed set that started in `[from, to)` — the Today card's
+     * "trained today" (`DashboardView.trainedToday`), which hides "Can't make it".
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM workout w
+        WHERE w.endedAt IS NOT NULL AND w.startedAt >= :from AND w.startedAt < :to
+          AND EXISTS (
+            SELECT 1 FROM set_entry s JOIN workout_exercise we ON we.id = s.workoutExerciseId
+            WHERE we.workoutId = w.id AND s.completedAt IS NOT NULL
+          )
+        """
+    )
+    fun observeCountedWorkoutsBetween(from: Long, to: Long): Flow<Int>
 
     @Query("SELECT * FROM workout WHERE id = :id")
     fun observeWorkout(id: String): Flow<WorkoutEntity?>
@@ -44,6 +100,19 @@ interface WorkoutDao {
 
     @Query("SELECT COUNT(*) FROM workout WHERE endedAt IS NOT NULL")
     fun observeFinishedCount(): Flow<Int>
+
+    /**
+     * Name of the most recent finished workout that came from a routine (its name matches one) —
+     * the Dashboard's suggestion rotates from it, so ad-hoc workouts do not shift the rotation.
+     */
+    @Query(
+        """
+        SELECT name FROM workout
+        WHERE endedAt IS NOT NULL AND name IN (SELECT name FROM routine)
+        ORDER BY startedAt DESC LIMIT 1
+        """
+    )
+    fun observeLastRoutineWorkoutName(): Flow<String?>
 
     @Transaction
     @Query("SELECT * FROM workout WHERE endedAt IS NOT NULL ORDER BY startedAt DESC LIMIT :limit")
@@ -115,6 +184,10 @@ interface WorkoutDao {
     @Query("UPDATE workout SET endedAt = :endedAt WHERE id = :id")
     suspend fun finishWorkout(id: String, endedAt: Long)
 
+    /** "Edit sets" from the summary: the workout is back in progress. */
+    @Query("UPDATE workout SET endedAt = NULL WHERE id = :id")
+    suspend fun reopenWorkout(id: String)
+
     @Query("UPDATE workout SET notes = :notes WHERE id = :id")
     suspend fun updateWorkoutNotes(id: String, notes: String)
 
@@ -157,6 +230,19 @@ interface WorkoutDao {
 
     @Query("UPDATE set_entry SET completedAt = :completedAt WHERE id = :id")
     suspend fun updateSetCompletion(id: Long, completedAt: Long?)
+
+    /**
+     * `RecordService.rebuild`'s open-set pass: an open set of these exercises that still carries a
+     * PR / set-record flag loses it. Returns the rows changed.
+     */
+    @Query(
+        """
+        UPDATE set_entry SET isPR = 0, isSetRecord = 0
+        WHERE completedAt IS NULL AND (isPR = 1 OR isSetRecord = 1)
+          AND workoutExerciseId IN (SELECT id FROM workout_exercise WHERE exerciseId IN (:exerciseIds))
+        """
+    )
+    suspend fun clearOpenSetRecords(exerciseIds: List<String>): Int
 
     /** Inserts an exercise and its sets under one transaction (FK order matters). */
     @Transaction

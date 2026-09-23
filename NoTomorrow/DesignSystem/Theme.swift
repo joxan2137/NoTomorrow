@@ -23,6 +23,10 @@ enum NT {
         static let bad       = Color(red: 255/255, green: 55/255,  blue: 95/255)
         static let badTint   = bad.opacity(0.12)
 
+        /// Fuel history levels 0…4 (nothing logged → on target): an OKLCH ramp at ember's hue, lighter and more
+        /// saturated per step, ending on ember itself.
+        static let heat: [Color] = [surface2, Color(hex: 0x693927), Color(hex: 0x98492B), Color(hex: 0xCA592C), ember]
+
         static let hairline = Color.white.opacity(0.12)
         static let border   = Color.white.opacity(0.20)
     }

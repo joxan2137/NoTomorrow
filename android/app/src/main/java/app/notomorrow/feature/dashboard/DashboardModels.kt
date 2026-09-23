@@ -82,6 +82,8 @@ data class PrSet(
  * `Workout` (name · duration · n PRs) plus one entry per PR set.
  */
 data class LastSession(
+    /** The workout the row opens in the detail sheet. */
+    val workoutId: String,
     val name: String,
     /** `endedAt ?? startedAt`, the timestamp the day label is derived from. */
     val at: Instant,
@@ -102,9 +104,15 @@ data class DashboardUiState(
     val avatarInitial: String = FALLBACK_INITIAL,
     val week: List<WeekDay> = emptyList(),
     val session: DashboardSession? = null,
+    /**
+     * The routine the card names: today's finished workout once the session is today and one
+     * exists (as the Kolega tab names it), else the suggested routine.
+     */
     val routineName: String? = null,
     /** Not rendered: the routine `startWorkout` builds the session from. */
     val suggestedRoutineId: String? = null,
+    /** Today's session is trained: "Today's session" and "Done" replace the eyebrow and countdown. */
+    val sessionDone: Boolean = false,
     val isPaired: Boolean = false,
     val partnerName: String? = null,
     val myState: DayState = DayState.Rest,
@@ -112,6 +120,8 @@ data class DashboardUiState(
     val partnerState: DayState = DayState.Rest,
     val partnerTime: Instant? = null,
     val hasActiveWorkout: Boolean = false,
+    /** A finished workout with a completed set started today (`NextSessionCard.trainedToday`). */
+    val trainedToday: Boolean = false,
     val isConfirming: Boolean = false,
     val totals: FuelTotals = FuelTotals(),
     val goals: FuelGoals = FuelGoals(),

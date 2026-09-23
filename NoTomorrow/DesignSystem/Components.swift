@@ -106,7 +106,9 @@ struct StatTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).eyebrow()
+            // Shrinks rather than truncates: three tiles in a row leave ~77 pt for "1 h 12 min" on a 375 pt phone.
             Text(value).font(NT.Fonts.headline).foregroundStyle(valueColor).tabular().lineLimit(1)
+                .minimumScaleFactor(0.6).allowsTightening(true)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

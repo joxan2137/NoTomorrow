@@ -48,6 +48,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun BroHeadsUpRow(
     partnerName: String,
+    /** `false` once the session is trained: the chip would cancel nothing and tell no one. */
+    offersCantMakeIt: Boolean,
     onCantMakeIt: () -> Unit,
     onSend: (HeadsUpKind, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -86,13 +88,15 @@ fun BroHeadsUpRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Swift's `HeadsUpChip` tints only the SF Symbol (`tint`); the label is always `ink`.
-            HeadsUpChip(
-                title = stringResource(S.dashboard_cantMakeIt),
-                icon = NtIcons.CalendarBadgeMinus,
-                borderTint = NT.Colors.bad.copy(alpha = 0.4f),
-                iconTint = NT.Colors.bad,
-                onClick = onCantMakeIt,
-            )
+            if (offersCantMakeIt) {
+                HeadsUpChip(
+                    title = stringResource(S.dashboard_cantMakeIt),
+                    icon = NtIcons.CalendarBadgeMinus,
+                    borderTint = NT.Colors.bad.copy(alpha = 0.4f),
+                    iconTint = NT.Colors.bad,
+                    onClick = onCantMakeIt,
+                )
+            }
             // `var borderTint: Color = NT.Colors.hairline` — the Swift default, not `border`.
             HeadsUpChip(
                 title = late15,
