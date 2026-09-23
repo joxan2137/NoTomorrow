@@ -1,0 +1,40 @@
+{
+  "kind": "label",
+  "name": "No energy printed",
+  "description": "kcal and kJ both -1 → legible false, no_energy.",
+  "raw": {
+    "legible": "true",
+    "name": "Przyprawa",
+    "brand": "",
+    "basis": "per100g",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": -1,
+      "kj": -1,
+      "protein": 1,
+      "carbs": 2,
+      "fat": 0,
+      "fiber": -1,
+      "sugar": -1,
+      "salt": 40
+    },
+    "packageSizeG": 20,
+    "barcode": "",
+    "confidence": 0.5
+  },
+  "expected": {
+    "version": 1,
+    "legible": false,
+    "unreadableReason": "no_energy",
+    "basis": "per100g",
+    "energyFrom": null,
+    "name": "Przyprawa",
+    "brand": "",
+    "per100": null,
+    "servingSizeG": null,
+    "packageSizeG": 20,
+    "barcode": "",
+    "confidence": 0.5,
+    "needsReview": false
+  }
+}

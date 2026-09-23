@@ -65,10 +65,16 @@ describe('loadEnv', () => {
     expect(env.google?.clientIds).toEqual(['a.apps.googleusercontent.com', 'b.apps.googleusercontent.com']);
     expect(env.aiAllowedUsers).toEqual(['test123', 'bro']);
     expect(env.apns).toMatchObject({ keyId: 'AK', topic: 'app.notomorrow', production: true, keyPem: PEM });
-    expect(env.gemini).toEqual({ apiKey: 'g', model: 'gemini-3.8-flash', fallbackModels: [] });
+    expect(env.gemini).toEqual({ apiKey: 'g', model: 'gemini-3.8-flash', fallbackModels: [], thinkingLevel: 'low' });
     expect(env.aiDailyLimit).toBe(5);
     expect(env.jobsEnabled).toBe(false);
     expect(env.warnings).toEqual([]);
+  });
+
+  it('reads the Gemini thinking level and rejects unknown ones', () => {
+    expect(loadEnv({ ...minimal, GEMINI_API_KEY: 'g', GEMINI_THINKING_LEVEL: 'medium' }).gemini?.thinkingLevel).toBe('medium');
+    expect(loadEnv({ ...minimal, GEMINI_API_KEY: 'g', GEMINI_THINKING_LEVEL: '' }).gemini?.thinkingLevel).toBe('low');
+    expect(() => loadEnv({ ...minimal, GEMINI_API_KEY: 'g', GEMINI_THINKING_LEVEL: 'max' })).toThrow(/GEMINI_THINKING_LEVEL/);
   });
 
   it('rejects a p8 that is not a PEM', () => {

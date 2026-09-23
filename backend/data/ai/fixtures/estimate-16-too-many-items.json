@@ -1,0 +1,1265 @@
+{
+  "kind": "estimate",
+  "name": "Items past maxItems (30) are skipped",
+  "description": "Only the first 30 of 32 items are kept; the rest are listed in skipped with too_many_items. Totals cover 30 items.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Cukierek 1",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 2",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 3",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 4",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 5",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 6",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 7",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 8",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 9",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 10",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 11",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 12",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 13",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 14",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 15",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 16",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 17",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 18",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 19",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 20",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 21",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 22",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 23",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 24",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 25",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 26",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 27",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 28",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 29",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 30",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 31",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      },
+      {
+        "name": "Cukierek 32",
+        "grams": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "confidence": 0.5
+      }
+    ],
+    "overallConfidence": 0.5
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Cukierek 1",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 2",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 3",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 4",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 5",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 6",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 7",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 8",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 9",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 10",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 11",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 12",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 13",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 14",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 15",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 16",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 17",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 18",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 19",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 20",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 21",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 22",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 23",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 24",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 25",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 26",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 27",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 28",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 29",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      },
+      {
+        "name": "Cukierek 30",
+        "grams": 5,
+        "kcal": 20,
+        "protein": 0,
+        "carbs": 4.9,
+        "fat": 0.1,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 400,
+          "protein": 0,
+          "carbs": 98,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0,
+        "carbsG": 4.9,
+        "fatG": 0.1
+      }
+    ],
+    "totals": {
+      "kcal": 600,
+      "protein": 0,
+      "carbs": 147,
+      "fat": 3
+    },
+    "overallConfidence": 0.5,
+    "scaleReferenceUsed": "none",
+    "assumptions": [],
+    "questions": [],
+    "skipped": [
+      {
+        "index": 30,
+        "name": "Cukierek 31",
+        "reason": "too_many_items"
+      },
+      {
+        "index": 31,
+        "name": "Cukierek 32",
+        "reason": "too_many_items"
+      }
+    ]
+  }
+}

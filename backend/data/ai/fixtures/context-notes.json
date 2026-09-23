@@ -1,0 +1,97 @@
+{
+  "kind": "context",
+  "name": "Notes → weightGiven / measuredReference",
+  "description": "spec.context patterns, run case-sensitively on the lower-cased notes.",
+  "cases": [
+    {
+      "notes": "",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "150 g ugotowanego ryżu",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "150g ryżu",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "150 gramów ryżu",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "0,5 l piwa",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "20 dag sera",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "1,5 kg arbuza",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "300 ml zupy",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "Zjadłem 6 pierogów",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "3 lody",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "2 łyżki śmietany",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "mój talerz ma 26 cm",
+      "weightGiven": false,
+      "measuredReference": true
+    },
+    {
+      "notes": "Talerz 26cm, 200G makaronu",
+      "weightGiven": true,
+      "measuredReference": true
+    },
+    {
+      "notes": "Measured reference: the user's dinner plate is 27 cm across.",
+      "weightGiven": false,
+      "measuredReference": true
+    },
+    {
+      "notes": "5 lat temu",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "2 gruszki",
+      "weightGiven": false,
+      "measuredReference": false
+    },
+    {
+      "notes": "100 g twarogu",
+      "weightGiven": true,
+      "measuredReference": false
+    },
+    {
+      "notes": "zjadłem połowę, ok. 12 cm kiełbasy",
+      "weightGiven": false,
+      "measuredReference": true
+    }
+  ]
+}

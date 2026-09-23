@@ -1,0 +1,179 @@
+{
+  "kind": "estimate",
+  "name": "Alcohol keeps beer and wine energy-consistent",
+  "description": "Beer per100 has 3.9 g alcohol: 4×0.5 + 4×3.6 + 7×3.9 = 43.7 ≈ 43, no repair. Wine grounded to wine_red. The drink volume in the notes (\"0,5 l\") counts as a user weight, so no confidence cap.",
+  "ctx": {
+    "weightGiven": true,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Piwo jasne",
+        "cooking": "packaged",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "butelka",
+        "gramsPerUnit": 500,
+        "grams": 500,
+        "per100": {
+          "kcal": 43,
+          "protein": 0.5,
+          "carbs": 3.6,
+          "fat": 0,
+          "alcohol": 3.9
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.9
+      },
+      {
+        "name": "Wino czerwone",
+        "cooking": "prepared",
+        "genericKey": "wine_red",
+        "portionCount": 1,
+        "portionUnit": "kieliszek",
+        "gramsPerUnit": 150,
+        "grams": 150,
+        "per100": {
+          "kcal": 70,
+          "protein": 0,
+          "carbs": 2,
+          "fat": 0,
+          "alcohol": 9
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.8
+      },
+      {
+        "name": "Orzeszki ziemne solone",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "garść",
+        "gramsPerUnit": 40,
+        "grams": 40,
+        "per100": {
+          "kcal": 610,
+          "protein": 26,
+          "carbs": 12,
+          "fat": 50,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.72
+      }
+    ],
+    "scaleReferenceUsed": "butelka 0,5 l",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.83
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Piwo jasne",
+        "grams": 500,
+        "kcal": 215,
+        "protein": 2.5,
+        "carbs": 18,
+        "fat": 0,
+        "confidence": 0.9,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "packaged",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "butelka",
+        "gramsPerUnit": 500,
+        "per100": {
+          "kcal": 43,
+          "protein": 0.5,
+          "carbs": 3.6,
+          "fat": 0,
+          "alcohol": 3.9
+        },
+        "adjustments": [],
+        "proteinG": 2.5,
+        "carbsG": 18,
+        "fatG": 0
+      },
+      {
+        "name": "Wino czerwone",
+        "grams": 150,
+        "kcal": 127.5,
+        "protein": 0.2,
+        "carbs": 3.9,
+        "fat": 0,
+        "confidence": 0.8,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "generic_table",
+        "cooking": "prepared",
+        "genericKey": "wine_red",
+        "portionCount": 1,
+        "portionUnit": "kieliszek",
+        "gramsPerUnit": 150,
+        "per100": {
+          "kcal": 85,
+          "protein": 0.1,
+          "carbs": 2.6,
+          "fat": 0,
+          "alcohol": 10.6
+        },
+        "adjustments": [
+          "generic_table"
+        ],
+        "proteinG": 0.2,
+        "carbsG": 3.9,
+        "fatG": 0
+      },
+      {
+        "name": "Orzeszki ziemne solone",
+        "grams": 40,
+        "kcal": 244,
+        "protein": 10.4,
+        "carbs": 4.8,
+        "fat": 20,
+        "confidence": 0.72,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "garść",
+        "gramsPerUnit": 40,
+        "per100": {
+          "kcal": 610,
+          "protein": 26,
+          "carbs": 12,
+          "fat": 50,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 10.4,
+        "carbsG": 4.8,
+        "fatG": 20
+      }
+    ],
+    "totals": {
+      "kcal": 586.5,
+      "protein": 13.1,
+      "carbs": 26.7,
+      "fat": 20
+    },
+    "overallConfidence": 0.83,
+    "scaleReferenceUsed": "butelka 0,5 l",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

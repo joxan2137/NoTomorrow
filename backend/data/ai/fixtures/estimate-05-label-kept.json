@@ -1,0 +1,184 @@
+{
+  "kind": "estimate",
+  "name": "Label values outside the Atwater tolerance are kept",
+  "description": "A protein bar read from a visible label: 380 kcal vs Atwater 232 is outside the label tolerance (max(40, 0.3×232)); the label wins, flagged energy_mismatch_kept. A user_notes item within tolerance is untouched. genericKey on a visible_label item does not override it.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Baton proteinowy",
+        "cooking": "packaged",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 55,
+        "grams": 55,
+        "per100": {
+          "kcal": 380,
+          "protein": 20,
+          "carbs": 20,
+          "fat": 8,
+          "alcohol": 0
+        },
+        "nutritionSource": "visible_label",
+        "barcode": "5901234123457",
+        "isGuess": false,
+        "confidence": 0.9
+      },
+      {
+        "name": "Jogurt naturalny",
+        "cooking": "packaged",
+        "genericKey": "yogurt_natural_2",
+        "portionCount": 1,
+        "portionUnit": "kubek",
+        "gramsPerUnit": 180,
+        "grams": 180,
+        "per100": {
+          "kcal": 61,
+          "protein": 4.3,
+          "carbs": 6.2,
+          "fat": 2,
+          "alcohol": 0
+        },
+        "nutritionSource": "visible_label",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.85
+      },
+      {
+        "name": "Kawa z mlekiem",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "kubek",
+        "gramsPerUnit": 250,
+        "grams": 250,
+        "per100": {
+          "kcal": 20,
+          "protein": 1,
+          "carbs": 1.5,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "nutritionSource": "user_notes",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.7
+      }
+    ],
+    "scaleReferenceUsed": "opakowanie",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.8
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Baton proteinowy",
+        "grams": 55,
+        "kcal": 209,
+        "protein": 11,
+        "carbs": 11,
+        "fat": 4.4,
+        "confidence": 0.65,
+        "isGuess": false,
+        "barcode": "5901234123457",
+        "nutritionSource": "visible_label",
+        "cooking": "packaged",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 55,
+        "per100": {
+          "kcal": 380,
+          "protein": 20,
+          "carbs": 20,
+          "fat": 8,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "energy_mismatch_kept",
+          "confidence_capped"
+        ],
+        "proteinG": 11,
+        "carbsG": 11,
+        "fatG": 4.4
+      },
+      {
+        "name": "Jogurt naturalny",
+        "grams": 180,
+        "kcal": 109.8,
+        "protein": 7.7,
+        "carbs": 11.2,
+        "fat": 3.6,
+        "confidence": 0.65,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "visible_label",
+        "cooking": "packaged",
+        "genericKey": "yogurt_natural_2",
+        "portionCount": 1,
+        "portionUnit": "kubek",
+        "gramsPerUnit": 180,
+        "per100": {
+          "kcal": 61,
+          "protein": 4.3,
+          "carbs": 6.2,
+          "fat": 2,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "confidence_capped"
+        ],
+        "proteinG": 7.7,
+        "carbsG": 11.2,
+        "fatG": 3.6
+      },
+      {
+        "name": "Kawa z mlekiem",
+        "grams": 250,
+        "kcal": 50,
+        "protein": 2.5,
+        "carbs": 3.8,
+        "fat": 2.5,
+        "confidence": 0.65,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "user_notes",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "kubek",
+        "gramsPerUnit": 250,
+        "per100": {
+          "kcal": 20,
+          "protein": 1,
+          "carbs": 1.5,
+          "fat": 1,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "confidence_capped"
+        ],
+        "proteinG": 2.5,
+        "carbsG": 3.8,
+        "fatG": 2.5
+      }
+    ],
+    "totals": {
+      "kcal": 368.8,
+      "protein": 21.2,
+      "carbs": 26,
+      "fat": 10.5
+    },
+    "overallConfidence": 0.65,
+    "scaleReferenceUsed": "opakowanie",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

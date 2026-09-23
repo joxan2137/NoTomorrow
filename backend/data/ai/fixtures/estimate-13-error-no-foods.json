@@ -1,0 +1,15 @@
+{
+  "kind": "estimate",
+  "name": "No foods array is an error",
+  "description": "An object without foods/items → no_foods_array.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "food": {
+      "name": "Banan"
+    }
+  },
+  "expectedError": "no_foods_array"
+}

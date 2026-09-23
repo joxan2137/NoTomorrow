@@ -1,0 +1,87 @@
+{
+  "kind": "estimate",
+  "name": "Legacy v1 reply with totals only, fenced and with trailing commas",
+  "description": "The old BYOK shape (protein_g, overall_confidence, no per100) inside ``` fences with prose. per100 is derived from totals / grams; bigos 150 kcal for 300 g with macros worth 425 kcal is repaired to Atwater.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "rawText": "Here is the estimate:\n```json\n{\"foods\":[\n{\"name\":\"Bigos\",\"grams\":300,\"kcal\":150,\"protein_g\":21,\"carbs_g\":18,\"fat_g\":28.5,\"confidence\":0.6},\n{\"name\":\"Chleb żytni\",\"grams\":\"40\",\"kcal\":\"90\",\"protein_g\":\"2,4\",\"carbs_g\":17.2,\"fat_g\":0.6,\"confidence\":0.5,},\n],\"overall_confidence\":0.55}\n```\nSmacznego!",
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Bigos",
+        "grams": 300,
+        "kcal": 412.5,
+        "protein": 21,
+        "carbs": 18,
+        "fat": 28.5,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 300,
+        "per100": {
+          "kcal": 137.5,
+          "protein": 7,
+          "carbs": 6,
+          "fat": 9.5,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "per100_from_totals",
+          "energy_repaired"
+        ],
+        "proteinG": 21,
+        "carbsG": 18,
+        "fatG": 28.5
+      },
+      {
+        "name": "Chleb żytni",
+        "grams": 40,
+        "kcal": 90,
+        "protein": 2.4,
+        "carbs": 17.2,
+        "fat": 0.6,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 40,
+        "per100": {
+          "kcal": 225,
+          "protein": 6,
+          "carbs": 43,
+          "fat": 1.5,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "per100_from_totals"
+        ],
+        "proteinG": 2.4,
+        "carbsG": 17.2,
+        "fatG": 0.6
+      }
+    ],
+    "totals": {
+      "kcal": 502.5,
+      "protein": 23.4,
+      "carbs": 35.2,
+      "fat": 29.1
+    },
+    "overallConfidence": 0.55,
+    "scaleReferenceUsed": "none",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "kind": "label",
+  "name": "Only kJ printed",
+  "description": "kcal = 1046 / 4.184 = 250 (energyFrom kj). Decimal-comma strings are numbers.",
+  "raw": {
+    "legible": true,
+    "name": "Płatki owsiane z owocami",
+    "brand": "",
+    "basis": "per100g",
+    "servingSizeG": 40,
+    "values": {
+      "kcal": -1,
+      "kj": 1046,
+      "protein": "8,2",
+      "carbs": 30,
+      "fat": "10,5",
+      "fiber": 6,
+      "sugar": 12,
+      "salt": 0.05
+    },
+    "packageSizeG": 350,
+    "barcode": "",
+    "confidence": 0.8
+  },
+  "expected": {
+    "version": 1,
+    "legible": true,
+    "unreadableReason": null,
+    "basis": "per100g",
+    "energyFrom": "kj",
+    "name": "Płatki owsiane z owocami",
+    "brand": "",
+    "per100": {
+      "kcal": 250,
+      "protein": 8.2,
+      "carbs": 30,
+      "fat": 10.5,
+      "fiber": 6,
+      "sugar": 12,
+      "salt": 0.05
+    },
+    "servingSizeG": 40,
+    "packageSizeG": 350,
+    "barcode": "",
+    "confidence": 0.8,
+    "needsReview": false
+  }
+}

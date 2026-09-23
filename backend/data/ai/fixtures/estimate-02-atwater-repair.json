@@ -1,0 +1,131 @@
+{
+  "kind": "estimate",
+  "name": "Atwater repair of an inconsistent per100",
+  "description": "The diagnosis probe: 150 g schabowy at 120 kcal/100 g with P20 C15 F15 (Atwater 275). Source estimated and genericKey none, so kcal becomes 275 and confidence drops by 0.1 (0.6 → 0.5). Ziemniaki are within tolerance.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Schabowy",
+        "cooking": "deep_fried",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 150,
+        "grams": 150,
+        "per100": {
+          "kcal": 120,
+          "protein": 20,
+          "carbs": 15,
+          "fat": 15,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      {
+        "name": "Ziemniaki z koperkiem",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 250,
+        "grams": 250,
+        "per100": {
+          "kcal": 80,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.2,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.55
+      }
+    ],
+    "scaleReferenceUsed": "widelec",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.55
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Schabowy",
+        "grams": 150,
+        "kcal": 412.5,
+        "protein": 30,
+        "carbs": 22.5,
+        "fat": 22.5,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "deep_fried",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 150,
+        "per100": {
+          "kcal": 275,
+          "protein": 20,
+          "carbs": 15,
+          "fat": 15,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "energy_repaired"
+        ],
+        "proteinG": 30,
+        "carbsG": 22.5,
+        "fatG": 22.5
+      },
+      {
+        "name": "Ziemniaki z koperkiem",
+        "grams": 250,
+        "kcal": 200,
+        "protein": 5,
+        "carbs": 43.8,
+        "fat": 0.5,
+        "confidence": 0.55,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 250,
+        "per100": {
+          "kcal": 80,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.2,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 5,
+        "carbsG": 43.8,
+        "fatG": 0.5
+      }
+    ],
+    "totals": {
+      "kcal": 612.5,
+      "protein": 35,
+      "carbs": 66.3,
+      "fat": 23
+    },
+    "overallConfidence": 0.55,
+    "scaleReferenceUsed": "widelec",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

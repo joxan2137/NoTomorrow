@@ -1,0 +1,48 @@
+{
+  "kind": "label",
+  "name": "Numbers that do not add up are flagged, not rejected",
+  "description": "kcal 400 against Atwater 4×10 + 4×20 + 9×5 = 165 and sugar 25 > carbs 20 → needsReview true. The barcode has a bad check digit → \"\".",
+  "raw": {
+    "legible": true,
+    "name": "Ciastka maślane",
+    "brand": "",
+    "basis": "per100g",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": 400,
+      "kj": 1674,
+      "protein": 10,
+      "carbs": 20,
+      "fat": 5,
+      "fiber": 2,
+      "sugar": 25,
+      "salt": 0.5
+    },
+    "packageSizeG": -1,
+    "barcode": "5900531000509",
+    "confidence": 0.75
+  },
+  "expected": {
+    "version": 1,
+    "legible": true,
+    "unreadableReason": null,
+    "basis": "per100g",
+    "energyFrom": "kcal",
+    "name": "Ciastka maślane",
+    "brand": "",
+    "per100": {
+      "kcal": 400,
+      "protein": 10,
+      "carbs": 20,
+      "fat": 5,
+      "fiber": 2,
+      "sugar": 25,
+      "salt": 0.5
+    },
+    "servingSizeG": null,
+    "packageSizeG": null,
+    "barcode": "",
+    "confidence": 0.75,
+    "needsReview": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "label",
+  "name": "Per 100 ml drink inside a fenced answer",
+  "description": "basis per100ml; values are stored as per 100 g. The answer arrives in ``` fences. Low confidence (0.55) → needsReview.",
+  "rawText": "```json\n{\"legible\": true, \"name\": \"Napój gazowany o smaku cola\", \"brand\": \"\", \"basis\": \"per100ml\", \"servingSizeG\": 250, \"values\": {\"kcal\": 42, \"kj\": 180, \"protein\": 0, \"carbs\": 10.6, \"fat\": 0, \"fiber\": -1, \"sugar\": 10.6, \"salt\": 0.01}, \"packageSizeG\": 500, \"barcode\": \"40822938\", \"confidence\": 0.55}\n```",
+  "expected": {
+    "version": 1,
+    "legible": true,
+    "unreadableReason": null,
+    "basis": "per100ml",
+    "energyFrom": "kcal",
+    "name": "Napój gazowany o smaku cola",
+    "brand": "",
+    "per100": {
+      "kcal": 42,
+      "protein": 0,
+      "carbs": 10.6,
+      "fat": 0,
+      "fiber": null,
+      "sugar": 10.6,
+      "salt": 0.01
+    },
+    "servingSizeG": 250,
+    "packageSizeG": 500,
+    "barcode": "40822938",
+    "confidence": 0.55,
+    "needsReview": true
+  }
+}

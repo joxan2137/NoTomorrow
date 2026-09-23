@@ -1,0 +1,48 @@
+{
+  "kind": "label",
+  "name": "Only a per-portion column",
+  "description": "basis perServing with a 30 g portion: every value × 100 / 30. The per-100 kcal (400) matches Atwater.",
+  "raw": {
+    "legible": true,
+    "name": "Baton zbożowy",
+    "brand": "Sante",
+    "basis": "perServing",
+    "servingSizeG": 30,
+    "values": {
+      "kcal": 120,
+      "kj": 502,
+      "protein": 3,
+      "carbs": 18,
+      "fat": 3.9,
+      "fiber": 1.5,
+      "sugar": 6,
+      "salt": 0.15
+    },
+    "packageSizeG": 30,
+    "barcode": "",
+    "confidence": 0.85
+  },
+  "expected": {
+    "version": 1,
+    "legible": true,
+    "unreadableReason": null,
+    "basis": "perServing",
+    "energyFrom": "kcal",
+    "name": "Baton zbożowy",
+    "brand": "Sante",
+    "per100": {
+      "kcal": 400,
+      "protein": 10,
+      "carbs": 60,
+      "fat": 13,
+      "fiber": 5,
+      "sugar": 20,
+      "salt": 0.5
+    },
+    "servingSizeG": 30,
+    "packageSizeG": 30,
+    "barcode": "",
+    "confidence": 0.85,
+    "needsReview": false
+  }
+}

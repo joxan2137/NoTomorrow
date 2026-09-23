@@ -1,0 +1,181 @@
+{
+  "kind": "estimate",
+  "name": "Portion fields are made consistent with grams",
+  "description": "6 × 35 g declared but grams 180 → gramsPerUnit 30 (portion_normalized). A count of \"2,5\" slices with no gramsPerUnit gets 87.5 / 2.5 = 35. A mass without units becomes 1 × grams. Unknown cooking becomes prepared.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Pierogi z kapustą i grzybami",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 35,
+        "grams": 180,
+        "per100": {
+          "kcal": 185,
+          "protein": 5,
+          "carbs": 29,
+          "fat": 4.5,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      {
+        "name": "Chleb pszenny",
+        "cooking": "baked",
+        "genericKey": "none",
+        "portionCount": "2,5",
+        "portionUnit": "kromka",
+        "gramsPerUnit": null,
+        "grams": 87.5,
+        "per100": {
+          "kcal": 250,
+          "protein": 8.5,
+          "carbs": 49,
+          "fat": 2,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      {
+        "name": "Sałatka jarzynowa",
+        "cooking": "frittered",
+        "genericKey": "none",
+        "portionCount": 0,
+        "portionUnit": "",
+        "gramsPerUnit": 120.04,
+        "grams": 120.04,
+        "per100": {
+          "kcal": 150,
+          "protein": 2.5,
+          "carbs": 8,
+          "fat": 11.5,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.5
+      }
+    ],
+    "scaleReferenceUsed": "talerz",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.6
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Pierogi z kapustą i grzybami",
+        "grams": 180,
+        "kcal": 333,
+        "protein": 9,
+        "carbs": 52.2,
+        "fat": 8.1,
+        "confidence": 0.6,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 30,
+        "per100": {
+          "kcal": 185,
+          "protein": 5,
+          "carbs": 29,
+          "fat": 4.5,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "portion_normalized"
+        ],
+        "proteinG": 9,
+        "carbsG": 52.2,
+        "fatG": 8.1
+      },
+      {
+        "name": "Chleb pszenny",
+        "grams": 87.5,
+        "kcal": 218.8,
+        "protein": 7.4,
+        "carbs": 42.9,
+        "fat": 1.8,
+        "confidence": 0.6,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "baked",
+        "genericKey": "none",
+        "portionCount": 2.5,
+        "portionUnit": "kromka",
+        "gramsPerUnit": 35,
+        "per100": {
+          "kcal": 250,
+          "protein": 8.5,
+          "carbs": 49,
+          "fat": 2,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "portion_normalized"
+        ],
+        "proteinG": 7.4,
+        "carbsG": 42.9,
+        "fatG": 1.8
+      },
+      {
+        "name": "Sałatka jarzynowa",
+        "grams": 120,
+        "kcal": 180,
+        "protein": 3,
+        "carbs": 9.6,
+        "fat": 13.8,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "",
+        "gramsPerUnit": 120,
+        "per100": {
+          "kcal": 150,
+          "protein": 2.5,
+          "carbs": 8,
+          "fat": 11.5,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 3,
+        "carbsG": 9.6,
+        "fatG": 13.8
+      }
+    ],
+    "totals": {
+      "kcal": 731.8,
+      "protein": 19.4,
+      "carbs": 104.7,
+      "fat": 23.7
+    },
+    "overallConfidence": 0.6,
+    "scaleReferenceUsed": "talerz",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

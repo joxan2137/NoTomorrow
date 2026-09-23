@@ -1,0 +1,133 @@
+{
+  "kind": "estimate",
+  "name": "No confidence cap when the notes give a weight",
+  "description": "Same answer as estimate-07. ctx.weightGiven is true (\"180 g piersi\"), so 0.9/0.85/0.88 stay.",
+  "ctx": {
+    "weightGiven": true,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Pierś z kurczaka grillowana",
+        "cooking": "grilled",
+        "genericKey": "chicken_breast_cooked",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 180,
+        "grams": 180,
+        "per100": {
+          "kcal": 165,
+          "protein": 31,
+          "carbs": 0,
+          "fat": 3.6,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.9
+      },
+      {
+        "name": "Ryż biały",
+        "cooking": "boiled",
+        "genericKey": "rice_white_cooked",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 150,
+        "grams": 150,
+        "per100": {
+          "kcal": 130,
+          "protein": 2.7,
+          "carbs": 28.2,
+          "fat": 0.3,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.85
+      }
+    ],
+    "scaleReferenceUsed": "waga kuchenna",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.88
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Pierś z kurczaka grillowana",
+        "grams": 180,
+        "kcal": 288,
+        "protein": 55.8,
+        "carbs": 0,
+        "fat": 6.5,
+        "confidence": 0.9,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "generic_table",
+        "cooking": "grilled",
+        "genericKey": "chicken_breast_cooked",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 180,
+        "per100": {
+          "kcal": 160,
+          "protein": 31,
+          "carbs": 0,
+          "fat": 3.6,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "generic_table"
+        ],
+        "proteinG": 55.8,
+        "carbsG": 0,
+        "fatG": 6.5
+      },
+      {
+        "name": "Ryż biały",
+        "grams": 150,
+        "kcal": 195,
+        "protein": 4.1,
+        "carbs": 42.3,
+        "fat": 0.5,
+        "confidence": 0.85,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "generic_table",
+        "cooking": "boiled",
+        "genericKey": "rice_white_cooked",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 150,
+        "per100": {
+          "kcal": 130,
+          "protein": 2.7,
+          "carbs": 28.2,
+          "fat": 0.3,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "generic_table"
+        ],
+        "proteinG": 4.1,
+        "carbsG": 42.3,
+        "fatG": 0.5
+      }
+    ],
+    "totals": {
+      "kcal": 483,
+      "protein": 59.9,
+      "carbs": 42.3,
+      "fat": 7
+    },
+    "overallConfidence": 0.88,
+    "scaleReferenceUsed": "waga kuchenna",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

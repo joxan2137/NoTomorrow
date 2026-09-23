@@ -1,0 +1,48 @@
+{
+  "kind": "label",
+  "name": "Per 100 g label, kcal and kJ printed",
+  "description": "Serek wiejski: every value printed per 100 g; fiber not printed (-1 → null). Valid EAN-13 kept.",
+  "raw": {
+    "legible": true,
+    "name": "Serek wiejski",
+    "brand": "Piątnica",
+    "basis": "per100g",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": 97,
+      "kj": 406,
+      "protein": 11,
+      "carbs": 2,
+      "fat": 5,
+      "fiber": -1,
+      "sugar": 2,
+      "salt": 0.63
+    },
+    "packageSizeG": 200,
+    "barcode": "5900531000508",
+    "confidence": 0.93
+  },
+  "expected": {
+    "version": 1,
+    "legible": true,
+    "unreadableReason": null,
+    "basis": "per100g",
+    "energyFrom": "kcal",
+    "name": "Serek wiejski",
+    "brand": "Piątnica",
+    "per100": {
+      "kcal": 97,
+      "protein": 11,
+      "carbs": 2,
+      "fat": 5,
+      "fiber": null,
+      "sugar": 2,
+      "salt": 0.63
+    },
+    "servingSizeG": null,
+    "packageSizeG": 200,
+    "barcode": "5900531000508",
+    "confidence": 0.93,
+    "needsReview": false
+  }
+}
