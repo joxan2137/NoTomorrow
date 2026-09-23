@@ -1,0 +1,40 @@
+{
+  "kind": "label",
+  "name": "Per-portion values without the portion size",
+  "description": "perServing with servingSizeG -1 cannot be converted → legible false, no_serving_size.",
+  "raw": {
+    "legible": true,
+    "name": "Chipsy",
+    "brand": "Lay’s",
+    "basis": "perServing",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": 160,
+      "kj": 670,
+      "protein": 2,
+      "carbs": 15,
+      "fat": 10,
+      "fiber": 1,
+      "sugar": 0.5,
+      "salt": 0.4
+    },
+    "packageSizeG": 140,
+    "barcode": "",
+    "confidence": 0.7
+  },
+  "expected": {
+    "version": 1,
+    "legible": false,
+    "unreadableReason": "no_serving_size",
+    "basis": "perServing",
+    "energyFrom": null,
+    "name": "Chipsy",
+    "brand": "Lay’s",
+    "per100": null,
+    "servingSizeG": null,
+    "packageSizeG": 140,
+    "barcode": "",
+    "confidence": 0.7,
+    "needsReview": false
+  }
+}

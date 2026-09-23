@@ -1,0 +1,56 @@
+{
+  "kind": "estimate",
+  "name": "Single-quoted JSON is repaired",
+  "description": "A model slip with single quotes and string numbers; the third parse attempt replaces quotes. isGuess \"true\" as a string counts.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "rawText": "{'foods': [{'name': 'Masło', 'cooking': 'raw', 'genericKey': 'butter', 'portionCount': '2', 'portionUnit': 'łyżeczka', 'gramsPerUnit': '5', 'grams': '10', 'per100': {'kcal': 717, 'protein': 0.9, 'carbs': 0.1, 'fat': 81, 'alcohol': 0}, 'nutritionSource': 'estimated', 'barcode': '', 'isGuess': 'true', 'confidence': '0.4'}], 'scaleReferenceUsed': 'nóż', 'assumptions': [], 'questions': [], 'overallConfidence': 0.4}",
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Masło",
+        "grams": 10,
+        "kcal": 74,
+        "protein": 0.1,
+        "carbs": 0.1,
+        "fat": 8.2,
+        "confidence": 0.4,
+        "isGuess": true,
+        "barcode": "",
+        "nutritionSource": "generic_table",
+        "cooking": "raw",
+        "genericKey": "butter",
+        "portionCount": 2,
+        "portionUnit": "łyżeczka",
+        "gramsPerUnit": 5,
+        "per100": {
+          "kcal": 740,
+          "protein": 0.7,
+          "carbs": 0.7,
+          "fat": 82,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "generic_table"
+        ],
+        "proteinG": 0.1,
+        "carbsG": 0.1,
+        "fatG": 8.2
+      }
+    ],
+    "totals": {
+      "kcal": 74,
+      "protein": 0.1,
+      "carbs": 0.1,
+      "fat": 8.2
+    },
+    "overallConfidence": 0.4,
+    "scaleReferenceUsed": "nóż",
+    "assumptions": [],
+    "questions": [],
+    "skipped": []
+  }
+}

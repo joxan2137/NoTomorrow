@@ -7,3 +7,4 @@ test
 coverage
 *.log
 .git
+data/ai/fixtures

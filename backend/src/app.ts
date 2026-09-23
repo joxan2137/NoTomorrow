@@ -5,7 +5,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { HttpError } from './http.js';
 import { requireAuth } from './middleware/auth.js';
 import { accountRoutes } from './routes/account.js';
-import { aiRoutes } from './routes/ai.js';
+import { AI_MULTIPART_PATHS, aiRoutes } from './routes/ai.js';
 import { appleNotificationRoutes } from './routes/apple-notifications.js';
 import { attendanceRoutes } from './routes/attendance.js';
 import { authRoutes } from './routes/auth.js';
@@ -55,7 +55,7 @@ export function createApp(deps: AppDeps, opts: CreateAppOptions = {}): Hono<AppE
 
   const jsonLimit = bodyLimit({ maxSize: JSON_BODY_LIMIT, onError: (c) => c.json({ error: 'payload_too_large' }, 413) });
   const multipartLimit = bodyLimit({ maxSize: MULTIPART_BODY_LIMIT, onError: (c) => c.json({ error: 'payload_too_large' }, 413) });
-  app.use('*', (c, next) => (c.req.path === '/ai/estimate' ? multipartLimit : jsonLimit)(c, next));
+  app.use('*', (c, next) => (AI_MULTIPART_PATHS.has(c.req.path) ? multipartLimit : jsonLimit)(c, next));
 
   const auth = requireAuth(deps.env.jwtSecret, deps.now);
   app.use('*', (c, next) => (PUBLIC_PATHS.has(c.req.path) ? next() : auth(c, next)));

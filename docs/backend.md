@@ -5,7 +5,7 @@ Small API on Fly.io (region `ams`) that does four things: accounts, gym-bro pair
 ## Stack
 
 - Node 22, TypeScript (ESM), **Hono** 4.x, `postgres` (porsager) with hand-written SQL migrations (folder `migrations/`, applied at boot in order, tracked in a `schema_migrations` table), `zod` for input validation, `jose` for JWT/JWKS, `argon2` (node-argon2, argon2id m=19456 t=2 p=1), `@parse/node-apn` 8.x for APNs, `pg-boss` for scheduled jobs, `pino` logging. Dev: `tsx watch`; build: `tsc`; test: `vitest`.
-- Config from env (validated with zod at boot): `PORT` (8080), `DATABASE_URL`, `JWT_SECRET` (HS256 for 15-min access tokens), `REFRESH_PEPPER`, `TOKEN_ENC_KEY` (32-byte base64, AES-256-GCM for stored Apple refresh tokens), `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID` (= `aud`), `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_P8_B64`, `GOOGLE_CLIENT_IDS` (comma-separated allowlist for `aud`), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_B64`, `APNS_TOPIC` (bundle id), `APNS_PRODUCTION` (bool), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`), `AI_DAILY_LIMIT` (default 30), `AI_ALLOWED_USERS` (comma-separated usernames, case-insensitive, allowed to use the server's Gemini key; empty = every signed-in user). Missing optional providers (Apple/Google/APNs/Gemini) must degrade to a clear 503 on those routes, not a crash at boot.
+- Config from env (validated with zod at boot): `PORT` (8080), `DATABASE_URL`, `JWT_SECRET` (HS256 for 15-min access tokens), `REFRESH_PEPPER`, `TOKEN_ENC_KEY` (32-byte base64, AES-256-GCM for stored Apple refresh tokens), `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID` (= `aud`), `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_P8_B64`, `GOOGLE_CLIENT_IDS` (comma-separated allowlist for `aud`), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_B64`, `APNS_TOPIC` (bundle id), `APNS_PRODUCTION` (bool), `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`), `GEMINI_FALLBACK_MODELS` (comma-separated), `GEMINI_THINKING_LEVEL` (`low` default, `minimal|medium|high`), `AI_DAILY_LIMIT` (default 30, shared by `/ai/estimate` and `/ai/label`), `AI_ALLOWED_USERS` (comma-separated usernames, case-insensitive, allowed to use the server's Gemini key; empty = every signed-in user). Missing optional providers (Apple/Google/APNs/Gemini) must degrade to a clear 503 on those routes, not a crash at boot.
 - `fly.toml`: `primary_region = "ams"`, `internal_port = 8080`, `force_https`, `auto_stop_machines = "stop"`, `auto_start_machines = true`, `min_machines_running = 1`, `[http_service.http_options] idle_timeout = 600`, health check `GET /healthz`, `[env] TZ = "UTC"`. Dockerfile: multi-stage, `node:22-slim`, non-root user.
 
 ## Schema (Postgres 16)
@@ -134,20 +134,56 @@ Jobs (pg-boss, one cron every 5 minutes that scans due work, idempotent):
 
 ## AI proxy
 
-`POST /ai/estimate` (auth, multipart: `image` JPEG ≤ 4 MB, `meal` in breakfast|lunch|snack|dinner, `locale` en|pl). If `AI_ALLOWED_USERS` is set and the caller's username is not on it → `403 {"error":"ai_not_allowed"}` before the body is read; the apps turn that into "ask the owner to whitelist you, or add your own Gemini or Claude API key in Settings". Rate limit `AI_DAILY_LIMIT` per user per UTC day (`ai_usage`), 429 beyond. Calls Gemini Interactions API:
+Two routes spend the server's Gemini key: `POST /ai/estimate` (meal photo → foods) and `POST /ai/label` (photo of a nutrition table → per-100 g values). Prompts, JSON schemas, Atwater constants, limits and the generic Polish food table are **not in code**: they live in `backend/data/ai/estimate-spec.json`, which the iOS and Android apps bundle for their bring-your-own-key (BYOK) paths. `backend/src/aiFinalize.ts` is the reference finalizer; the apps port it 1:1 and all three run the shared fixtures in `backend/data/ai/fixtures/*.json` (`npm run ai:fixtures` checks the backend; see the README).
 
+**Guards, identical for both routes, in this order.** `X-Anthropic-Key` header → `400 byok_is_device_direct` (BYOK always goes device → provider). No `GEMINI_API_KEY` → `503 ai_unavailable`. Not multipart → `400 multipart_required`. `AI_ALLOWED_USERS` set and the caller's username not on it → `403 ai_not_allowed`, before the body is read. Then field validation (`400 invalid_body`), the image (`400 image_required`, `413 image_too_large` over 4 MB, `400 image_not_jpeg`), then one unit of the shared `ai_usage` quota (`AI_DAILY_LIMIT` per user per UTC day, `429 ai_daily_limit` with `Retry-After: 3600`). The unit is refunded only when Gemini certainly did not bill the call (429/5xx or unreachable); an unusable answer or a timeout after the request left keeps it. Consent is collected by the apps before anything is sent (same consent keys for both routes).
+
+**`POST /ai/estimate`** multipart: `image` (JPEG), `meal` (breakfast|lunch|snack|dinner), `locale` (en|pl, default en), `notes` (≤ 1500 characters; user details, "User corrections…" and "Measured reference…" lines). Response 200 (v2, backward compatible):
+
+```jsonc
+{ "version": 2,
+  "foods": [{ "name": "Pierogi ruskie", "grams": 210,
+              "kcal": 420, "protein": 13.7, "carbs": 63, "fat": 12.6,          // totals for grams
+              "proteinG": 13.7, "carbsG": 63, "fatG": 12.6,                   // legacy aliases
+              "confidence": 0.65, "isGuess": false,
+              "per100": { "kcal": 200, "protein": 6.5, "carbs": 30, "fat": 6, "alcohol": 0 },
+              "portionCount": 6, "portionUnit": "szt.", "gramsPerUnit": 35,
+              "nutritionSource": "generic_table",   // estimated | generic_table | visible_label | user_notes | open_food_facts
+              "cooking": "boiled", "genericKey": "pierogi_ruskie", "barcode": "",
+              "adjustments": ["generic_table", "confidence_capped"] }],
+  "totals": { "kcal": 420, "protein": 13.7, "carbs": 63, "fat": 12.6 },
+  "overallConfidence": 0.65, "scaleReferenceUsed": "talerz obiadowy", "assumptions": ["…"], "questions": ["…"],
+  "skipped": [{ "index": 1, "name": "Okrasa", "reason": "invalid_grams" }] }
 ```
-POST https://generativelanguage.googleapis.com/v1beta/interactions
-x-goog-api-key: GEMINI_API_KEY
-{ "model": GEMINI_MODEL,
-  "input": [ {"type":"text","text": <prompt>}, {"type":"image","data": <base64>, "mime_type":"image/jpeg"} ],
-  "response_format": { "type":"text", "mime_type":"application/json", "schema": <schema below> } }
+Old app builds keep working: every v1 field (`name, grams, kcal, protein/proteinG, carbs/carbsG, fat/fatG, confidence, isGuess`, `overallConfidence`, `assumptions`, `questions`, `scaleReferenceUsed`) is still present with the same meaning. The model never returns totals any more: the finalizer computes them from `per100 × grams`, grounds `per100` in the generic table when the model picked a `genericKey` for an estimated item, repairs kcal that disagree with 4/4/9/7 (protein/carbs/fat/alcohol) for estimated values, keeps label values, skips a bad item instead of failing the estimate, and caps confidence at 0.65 unless the notes give a weight or a measured length. A readable barcode is then grounded with Open Food Facts (`nutritionSource: open_food_facts`).
+
+**`POST /ai/label`** multipart: `image` (JPEG, the apps send up to 1600 px), `locale`. Response 200 — also when the table is unreadable (`legible: false`, `per100: null`):
+
+```jsonc
+{ "version": 1, "legible": true, "unreadableReason": null,   // illegible | no_energy | incomplete | no_serving_size | implausible
+  "basis": "per100g", "energyFrom": "kcal",                  // per100g | per100ml | perServing ; kcal | kj
+  "name": "Serek wiejski", "brand": "Piątnica",
+  "per100": { "kcal": 97, "protein": 11, "carbs": 2, "fat": 5, "fiber": null, "sugar": 2, "salt": 0.63 },
+  "servingSizeG": null, "packageSizeG": 200, "barcode": "", "confidence": 0.93, "needsReview": false }
 ```
-Read `output_text` and parse. If the Interactions endpoint returns 404 for the model, fall back to `POST /v1beta/models/{model}:generateContent` with `generationConfig.responseMimeType = "application/json"` and `responseSchema`. Prompt (English regardless of locale, but ask for `name` in the user's locale): identify each distinct food, estimate grams using visible scale references (dinner plate ≈ 26–28 cm, fork ≈ 19 cm, fist ≈ 150 g cooked rice, palm ≈ 100–120 g cooked meat, thumb ≈ 1 tbsp fat), add cooking fat as a separate item with `isGuess: true` when it is not visible but likely, do not underestimate large or oily portions, and return kcal/protein/carbs/fat from standard nutrition tables. Schema: `{foods: [{name, grams, kcal, proteinG, carbsG, fatG, confidence (0..1), isGuess (bool)}], overallConfidence (0..1), scaleReferenceUsed (string)}`. Response to the app: `{foods, overallConfidence}` (camelCase, numbers rounded to 1 decimal). If the request carries `X-Anthropic-Key`, reply 400 `{"error":"byok_is_device_direct"}` — the app calls Anthropic itself.
+kJ-only labels are converted (kcal = kJ / 4.184); per-portion-only labels are scaled by 100 / `servingSizeG`; per 100 ml is stored as per 100 g. `needsReview` flags numbers that do not add up (energy vs 4/4/9 + 2·fibre, sugar above carbs, confidence below 0.6).
+
+**Errors (both routes)** beyond the guards: `503 ai_busy` (Gemini 429/5xx on every model, or unreachable), `504 ai_timeout` (35 s per attempt, 65 s in total), `502 ai_upstream_error` (other provider error, or an answer without text), `502 ai_unparseable` (no usable JSON). Body: `{"error": "<code>", "message": "<human>"}`.
+
+**Gemini call.** Interactions API first:
+```
+POST https://generativelanguage.googleapis.com/v1beta/interactions      x-goog-api-key: GEMINI_API_KEY
+{ "model": GEMINI_MODEL, "store": false,
+  "system_instruction": <static prompt from the spec, one per language>,
+  "generation_config": { "thinking_level": GEMINI_THINKING_LEVEL (default "low") },
+  "input": [ {"type":"image","data":<base64>,"mime_type":"image/jpeg","resolution":"high"}, {"type":"text","text":<request text>} ],
+  "response_format": { "type":"text", "mime_type":"application/json", "schema": <spec schema without additionalProperties> } }
+```
+On 404 (model not served there) or 400 (request shape refused; logged as a warning), the same model is retried on `POST /v1beta/models/{model}:generateContent` with `systemInstruction`, `contents: [{role:"user", parts:[{inlineData}, {text}]}]` and `generationConfig: {responseMimeType:"application/json", responseJsonSchema, thinkingConfig:{thinkingLevel}, mediaResolution:"MEDIA_RESOLUTION_HIGH"}`. No temperature (Gemini 3 wants the default). 429, 5xx and timeouts move on to the next model of `GEMINI_FALLBACK_MODELS`. Every successful call logs `ai usage` with model, API, input/output/thought/cached tokens and latency.
 
 ## Tests (vitest)
 
-Pure-function tests that need no database: password policy, pair-code generation/charset, refresh-token rotation logic (against an in-memory fake of the token table), JWT issue/verify, APNs payload localization, the Gemini response parser (including a fenced/garbled JSON sample). Integration tests may run only when `DATABASE_URL` is set.
+Pure-function tests that need no database: password policy, pair-code generation/charset, refresh-token rotation logic (against an in-memory fake of the token table), JWT issue/verify, APNs payload localization, the Gemini request shapes, fallbacks and quota refunds, and the AI finalizer against the shared fixtures in `data/ai/fixtures`. Integration tests may run only when `DATABASE_URL` is set.
 
 ## Repo layout
 
@@ -158,7 +194,8 @@ backend/
   src/index.ts (boot: env, migrations, jobs, serve)  src/app.ts (Hono app + routes)
   src/env.ts  src/db.ts  src/auth/{jwt,apple,google,password,tokens}.ts  src/middleware/auth.ts
   src/routes/{auth,account,pair,schedule,attendance,headsups,events,push,ai,apple-notifications}.ts
-  src/push.ts  src/ai.ts  src/jobs.ts  src/i18n.ts  src/events.ts
+  src/push.ts  src/ai.ts  src/aiSpec.ts  src/aiFinalize.ts  src/jobs.ts  src/i18n.ts  src/events.ts
+  data/ai/estimate-spec.json  data/ai/fixtures/*.json  scripts/ai-fixtures.ts
   test/*.test.ts
 ```
 README: local run (`docker run postgres`, `npm run dev`), migrations, `fly launch --no-deploy`, `fly postgres create`/`attach`, `fly secrets set` list, deploy, how the app points at the URL (`AppConfig.backendBaseURL`).

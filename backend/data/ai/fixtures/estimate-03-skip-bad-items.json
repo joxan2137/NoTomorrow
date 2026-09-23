@@ -1,0 +1,180 @@
+{
+  "kind": "estimate",
+  "name": "Bad items are skipped, the estimate survives",
+  "description": "Pierogi with grams 0 are repaired from 6 × 35 g; okrasa with grams 0 and no portion is skipped; an empty name, a per100 whose macros exceed 105 g, a string item and an item with no nutrition at all are skipped too.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Pierogi z mięsem",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 35,
+        "grams": 0,
+        "per100": {
+          "kcal": 230,
+          "protein": 10,
+          "carbs": 27,
+          "fat": 9,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.7
+      },
+      {
+        "name": "Okrasa",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 0,
+        "portionUnit": "",
+        "gramsPerUnit": 0,
+        "grams": 0,
+        "per100": {
+          "kcal": 600,
+          "protein": 9,
+          "carbs": 0,
+          "fat": 62,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": true,
+        "confidence": 0.3
+      },
+      {
+        "name": "   ",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 100,
+        "grams": 100,
+        "per100": {
+          "kcal": 100,
+          "protein": 5,
+          "carbs": 10,
+          "fat": 3,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      {
+        "name": "Surówka",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 120,
+        "grams": 120,
+        "per100": {
+          "kcal": 100,
+          "protein": 60,
+          "carbs": 40,
+          "fat": 10,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      "kapusta zasmażana",
+      {
+        "name": "Sos",
+        "grams": 50
+      }
+    ],
+    "scaleReferenceUsed": "",
+    "assumptions": [
+      "  ",
+      "Okrasa niewidoczna"
+    ],
+    "questions": [],
+    "overallConfidence": "0,62"
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Pierogi z mięsem",
+        "grams": 210,
+        "kcal": 483,
+        "protein": 21,
+        "carbs": 56.7,
+        "fat": 18.9,
+        "confidence": 0.65,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 35,
+        "per100": {
+          "kcal": 230,
+          "protein": 10,
+          "carbs": 27,
+          "fat": 9,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "grams_from_portion",
+          "confidence_capped"
+        ],
+        "proteinG": 21,
+        "carbsG": 56.7,
+        "fatG": 18.9
+      }
+    ],
+    "totals": {
+      "kcal": 483,
+      "protein": 21,
+      "carbs": 56.7,
+      "fat": 18.9
+    },
+    "overallConfidence": 0.62,
+    "scaleReferenceUsed": "none",
+    "assumptions": [
+      "Okrasa niewidoczna"
+    ],
+    "questions": [],
+    "skipped": [
+      {
+        "index": 1,
+        "name": "Okrasa",
+        "reason": "invalid_grams"
+      },
+      {
+        "index": 2,
+        "name": "",
+        "reason": "no_name"
+      },
+      {
+        "index": 3,
+        "name": "Surówka",
+        "reason": "invalid_per100"
+      },
+      {
+        "index": 4,
+        "name": "",
+        "reason": "not_object"
+      },
+      {
+        "index": 5,
+        "name": "Sos",
+        "reason": "no_nutrition"
+      }
+    ]
+  }
+}

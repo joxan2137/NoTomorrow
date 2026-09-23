@@ -1,0 +1,40 @@
+{
+  "kind": "label",
+  "name": "Macros over 105 g per 100 g",
+  "description": "protein 60 + carbs 50 + fat 10 = 120 g > 105 → legible false, implausible.",
+  "raw": {
+    "legible": true,
+    "name": "Odżywka białkowa",
+    "brand": "",
+    "basis": "per100g",
+    "servingSizeG": 30,
+    "values": {
+      "kcal": 530,
+      "kj": 2218,
+      "protein": 60,
+      "carbs": 50,
+      "fat": 10,
+      "fiber": -1,
+      "sugar": 5,
+      "salt": 0.3
+    },
+    "packageSizeG": 700,
+    "barcode": "",
+    "confidence": 0.6
+  },
+  "expected": {
+    "version": 1,
+    "legible": false,
+    "unreadableReason": "implausible",
+    "basis": "per100g",
+    "energyFrom": null,
+    "name": "Odżywka białkowa",
+    "brand": "",
+    "per100": null,
+    "servingSizeG": 30,
+    "packageSizeG": 700,
+    "barcode": "",
+    "confidence": 0.6,
+    "needsReview": false
+  }
+}

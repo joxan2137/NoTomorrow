@@ -1,0 +1,40 @@
+{
+  "kind": "label",
+  "name": "A missing macronutrient",
+  "description": "fat not readable (-1) → legible false, incomplete.",
+  "raw": {
+    "legible": true,
+    "name": "Twaróg półtłusty",
+    "brand": "",
+    "basis": "per100g",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": 133,
+      "kj": 556,
+      "protein": 18.7,
+      "carbs": 3.7,
+      "fat": -1,
+      "fiber": -1,
+      "sugar": 3.7,
+      "salt": 0.1
+    },
+    "packageSizeG": 250,
+    "barcode": "",
+    "confidence": 0.7
+  },
+  "expected": {
+    "version": 1,
+    "legible": false,
+    "unreadableReason": "incomplete",
+    "basis": "per100g",
+    "energyFrom": null,
+    "name": "Twaróg półtłusty",
+    "brand": "",
+    "per100": null,
+    "servingSizeG": null,
+    "packageSizeG": 250,
+    "barcode": "",
+    "confidence": 0.7,
+    "needsReview": false
+  }
+}

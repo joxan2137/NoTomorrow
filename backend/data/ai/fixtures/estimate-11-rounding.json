@@ -1,0 +1,203 @@
+{
+  "kind": "estimate",
+  "name": "Rounding is floor(x × 10 + 0.5) / 10 on the IEEE double",
+  "description": "Values that sit on .x5 in decimal but not in binary: fat 1.4 × 175 g / 100 = 2.4499999999999997 → 2.4 (not 2.5); protein 9.2 × 162.5 / 100 = 14.949999999999998 → 14.9; confidence 0.145 × 100 = 14.499999999999998 → 0.14. Grams 0.04 rounds to 0 and the item is skipped. Totals use the rounded per100 and the rounded grams.",
+  "ctx": {
+    "weightGiven": true,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Kasza jaglana",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 175,
+        "grams": 175,
+        "per100": {
+          "kcal": 120,
+          "protein": 3.5,
+          "carbs": 24.6,
+          "fat": 1.4,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.655
+      },
+      {
+        "name": "Twarożek ze szczypiorkiem",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 162.5,
+        "grams": 162.5,
+        "per100": {
+          "kcal": 150,
+          "protein": 9.2,
+          "carbs": 3.5,
+          "fat": 11,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.145
+      },
+      {
+        "name": "Pomidor",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 0.04,
+        "grams": 0.04,
+        "per100": {
+          "kcal": 18,
+          "protein": 0.9,
+          "carbs": 3.3,
+          "fat": 0.2,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.6
+      },
+      {
+        "name": "Ogórek kiszony",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 3,
+        "portionUnit": "plaster",
+        "gramsPerUnit": 11.1,
+        "grams": 33.35,
+        "per100": {
+          "kcal": 12.25,
+          "protein": 0.95,
+          "carbs": 1.85,
+          "fat": 0.15,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.335
+      }
+    ],
+    "scaleReferenceUsed": "waga",
+    "assumptions": [],
+    "questions": [],
+    "overallConfidence": 0.645
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Kasza jaglana",
+        "grams": 175,
+        "kcal": 210,
+        "protein": 6.1,
+        "carbs": 43.1,
+        "fat": 2.4,
+        "confidence": 0.66,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "boiled",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 175,
+        "per100": {
+          "kcal": 120,
+          "protein": 3.5,
+          "carbs": 24.6,
+          "fat": 1.4,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 6.1,
+        "carbsG": 43.1,
+        "fatG": 2.4
+      },
+      {
+        "name": "Twarożek ze szczypiorkiem",
+        "grams": 162.5,
+        "kcal": 243.8,
+        "protein": 14.9,
+        "carbs": 5.7,
+        "fat": 17.9,
+        "confidence": 0.14,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "porcja",
+        "gramsPerUnit": 162.5,
+        "per100": {
+          "kcal": 150,
+          "protein": 9.2,
+          "carbs": 3.5,
+          "fat": 11,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 14.9,
+        "carbsG": 5.7,
+        "fatG": 17.9
+      },
+      {
+        "name": "Ogórek kiszony",
+        "grams": 33.4,
+        "kcal": 4.1,
+        "protein": 0.3,
+        "carbs": 0.6,
+        "fat": 0.1,
+        "confidence": 0.34,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 3,
+        "portionUnit": "plaster",
+        "gramsPerUnit": 11.1,
+        "per100": {
+          "kcal": 12.3,
+          "protein": 1,
+          "carbs": 1.9,
+          "fat": 0.2,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0.3,
+        "carbsG": 0.6,
+        "fatG": 0.1
+      }
+    ],
+    "totals": {
+      "kcal": 457.9,
+      "protein": 21.3,
+      "carbs": 49.4,
+      "fat": 20.4
+    },
+    "overallConfidence": 0.65,
+    "scaleReferenceUsed": "waga",
+    "assumptions": [],
+    "questions": [],
+    "skipped": [
+      {
+        "index": 2,
+        "name": "Pomidor",
+        "reason": "invalid_grams"
+      }
+    ]
+  }
+}

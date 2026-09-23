@@ -1,0 +1,11 @@
+{
+  "kind": "estimate",
+  "name": "Broken JSON is an error",
+  "description": "All three parse attempts fail → invalid_json.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "rawText": "{\"foods\": [ {\"name\": \"Zupa\" \"grams\": 300} ]}",
+  "expectedError": "invalid_json"
+}

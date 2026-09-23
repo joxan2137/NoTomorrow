@@ -1,0 +1,11 @@
+{
+  "kind": "estimate",
+  "name": "Prose only is an error",
+  "description": "No {…} in the text → no_json.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "rawText": "Nie widzę na zdjęciu żadnego jedzenia.",
+  "expectedError": "no_json"
+}

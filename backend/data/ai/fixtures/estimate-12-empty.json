@@ -1,0 +1,33 @@
+{
+  "kind": "estimate",
+  "name": "No food: empty list via the legacy \"items\" key",
+  "description": "An answer with an empty items array is a valid empty estimate. overallConfidence falls back to 0 (no items, no value).",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "items": [],
+    "scaleReferenceUsed": "none",
+    "assumptions": [
+      "To zdjęcie nie przedstawia jedzenia"
+    ]
+  },
+  "expected": {
+    "version": 2,
+    "foods": [],
+    "totals": {
+      "kcal": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0
+    },
+    "overallConfidence": 0,
+    "scaleReferenceUsed": "none",
+    "assumptions": [
+      "To zdjęcie nie przedstawia jedzenia"
+    ],
+    "questions": [],
+    "skipped": []
+  }
+}

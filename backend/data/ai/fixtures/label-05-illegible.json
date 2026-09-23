@@ -1,0 +1,40 @@
+{
+  "kind": "label",
+  "name": "Model reports the table as illegible",
+  "description": "legible false → no per100; name and brand pass through so the form can be pre-filled.",
+  "raw": {
+    "legible": false,
+    "name": "Kefir",
+    "brand": "Bakoma",
+    "basis": "per100g",
+    "servingSizeG": -1,
+    "values": {
+      "kcal": -1,
+      "kj": -1,
+      "protein": -1,
+      "carbs": -1,
+      "fat": -1,
+      "fiber": -1,
+      "sugar": -1,
+      "salt": -1
+    },
+    "packageSizeG": 400,
+    "barcode": "",
+    "confidence": 0.2
+  },
+  "expected": {
+    "version": 1,
+    "legible": false,
+    "unreadableReason": "illegible",
+    "basis": "per100g",
+    "energyFrom": null,
+    "name": "Kefir",
+    "brand": "Bakoma",
+    "per100": null,
+    "servingSizeG": null,
+    "packageSizeG": 400,
+    "barcode": "",
+    "confidence": 0.2,
+    "needsReview": false
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "kind": "estimate",
+  "name": "Generic-table grounding for pierogi, model per100 kept for okrasa",
+  "description": "pierogi_ruskie with nutritionSource estimated takes the table per100 (the model said 180 kcal/100 g); okrasa has genericKey none so its own per100 is used; no weight in the notes, so confidences are capped at 0.65.",
+  "ctx": {
+    "weightGiven": false,
+    "measuredReference": false
+  },
+  "raw": {
+    "foods": [
+      {
+        "name": "Pierogi ruskie",
+        "cooking": "boiled",
+        "genericKey": "pierogi_ruskie",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 35,
+        "grams": 210,
+        "per100": {
+          "kcal": 180,
+          "protein": 6,
+          "carbs": 28,
+          "fat": 5,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.8
+      },
+      {
+        "name": "Okrasa ze skwarkami",
+        "cooking": "pan_fried",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "łyżka",
+        "gramsPerUnit": 15,
+        "grams": 15,
+        "per100": {
+          "kcal": 600,
+          "protein": 9,
+          "carbs": 0,
+          "fat": 62,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": true,
+        "confidence": 0.4
+      },
+      {
+        "name": "Kompot",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szklanka",
+        "gramsPerUnit": 250,
+        "grams": 250,
+        "per100": {
+          "kcal": 45,
+          "protein": 0.2,
+          "carbs": 11,
+          "fat": 0,
+          "alcohol": 0
+        },
+        "nutritionSource": "estimated",
+        "barcode": "",
+        "isGuess": false,
+        "confidence": 0.5
+      }
+    ],
+    "scaleReferenceUsed": "talerz obiadowy ok. 26 cm",
+    "assumptions": [
+      "Pierogi gotowane, nie smażone",
+      "Okrasa z boczku"
+    ],
+    "questions": [
+      "Ile pierogów zjadłeś?",
+      "Czy okrasa była na maśle?"
+    ],
+    "overallConfidence": 0.7
+  },
+  "expected": {
+    "version": 2,
+    "foods": [
+      {
+        "name": "Pierogi ruskie",
+        "grams": 210,
+        "kcal": 420,
+        "protein": 13.7,
+        "carbs": 63,
+        "fat": 12.6,
+        "confidence": 0.65,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "generic_table",
+        "cooking": "boiled",
+        "genericKey": "pierogi_ruskie",
+        "portionCount": 6,
+        "portionUnit": "szt.",
+        "gramsPerUnit": 35,
+        "per100": {
+          "kcal": 200,
+          "protein": 6.5,
+          "carbs": 30,
+          "fat": 6,
+          "alcohol": 0
+        },
+        "adjustments": [
+          "generic_table",
+          "confidence_capped"
+        ],
+        "proteinG": 13.7,
+        "carbsG": 63,
+        "fatG": 12.6
+      },
+      {
+        "name": "Okrasa ze skwarkami",
+        "grams": 15,
+        "kcal": 90,
+        "protein": 1.4,
+        "carbs": 0,
+        "fat": 9.3,
+        "confidence": 0.4,
+        "isGuess": true,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "pan_fried",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "łyżka",
+        "gramsPerUnit": 15,
+        "per100": {
+          "kcal": 600,
+          "protein": 9,
+          "carbs": 0,
+          "fat": 62,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 1.4,
+        "carbsG": 0,
+        "fatG": 9.3
+      },
+      {
+        "name": "Kompot",
+        "grams": 250,
+        "kcal": 112.5,
+        "protein": 0.5,
+        "carbs": 27.5,
+        "fat": 0,
+        "confidence": 0.5,
+        "isGuess": false,
+        "barcode": "",
+        "nutritionSource": "estimated",
+        "cooking": "prepared",
+        "genericKey": "none",
+        "portionCount": 1,
+        "portionUnit": "szklanka",
+        "gramsPerUnit": 250,
+        "per100": {
+          "kcal": 45,
+          "protein": 0.2,
+          "carbs": 11,
+          "fat": 0,
+          "alcohol": 0
+        },
+        "adjustments": [],
+        "proteinG": 0.5,
+        "carbsG": 27.5,
+        "fatG": 0
+      }
+    ],
+    "totals": {
+      "kcal": 622.5,
+      "protein": 15.6,
+      "carbs": 90.5,
+      "fat": 21.9
+    },
+    "overallConfidence": 0.65,
+    "scaleReferenceUsed": "talerz obiadowy ok. 26 cm",
+    "assumptions": [
+      "Pierogi gotowane, nie smażone",
+      "Okrasa z boczku"
+    ],
+    "questions": [
+      "Ile pierogów zjadłeś?",
+      "Czy okrasa była na maśle?"
+    ],
+    "skipped": []
+  }
+}

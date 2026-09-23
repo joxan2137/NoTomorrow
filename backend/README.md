@@ -35,6 +35,18 @@ list or to add their own Gemini or Claude API key in Settings — those keys nev
 the app then calls Google or Anthropic directly from the phone. Leave the variable empty to let
 every signed-in user through (the boot log warns when Gemini is configured and the list is empty).
 
+Both AI routes (`POST /ai/estimate` for meal photos, `POST /ai/label` for nutrition-table photos)
+share `AI_DAILY_LIMIT` per user per UTC day. A unit is refunded only when Gemini certainly did not
+bill the call (rate-limited, overloaded or unreachable); an answer that could not be used, or a
+timeout after the request left, keeps it. Every call logs one `ai usage` line with the model, API
+and token counts (input, output, thought, cached) so real cost can be read from `fly logs`.
+`GEMINI_THINKING_LEVEL` (default `low`) sets the thinking depth.
+
+The prompts, JSON schemas, Atwater constants, limits and the generic Polish food table are in
+`data/ai/estimate-spec.json`; the apps bundle the same file for their bring-your-own-key paths, and
+`data/ai/fixtures/*.json` lock the three implementations together. After editing the spec run
+`npm run ai:fixtures -- --prompts` (prompt/table/schema edits) and `npm run ai:fixtures` (check).
+
 Optional providers (Apple, Google, APNs, Gemini) may be left blank: the server boots, logs a
 warning, and the routes that need them answer `503 {"error": "..._unavailable"}`. A *partially*
 configured provider is a boot error (it names the missing variables, never values).
@@ -52,6 +64,7 @@ with vitest's optional peer dependencies.
 | `npm test` | vitest (pure tests always; integration tests only with `DATABASE_URL`) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run breached:build` | regenerate `data/breached-passwords.txt` (top-10k list) |
+| `npm run ai:fixtures` | check the shared AI fixtures; `-- --prompts` regenerates the prompt fixtures, `-- --write` every expectation (review the diff) |
 
 ### Tests
 
@@ -102,6 +115,7 @@ fly secrets set --app notomorrow-api \
   APNS_PRODUCTION=true \
   GEMINI_API_KEY=... \
   GEMINI_MODEL=gemini-3.8-flash \
+  GEMINI_THINKING_LEVEL=low \
   AI_DAILY_LIMIT=30
 
 fly deploy --app notomorrow-api
@@ -112,7 +126,8 @@ fly logs --app notomorrow-api
 Full secrets list (required in bold): **`DATABASE_URL`** (set by `fly postgres attach`),
 **`JWT_SECRET`**, **`REFRESH_PEPPER`**, **`TOKEN_ENC_KEY`**, `APPLE_TEAM_ID`, `APPLE_BUNDLE_ID`,
 `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY_P8_B64`, `GOOGLE_CLIENT_IDS`, `APNS_KEY_ID`, `APNS_TEAM_ID`,
-`APNS_P8_B64`, `APNS_TOPIC`, `APNS_PRODUCTION`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `AI_DAILY_LIMIT`.
+`APNS_P8_B64`, `APNS_TOPIC`, `APNS_PRODUCTION`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
+`GEMINI_FALLBACK_MODELS`, `GEMINI_THINKING_LEVEL`, `AI_DAILY_LIMIT`, `AI_ALLOWED_USERS`.
 Non-secret env (`PORT`, `TZ`, `LOG_LEVEL`, `NODE_ENV`, `JOBS_ENABLED`) lives in `fly.toml`.
 
 Also register `https://<app>.fly.dev/apple/notifications` as the Sign in with Apple
