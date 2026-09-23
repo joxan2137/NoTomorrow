@@ -5,17 +5,19 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.RenderEffect as ComposeRenderEffect
 
 /**
  * The one-pass Liquid Glass shader (`docs/android-glass.md` §3.4).
  *
  * It consumes an **already blurred** input — a `BlurEffect` is chained beneath it — and does rim
- * refraction, the dynamic-range transfer, the specular rim, optional grain and the shape's
- * antialiased alpha in a single pass.
+ * refraction, chromatic dispersion, the dynamic-range transfer, the specular rim, optional grain
+ * and the shape's antialiased alpha in a single pass.
  *
  * Attribution: `sdRoundRect` is Inigo Quilez's standard rounded-box SDF; the `circleMap` rim
- * profile follows the approach in Kyant0/AndroidLiquidGlass (Apache-2.0).
+ * profile and the seven-band spectral weights of the dispersion follow the approach in
+ * Kyant0/AndroidLiquidGlass (Apache-2.0).
  *
  * Colour space: AGSL runs in the destination space, which for this app's non-wide-gamut window is
  * sRGB **with** the transfer curve applied — the same space every constant in §1.1 was measured in.
@@ -31,7 +33,10 @@ uniform float  refractHeight;
 uniform float  refractAmount;
 uniform float  refractPow;
 uniform float  lensMag;
-uniform float  dispersion;
+uniform float  chromaBody;
+uniform float  chromaRim;
+uniform float  chromaBand;
+uniform float2 chromaDrift;
 uniform float  rimWidth;
 uniform float  rimAlpha;
 uniform float2 lightDir;
@@ -95,15 +100,28 @@ half4 main(float2 coord) {
     }
 
     float3 src;
-    if (dispersion > 0.0) {
-        // Shorter wavelengths refract further, so blue carries the larger offset and a feature
-        // shows its blue copy pulled further in than its red one. The split rides on the *whole*
-        // displacement, magnification included — which is what the burst measures: 6.75 px red to
-        // blue on `burst-09`'s label where the local bend is ~28 px, and 1.25 px on its icon where
-        // only the magnification's ~5 px is acting. 12 % in both places.
-        src = float3(content.eval(coord + off * (1.0 - dispersion)).r,
-                     content.eval(coord + off).g,
-                     content.eval(coord + off * (1.0 + dispersion)).b);
+    if (chromaBody > 0.0 || chromaRim > 0.0 || dot(chromaDrift, chromaDrift) > 0.0) {
+        // Dispersion: seven bands, each sampled at `off + t * cv`, t running from +1 (red) to -1
+        // (violet). `cv` points outward, so red samples further out and a feature's red copy lands
+        // further *in* than its violet one — the violet/blue fringe is always the outer one, as on
+        // every iOS frame. The spread is its own field, not a fraction of the bend: a radial term,
+        // a rim band along the outward normal, and a drift along the lens's travel (violet leads).
+        float2 cv = chromaBody * p + chromaDrift;
+        if (chromaRim > 0.0 && depth < chromaBand) {
+            cv += (chromaRim * (1.0 - depth / chromaBand)) * sdGrad(p, halfSize, max(r, 1.0));
+        }
+        float2 bent = coord + off;
+        float3 red    = float3(content.eval(bent + cv).rgb);
+        float3 orange = float3(content.eval(bent + cv * 0.6667).rgb);
+        float3 yellow = float3(content.eval(bent + cv * 0.3333).rgb);
+        float3 green  = float3(content.eval(bent).rgb);
+        float3 cyan   = float3(content.eval(bent - cv * 0.3333).rgb);
+        float3 blue   = float3(content.eval(bent - cv * 0.6667).rgb);
+        float3 violet = float3(content.eval(bent - cv).rgb);
+        // Each channel's weights sum to 1, so flat content comes out unchanged.
+        src = float3((red.r + orange.r + yellow.r) / 3.5 + violet.r / 7.0,
+                     orange.g / 7.0 + (yellow.g + green.g + cyan.g) / 3.5,
+                     (cyan.b + blue.b + violet.b) / 3.0);
     } else {
         src = float3(content.eval(coord + off).rgb);
     }
@@ -171,12 +189,14 @@ internal const val NT_PASSTHROUGH_AGSL = """
 uniform shader content;
 uniform float2 size; uniform float2 pad; uniform float4 radii;
 uniform float refractHeight; uniform float refractAmount; uniform float refractPow; uniform float lensMag;
-uniform float dispersion; uniform float rimWidth; uniform float rimAlpha; uniform float2 lightDir;
+uniform float chromaBody; uniform float chromaRim; uniform float chromaBand; uniform float2 chromaDrift;
+uniform float rimWidth; uniform float rimAlpha; uniform float2 lightDir;
 uniform float rimAniso; uniform float contrast; uniform float liftLo; uniform float liftHi;
 uniform float liftK0; uniform float liftK1; uniform float adaptive; uniform float overlay; uniform float noise;
 layout(color) uniform half4 tint;
 half4 main(float2 coord) {
-    float k = (size.x + pad.x + radii.x + refractHeight + refractAmount + refractPow + lensMag + dispersion +
+    float k = (size.x + pad.x + radii.x + refractHeight + refractAmount + refractPow + lensMag +
+               chromaBody + chromaRim + chromaBand + chromaDrift.x +
                rimWidth + rimAlpha + lightDir.x + rimAniso + contrast + liftLo + liftHi + liftK0 + liftK1 +
                adaptive + overlay + noise + float(tint.a)) * 0.0;
     return content.eval(coord) + half4(half(k));
@@ -224,6 +244,20 @@ internal fun glassPadding(sigmaPx: Float, reachPx: Float = 0f): Int {
 }
 
 /**
+ * The furthest [style] samples outside its own shape, in px, for [glassPadding]: the lens band's
+ * bend (only a `refractionPower` style bends that far) plus the outermost dispersion tap, whose
+ * radial term grows with [halfExtentPx], the largest half-size the shape reaches. 0 for every
+ * static preset, so their layer size is untouched.
+ */
+internal fun Density.glassReachPx(style: GlassStyle, halfExtentPx: Float): Float {
+    val bend = if (style.refractionPower > 0f) style.refractionAmount.toPx() else 0f
+    val drift = style.dispersionDrift
+    val chroma = style.dispersion * halfExtentPx + style.dispersionRim.toPx() +
+        kotlin.math.hypot(drift.x.toPx(), drift.y.toPx())
+    return bend + chroma
+}
+
+/**
  * Binds everything in [style] that the shader reads, for a shape [widthPx] x [heightPx] whose
  * top-left corner sits at ([padXPx], [padYPx]) inside the effect layer. `liquidGlass` centres the
  * shape behind a uniform padding; `liquidGlassLens` moves it about inside a layer that never resizes.
@@ -246,7 +280,14 @@ internal fun RuntimeShader.bindGlassUniforms(
         setFloatUniform("refractAmount", style.refractionAmount.toPx())
         setFloatUniform("refractPow", style.refractionPower)
         setFloatUniform("lensMag", style.lensMagnification)
-        setFloatUniform("dispersion", style.dispersion)
+        setFloatUniform("chromaBody", style.dispersion)
+        setFloatUniform("chromaRim", style.dispersionRim.toPx())
+        setFloatUniform("chromaBand", style.dispersionBand.toPx())
+        setFloatUniform(
+            "chromaDrift",
+            style.dispersionDrift.x.toPx(),
+            style.dispersionDrift.y.toPx(),
+        )
         setFloatUniform("rimWidth", style.rimWidth.toPx())
         setFloatUniform("rimAlpha", style.rimAlpha)
         val a = Math.toRadians(style.rimAngle.toDouble() - 90.0)

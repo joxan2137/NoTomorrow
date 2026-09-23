@@ -193,10 +193,11 @@ private class LiquidGlassNode(
         }
 
         val sigmaPx = style.blurSigma.toPx()
-        // A `refractionPower` style bends across its whole band, so the outer ring of the shape
-        // samples up to `refractionAmount` *outside* itself and the effect layer has to be that
-        // much wider. The measured presets pass 0 here and keep their old layer size exactly.
-        val reachPx = if (style.refractionPower > 0f) style.refractionAmount.toPx() else 0f
+        // A `refractionPower` style bends across its whole band, and a dispersing one spreads its
+        // outer taps further still, so the outer ring of the shape samples *outside* itself and
+        // the effect layer has to be that much wider. The measured presets pass 0 here and keep
+        // their old layer size exactly.
+        val reachPx = glassReachPx(style, maxOf(size.width, size.height) / 2f)
         val pad = glassPadding(sigmaPx, reachPx)
         val w = size.width.roundToInt()
         val h = size.height.roundToInt()

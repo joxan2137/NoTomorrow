@@ -201,8 +201,9 @@ private class LiquidGlassLensNode(
         }
 
         // One allocation for the life of the node: the widest the shape will ever be, plus the
-        // blur kernel and the furthest the lens band can reach outside the shape at full motion.
-        val reachPx = if (maxStyle.refractionPower > 0f) maxStyle.refractionAmount.toPx() else 0f
+        // blur kernel and the furthest the lens band and its outermost dispersion tap can reach
+        // outside the shape at full motion.
+        val reachPx = glassReachPx(maxStyle, maxOf(maxSize.width.toPx(), maxSize.height.toPx()) / 2f)
         val pad = glassPadding(maxStyle.blurSigma.toPx(), reachPx)
         val layerW = ceil(maxSize.width.toPx()).toInt() + 2 * pad
         val layerH = ceil(maxSize.height.toPx()).toInt() + 2 * pad

@@ -3,6 +3,7 @@ package app.notomorrow.designsystem
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 
 /**
@@ -62,11 +63,21 @@ data class GlassStyle(
      */
     val lensMagnification: Float = 0f,
 
-    /**
-     * Chromatic dispersion, as a fraction of the local refraction offset: red is sampled at
-     * `(1 - dispersion)` of the bend, blue at `(1 + dispersion)`. 0 disables the two extra taps.
-     */
+    // ---- chromatic dispersion -------------------------------------------------------------
+    //
+    // Seven spectral bands, each sampled at `refraction offset + t * spread` with t running from
+    // +1 (red) to -1 (violet). The spread points outward, so a feature's violet copy always lands
+    // outside its red one. It is its own field — the sum of the three terms below — rather than
+    // a fraction of the bend, because iOS keeps the colour after the bend has relaxed. All three
+    // at 0 (every static preset) skip the six extra taps entirely.
+
+    /** Radial spread, px per px of distance from the shape's centre. */
     val dispersion: Float = 0f,
+    /** Spread at the rim along the outward normal, fading linearly to 0 across [dispersionBand]. */
+    val dispersionRim: Dp = 0.dp,
+    val dispersionBand: Dp = 0.dp,
+    /** Spread along the lens's travel: violet leads, red trails. */
+    val dispersionDrift: DpOffset = DpOffset.Zero,
 
     // ---- specular rim ---------------------------------------------------------------------
     /**
@@ -325,8 +336,23 @@ data class GlassStyle(
         //                     the magnification alone would give -9.5. It is back to zero by
         //                     ~40 px depth. A linear ramp over a 13 dp band peaking at 11.5 dp
         //                     reproduces both ends; `circleMap` cannot (it would need a 48 dp peak).
-        // Dispersion:         red-to-blue split 6.75 px on the label of `burst-09`, 1.25 px on its
-        //                     icon — 12 % of the local bend in both places.
+        // Dispersion:         re-measured 2026-09-23 per channel, at every edge a frame has. The old
+        //                     three-tap fit (12 % of the bend) rendered 0.7-1.4 px fringes mid-lens
+        //                     and none once the bend relaxed; iOS's are rainbows, and they sit in
+        //                     three places, none of which scales with the bend:
+        //                     - the rim band. Glyph edges near the blob's edge split up to 11-13 px
+        //                       violet-to-red by `key-05`'s left rim (90th percentile), and 4-8 px
+        //                       in the top and bottom ~12 dp of `burst-18`, where the pill has
+        //                       already shrunk back to its rest size;
+        //                     - the travel. `key-04`'s dumbbell trails a faint (+20-40/255) violet
+        //                       copy ~3 dp ahead of each plate and a red one behind, however far the
+        //                       plate is from the centre;
+        //                     - the interior. Only 0.3-0.7 px (`key-04`, `burst-11`).
+        //                     Hues: `key-05`'s saturated pixels run orange -> yellow -> green ->
+        //                     azure -> violet, not just red and blue, hence seven spectral bands.
+        //                     Sign: the violet copy is always the outer one (the blue edge above
+        //                     the warm platter-rim streak in `key-05`'s top crescent, the violet
+        //                     ghost above the roof in `burst-18`).
 
         /**
          * Peak blur while the lens is fully liquid; the rest state has none, the icon is crisp.
@@ -340,8 +366,45 @@ data class GlassStyle(
         private val PILL_LENS_BAND = 13.dp
         private val PILL_LENS_AMOUNT = 11.5.dp
         private const val PILL_MAGNIFICATION = 0.128f
-        private const val PILL_DISPERSION = 0.12f
         private const val PILL_RIM_ALPHA = 0.44f
+
+        /**
+         * The three dispersion terms at full colour (see the block above), fitted by rendering
+         * this shader over the burst's own rest frame and counting the pixels whose chroma
+         * (max - min) passes 12 % and 25 %, the same count run on the iOS frame:
+         *
+         * ```
+         *                    iOS          three-tap (old)   this
+         *   key-04  travel   0 / 1542     365 / 1615        306 / 1422
+         *   key-05  rim      3781 / 6200  740 / 1914        2840 / 5145
+         *   burst-18 settle  1233 / 1525  0 / 10            880 / 1481
+         *   burst-19 parked  0 / 66       0 / 0             0 / 0
+         * ```
+         *
+         * The old split was only ever right mid-travel: it died with the bend, so the settle —
+         * where iOS flashes its rainbow — came out grey. The rim band's violet-to-red centroid
+         * split is 1.1x its spread: 5 dp is ~16 px at the edge, ~8 px half-way in. The drift is
+         * small on purpose — `key-04`'s ghosts are faint, and a full dp of it turned a 10 pt label
+         * into a smear.
+         */
+        private const val PILL_DISPERSION = 0.012f
+        private val PILL_DISPERSION_RIM = 5.dp
+        private val PILL_DISPERSION_BAND = 16.dp
+        private val PILL_DISPERSION_DRIFT = 0.25.dp
+
+        /**
+         * How much of the rainbow `motion` carries: all of it from half-liquid up, none below 0.08.
+         *
+         * Mid-settle this is `sqrt`'s strength (0.54 at 0.3, where `burst-18` splits hardest). The
+         * cut-off is for the spring's tail: its last few hundredths of speed keep `motion` above 0
+         * for several hundred ms after the pill looks parked, and a `sqrt` curve turned that into
+         * blue fringes on a resting icon (17 frames of the 10x emulator burst). It also sits under
+         * `NtTabBarTokens.pillPressMotion`, so a held tab still shimmers.
+         */
+        private fun pillColour(m: Float): Float {
+            val t = ((m - 0.08f) / (0.5f - 0.08f)).coerceIn(0f, 1f)
+            return t * t * (3f - 2f * t)
+        }
         private val PILL_RIM_WIDTH = 1.5.dp
 
         /** MEASURED: 28 -> 61 over the platter. Additive, backdrop-independent, no rim. */
@@ -365,12 +428,20 @@ data class GlassStyle(
          * That is the whole reason the pill can be one node instead of a cross-fade between two.
          *
          * At 1 it is the lens: the same backdrop, lifted by +5 instead of +33 — magnified, bent
-         * outward at the rim, split into three colours and rimmed at 0.44. The blob reads as a
+         * outward at the rim, split into a spectrum and rimmed at 0.44. The blob reads as a
          * blob because of its *geometry*, not because of a brightness step: contrast never leaves
          * 1, so a glyph that passes under it comes out the brightness it went in.
+         *
+         * [drift] is the lens's signed speed along x, -1..1 of `NtTabBarTokens.pillVelocityMax`.
+         *
+         * The colour has its own curve, [pillColour]: `burst-18` is still split 4-8 px once the
+         * blob has shrunk back to its rest size, so the rainbow has to outlast the bend — and
+         * `burst-19` is clean, so it must not outlast it by much. At 0 it is 0 like everything
+         * else, and the rest state above still holds to the bit.
          */
-        fun pillLens(motion: Float): GlassStyle {
+        fun pillLens(motion: Float, drift: Float = 0f): GlassStyle {
             val m = motion.coerceIn(0f, 1f)
+            val colour = pillColour(m)
             return GlassStyle(
                 blurSigma = PILL_BLUR * m,
                 // Both scale with m so the band collapses to nothing at rest and the `if` in the
@@ -379,7 +450,10 @@ data class GlassStyle(
                 refractionAmount = PILL_LENS_AMOUNT * m,
                 refractionPower = 1f,
                 lensMagnification = PILL_MAGNIFICATION * m,
-                dispersion = PILL_DISPERSION * m,
+                dispersion = PILL_DISPERSION * colour,
+                dispersionRim = PILL_DISPERSION_RIM * colour,
+                dispersionBand = PILL_DISPERSION_BAND,
+                dispersionDrift = DpOffset(PILL_DISPERSION_DRIFT * (drift.coerceIn(-1f, 1f) * colour), 0.dp),
                 // Width scales too, so at rest `depth < rimWidth` is false everywhere and the
                 // shader's rim block is skipped rather than evaluated at alpha 0.
                 rimWidth = PILL_RIM_WIDTH * m,
