@@ -71,7 +71,7 @@ android/app/src/     Android app (app.notomorrow: feature/, designsystem/, servi
 backend/src/         API (routes/, auth/, ai.ts, aiFinalize.ts, push.ts, jobs.ts), migrations/, test/
 backend/data/ai/     AI spec (prompts, schemas, food table) + fixtures, shared with both apps
 docs/                architecture.md, backend.md, android-*.md — the specs
-design/              iOS reference captures and Android parity captures
+design/              iOS reference captures, Android parity captures, and the v2 redesign (design/v2)
 scripts/             string pipeline: xcstrings → Android res + typed keys; font fitting
 ```
 

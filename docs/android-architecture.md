@@ -653,7 +653,7 @@ Every item must exist and behave as the iOS original. Grouped by owner package.
 
 **Fuel** — `FuelHomeScreen` (+ subviews: `FuelHeader` with `DayChevron` / `DateButton` / `TodayPill`, hero ring, meal sections with `FuelMealHeaderRow` / `FuelEntryRow` / `EntrySwipeRow`, `FuelUndoToast`, add bar) · `FuelCalendarSheet` · `FoodSearchSheet` (+ `FoodRow`, `FoodResultRow`, `FoodRecentRow`, `FoodSectionLabel`, `FoodStateRow`) · `PortionSheet` + `PortionPickSheet` · `QuickAddSheet` · `EntryDayStepper` · `BarcodeScannerScreen` · `BarcodeLookupPrompts` · `ProductLabelSheet` · `AIScanScreen` (`AIScanSourceView`, `AIScanAnalyzingView`, `AIScanResultView`, `AIScanFailedView`, `AIScanSignedOutView`) · `AIScanFoodRow` + `ConfidenceDots` + `AIScanPhoto`/`DetectionTag` + `LogToMealButton` · `AIScanItemSheet`. (`AIScanAddMissedSheet` is gone: "add missed" is the search sheet in pick mode.) (`KcalLabel` and `ConfidenceDots` are **design-system** components — see the table above — not files in `feature/fuel/`: `KcalLabel` has two callers, `FoodSearchRows.kt` and `AIScanFoodRow.kt`.)
 
-**Progress** — `ProgressHomeScreen` · `ProgressLiftRow` · `BodyWeightCard` + `BodyTab` + `BodyDeltaLine` · `LogWeightSheet` · `ExerciseProgressScreen` · `SparklineChart` · `BodyWeightChart` · `E1RMChart` · `WeeklyVolumeChart`.
+**Progress** — `ProgressHomeScreen` · `ProgressLiftRow` · `BodyTab` + `BodyDeltaLine` · `LogWeightSheet` · `ExerciseProgressScreen` · `SparklineChart` · `BodyWeightChart` · `E1RMChart` · `WeeklyVolumeChart`.
 
 **Bro** — `BroScreen` · `BroSignedOutView` · `BroUnpairedView` · `BroSharedWeekCard` · `BroStatusCell` · `BroHeadsUpRow` + `HeadsUpChip` · `BroLogSection` + `BroLogRow` · `CantMakeItSheet` + `SheetChip` + `NtFlowLayout`.
 

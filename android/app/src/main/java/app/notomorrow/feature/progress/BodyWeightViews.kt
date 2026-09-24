@@ -1,7 +1,6 @@
 package app.notomorrow.feature.progress
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,80 +30,16 @@ import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.SectionHeader
 import app.notomorrow.designsystem.TabularText
-import app.notomorrow.designsystem.ntPlainClickable
-import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
 /**
- * The body-weight half of Progress — the port of `BodyWeightCard`, `BodyDeltaLine` and
- * `BodyTabView` (`Features/Progress/BodyWeightViews.swift`).
+ * The body-weight half of Progress — the port of `BodyDeltaLine` and `BodyTabView`
+ * (`Features/Progress/BodyWeightViews.swift`). v2 moved the compact body-weight card off the Lifts
+ * tab; the Body tab carries it all.
  */
-
-/** Compact card at the top of the Lifts tab: latest weight, 4-week delta, 120×48 sparkline. */
-@Composable
-fun BodyWeightCard(
-    stats: BodyStats,
-    unit: WeightUnit,
-    onLog: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val latest = stats.latest
-    NTCard(
-        // iOS is `.contentShape(…) + .onTapGesture` — a bare tap, no press feedback on the
-        // card itself; only the inner "Log weight" button press-scales.
-        modifier = modifier.then(
-            if (latest != null) Modifier.ntPlainClickable(onClick = onLog) else Modifier,
-        ),
-        padding = 0.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Eyebrow(stringResource(S.progress_bodyWeightTrend))
-                if (latest != null) {
-                    WeightHeadline(kg = latest.kg, unit = unit)
-                    BodyDeltaLine(stats = stats, unit = unit)
-                } else {
-                    NtText(
-                        text = stringResource(S.progress_noWeightYet),
-                        style = NT.Fonts.subheadline,
-                        color = NT.Colors.ink2,
-                    )
-                    Box(
-                        modifier = Modifier.height(NT.Size.control).pressScale(onClick = onLog),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        NtText(
-                            text = stringResource(S.progress_logWeight),
-                            style = NT.Fonts.subheadlineBold,
-                            color = NT.Colors.ink,
-                            maxLines = 1,
-                        )
-                    }
-                }
-            }
-
-            if (stats.entries.size >= 2) {
-                BodyWeightChart(
-                    raw = stats.entries.takeLast(28).map { it.kg },
-                    smoothed = stats.smoothed.takeLast(28),
-                    modifier = Modifier.size(width = 120.dp, height = 48.dp),
-                )
-            }
-        }
-    }
-}
 
 /** "+0,4 kg over 4 weeks · logged 21 of 28 days" — the delta run is ember. */
 @Composable
@@ -250,30 +185,6 @@ fun BodyTab(
 
 // MARK: - Shared bits
 
-/** `display(40)` weight with the unit in `subheadline`, first baselines aligned. */
-@Composable
-private fun WeightHeadline(kg: Double, unit: WeightUnit, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        NtText(
-            text = Fmt.weight(kg, unit, withUnit = false),
-            modifier = Modifier.alignByBaseline(),
-            style = NT.Fonts.display(40).tabular(),
-            color = NT.Colors.ink,
-            maxLines = 1,
-        )
-        NtText(
-            text = unit.raw,
-            modifier = Modifier.alignByBaseline(),
-            style = NT.Fonts.subheadline,
-            color = NT.Colors.ink2,
-            maxLines = 1,
-        )
-    }
-}
-
 /**
  * `footnote` with the **iOS line box**, not the HIG one.
  *
@@ -282,8 +193,9 @@ private fun WeightHeadline(kg: Double, unit: WeightUnit, modifier: Modifier = Mo
  * rounded up to a 16 pt view height), **not** the 18 pt `.footnote` text-style leading the
  * ramp in `NT.kt` encodes. On the 3× parity captures that is 48 px against our 54 px, and
  * the 6 px lands entirely below the "over 4 weeks · logged…" line: it made the compact
- * `BodyWeightCard` 2 dp taller than iOS (09-progress) and pushed the Body tab's "Log
- * weight" button, and the card bottom with it, 2 dp down (20-progress-body).
+ * body-weight card (on the Lifts tab until v2) 2 dp taller than iOS (09-progress) and pushed
+ * the Body tab's "Log weight" button, and the card bottom with it, 2 dp down
+ * (20-progress-body).
  *
  * Overriding it here keeps the fix inside Progress; the ramp itself (every `sans()` entry
  * carries the HIG leading rather than the `Font.system` line box) is a design-system call.
