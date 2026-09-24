@@ -133,26 +133,21 @@ struct SetNumberCell: View {
     }
 }
 
-/// The ✓ column: an ink disc when done, an outlined circle when not.
+/// The ✓ column: a 36 pt rounded square, ember with a dark check when done, surface-2 with a faint check when not.
 struct SetCheckButton: View {
     let isOn: Bool
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                if isOn {
-                    Circle().fill(NT.Colors.ink)
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(NT.Colors.onPrimary)
-                } else {
-                    Circle().strokeBorder(NT.Colors.ink3, lineWidth: 1.5)
-                }
-            }
-            .frame(width: 28, height: 28)
-            .frame(width: 48, height: NT.Size.control)
-            .contentShape(Rectangle())
+            Image(systemName: "checkmark")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(isOn ? NT.Colors.onPrimary : NT.Colors.ink3)
+                .frame(width: 36, height: 36)
+                .background(isOn ? NT.Colors.ember : NT.Colors.surface2,
+                            in: RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
+                .frame(width: 48, height: NT.Size.control)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

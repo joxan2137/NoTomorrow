@@ -198,6 +198,7 @@ fun ActiveWorkoutScreen(
                         model.removeSet(setId)
                     },
                     onRowAppear = model::prefillFromPrevious,
+                    onUseSuggestion = model::useSuggestion,
                 )
             }
         }

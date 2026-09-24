@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -119,7 +118,9 @@ class SetFieldFocus {
  * through, and a model value the text no longer reads as (a prefill, a tick's fallback) replaces
  * it — so a rounded or lb-converted number is never written back.
  *
- * [editing] is the workout editor's row: never dimmed or locked, the Previous column left blank.
+ * A completed row sits on a faint ember tint (radius `NT.Radius.cell`), its numbers at full
+ * strength. [editing] is the workout editor's row: never tinted or locked, the Previous column
+ * left blank.
  * [onDelete] adds "Delete set" to the kind menu. [onAppear] runs once per row, like `.onAppear`
  * (the active table prefills an open row from Previous there).
  */
@@ -141,7 +142,7 @@ fun SetRow(
     Row(
         modifier = modifier
             .height(NT.Size.control)
-            .alpha(if (row.isCompleted && !editing) 0.55f else 1f),
+            .then(if (row.isCompleted && !editing) Modifier.background(DONE_TINT, NtShapes.cell) else Modifier),
         horizontalArrangement = Arrangement.spacedBy(SetTable.spacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -302,7 +303,10 @@ private fun NumericCell(
     )
 }
 
-/** 28 dp check inside a 48 × 44 hit column. */
+/**
+ * `SetCheckButton`: a 36 dp rounded square (radius 10) inside a 48 × 44 hit column — ember with a
+ * dark check when done, `surface2` with a faint check when not.
+ */
 @Composable
 private fun CheckButton(isCompleted: Boolean, onToggle: () -> Unit) {
     Box(
@@ -313,19 +317,15 @@ private fun CheckButton(isCompleted: Boolean, onToggle: () -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
-                .then(
-                    if (isCompleted) {
-                        Modifier.background(NT.Colors.ink, CircleShape)
-                    } else {
-                        Modifier.border(1.5.dp, NT.Colors.ink3, CircleShape)
-                    }
-                ),
+                .size(36.dp)
+                .background(if (isCompleted) NT.Colors.ember else NT.Colors.surface2, NtShapes.cell),
             contentAlignment = Alignment.Center,
         ) {
-            if (isCompleted) {
-                NtIcon(NtIcons.Checkmark, size = sfIconSize(13f), tint = NT.Colors.onPrimary)
-            }
+            NtIcon(
+                NtIcons.Checkmark,
+                size = sfIconSize(15f),
+                tint = if (isCompleted) NT.Colors.onPrimary else NT.Colors.ink3,
+            )
         }
     }
 }
@@ -370,6 +370,9 @@ object SetInput {
 
 /** The em dash the Previous column shows when the exercise was never done. */
 private const val EM_DASH = "—"
+
+/** `NT.Colors.ember.opacity(0.07)` behind a completed row. */
+private val DONE_TINT = NT.Colors.ember.copy(alpha = 0.07f)
 
 // MARK: - Row state
 

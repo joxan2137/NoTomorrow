@@ -6,6 +6,7 @@ import app.notomorrow.data.dao.WorkoutDao
 import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.model.AttendanceStatus
 import app.notomorrow.model.SetKind
@@ -42,7 +43,7 @@ import java.time.ZoneId
  * derive on its own — the *previous* workout's rows per exercise and the "Last: 80 × 8" set —
  * are cached in [previousRows] / [previousLast] as plain values, reloaded exactly where iOS calls
  * `reloadPrevious()` (on every expand, since history may have been edited meanwhile). The user's
- * weight unit is re-read there too.
+ * weight unit and the routine's target reps (for the suggested weight) are re-read there too.
  *
  * Every write to a set runs under [writes], in call order: a tick right after typing sees the
  * number that was typed, and two keystrokes can never land in the wrong order.
@@ -68,6 +69,8 @@ class ActiveWorkoutViewModel(
     private val units: suspend () -> WeightUnit = { WeightUnit.Kg },
     /** Sends the attended day to the backend (`AttendanceSync.report`); a no-op in tests. */
     private val reportAttendance: AttendanceReporter = AttendanceReporter.None,
+    /** The routines, read with the unit: the one named like the workout gives the target reps. */
+    private val routines: suspend () -> List<RoutineWithItems> = { emptyList() },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ActiveWorkoutUiState())
@@ -97,6 +100,9 @@ class ActiveWorkoutViewModel(
 
     /** `unit` — cells, Previous, "Last:", the hint, the rest card and its notification show it. */
     private var unit = WeightUnit.Kg
+    /** `targetReps` — per exercise id, from the routine this workout was started from. */
+    private var targetReps: Map<String, Int> = emptyMap()
+    /** [unit] and [targetReps] are current. */
     private var unitLoaded = false
 
     /** Serialises the set writes (see the class comment). */
@@ -150,6 +156,7 @@ class ActiveWorkoutViewModel(
     private suspend fun ensurePrevious(graph: WorkoutWithExercises) {
         if (!unitLoaded) {
             unit = units()
+            targetReps = routineTargetReps(routines(), graph.workout.name)
             unitLoaded = true
         }
         val myId = graph.workout.id
@@ -188,6 +195,9 @@ class ActiveWorkoutViewModel(
                 locale = locale,
                 previousLast = exerciseId?.let { previousLast[it] },
                 previous = { slot -> previous(exerciseId, slot) },
+                suggestion = exerciseId?.let { id ->
+                    weightSuggestion(previousRows[id]?.normal.orEmpty(), targetReps[id], unit)
+                },
             )
         }
         _state.value = ActiveWorkoutUiState(
@@ -313,6 +323,24 @@ class ActiveWorkoutViewModel(
                 val entity = workoutDao.set(setId) ?: return@launch
                 val values = prefilledValues(entity.weightKg, entity.reps, entity.isCompleted, previous) ?: return@launch
                 workoutDao.updateSet(entity.copy(weightKg = values.weightKg, reps = values.reps))
+            }
+        }
+    }
+
+    /**
+     * `useSuggestion(_:in:)` — "Use": every open set of the exercise (not a warm-up, not a drop set)
+     * takes the suggested weight. Nothing changes a weight without this tap; the line goes once no
+     * open set is left at the previous top weight.
+     */
+    fun useSuggestion(exerciseUiId: Long) {
+        val suggestion = _state.value.exercises.firstOrNull { it.id == exerciseUiId }?.suggestion ?: return
+        viewModelScope.launch {
+            writes.withLock {
+                workoutDao.sets(exerciseUiId)
+                    .filter { !it.isCompleted && it.kind != SetKind.Warmup && it.kind != SetKind.Drop }
+                    .forEach { set ->
+                        if (set.weightKg != suggestion.toKg) workoutDao.updateSet(set.copy(weightKg = suggestion.toKg))
+                    }
             }
         }
     }

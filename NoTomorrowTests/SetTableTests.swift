@@ -212,4 +212,79 @@ final class SetTableTests: XCTestCase {
         XCTAssertTrue(Fmt.volume(100, unit: .lb).hasSuffix("lb"))
         XCTAssertTrue(Fmt.volume(100).hasSuffix("kg"))
     }
+
+    // MARK: Suggested weight (v2)
+
+    private func sets(_ kg: Double, _ reps: [Int]) -> [ActiveWorkoutModel.SetValue] {
+        reps.map { ActiveWorkoutModel.SetValue(weightKg: kg, reps: $0) }
+    }
+
+    func testSuggestionAddsAStepWhenEverySetReachedTheTarget() {
+        let suggestion = ActiveWorkoutModel.suggestion(previous: sets(80, [8, 8, 9]), targetReps: 8, unit: .kg)
+        XCTAssertEqual(suggestion, ActiveWorkoutModel.Suggestion(fromKg: 80, toKg: 82.5, reps: [8, 8, 9]))
+        XCTAssertNil(ActiveWorkoutModel.suggestion(previous: sets(80, [8, 8, 7]), targetReps: 8, unit: .kg),
+                     "one set short of the target")
+    }
+
+    func testWithoutATargetNoSetMayFallBelowTheFirst() {
+        XCTAssertEqual(ActiveWorkoutModel.suggestion(previous: sets(80, [8, 8, 8]), targetReps: nil, unit: .kg)?.toKg, 82.5)
+        XCTAssertEqual(ActiveWorkoutModel.suggestion(previous: sets(80, [8, 9]), targetReps: 0, unit: .kg)?.toKg, 82.5,
+                       "a zero target is no target")
+        XCTAssertNil(ActiveWorkoutModel.suggestion(previous: sets(80, [8, 8, 7]), targetReps: nil, unit: .kg))
+    }
+
+    func testNoSuggestionFromOneSetMixedWeightsOrNoWeight() {
+        XCTAssertNil(ActiveWorkoutModel.suggestion(previous: sets(80, [8]), targetReps: nil, unit: .kg))
+        XCTAssertNil(ActiveWorkoutModel.suggestion(previous: sets(80, [8]) + sets(82.5, [8]), targetReps: nil, unit: .kg))
+        XCTAssertNil(ActiveWorkoutModel.suggestion(previous: sets(0, [12, 12]), targetReps: nil, unit: .kg),
+                     "bodyweight sets have nothing to add to")
+    }
+
+    func testPoundUsersStepFivePounds() throws {
+        let kg = SetInput.weightKg("135", unit: .lb)
+        let suggestion = try XCTUnwrap(ActiveWorkoutModel.suggestion(previous: sets(kg, [5, 5]), targetReps: nil, unit: .lb))
+        XCTAssertEqual(Fmt.weight(suggestion.toKg, unit: .lb, withUnit: false), "140")
+        XCTAssertEqual(suggestion.fromKg, kg)
+    }
+
+    func testSuggestionShowsWhileAnOpenSetHasThePreviousWeight() {
+        let suggestion = ActiveWorkoutModel.Suggestion(fromKg: 80, toKg: 82.5, reps: [8, 8])
+        XCTAssertTrue(ActiveWorkoutModel.showsSuggestion(suggestion, openWeights: [82.5, 80]))
+        XCTAssertFalse(ActiveWorkoutModel.showsSuggestion(suggestion, openWeights: [82.5, 82.5]), "after Use")
+        XCTAssertFalse(ActiveWorkoutModel.showsSuggestion(suggestion, openWeights: []), "every set done")
+    }
+
+    func testUseMovesOnlyTheOpenWorkingSetsAndTheLineGoes() throws {
+        let ex = bench()
+        _ = workout(ex, start: .now.addingTimeInterval(-86_400), finished: true, rows: [
+            (.warmup, 40, 10, true), (.normal, 80, 8, true), (.normal, 80, 8, true), (.drop, 60, 6, true),
+        ])
+        let (today, entry) = workout(ex, start: .now.addingTimeInterval(-600), finished: false, rows: [
+            (.warmup, 40, 10, false), (.normal, 80, 8, true), (.normal, 80, 8, false), (.drop, 60, 6, false),
+        ])
+        let model = ActiveWorkoutModel(workout: today, context: context)
+
+        let suggestion = try XCTUnwrap(model.suggestion(for: entry), "the drop set and the warm-up do not count")
+        XCTAssertEqual(suggestion.toKg, 82.5)
+        model.useSuggestion(suggestion, in: entry)
+
+        XCTAssertEqual(entry.sortedSets.map(\.weightKg), [40, 80, 82.5, 60], "done, warm-up and drop sets keep theirs")
+        XCTAssertNil(model.suggestion(for: entry))
+    }
+
+    func testTheRoutineTargetGatesTheSuggestion() {
+        let ex = bench()
+        let routine = Routine(name: "Push A")
+        context.insert(routine)
+        let item = RoutineItem(order: 0, exercise: ex, targetSets: 2, targetReps: 10)
+        context.insert(item)
+        item.routine = routine
+        _ = workout(ex, start: .now.addingTimeInterval(-86_400), finished: true,
+                    rows: [(.normal, 80, 8, true), (.normal, 80, 8, true)])
+        let (today, entry) = workout(ex, start: .now.addingTimeInterval(-600), finished: false,
+                                     rows: [(.normal, 80, 8, false), (.normal, 80, 8, false)])
+        let model = ActiveWorkoutModel(workout: today, context: context)
+
+        XCTAssertNil(model.suggestion(for: entry), "Push A asks for 10: 8 · 8 does not move the weight up")
+    }
 }

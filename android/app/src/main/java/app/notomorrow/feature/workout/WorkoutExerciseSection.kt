@@ -2,6 +2,7 @@ package app.notomorrow.feature.workout
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.NT
@@ -48,8 +51,9 @@ import app.notomorrow.util.S
 
 /**
  * One exercise of the active workout — 1:1 port of `WorkoutExerciseSection.swift`.
- * Expanded it is header + column header + the set table + "Add set"; collapsed it is a
- * 60 dp row with the set count and the last time it was done.
+ * Expanded it is header + suggested weight + column header + the set table + "Add set"; collapsed
+ * it is a 60 dp row with the set count and the last time it was done. [onUseSuggestion] is the
+ * suggestion's Use.
  *
  * [editing] is the workout editor's section (`WorkoutEditExerciseSection`): always expanded, the
  * header shows the muscle only and its menu offers [onMoveUp] / [onMoveDown] (hidden when null,
@@ -77,6 +81,7 @@ fun WorkoutExerciseSection(
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
     onRowAppear: (Long) -> Unit = {},
+    onUseSuggestion: () -> Unit = {},
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -98,6 +103,7 @@ fun WorkoutExerciseSection(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onRowAppear = onRowAppear,
+            onUseSuggestion = onUseSuggestion,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -170,6 +176,7 @@ private fun Expanded(
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
     onRowAppear: (Long) -> Unit,
+    onUseSuggestion: () -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 12.dp),
@@ -185,6 +192,20 @@ private fun Expanded(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
         )
+        if (!editing) {
+            // `.transition(.opacity)`: Use fades the line out; latch the last suggestion so the
+            // exit has something to fade, as SwiftUI keeps the removed view alive.
+            val suggestion = exercise.suggestion
+            val shown = remember { mutableStateOf(suggestion) }
+            if (suggestion != null) shown.value = suggestion
+            AnimatedVisibility(
+                visible = suggestion != null,
+                enter = fadeIn(SUGGESTION_FADE),
+                exit = fadeOut(SUGGESTION_FADE),
+            ) {
+                shown.value?.let { SuggestionRow(suggestion = it, unit = unit, onUse = onUseSuggestion) }
+            }
+        }
         ColumnHeader(unit = unit, showsPrevious = !editing)
         for (row in exercise.sets) {
             key(row.id) {
@@ -294,6 +315,57 @@ private fun Header(
 }
 
 /**
+ * `suggestionRow(_:)` — "↑ Try 82.5 kg today" over "8 · 8 · 8 at 80 kg last time", and Use, which
+ * puts that weight in the open sets.
+ */
+@Composable
+private fun SuggestionRow(suggestion: WeightSuggestion, unit: WeightUnit, onUse: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NtIcon(NtIcons.ArrowUp, size = sfIconSize(13f), tint = NT.Colors.ember)
+        Column(
+            modifier = Modifier.weight(1f),
+            // `VStack(spacing: 1)` — the 13/18 line boxes already carry that leading.
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+        ) {
+            NtText(
+                text = stringResource(S.workout_suggest_try_s, Fmt.weight(suggestion.toKg, unit)),
+                style = NT.Fonts.footnoteBold.tabular(),
+                color = NT.Colors.ink,
+            )
+            NtText(
+                text = stringResource(
+                    S.workout_suggest_last_s_s,
+                    suggestion.reps.joinToString(SEPARATOR),
+                    Fmt.weight(suggestion.fromKg, unit),
+                ),
+                style = NT.Fonts.footnote.tabular(),
+                color = NT.Colors.ink2,
+            )
+        }
+        // `Spacer(minLength: 8)` between the `HStack(spacing: 10)` gaps.
+        Spacer(Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .widthIn(min = NT.Size.control)
+                .heightIn(min = 36.dp)
+                .ntPlainClickable(role = Role.Button, onClick = onUse),
+            contentAlignment = Alignment.Center,
+        ) {
+            NtText(
+                text = stringResource(S.workout_suggest_use),
+                style = NT.Fonts.subheadlineBold,
+                color = NT.Colors.ink,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/**
  * Set 36 · Previous flexible · kg (or lb) 60 · Reps 60 · check 48 — the widths are the contract.
  * The editor leaves the Previous column blank.
  */
@@ -393,6 +465,9 @@ private val HINT_SPRING_FLOAT = spring<Float>(dampingRatio = 0.7f, stiffness = 3
 /** `.scale(0.9, anchor: .leading)`. */
 private val LEADING = TransformOrigin(0f, 0.5f)
 
+/** `withAnimation(.easeInOut(duration: 0.2))` around Use — the suggestion fades out. */
+private val SUGGESTION_FADE = tween<Float>(200, easing = NT.Ease.inOut)
+
 // MARK: - Section state
 
 /** One exercise section of the active workout. */
@@ -408,4 +483,6 @@ data class WorkoutExerciseUi(
     /** "Last: 80 kg × 8". */
     val last: SetValue?,
     val sets: List<SetRowUi>,
+    /** The suggested weight while it applies (`ActiveWorkoutModel.suggestion(for:)`); never in the editor. */
+    val suggestion: WeightSuggestion? = null,
 )

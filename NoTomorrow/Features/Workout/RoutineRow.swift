@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One routine: name, "5 exercises · Bench, Press, Raise", and a white Start pill.
+/// One routine: name, "5 exercises · Bench, Press, Raise", and a round play button.
 struct RoutineRow: View {
     var routine: Routine
     var onStart: () -> Void
@@ -28,27 +28,28 @@ struct RoutineRow: View {
                     .lineLimit(2)
             }
             Spacer(minLength: 8)
-            StartPill(title: "workout.start", action: onStart)
+            StartPlayButton(routineName: routine.name, action: onStart)
         }
         .padding(.vertical, 14)
     }
 }
 
-/// Compact PrimaryButton: white capsule, ink label, hugs its content. For a button that sits beside text in a row.
-struct StartPill: View {
-    var title: LocalizedStringKey
+/// 40 pt surface-2 circle with an ink `play.fill`: starts the routine beside it. VoiceOver reads
+/// "Start workout, Push A".
+struct StartPlayButton: View {
+    var routineName: String
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(NT.Fonts.subheadlineBold)
-                .foregroundStyle(NT.Colors.onPrimary)
-                .lineLimit(1)
-                .padding(.horizontal, 18)
-                .frame(height: NT.Size.control)
-                .background(NT.Colors.ink, in: Capsule())
+            Image(systemName: "play.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(NT.Colors.ink)
+                .frame(width: 40, height: 40)
+                .background(NT.Colors.surface2, in: Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(PressScale())
+        .accessibilityLabel(Text("workout.start") + Text(verbatim: ", \(routineName)"))
     }
 }

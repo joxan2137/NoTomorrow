@@ -319,4 +319,26 @@ final class WorkoutStarterTests: XCTestCase {
                        "an ad-hoc workout does not shift the rotation")
         XCTAssertNil(DashboardModel.suggestedRoutine(routines: [], recentWorkoutNames: ["Push A"]))
     }
+
+    // MARK: History weeks
+
+    func testHistoryGroupsByISOWeek() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try XCTUnwrap(TimeZone(identifier: "Europe/Warsaw"))
+        func day(_ d: Int, _ hour: Int = 18) -> Date {
+            cal.date(from: DateComponents(year: 2026, month: 9, day: d, hour: hour))!
+        }
+        let now = day(24, 9)   // Thursday
+        XCTAssertEqual(HistoryWeek.of(day(21, 0), now: now, calendar: cal), .thisWeek, "Monday 00:00 opens the week")
+        XCTAssertEqual(HistoryWeek.of(day(20, 23), now: now, calendar: cal), .lastWeek, "Sunday closes the one before")
+        XCTAssertEqual(HistoryWeek.of(day(14, 0), now: now, calendar: cal), .lastWeek)
+        XCTAssertEqual(HistoryWeek.of(day(13), now: now, calendar: cal), .earlier)
+
+        let newestFirst = [day(23), day(21), day(18), day(2)]
+        let groups = HistoryWeek.grouped(newestFirst, date: { $0 }, now: now, calendar: cal)
+        XCTAssertEqual(groups.map(\.week), [.thisWeek, .lastWeek, .earlier])
+        XCTAssertEqual(groups.map(\.items), [[day(23), day(21)], [day(18)], [day(2)]], "each keeps its order")
+        XCTAssertEqual(HistoryWeek.grouped([day(2)], date: { $0 }, now: now, calendar: cal).map(\.week), [.earlier],
+                       "empty weeks are left out")
+    }
 }
