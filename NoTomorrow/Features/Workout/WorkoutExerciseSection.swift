@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// One exercise of the active workout: expanded (header + set table + add set) or collapsed to a 60 pt row.
+/// One exercise of the active workout: expanded (header + suggested weight + set table + add set) or collapsed to a
+/// 60 pt row.
 struct WorkoutExerciseSection: View {
     let exercise: WorkoutExercise
     let model: ActiveWorkoutModel
@@ -49,6 +50,10 @@ struct WorkoutExerciseSection: View {
     private var expanded: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
+            if let suggestion = model.suggestion(for: exercise) {
+                suggestionRow(suggestion)
+                    .transition(.opacity)
+            }
             SetColumnHeader(unit: model.unit)
             ForEach(exercise.sortedSets) { set in
                 SetRowView(set: set, exercise: exercise, model: model,
@@ -92,6 +97,32 @@ struct WorkoutExerciseSection: View {
     private var subtitle: String {
         let muscle = exercise.exercise?.primaryMuscles.first.map(WorkoutStrings.muscle)
         return [muscle, lastLine].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// "↑ Try 82.5 kg today" over "8 · 8 · 8 at 80 kg last time", and Use, which puts that weight in the open sets.
+    private func suggestionRow(_ suggestion: ActiveWorkoutModel.Suggestion) -> some View {
+        let reps = suggestion.reps.map { "\($0)" }.joined(separator: " · ")
+        return HStack(spacing: 10) {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(NT.Colors.ember)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("workout.suggest.try \(Fmt.weight(suggestion.toKg, unit: model.unit))")
+                    .font(NT.Fonts.footnoteBold).foregroundStyle(NT.Colors.ink).tabular()
+                Text("workout.suggest.last \(reps) \(Fmt.weight(suggestion.fromKg, unit: model.unit))")
+                    .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular()
+            }
+            Spacer(minLength: 8)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { model.useSuggestion(suggestion, in: exercise) }
+            } label: {
+                Text("workout.suggest.use")
+                    .font(NT.Fonts.subheadlineBold).foregroundStyle(NT.Colors.ink)
+                    .frame(minWidth: NT.Size.control, minHeight: 36)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private func hint(set: SetEntry, best: (weightKg: Double, reps: Int)) -> some View {

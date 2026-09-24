@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The one card on the dashboard: next session time, relative day + countdown, bro row, action row.
+/// The one card on the dashboard (its `FocalCard`): next session time, relative day + countdown, bro row, action row.
 struct NextSessionCard: View {
     var session: DashboardSession?
     var routineName: String?
@@ -24,7 +24,7 @@ struct NextSessionCard: View {
     private var partnerIsIn: Bool { partnerState == .confirmed || partnerState == .attended }
 
     var body: some View {
-        NTCard {
+        FocalCard {
             VStack(alignment: .leading, spacing: 14) {
                 titleRow
                 heroRow

@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0B">
+<title>No Tomorrow v2</title>
+<meta name="description" content="A UI redesign proposal for No Tomorrow, the gym and nutrition app for two. Interactive prototype, before/after, design system and rollout plan.">
+<meta property="og:title" content="No Tomorrow v2 — UI redesign proposal">
+<meta property="og:description" content="Keep the ember. Lose the empty space. An interactive prototype of the redesigned app.">
+<meta property="og:image" content="https://joxan2137.github.io/notomorrow/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #0A0A0B;
+    --ground-2: #0F0F11;
+    --surface: #161618;
+    --surface-2: #1E1E21;
+    --line: rgba(255,255,255,0.08);
+    --line-2: rgba(255,255,255,0.14);
+    --ink: #F4F4F6;
+    --ink-2: rgba(235,235,245,0.66);
+    --ink-3: rgba(235,235,245,0.42);
+    --ember: #FF6A2B;
+    --ember-hi: #FF8A55;
+    --ember-tint: rgba(255,106,43,0.13);
+    --good: #30D158;
+    --bad: #FF375F;
+    --protein: #5EB8FF; --carbs: #F5C04A; --fat: #B18CFF;
+    --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --wrap: 1180px;
+    --gutter: clamp(16px, 4vw, 40px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: inherit; }
+  img { display: block; max-width: 100%; }
+  ::selection { background: var(--ember); color: #160800; }
+  :focus-visible { outline: 2px solid var(--ember-hi); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  .eyebrow.ember { color: var(--ember); }
+  h1, h2, h3 { margin: 0; }
+  .display { font-family: var(--display); font-weight: 800; text-transform: uppercase; line-height: 0.9; letter-spacing: 0.005em; }
+  h2.display { font-size: clamp(44px, 6.4vw, 78px); }
+  .lead { font-size: clamp(18px, 1.6vw, 20px); color: var(--ink-2); max-width: 60ch; }
+  section { padding: clamp(72px, 10vw, 128px) 0 0; }
+  .sec-head { display: grid; gap: 18px; margin-bottom: clamp(32px, 5vw, 56px); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* top bar */
+  .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); background: rgba(10,10,11,0.72); border-bottom: 1px solid var(--line); }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; height: 58px; gap: 16px; }
+  .mark { font-family: var(--display); font-weight: 800; font-size: 24px; text-transform: uppercase; text-decoration: none; letter-spacing: 0.01em; white-space: nowrap; }
+  .mark span { color: var(--ember); }
+  .mark small { font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--ink-3); text-transform: none; letter-spacing: 0; margin-left: 8px; }
+  .top nav { display: flex; gap: 22px; font-size: 14px; }
+  .top nav a { text-decoration: none; color: var(--ink-2); }
+  .top nav a:hover { color: var(--ink); }
+  @media (max-width: 760px) { .top nav { display: none; } }
+  @media (max-width: 480px) { .mark small { display: none; } }
+
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border-radius: 26px; font-weight: 600; font-size: 16px; text-decoration: none; white-space: nowrap; transition: transform 0.15s ease, background 0.2s; border: 0; cursor: pointer; font-family: inherit; }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--ember); color: #160800; box-shadow: 0 10px 30px -10px rgba(255,106,43,0.55), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .btn.primary:hover { background: var(--ember-hi); }
+  .btn.ghost { background: rgba(255,255,255,0.07); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+  .btn.ghost:hover { background: rgba(255,255,255,0.11); }
+  .btn.sm { height: 40px; padding: 0 16px; font-size: 14px; }
+
+  /* hero */
+  .hero { position: relative; padding-top: clamp(36px, 6vw, 72px); }
+  .hero::before { content: ""; position: absolute; inset: -58px 0 auto; height: 900px; pointer-events: none; z-index: -1;
+    background: radial-gradient(50% 55% at 72% 40%, rgba(255,106,43,0.16), transparent 70%), radial-gradient(40% 40% at 10% 10%, rgba(255,106,43,0.06), transparent 70%); }
+  .hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(24px, 5vw, 72px); align-items: start; }
+  .hero-grid > :first-child { padding-top: clamp(0px, 3vw, 36px); }
+  .hero h1 { font-size: clamp(54px, 6.6vw, 90px); margin: 18px 0 24px; }
+  .hero h1 .e { color: var(--ember); }
+  .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 44px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .facts div { background: var(--ground); padding: 16px 18px; }
+  .facts b { display: block; font-family: var(--display); font-size: 36px; line-height: 1; font-weight: 800; }
+  .facts span { font-size: 13px; color: var(--ink-3); line-height: 1.4; display: block; margin-top: 6px; }
+  @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; } }
+
+  /* live phone */
+  .live { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .phone-wrap { position: relative; }
+  .device { position: absolute; top: 0; left: 0; width: 426px; height: 898px; padding: 12px; border-radius: 68px; transform-origin: top left;
+    background: linear-gradient(145deg, #2c2c30, #111113 40%, #1d1d20); box-shadow: 0 0 0 1.5px #3a3a3f, 0 40px 120px rgba(0,0,0,0.7), 0 0 120px -20px rgba(255,106,43,0.25); }
+  .device iframe { width: 402px; height: 874px; border: 0; border-radius: 56px; display: block; background: var(--ground); }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 440px; }
+  .jump button { height: 34px; padding: 0 14px; border-radius: 17px; border: 0; background: rgba(255,255,255,0.07); color: var(--ink-2); font: 600 13px var(--font); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); transition: background 0.2s, color 0.2s; }
+  .jump button:hover { color: var(--ink); background: rgba(255,255,255,0.12); }
+  .jump button.on { background: var(--ink); color: var(--ground); }
+  .live .hint { font-size: 13px; color: var(--ink-3); text-align: center; }
+
+  /* findings */
+  .findings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 980px) { .findings { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .findings { grid-template-columns: 1fr; } }
+  .finding { background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; }
+  .finding .shot { height: 250px; overflow: hidden; position: relative; background: #0b0b0c; border-bottom: 1px solid var(--line); }
+  .finding .shot img { width: 100%; height: 100%; object-fit: cover; }
+  .finding .shot.whole { display: flex; justify-content: center; gap: 14px; padding-top: 18px; }
+  .finding .shot.whole img { width: auto; height: 300px; flex: none; border-radius: 16px; box-shadow: 0 0 0 1px var(--line-2); object-fit: initial; }
+  .finding .shot::after { content: ""; position: absolute; inset: auto 0 0; height: 60px; background: linear-gradient(transparent, rgba(22,22,24,0.9)); }
+  .finding .shot .tag { position: absolute; left: 14px; top: 14px; z-index: 1; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,0.65); color: var(--ink-2); backdrop-filter: blur(6px); }
+  .finding .body { padding: 20px 22px 24px; }
+  .finding h3 { font-size: 20px; line-height: 1.25; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .finding h3 i { font-style: normal; color: var(--ember); font-family: var(--display); font-size: 22px; margin-right: 8px; }
+  .finding p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.55; }
+  .ctx { margin-top: 20px; font-size: 14px; color: var(--ink-3); max-width: 80ch; }
+
+  /* moves */
+  .moves { display: grid; gap: 14px; }
+  .move { display: grid; grid-template-columns: 76px minmax(0, 1fr) 300px; gap: 28px; align-items: center; background: var(--surface); border-radius: 24px; padding: 24px 28px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+  .move .n { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 0.85; color: var(--ember); }
+  .move h3 { font-size: clamp(21px, 2vw, 25px); letter-spacing: -0.015em; line-height: 1.2; }
+  .move p { margin: 10px 0 0; color: var(--ink-2); font-size: 16px; }
+  .move .see { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ember-hi); background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; }
+  .move .see:hover { text-decoration: underline; }
+  .move .crop { height: 190px; border-radius: 18px; overflow: hidden; position: relative; background: #0b0b0c; box-shadow: inset 0 0 0 1px var(--line); }
+  .move .crop img { width: 100%; height: 100%; object-fit: cover; }
+  @media (max-width: 900px) { .move { grid-template-columns: 1fr; gap: 14px; padding: 22px; } .move .n { font-size: 48px; } .move .crop { height: 220px; } }
+
+  /* before / after */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 28px; }
+  .tabs button { height: 40px; padding: 0 18px; border-radius: 20px; border: 0; background: rgba(255,255,255,0.06); color: var(--ink-2); font: 600 15px var(--font); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); transition: background 0.2s, color 0.2s; }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: var(--ground); box-shadow: none; }
+  .compare { display: grid; grid-template-columns: 300px 300px minmax(0, 1fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+  .compare figure { margin: 0; }
+  .compare figcaption { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .compare figcaption i { width: 8px; height: 8px; border-radius: 4px; background: var(--ink-3); display: inline-block; }
+  .compare figure.after figcaption { color: var(--ember); }
+  .compare figure.after figcaption i { background: var(--ember); }
+  .screen-img { border-radius: 40px; overflow: hidden; box-shadow: 0 0 0 1px var(--line-2), 0 30px 80px -30px rgba(0,0,0,0.9); background: #000; aspect-ratio: 402 / 874; }
+  .screen-img img { width: 100%; height: 100%; object-fit: cover; }
+  .compare figure.after .screen-img { box-shadow: 0 0 0 1px rgba(255,106,43,0.35), 0 30px 80px -30px rgba(255,106,43,0.35); }
+  .notes h3 { font-size: 26px; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .notes > p { color: var(--ink-2); margin: 0 0 18px; }
+  .notes ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .notes li { position: relative; padding-left: 26px; color: var(--ink-2); font-size: 16px; }
+  .notes li::before { content: ""; position: absolute; left: 0; top: 9px; width: 12px; height: 2px; border-radius: 1px; background: var(--ember); }
+  .notes li b { color: var(--ink); font-weight: 600; }
+  .notes .open { margin-top: 26px; }
+  @media (max-width: 1060px) { .compare { grid-template-columns: 1fr 1fr; } .notes { grid-column: 1 / -1; } }
+  @media (max-width: 520px) { .compare { gap: 12px; } .screen-img { border-radius: 24px; } }
+
+  /* design system */
+  .ds { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .ds { grid-template-columns: 1fr; } }
+  .ds > *, .code-grid > *, .compare > *, .hero-grid > * { min-width: 0; }
+  .panel { background: var(--surface); border-radius: 24px; padding: 26px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }
+  .panel h3 { font-size: 19px; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .panel > p { margin: 0 0 20px; color: var(--ink-3); font-size: 14px; }
+  .panel.wide { grid-column: 1 / -1; }
+  .swatches { display: grid; gap: 10px; }
+  .sw-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .sw { border-radius: 14px; overflow: hidden; background: var(--ground-2); box-shadow: inset 0 0 0 1px var(--line); }
+  .sw .chip { height: 54px; }
+  .sw .meta { padding: 8px 10px 10px; font-size: 12px; line-height: 1.35; }
+  .sw .meta b { display: block; font-size: 13px; }
+  .sw .meta code { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .sw .meta span { color: var(--ink-3); }
+  .sw.new .meta b::after { content: "new"; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ember); }
+  .type-spec { display: grid; gap: 16px; }
+  .type-spec .row { display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+  .type-spec .row:last-child { border-bottom: 0; }
+  .type-spec .k { font-size: 12px; color: var(--ink-3); font-family: var(--mono); }
+  .surfaces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 640px) { .surfaces { grid-template-columns: 1fr; } }
+  .surf { height: 170px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; font-size: 13px; color: var(--ink-2); position: relative; overflow: hidden; }
+  .surf b { color: var(--ink); font-size: 15px; display: block; }
+  .surf.card { background: #1C1C1E; }
+  .surf.herocard { background: radial-gradient(90% 70% at 100% 0%, rgba(255,106,43,0.13), transparent 65%), #1C1C1E; box-shadow: inset 0 1px 0 rgba(255,190,160,0.10), inset 0 0 0 1px rgba(255,106,43,0.12); }
+  .surf.glassy { background: repeating-linear-gradient(90deg, #26262a 0 18px, #1a1a1d 18px 36px); }
+  .surf.glassy .g { position: absolute; left: 14px; right: 14px; top: 16px; height: 44px; border-radius: 22px; background: rgba(28,28,31,0.72); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.08); }
+  pre { margin: 0; background: #0c0c0e; border-radius: 16px; padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #d7d7de; box-shadow: inset 0 0 0 1px var(--line); }
+  pre .c { color: #6c6c75; } pre .k { color: #ff8a55; } pre .t { color: #8ecfff; } pre .s { color: #f5c04a; }
+  .code-grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 16px; }
+  pre { font-size: 12.5px; }
+  @media (max-width: 900px) { .code-grid { grid-template-columns: 1fr; } }
+  .code-grid h4 { margin: 0 0 10px; font-size: 13px; color: var(--ink-3); font-weight: 600; }
+
+  /* plan */
+  .plan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: ph; }
+  @media (max-width: 900px) { .plan { grid-template-columns: 1fr; } }
+  .phase { background: var(--surface); border-radius: 24px; padding: 26px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 14px; }
+  .phase .ph { display: flex; justify-content: space-between; align-items: center; }
+  .phase .ph b { font-family: var(--display); font-size: 40px; line-height: 1; color: var(--ember); }
+  .phase h3 { font-size: 21px; letter-spacing: -0.01em; }
+  .phase ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 15px; display: grid; gap: 6px; }
+  .phase .be { margin-top: auto; font-size: 13px; padding: 10px 12px; border-radius: 12px; background: rgba(48,209,88,0.1); color: #7fe39a; }
+  .phase .be.some { background: rgba(245,192,74,0.1); color: #f5c04a; }
+  code.inl { font-family: var(--mono); font-size: 0.86em; background: rgba(255,255,255,0.07); padding: 1px 6px; border-radius: 6px; }
+
+  footer { margin-top: clamp(80px, 10vw, 140px); border-top: 1px solid var(--line); padding: 36px 0 60px; color: var(--ink-3); font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  footer p { margin: 0; max-width: 70ch; }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="#"><span>No</span> Tomorrow<small>v2 proposal</small></a>
+    <nav aria-label="Sections">
+      <a href="#problems">Diagnosis</a>
+      <a href="#moves">Six moves</a>
+      <a href="#compare">Before / after</a>
+      <a href="#system">Design system</a>
+      <a href="#plan">Shipping it</a>
+    </nav>
+    <a class="btn sm ghost" href="app/">Prototype ↗</a>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow ember">UI redesign proposal · No Tomorrow v2</div>
+        <h1 class="display">Keep the ember.<br><span class="e">Lose the empty space.</span></h1>
+        <p class="lead">The current app is tidy, but most screens are grey numbers in lists, whole screens sit empty until there's data, and the partner feature the app is built around lives in the fifth tab. This proposal keeps what already works: the ember-on-black look, the iOS&nbsp;26 Liquid Glass tab bar, and screens as quiet as they are today. It gives each screen one clear focus, draws data where a shape says more than a number, and brings your bro onto the screens where it matters.</p>
+        <div class="ctas">
+          <a class="btn primary" href="app/">Open the prototype
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn ghost" href="#compare">See before &amp; after</a>
+        </div>
+        <div class="facts">
+          <div><b class="num">6</b><span>screens redesigned: five tabs plus the live workout, all tappable</span></div>
+          <div><b class="num">12</b><span>flows to try, from ticking a PR set to logging dinner from a photo</span></div>
+          <div><b class="num">0</b><span>backend changes for phases 1 and 2; phase 3 needs one small one</span></div>
+        </div>
+      </div>
+      <div class="live">
+        <div class="phone-wrap" id="phoneWrap">
+          <div class="device" id="device"><iframe id="proto" src="app/?embed" title="No Tomorrow v2 interactive prototype" loading="eager"></iframe></div>
+        </div>
+        <div class="jump" role="group" aria-label="Jump to a screen">
+          <button data-tab="today" class="on">Today</button>
+          <button data-tab="train">Train</button>
+          <button data-workout>Live workout</button>
+          <button data-tab="fuel">Fuel</button>
+          <button data-ai>AI photo</button>
+          <button data-tab="progress">Progress</button>
+          <button data-tab="bro">Bro</button>
+        </div>
+        <div class="hint">It's live: tap <b>I'm in</b>, start the workout, tick a set. Drag along the tab bar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── diagnosis ───────────── -->
+  <section id="problems">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">01 · Diagnosis</div>
+        <h2 class="display">What's holding<br>the current UI back</h2>
+        <p class="lead">Six problems, each visible in the shipped iOS&nbsp;26 build. None of them is about taste. They're about where the eye lands and what the screen tells you to do next.</p>
+      </div>
+      <div class="findings">
+        <article class="finding">
+          <div class="shot whole"><span class="tag">Progress · Bro</span><img src="img/before-progress.webp" alt="Current Progress screen: a body-weight card, one lift row and a large empty area"><img src="img/before-bro.webp" alt="Current Bro screen: a sign-in card and a large empty area"></div>
+          <div class="body"><h3><i>1</i>Screens go empty</h3><p>With little data, Progress is one row over a black void, and the Bro tab is a sign-in box. Nothing on the screen says what to do to fill it.</p></div>
+        </article>
+        <article class="finding">
+          <div class="shot"><span class="tag">Train</span><img src="img/before-train.webp" alt="Current Train screen with three identical white Start workout buttons" style="object-position:50% 35%"></div>
+          <div class="body"><h3><i>2</i>Everything shouts equally</h3><p>Three identical white “Start workout” pills plus an outlined fourth. The one routine you're scheduled for today looks exactly like the ones you aren't.</p></div>
+        </article>
+        <article class="finding">
+          <div class="shot"><span class="tag">Fuel</span><img src="img/before-fuel.webp" alt="Current Fuel screen with grey macro bars and empty meal rows" style="object-position:50% 22%"></div>
+          <div class="body"><h3><i>3</i>Numbers without shapes</h3><p>Macros are three grey hairlines, the kcal ring has no colour, and Progress has no chart on its home screen. You read numbers instead of seeing trends.</p></div>
+        </article>
+        <article class="finding">
+          <div class="shot"><span class="tag">Today</span><img src="img/before-today.webp" alt="Current Today screen where the partner appears as one grey sentence" style="object-position:50% 55%"></div>
+          <div class="body"><h3><i>4</i>The bro is an afterthought</h3><p>The reason the app exists, keeping each other honest, is a grey sentence on Today and the fifth tab. The week strip only shows you, never both of you.</p></div>
+        </article>
+        <article class="finding">
+          <div class="shot"><span class="tag">Active workout</span><img src="img/before-workout.webp" alt="Current active workout screen: a plain table of sets" style="object-position:50% 17%"></div>
+          <div class="body"><h3><i>5</i>The workout is a spreadsheet</h3><p>No sense of progress through the session, a small state change when a set is done, and no hint of what to lift today beyond “previous”.</p></div>
+        </article>
+        <article class="finding">
+          <div class="shot"><span class="tag">Welcome</span><img src="img/before-welcome.webp" alt="Current welcome screen with the NO TOMORROW wordmark" style="object-position:50% 11%"></div>
+          <div class="body"><h3><i>6</i>The brand stops at the door</h3><p>The welcome screen is loud and confident. Past it, Big Shoulders only shows up for a couple of hero numbers and ember is used sparingly, so the app reads as generic dark iOS.</p></div>
+        </article>
+      </div>
+      <p class="ctx">The “current” screenshots are the repo's own iOS&nbsp;26 simulator captures (<code class="inl">design/parity/ios</code>), taken with test data, which explains values like 17&nbsp;300&nbsp;kcal. The critique is about layout and hierarchy, not the numbers. The two other directions in <code class="inl">design/</code> (stock iOS blue, brutalist yellow) were already explored and set aside; this builds on the chosen one.</p>
+    </div>
+  </section>
+
+  <!-- ───────────── moves ───────────── -->
+  <section id="moves">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">02 · The redesign</div>
+        <h2 class="display">Six moves</h2>
+        <p class="lead">No new brand, no new navigation, no extra chrome. The same five tabs, fonts and ember, with fewer and clearer things on each screen.</p>
+      </div>
+      <div class="moves">
+        <article class="move">
+          <div class="n">1</div>
+          <div><h3>One focal point per screen</h3><p>Each tab lifts one thing onto a card with a faint ember wash: the next session on Today, today's routine on Train, your lift on Progress, the week you share on Bro. Everything else stays on the plain surfaces the app already uses.</p><button class="see" data-go="today">See it on Today →</button></div>
+          <div class="crop"><img src="img/after-today.webp" alt="" style="object-position:50% 45%"></div>
+        </article>
+        <article class="move">
+          <div class="n">2</div>
+          <div><h3>Shapes where they help</h3><p>Progress gets a real chart: estimated 1RM with record markers and ranges, a sparkline per lift, a body-weight trend drawn through the raw weigh-ins, and a weekly muscle map from the <code class="inl">muscle_model.json</code> the app already ships. The other tabs stay lists.</p><button class="see" data-go="progress">See it on Progress →</button></div>
+          <div class="crop"><img src="img/after-progress.webp" alt="" style="object-position:50% 38%"></div>
+        </article>
+        <article class="move">
+          <div class="n">3</div>
+          <div><h3>Your bro, where it matters</h3><p>Two avatars and a one-tap answer on the next-session card. A dot under each day for who trained. One quiet line in the workout when he's training too. The Bro tab opens on your shared week instead of a settings-style page.</p><button class="see" data-go="bro">See it on Bro →</button></div>
+          <div class="crop"><img src="img/after-bro.webp" alt="" style="object-position:50% 18%"></div>
+        </article>
+        <article class="move">
+          <div class="n">4</div>
+          <div><h3>Colour with a job</h3><p>Ember means you, progress and records. Green means your partner and “confirmed”. Red only ever means “missed”. Protein, carbs and fat get their own hues so the kcal ring shows what the calories are made of. No other colour is added.</p><button class="see" data-go="fuel">See it on Fuel →</button></div>
+          <div class="crop"><img src="img/after-fuel.webp" alt="" style="object-position:50% 16%"></div>
+        </article>
+        <article class="move">
+          <div class="n">5</div>
+          <div><h3>A calmer workout screen</h3><p>A thin rail shows where you are. The next weight is suggested in one line (“82.5 kg today, you hit 8 · 8 · 7 at 80”) with Undo. Ticks are bigger, done sets are tinted, the rest timer sits at thumb height, and the other exercises collapse into a plain list.</p><button class="see" data-go="workout">Start a workout →</button></div>
+          <div class="crop"><img src="img/after-workout.webp" alt="" style="object-position:50% 32%"></div>
+        </article>
+        <article class="move">
+          <div class="n">6</div>
+          <div><h3>Native motion, kept</h3><p>The Liquid Glass tab bar works as it does in the shipped app, built to the numbers in <code class="inl">docs/android-glass.md</code>. The selection swells on touch, becomes a magnifying lens with a spectral rim while it slides or you drag it, then settles into the flat pill. Ticking a record set shows a short PR toast.</p><button class="see" data-go="today">Drag along the tab bar →</button></div>
+          <div class="crop"><img src="img/after-lens.webp" alt="" style="object-fit:contain;background:#0A0A0B"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── before / after ───────────── -->
+  <section id="compare">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">03 · Side by side</div>
+        <h2 class="display">Before / after</h2>
+        <p class="lead">Same screens, same features. Left is the shipped iOS build, right is the prototype.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Screens">
+        <button role="tab" aria-selected="true" data-k="today">Today</button>
+        <button role="tab" aria-selected="false" data-k="train">Train</button>
+        <button role="tab" aria-selected="false" data-k="workout">Workout</button>
+        <button role="tab" aria-selected="false" data-k="fuel">Fuel</button>
+        <button role="tab" aria-selected="false" data-k="progress">Progress</button>
+        <button role="tab" aria-selected="false" data-k="bro">Bro</button>
+      </div>
+      <div class="compare" role="tabpanel" id="comparePanel">
+        <figure class="before"><figcaption><i></i>Now</figcaption><div class="screen-img"><img id="imgBefore" src="img/before-today.webp" alt="Current Today screen"></div></figure>
+        <figure class="after"><figcaption><i></i>v2</figcaption><div class="screen-img"><img id="imgAfter" src="img/after-today.webp" alt="Redesigned Today screen"></div></figure>
+        <div class="notes" id="notes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── design system ───────────── -->
+  <section id="system">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">04 · Design system v2</div>
+        <h2 class="display">What changes<br>in the tokens</h2>
+        <p class="lead">Small and additive. Existing <code class="inl">NT.Colors</code>, fonts, radii and surfaces stay as they are. v2 adds three macro hues and one focal-card style. Android picks up the same values in its designsystem module.</p>
+      </div>
+      <div class="ds">
+        <div class="panel wide">
+          <h3>Colour</h3><p>Every hue has one job. Values not marked “new” already exist in <code class="inl">Theme.swift</code>.</p>
+          <div class="swatches">
+            <div class="sw-row">
+              <div class="sw"><div class="chip" style="background:#0A0A0B;box-shadow:inset 0 0 0 1px var(--line)"></div><div class="meta"><b>ground</b><code>#0A0A0B</code></div></div>
+              <div class="sw"><div class="chip" style="background:#1C1C1E"></div><div class="meta"><b>surface</b><code>#1C1C1E</code></div></div>
+              <div class="sw"><div class="chip" style="background:#2A2A2E"></div><div class="meta"><b>surface2</b><code>#2A2A2E</code></div></div>
+              <div class="sw"><div class="chip" style="background:#F2F2F4"></div><div class="meta"><b>ink</b><code>#F2F2F4</code></div></div>
+              <div class="sw"><div class="chip" style="background:#38383C"></div><div class="meta"><b>surface3</b><code>#38383C</code></div></div>
+            </div>
+            <div class="sw-row">
+              <div class="sw"><div class="chip" style="background:#FF6A2B"></div><div class="meta"><b>ember</b><code>#FF6A2B</code><span> · you, progress, PRs</span></div></div>
+              <div class="sw"><div class="chip" style="background:#30D158"></div><div class="meta"><b>good</b><code>#30D158</code><span> · your bro, confirmed</span></div></div>
+              <div class="sw"><div class="chip" style="background:#FF375F"></div><div class="meta"><b>bad</b><code>#FF375F</code><span> · missed, only</span></div></div>
+              <div class="sw new"><div class="chip" style="background:#5EB8FF"></div><div class="meta"><b>protein</b><code>#5EB8FF</code></div></div>
+              <div class="sw new"><div class="chip" style="background:#F5C04A"></div><div class="meta"><b>carbs</b><code>#F5C04A</code></div></div>
+              <div class="sw new"><div class="chip" style="background:#B18CFF"></div><div class="meta"><b>fat</b><code>#B18CFF</code></div></div>
+            </div>
+            <div class="sw-row" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+              <div class="sw"><div class="chip" style="background:#2A2A2E"></div><div class="meta"><b>heat 0</b><span>nothing</span></div></div>
+              <div class="sw"><div class="chip" style="background:#693927"></div><div class="meta"><b>heat 1</b></div></div>
+              <div class="sw"><div class="chip" style="background:#98492B"></div><div class="meta"><b>heat 2</b></div></div>
+              <div class="sw"><div class="chip" style="background:#CA592C"></div><div class="meta"><b>heat 3</b></div></div>
+              <div class="sw"><div class="chip" style="background:#FF6A2B"></div><div class="meta"><b>heat 4</b><span>on target</span></div></div>
+            </div>
+            <p style="margin:6px 0 0;font-size:13px;color:var(--ink-3)">The existing heat ramp also drives the muscle map (sets per muscle).</p>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Type</h3><p>Unchanged. Big Shoulders stays for the one big number on each screen.</p>
+          <div class="type-spec">
+            <div class="row"><span class="k">display 84</span><span class="display" style="font-size:72px;text-transform:none">18:00</span></div>
+            <div class="row"><span class="k">display 48</span><span class="display" style="font-size:44px;text-transform:none">1 124 <span style="font-family:var(--font);font-size:15px;font-weight:500;color:var(--ink-2);text-transform:none">kcal left</span></span></div>
+            <div class="row"><span class="k">largeTitle 34</span><span style="font-size:32px;font-weight:700;letter-spacing:-0.5px">Today</span></div>
+            <div class="row"><span class="k">title3 20</span><span style="font-size:20px;font-weight:650">Bench Press</span></div>
+            <div class="row"><span class="k">eyebrow 11</span><span class="eyebrow ember" style="font-size:11px">Next session</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Surfaces</h3><p>Plain cards as today, one focal card per screen, glass only for chrome.</p>
+          <div class="surfaces">
+            <div class="surf card"><b>Card</b>#1C1C1E, as today</div>
+            <div class="surf herocard"><b>Focal card</b>Faint ember wash and hairline</div>
+            <div class="surf glassy"><div class="g"></div><b>Glass</b>Tab bar, Fuel actions, rest timer, mini bar</div>
+          </div>
+        </div>
+        <div class="panel wide">
+          <h3>In code</h3><p>A sketch of the SwiftUI side. Compose mirrors it in <code class="inl">designsystem/</code>.</p>
+          <div class="code-grid">
+            <div><h4>Theme.swift: new tokens</h4>
+<pre><span class="k">enum</span> <span class="t">Colors</span> {
+    <span class="c">// …existing tokens unchanged…</span>
+
+    <span class="c">// Macro hues. Ember stays "you + progress".</span>
+    <span class="k">static let</span> protein   = <span class="t">Color</span>(hex: <span class="s">0x5EB8FF</span>)
+    <span class="k">static let</span> carbs     = <span class="t">Color</span>(hex: <span class="s">0xF5C04A</span>)
+    <span class="k">static let</span> fat       = <span class="t">Color</span>(hex: <span class="s">0xB18CFF</span>)
+}</pre></div>
+            <div><h4>Components.swift: the focal card</h4>
+<pre><span class="c">/// One per screen: the thing the user came to do.</span>
+<span class="k">struct</span> <span class="t">FocalCard</span>&lt;<span class="t">Content</span>: <span class="t">View</span>&gt;: <span class="t">View</span> {
+    <span class="k">@ViewBuilder var</span> content: () -&gt; <span class="t">Content</span>
+    <span class="k">private let</span> shape = <span class="t">RoundedRectangle</span>(
+        cornerRadius: <span class="t">NT</span>.Radius.card, style: .continuous)
+
+    <span class="k">var</span> body: <span class="k">some</span> <span class="t">View</span> {
+        content()
+            .padding(<span class="t">NT</span>.Spacing.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                <span class="t">RadialGradient</span>(
+                    colors: [<span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.13</span>), .clear],
+                    center: .topTrailing,
+                    startRadius: <span class="s">0</span>, endRadius: <span class="s">320</span>)
+                .background(<span class="t">NT</span>.Colors.surface)
+            }
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(
+                <span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.12</span>)))
+    }
+}</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── plan ───────────── -->
+  <section id="plan">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">05 · Shipping it</div>
+        <h2 class="display">Three phases,<br>each shippable</h2>
+        <p class="lead">Ordered so every phase lands on its own and improves the app before the next one starts. Both apps move together, as they do today.</p>
+      </div>
+      <div class="plan">
+        <article class="phase">
+          <div class="ph"><span class="eyebrow">Phase</span><b>1</b></div>
+          <h3>Foundation</h3>
+          <ul>
+            <li>Macro hues and the <code class="inl">FocalCard</code> style</li>
+            <li>Macro-coloured ring, sparkline</li>
+            <li>Week strip dots for both of you</li>
+          </ul>
+          <div class="be">No backend changes</div>
+        </article>
+        <article class="phase">
+          <div class="ph"><span class="eyebrow">Phase</span><b>2</b></div>
+          <h3>Today, Train, Workout</h3>
+          <ul>
+            <li>Next-session card with both of you</li>
+            <li>Today's routine card; routine rows with play</li>
+            <li>Workout rail, weight suggestion, bigger ticks</li>
+            <li>PR toast when a record set is ticked</li>
+          </ul>
+          <div class="be">No backend changes. Uses data the app already stores.</div>
+        </article>
+        <article class="phase">
+          <div class="ph"><span class="eyebrow">Phase</span><b>3</b></div>
+          <h3>Fuel, Progress, Bro</h3>
+          <ul>
+            <li>Ring and protein hint on Fuel</li>
+            <li>e1RM chart, muscle map, lift sparklines, body trend</li>
+            <li>Bro week grid and one-tap heads-ups</li>
+          </ul>
+          <div class="be some">One small backend addition: a “started workout” attendance event, so “Tomek is training too” can show live.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Prototype: plain HTML, CSS and JavaScript, no build step. Source lives in the NoTomorrow repo under <code class="inl">design/v2/</code>. All sample data is invented.</p>
+    <p><a href="app/">Open the prototype →</a></p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  // scale the embedded phone to the space available
+  const wrap = document.getElementById('phoneWrap'), device = document.getElementById('device');
+  function fit() {
+    const maxW = Math.min(wrap.parentElement.clientWidth, 460);
+    const maxH = window.innerWidth > 920 ? Math.max(560, window.innerHeight - 170) : 900;
+    const s = Math.min(maxW / 426, maxH / 898, 1);
+    device.style.transform = `scale(${s})`;
+    wrap.style.width = 426 * s + 'px';
+    wrap.style.height = 898 * s + 'px';
+  }
+  addEventListener('resize', fit); fit();
+
+  // drive the prototype from the page
+  const frame = document.getElementById('proto');
+  const jump = document.querySelectorAll('.jump button');
+  function send(msg, btn) {
+    frame.contentWindow.postMessage(msg, '*');
+    jump.forEach(b => b.classList.toggle('on', b === btn));
+  }
+  jump.forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.tab) send({ type: 'nt-tab', tab: b.dataset.tab }, b);
+    else if ('workout' in b.dataset) send({ type: 'nt-workout' }, b);
+    else if ('ai' in b.dataset) send({ type: 'nt-ai' }, b);
+  }));
+  const phoneTop = () => wrap.getBoundingClientRect().top + scrollY - 80;
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+    const go = b.dataset.go;
+    const target = [...jump].find(j => go === 'workout' ? 'workout' in j.dataset : j.dataset.tab === go);
+    scrollTo({ top: Math.max(0, phoneTop()), behavior: 'smooth' });
+    setTimeout(() => target && target.click(), 450);
+  }));
+
+  // before / after
+  const NOTES = {
+    today: { t: 'Today', d: 'Same layout, one clear question: are you going tonight?', li: [
+      '<b>The next session is the focal card,</b> with a faint ember wash. It shows the time, and whether your bro is in, with a one-tap answer.',
+      '<b>The week strip keeps its circles.</b> A dot under each day now shows who trained: ember for you, green for Tomek, red for a miss.',
+      '<b>Fuel keeps its row</b>, with macros in their own colours.',
+      '<b>Last session is one line</b> with its record count.' ] },
+    train: { t: 'Train', d: 'One routine is scheduled today. Now it looks like it.', li: [
+      '<b>One primary action.</b> Today\'s routine gets the focal card with its exercises, planned weights (the suggested increase marked ↑) and one Start button.',
+      '<b>The other routines become plain rows</b> with a small play button. There are no longer three identical white buttons competing.',
+      '<b>History is grouped by week</b>, with a record count where there is one.' ] },
+    workout: { t: 'Live workout', d: 'The screen you look at between sets, with less to read.', li: [
+      '<b>A thin rail</b> shows your place in the session, with “Exercise 1 of 5” and one quiet line when Tomek is training too.',
+      '<b>The next weight is suggested in one line</b>: “82.5 kg today. You hit 8 · 8 · 7 at 80 last time.” Undo puts it back.',
+      '<b>Bigger ticks.</b> Done sets are tinted and a record gets a small PR mark.',
+      '<b>The rest timer sits at thumb height</b> with −15 / +15 / Skip. The other exercises collapse into a plain list.' ] },
+    fuel: { t: 'Fuel', d: 'The ring shows what the calories are made of. The rest stays a simple log.', li: [
+      '<b>A macro-coloured ring.</b> Tap it to switch between left and eaten.',
+      '<b>Meals stay plain lists</b> with an AI tag on estimates. An empty meal shows how much protein is left.',
+      '<b>AI photo, Barcode and Search</b> sit in the glass bar at thumb height, as they do today.' ] },
+    progress: { t: 'Progress', d: 'The home screen finally has a chart on it.', li: [
+      '<b>An e1RM chart first,</b> with record markers, 1M / 3M / 1Y / All and a change label that follows the range.',
+      '<b>Muscles this week</b> reuses the muscle model the app already bundles, and says which muscles haven\'t been trained yet.',
+      '<b>Every lift gets a sparkline</b> and its 3-month change.',
+      '<b>Body:</b> raw weigh-ins as dots, the trend as a line, and the rate per week.' ] },
+    bro: { t: 'Bro', d: 'Opens on the week you share.', li: [
+      '<b>A You / Tomek × weekday grid</b> showing done, missed, “IN” and planned, plus “8 of 11 together in September”.',
+      '<b>Today\'s status and your answer</b> come next, then one-tap heads-ups: Can\'t make it · 15 min late · Let\'s go · Custom.',
+      '<b>The log reads like a feed</b>, with heads-up quotes and records. (The “before” shows the signed-out state; the paired screen used the same list layout.)' ] },
+  };
+  const tabs = document.querySelectorAll('.tabs button');
+  const notes = document.getElementById('notes');
+  const bImg = document.getElementById('imgBefore'), aImg = document.getElementById('imgAfter');
+  function show(k) {
+    const n = NOTES[k];
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.k === k)));
+    bImg.src = `img/before-${k}.webp`; bImg.alt = `Current ${n.t} screen`;
+    aImg.src = `img/after-${k}.webp`; aImg.alt = `Redesigned ${n.t} screen`;
+    notes.innerHTML = `<h3>${n.t}</h3><p>${n.d}</p><ul>${n.li.map(l => `<li>${l}</li>`).join('')}</ul>
+      <button class="btn ghost sm open" data-open="${k}">Try it in the prototype →</button>`;
+    notes.querySelector('[data-open]').addEventListener('click', () => {
+      const target = [...jump].find(j => k === 'workout' ? 'workout' in j.dataset : j.dataset.tab === k);
+      scrollTo({ top: Math.max(0, phoneTop()), behavior: 'smooth' });
+      setTimeout(() => target && target.click(), 450);
+    });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.k)));
+  document.querySelector('.tabs').addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const arr = [...tabs], i = arr.findIndex(t => t.getAttribute('aria-selected') === 'true');
+    const next = arr[(i + (e.key === 'ArrowRight' ? 1 : arr.length - 1)) % arr.length];
+    next.focus(); show(next.dataset.k);
+  });
+  show('today');
+  // preload the other pairs
+  Object.keys(NOTES).forEach(k => { new Image().src = `img/before-${k}.webp`; new Image().src = `img/after-${k}.webp`; });
+
+})();
+</script>
+</body>
+</html>

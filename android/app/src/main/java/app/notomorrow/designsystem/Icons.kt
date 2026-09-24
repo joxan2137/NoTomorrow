@@ -171,6 +171,9 @@ enum class NtIcons(
     /** SF `forward.end.fill` — skip rest. */
     ForwardEndFill(R.drawable.ic_forward_end_fill),
 
+    /** SF `play.fill` — a routine's start button on the Train tab. */
+    PlayFill(R.drawable.ic_play_fill),
+
     /** SF `medal`. */
     Medal(R.drawable.ic_medal),
 

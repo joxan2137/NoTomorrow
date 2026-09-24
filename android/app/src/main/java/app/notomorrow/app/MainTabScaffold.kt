@@ -305,6 +305,7 @@ private fun activeWorkoutModel(workoutId: String): ActiveWorkoutViewModel =
             strings = NtStrings.from(c.app),
             units = { c.db.profileDao().profile()?.units ?: WeightUnit.Kg },
             reportAttendance = c.attendanceReporter,
+            routines = { c.db.routineDao().routinesWithItems() },
         )
     }
 

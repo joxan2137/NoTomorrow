@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,13 +38,17 @@ import app.notomorrow.util.S
 
 // MARK: - Delta chip
 
-/** "↑ 14 kg in 3 months" — ember on `emberTint` when positive, `ink2` on `surface` otherwise. */
+/**
+ * `ProgressDeltaChip` (`ProgressSupport.swift`): "↑ 14 kg in 3 months" — ember on `emberTint` when
+ * positive, `ink2` on [neutral] otherwise; `surface` on the ground, `surface2` inside a card.
+ */
 @Composable
 fun DeltaChip(
     delta: Double,
     unit: WeightUnit,
     range: ProgressRange,
     modifier: Modifier = Modifier,
+    neutral: Color = NT.Colors.surface,
 ) {
     val positive = delta > 0
     val tint = if (positive) NT.Colors.ember else NT.Colors.ink2
@@ -56,7 +61,7 @@ fun DeltaChip(
         modifier = modifier
             .height(30.dp)
             .background(
-                color = if (positive) NT.Colors.emberTint else NT.Colors.surface,
+                color = if (positive) NT.Colors.emberTint else neutral,
                 shape = CircleShape,
             )
             .padding(horizontal = 12.dp),

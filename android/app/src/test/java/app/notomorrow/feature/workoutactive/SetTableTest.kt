@@ -1,20 +1,29 @@
 package app.notomorrow.feature.workoutactive
 
+import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.GymScheduleEntity
+import app.notomorrow.data.entity.RoutineEntity
+import app.notomorrow.data.entity.RoutineItemEntity
 import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.RoutineItemWithExercise
+import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.feature.workout.ActiveWorkoutViewModel
 import app.notomorrow.feature.workout.PreviousRows
 import app.notomorrow.feature.workout.SetInput
 import app.notomorrow.feature.workout.SetSlot
 import app.notomorrow.feature.workout.SetValue
+import app.notomorrow.feature.workout.WeightSuggestion
 import app.notomorrow.feature.workout.prefilledValues
 import app.notomorrow.feature.workout.previousValue
+import app.notomorrow.feature.workout.routineTargetReps
+import app.notomorrow.feature.workout.showsSuggestion
 import app.notomorrow.feature.workout.slots
 import app.notomorrow.feature.workout.valuesToLog
+import app.notomorrow.feature.workout.weightSuggestion
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.rest.RestTimerController
@@ -35,6 +44,7 @@ import java.time.ZoneOffset
 import java.util.Locale
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +62,8 @@ import org.junit.Test
 
 /**
  * The active set table (`SetTableTests.swift`): Previous lined up with warm-ups (product-ux-6), no
- * "0 × 0" sets, Delete set, Finish settling the records, and pounds in and out (product-ux-12).
+ * "0 × 0" sets, Delete set, Finish settling the records, pounds in and out (product-ux-12), and the
+ * suggested weight (v2).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetTableTest {
@@ -266,7 +277,122 @@ class SetTableTest {
         assertEquals(WeightUnit.Lb, model.state.value.unit)
     }
 
+    // MARK: Suggested weight (v2)
+
+    private fun sets(kg: Double, vararg reps: Int) = reps.map { SetValue(kg, it) }
+
+    @Test
+    fun `a suggestion adds a step when every set reached the target`() {
+        assertEquals(
+            WeightSuggestion(fromKg = 80.0, toKg = 82.5, reps = listOf(8, 8, 9)),
+            weightSuggestion(sets(80.0, 8, 8, 9), targetReps = 8, unit = WeightUnit.Kg),
+        )
+        assertNull(weightSuggestion(sets(80.0, 8, 8, 7), targetReps = 8, unit = WeightUnit.Kg), "one set short of the target")
+    }
+
+    @Test
+    fun `without a target no set may fall below the first`() {
+        assertEquals(82.5, weightSuggestion(sets(80.0, 8, 8, 8), targetReps = null, unit = WeightUnit.Kg)?.toKg)
+        assertEquals(
+            82.5,
+            weightSuggestion(sets(80.0, 8, 9), targetReps = 0, unit = WeightUnit.Kg)?.toKg,
+            "a zero target is no target",
+        )
+        assertNull(weightSuggestion(sets(80.0, 8, 8, 7), targetReps = null, unit = WeightUnit.Kg))
+    }
+
+    @Test
+    fun `no suggestion from one set, mixed weights or no weight`() {
+        assertNull(weightSuggestion(sets(80.0, 8), targetReps = null, unit = WeightUnit.Kg))
+        assertNull(weightSuggestion(sets(80.0, 8) + sets(82.5, 8), targetReps = null, unit = WeightUnit.Kg))
+        assertNull(
+            weightSuggestion(sets(0.0, 12, 12), targetReps = null, unit = WeightUnit.Kg),
+            "bodyweight sets have nothing to add to",
+        )
+    }
+
+    @Test
+    fun `pound users step five pounds`() {
+        val kg = SetInput.weightKg("135", WeightUnit.Lb)
+        val suggestion = assertNotNull(weightSuggestion(sets(kg, 5, 5), targetReps = null, unit = WeightUnit.Lb))
+        assertEquals("140", Fmt.weight(suggestion.toKg, WeightUnit.Lb, withUnit = false))
+        assertEquals(kg, suggestion.fromKg)
+    }
+
+    @Test
+    fun `the suggestion shows while an open set has the previous weight`() {
+        val suggestion = WeightSuggestion(fromKg = 80.0, toKg = 82.5, reps = listOf(8, 8))
+        assertTrue(showsSuggestion(suggestion, listOf(82.5, 80.0)))
+        assertFalse(showsSuggestion(suggestion, listOf(82.5, 82.5)), "after Use")
+        assertFalse(showsSuggestion(suggestion, emptyList()), "every set done")
+    }
+
+    @Test
+    fun `previous normal rows leave out warm-ups and drop sets`() {
+        val rows = PreviousRows.of(
+            listOf(
+                completed(0, SetKind.Warmup, 40.0, 10),
+                completed(1, SetKind.Normal, 80.0, 8),
+                completed(2, SetKind.Failure, 80.0, 6),
+                completed(3, SetKind.Drop, 60.0, 6),
+            ),
+        )
+        assertEquals(listOf(SetValue(80.0, 8), SetValue(80.0, 6)), rows.normal)
+    }
+
+    @Test
+    fun `routine target reps come from the routine named like the workout`() {
+        val routines = listOf(pushA(targetReps = 10))
+        assertEquals(mapOf(BENCH to 10), routineTargetReps(routines, "Push A"))
+        assertEquals(emptyMap(), routineTargetReps(routines, "Trening"), "an ad-hoc workout has no target")
+    }
+
+    @Test
+    fun `use moves only the open working sets and the line goes`() = runTest {
+        seedFinished("old", startedAt = now - 86_400_000L, rows = listOf(
+            Row(SetKind.Warmup, 40.0, 10), Row(SetKind.Normal, 80.0, 8), Row(SetKind.Normal, 80.0, 8), Row(SetKind.Drop, 60.0, 6),
+        ))
+        seedActive(rows = listOf(
+            Row(SetKind.Warmup, 40.0, 10), Row(SetKind.Normal, 80.0, 8, done = true), Row(SetKind.Normal, 80.0, 8),
+            Row(SetKind.Drop, 60.0, 6),
+        ))
+        val model = model(newSession())
+        runCurrent()
+
+        val section = model.state.value.exercises.single()
+        assertEquals(82.5, section.suggestion?.toKg, "the drop set and the warm-up do not count")
+        model.useSuggestion(section.id)
+        runCurrent()
+
+        assertEquals(
+            listOf(40.0, 80.0, 82.5, 60.0),
+            workouts.sets.value.filter { it.workoutExerciseId == section.id }.sortedBy { it.order }.map { it.weightKg },
+            "done, warm-up and drop sets keep theirs",
+        )
+        assertNull(model.state.value.exercises.single().suggestion)
+    }
+
+    @Test
+    fun `the routine target gates the suggestion`() = runTest {
+        seedFinished("old", startedAt = now - 86_400_000L, rows = listOf(Row(SetKind.Normal, 80.0, 8), Row(SetKind.Normal, 80.0, 8)))
+        seedActive(rows = listOf(Row(SetKind.Normal, 80.0, 8), Row(SetKind.Normal, 80.0, 8)))
+        val model = model(newSession(), routines = listOf(pushA(targetReps = 10)))
+        runCurrent()
+
+        assertNull(model.state.value.exercises.single().suggestion, "Push A asks for 10: 8 · 8 does not move the weight up")
+    }
+
     // MARK: Fixtures
+
+    private fun pushA(targetReps: Int) = RoutineWithItems(
+        RoutineEntity(id = "push", name = "Push A"),
+        listOf(
+            RoutineItemWithExercise(
+                RoutineItemEntity(routineId = "push", exerciseId = BENCH, order = 0, targetSets = 2, targetReps = targetReps),
+                ExerciseEntity(id = BENCH, name = "Bench"),
+            ),
+        ),
+    )
 
     private data class Row(val kind: SetKind, val kg: Double = 0.0, val reps: Int = 0, val done: Boolean = false)
 
@@ -335,7 +461,11 @@ class SetTableTest {
         backgroundScope,
     ).also { it.awaitRestored() }
 
-    private fun model(session: WorkoutSessionController, unit: WeightUnit = WeightUnit.Kg) = ActiveWorkoutViewModel(
+    private fun model(
+        session: WorkoutSessionController,
+        unit: WeightUnit = WeightUnit.Kg,
+        routines: List<RoutineWithItems> = emptyList(),
+    ) = ActiveWorkoutViewModel(
         workoutId = ACTIVE,
         workoutDao = workouts,
         recordService = RecordService(workouts),
@@ -352,6 +482,7 @@ class SetTableTest {
         zone = zone,
         clock = { now },
         units = { unit },
+        routines = { routines },
     )
 
     private companion object {

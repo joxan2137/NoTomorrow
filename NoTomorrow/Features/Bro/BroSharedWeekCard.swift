@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The one card on the Bro tab: Mon–Sun letters, a row of cells for me and one for the partner,
-/// then the next session line with who confirmed when.
+/// The one card on the Bro tab, and its focal card (v2): Mon–Sun letters, a row of cells for me and one for the
+/// partner, then the next session line with who confirmed when.
 struct BroSharedWeekCard: View {
     var week: [WeekDay]
     var partnerName: String
@@ -10,7 +10,7 @@ struct BroSharedWeekCard: View {
     private let labelWidth: CGFloat = 52
 
     var body: some View {
-        NTCard(padding: 0) {
+        FocalCard(padding: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 lettersRow
                 cellsRow(label: Text("bro.you")) { $0.myState }

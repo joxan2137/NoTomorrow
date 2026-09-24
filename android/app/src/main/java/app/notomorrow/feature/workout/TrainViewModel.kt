@@ -6,8 +6,10 @@ import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.di.AppContainer
+import app.notomorrow.feature.dashboard.DashboardViewModel
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.WorkoutSessionController
+import app.notomorrow.util.Fmt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /**
  * The Train tab's state — the port of the `@Query`s in `TrainView.swift`, plus its start guard.
@@ -24,8 +27,10 @@ import kotlinx.coroutines.launch
  * the screen turns timestamps into text through `Fmt`, so a language change re-renders without the
  * view model knowing.
  *
- * A workout in progress lives in the mini bar above the tab bar (the resume card is gone); Start
- * while one runs asks first ([blockedStart]), because only one workout runs at a time.
+ * A workout in progress lives in the mini bar above the tab bar; Start while one runs asks first
+ * ([blockedStart]), because only one workout runs at a time. The "Up next" card leads the tab with
+ * the routine the Today card suggests (`DashboardViewModel.suggestedRoutine`), and turns into
+ * Resume while a workout is in progress; the routine list below holds the others.
  */
 class TrainViewModel internal constructor(
     private val stores: WorkoutStarter.Stores,
@@ -49,11 +54,20 @@ class TrainViewModel internal constructor(
         // `@Query(filter: endedAt != nil, sort: startedAt, .reverse)` — iOS has no limit.
         workoutDao.observeFinishedWorkoutsWithExercises(Int.MAX_VALUE),
         profileDao.observeProfile(),
-    ) { routines, history, profile ->
+        session.isWorkoutInProgress,
+    ) { routines, history, profile, inProgress ->
+        // `TrainView.upNextRoutine`: the routine after the last one done, as on Today.
+        val upNextId = DashboardViewModel.suggestedRoutine(
+            routines = routines.map { it.routine },
+            recentWorkoutNames = history.map { it.workout.name },
+        )?.id
         TrainUiState(
-            routines = routines.map(::rowItem),
+            upNext = routines.firstOrNull { it.routine.id == upNextId }?.let(::upNextItem),
+            routines = routines.filter { it.routine.id != upNextId }.map(::rowItem),
+            hasRoutines = routines.isNotEmpty(),
             history = history,
             unit = profile?.units ?: WeightUnit.Kg,
+            isWorkoutInProgress = inProgress,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUiState())
 
@@ -67,7 +81,7 @@ class TrainViewModel internal constructor(
 
     // MARK: - Actions
 
-    /** The white Start pill: build the workout from the routine and present it. */
+    /** The play button and the Up next card's Start: build the workout from the routine and present it. */
     fun start(routineId: String) = requestStart(WorkoutStarter.Request.Routine(routineId))
 
     /**
@@ -97,7 +111,10 @@ class TrainViewModel internal constructor(
         }
     }
 
-    /** "Resume" in the dialog: the running workout comes back full screen. */
+    /**
+     * "Resume" in the dialog, and on the Up next card while a workout is in progress: the running
+     * workout comes back full screen, as a mini bar tap brings it.
+     */
     fun resumeActive() {
         _blockedStart.value = null
         session.expand()
@@ -150,17 +167,81 @@ class TrainViewModel internal constructor(
             )
         }
 
+        /**
+         * The Up next card's lines: `routine.sortedItems` whose exercise still exists, with the
+         * targets `WorkoutStarter` builds the rows from.
+         */
+        fun upNextItem(routine: RoutineWithItems): UpNextRoutine = UpNextRoutine(
+            id = routine.routine.id,
+            name = routine.routine.name,
+            items = routine.sortedItems.mapNotNull { item ->
+                item.exercise?.let { UpNextItem(it, item.item.targetSets, item.item.targetReps) }
+            },
+        )
+
         const val PREVIEW_COUNT = 3
     }
 }
 
 /** One immutable snapshot of the Train tab. */
 data class TrainUiState(
+    /** The routine the Today card suggests; `null` when there are no routines. */
+    val upNext: UpNextRoutine? = null,
+    /** Every routine but [upNext]. */
     val routines: List<RoutineRowItem> = emptyList(),
+    /** Any routine at all, the up-next one included (`workout.noRoutines` otherwise). */
+    val hasRoutines: Boolean = false,
     /** Finished workouts, newest first, with the graph the detail sheet and the row totals need. */
     val history: List<WorkoutWithExercises> = emptyList(),
     val unit: WeightUnit = WeightUnit.Kg,
+    /** `session.isWorkoutInProgress`: the Up next card offers Resume instead of Start. */
+    val isWorkoutInProgress: Boolean = false,
 )
+
+/** The Up next card (`TrainView.upNextCard`): the routine and one line per exercise. */
+data class UpNextRoutine(
+    val id: String,
+    val name: String,
+    val items: List<UpNextItem>,
+)
+
+/**
+ * One line of the Up next card: the exercise (localized at render time) and its target sets ×
+ * reps (`RoutineItem.targetSets` / `targetReps`).
+ */
+data class UpNextItem(
+    val exercise: ExerciseEntity,
+    val targetSets: Int,
+    val targetReps: Int,
+)
+
+/**
+ * `HistoryWeek` (`TrainView.swift`): the history group of a finished workout — this ISO week
+ * (Monday first), the one before, or earlier.
+ */
+enum class HistoryWeek {
+    ThisWeek,
+    LastWeek,
+    Earlier,
+    ;
+
+    companion object {
+        fun of(day: LocalDate, today: LocalDate): HistoryWeek {
+            val thisWeek = Fmt.startOfIsoWeek(today)
+            return when {
+                !day.isBefore(thisWeek) -> ThisWeek
+                !day.isBefore(thisWeek.minusWeeks(1)) -> LastWeek
+                else -> Earlier
+            }
+        }
+
+        /** [items] split by week, newest group first, each keeping the order it came in; empty weeks are left out. */
+        fun <T> grouped(items: List<T>, today: LocalDate, day: (T) -> LocalDate): List<Pair<HistoryWeek, List<T>>> {
+            val byWeek = items.groupBy { of(day(it), today) }
+            return entries.mapNotNull { week -> byWeek[week]?.let { week to it } }
+        }
+    }
+}
 
 /** `BlockedStart` — the running workout a Start ran into, and what the Start asked for. */
 data class BlockedStart(

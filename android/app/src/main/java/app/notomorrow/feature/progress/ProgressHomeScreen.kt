@@ -2,6 +2,7 @@ package app.notomorrow.feature.progress
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,9 +12,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,17 +25,33 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.app.LocalTabBarHeight
+import app.notomorrow.designsystem.Chip
+import app.notomorrow.designsystem.E1RMChart
 import app.notomorrow.designsystem.Eyebrow
+import app.notomorrow.designsystem.FocalCard
 import app.notomorrow.designsystem.GhostButton
+import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
+import app.notomorrow.designsystem.NTCard
 import app.notomorrow.designsystem.NtSegmented
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.SectionHeader
+import app.notomorrow.designsystem.TabularText
+import app.notomorrow.designsystem.ntPlainClickable
+import app.notomorrow.designsystem.tabular
 import app.notomorrow.di.ntViewModel
+import app.notomorrow.feature.bro.bleedHorizontally
+import app.notomorrow.feature.workout.MuscleHeatView
+import app.notomorrow.feature.workout.workoutMuscleName
+import app.notomorrow.feature.workout.workoutSetCount
+import app.notomorrow.model.WeightUnit
+import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
 /**
@@ -40,8 +59,9 @@ import app.notomorrow.util.S
  * (`Features/Progress/ProgressHomeView.swift`).
  *
  * No visible top bar: the eyebrow (last PR date), the title and the Lifts / Body
- * segmented control are the screen's own header. The Lifts tab shows the body-weight
- * card **above** the e1RM list; the Body tab replaces both with the full body view.
+ * segmented control are the screen's own header. The Lifts tab shows a chip per lift over
+ * the selected lift's [FocalCard] (e1RM, range delta, chart, range picker), the muscles
+ * trained this week, and the e1RM list; the Body tab replaces them with the full body view.
  */
 @Composable
 fun ProgressHomeScreen(onExercise: (String) -> Unit) {
@@ -84,11 +104,28 @@ fun ProgressHomeScreen(onExercise: (String) -> Unit) {
                 ) { tab ->
                     when (tab) {
                         ProgressTab.Lifts -> Column(Modifier.fillMaxWidth()) {
-                            BodyWeightCard(
-                                stats = state.body,
-                                unit = state.unit,
-                                onLog = model::showLogWeight,
-                                modifier = Modifier.padding(top = 18.dp),
+                            val focal = state.focal
+                            if (state.hasCompletedSets && focal != null) {
+                                LiftChips(
+                                    lifts = state.lifts,
+                                    selectedId = focal.exerciseId,
+                                    onSelect = model::selectLift,
+                                    modifier = Modifier.padding(top = 18.dp),
+                                )
+                                LiftFocalCard(
+                                    focal = focal,
+                                    unit = state.unit,
+                                    range = state.range,
+                                    onOpen = { onExercise(focal.exerciseId) },
+                                    onSelectRange = model::selectRange,
+                                    modifier = Modifier.padding(top = 12.dp),
+                                )
+                            }
+                            MusclesSection(
+                                muscles = state.muscles,
+                                modifier = Modifier.padding(
+                                    top = if (state.hasCompletedSets) NT.Spacing.section else 18.dp,
+                                ),
                             )
                             LiftsSection(
                                 state = state,
@@ -160,6 +197,196 @@ private fun ProgressHeader(
             width = 150.dp,
             label = { titles.getValue(it) },
         )
+    }
+}
+
+// MARK: - Selected lift
+
+/** Every lift, in the list's order, bleeding to the screen edge (`ProgressHomeView.liftChips`). */
+@Composable
+private fun LiftChips(
+    lifts: List<LiftRowState>,
+    selectedId: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .bleedHorizontally(NT.Spacing.screenH)
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = NT.Spacing.screenH),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        lifts.forEach { lift ->
+            Chip(
+                title = lift.name,
+                selected = lift.exerciseId == selectedId,
+                onClick = { onSelect(lift.exerciseId) },
+            )
+        }
+    }
+}
+
+/**
+ * `ProgressHomeView.focalCard`: the current e1RM in `display(56)` with the unit in `title2`, the
+ * range [DeltaChip] (on `surface2`, since the card is `surface`), the 160 dp [E1RMChart] that
+ * opens the lift, and the range control.
+ */
+@Composable
+private fun LiftFocalCard(
+    focal: FocalLiftState,
+    unit: WeightUnit,
+    range: ProgressRange,
+    onOpen: () -> Unit,
+    onSelectRange: (ProgressRange) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // `NtSegmented.label` is a plain lambda, so the titles are resolved up here.
+    val titles = ProgressRange.entries.associateWith { stringResource(it.titleRes) }
+    FocalCard(modifier = modifier) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Eyebrow(stringResource(S.progress_e1rm))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        NtText(
+                            text = Fmt.weight(focal.current, unit, withUnit = false),
+                            modifier = Modifier.alignByBaseline(),
+                            style = NT.Fonts.display(56).tabular(),
+                            color = NT.Colors.ink,
+                            maxLines = 1,
+                        )
+                        NtText(
+                            text = unit.raw,
+                            modifier = Modifier.alignByBaseline(),
+                            style = NT.Fonts.title2,
+                            color = NT.Colors.ink2,
+                            maxLines = 1,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                DeltaChip(
+                    delta = focal.delta,
+                    unit = unit,
+                    range = range,
+                    neutral = NT.Colors.surface2,
+                )
+            }
+
+            // `NavigationLink(value: lift.id)` with `.buttonStyle(.plain)`, as the list rows.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(FOCAL_CHART_HEIGHT)
+                    .ntPlainClickable(role = Role.Button, onClick = onOpen),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (focal.points.size >= 2) {
+                    E1RMChart(points = focal.points, modifier = Modifier.fillMaxSize(), unit = unit)
+                } else {
+                    NtText(
+                        text = stringResource(
+                            if (focal.points.size == 1) S.progress_firstSessionHint
+                            else S.progress_noSessionsInRange,
+                        ),
+                        style = NT.Fonts.footnote,
+                        color = NT.Colors.ink2,
+                    )
+                }
+            }
+
+            NtSegmented(
+                options = ProgressRange.entries,
+                selected = range,
+                onSelect = onSelectRange,
+                label = { titles.getValue(it) },
+            )
+        }
+    }
+}
+
+private val FOCAL_CHART_HEIGHT = 160.dp
+
+// MARK: - Muscles this week
+
+/**
+ * `ProgressHomeView.musclesSection`: "Muscles this week" with the week's set count, then an
+ * [NTCard] with the [MuscleHeatView] beside the five most-trained muscles and, once something
+ * was logged, which of the big ones are still at zero.
+ */
+@Composable
+private fun MusclesSection(muscles: MuscleWeek, modifier: Modifier = Modifier) {
+    val top = muscles.top
+    val notTrained = muscles.notTrainedYet.map { workoutMuscleName(it) }.joinToString(", ")
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        SectionHeader(
+            title = stringResource(S.progress_musclesThisWeek),
+            trailing = workoutSetCount(muscles.totalSets),
+        )
+        NTCard {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    // Centred: with nothing logged the map stands alone, as in the Swift `HStack`.
+                    horizontalArrangement = Arrangement.spacedBy(
+                        16.dp,
+                        Alignment.CenterHorizontally,
+                    ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MuscleHeatView(
+                        setsByMuscle = muscles.setsByMuscle,
+                        modifier = Modifier.width(120.dp).height(180.dp),
+                    )
+                    if (top.isNotEmpty()) {
+                        Column(Modifier.weight(1f)) {
+                            top.forEachIndexed { index, (muscle, sets) ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(36.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    NtText(
+                                        text = workoutMuscleName(muscle),
+                                        modifier = Modifier.weight(1f),
+                                        style = NT.Fonts.subheadline,
+                                        color = NT.Colors.ink,
+                                        maxLines = 1,
+                                    )
+                                    TabularText(
+                                        text = Fmt.count(sets),
+                                        style = NT.Fonts.subheadline,
+                                        color = NT.Colors.ink2,
+                                    )
+                                }
+                                if (index < top.size - 1) Hairline()
+                            }
+                        }
+                    }
+                }
+                if (notTrained.isNotEmpty()) {
+                    NtText(
+                        text = stringResource(S.progress_notTrainedYet_s, notTrained),
+                        style = NT.Fonts.footnote,
+                        color = NT.Colors.ink2,
+                    )
+                }
+            }
+        }
     }
 }
 

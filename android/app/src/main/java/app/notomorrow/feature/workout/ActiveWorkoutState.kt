@@ -1,12 +1,14 @@
 package app.notomorrow.feature.workout
 
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.RecordService
 import app.notomorrow.service.localizedName
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * The pure half of `ActiveWorkoutModel.swift`: the immutable state the screen renders and the
@@ -59,6 +61,8 @@ data class ActiveWorkoutUiState(
 data class PreviousRows(
     val warmups: List<SetValue> = emptyList(),
     val working: List<SetValue> = emptyList(),
+    /** The working sets that are not drop sets, in row order: what the suggested weight reads. */
+    val normal: List<SetValue> = emptyList(),
 ) {
     /** The row at the same position: the k-th warm-up for a warm-up, the k-th working set otherwise. */
     fun value(slot: SetSlot): SetValue? = (if (slot.isWarmup) warmups else working).getOrNull(slot.index)
@@ -68,6 +72,8 @@ data class PreviousRows(
         fun of(rows: List<CompletedSetRow>): PreviousRows = PreviousRows(
             warmups = rows.filter { it.kind == SetKind.Warmup }.map { SetValue(it.weightKg, it.reps) },
             working = rows.filter { it.kind != SetKind.Warmup && it.reps > 0 }.map { SetValue(it.weightKg, it.reps) },
+            normal = rows.filter { it.kind != SetKind.Warmup && it.kind != SetKind.Drop && it.reps > 0 }
+                .map { SetValue(it.weightKg, it.reps) },
         )
     }
 }
@@ -131,6 +137,66 @@ internal fun prefilledValues(weightKg: Double, reps: Int, isCompleted: Boolean, 
     return SetValue(weight, count).takeIf { weight != weightKg || count != reps }
 }
 
+// MARK: - Suggested weight
+
+/**
+ * `ActiveWorkoutModel.Suggestion` — progressive overload for one exercise: the weight to try today
+ * and the session it builds on (weights in kg).
+ */
+data class WeightSuggestion(
+    /** The previous session's top weight (every one of its sets was at it). */
+    val fromKg: Double,
+    val toKg: Double,
+    /** That session's reps, in row order ("8 · 8 · 8"). */
+    val reps: List<Int>,
+)
+
+/** Weights closer than this (1 g) are one weight: a number typed in lb comes back from kg with a rounding tail. */
+private const val SAME_WEIGHT = 0.001
+
+/**
+ * `ActiveWorkoutModel.suggestion(previous:targetReps:unit:)` — progressive overload from the
+ * previous session's sets of an exercise (completed, not warm-ups, not drop sets, [PreviousRows.normal]):
+ * the top weight plus one step (2.5 kg, or 5 lb for lb users) when there are at least two such
+ * sets, all at one weight above zero, and every one reached [targetReps] (the routine's target,
+ * when there is one) or, without a target, none has fewer reps than the first. Otherwise `null`.
+ */
+internal fun weightSuggestion(previous: List<SetValue>, targetReps: Int?, unit: WeightUnit): WeightSuggestion? {
+    val first = previous.firstOrNull() ?: return null
+    if (previous.size < 2 || first.weightKg <= 0) return null
+    if (previous.any { abs(it.weightKg - first.weightKg) >= SAME_WEIGHT }) return null
+    val minReps = targetReps?.takeIf { it > 0 } ?: first.reps
+    if (previous.any { it.reps < minReps }) return null
+    val step = if (unit == WeightUnit.Kg) 2.5 else SetInput.kg(5.0, WeightUnit.Lb)
+    return WeightSuggestion(fromKg = first.weightKg, toKg = first.weightKg + step, reps = previous.map { it.reps })
+}
+
+/**
+ * `ActiveWorkoutModel.showsSuggestion(_:openWeights:)` — the suggestion stays up while an open set
+ * (not a warm-up, not a drop set) still has the previous top weight; "Use" moves them all off it, so
+ * the line goes. [openWeights] are those sets' weights in kg.
+ */
+internal fun showsSuggestion(suggestion: WeightSuggestion, openWeights: List<Double>): Boolean =
+    openWeights.any { abs(it - suggestion.fromKg) < SAME_WEIGHT }
+
+/**
+ * `routineTargetReps()` — target reps per exercise id of the routine named like the workout (the
+ * name is the only link a workout keeps, as for the suggested routine); the first item wins when a
+ * routine lists an exercise twice. Empty for an ad-hoc workout. [routines] come in `order`.
+ */
+internal fun routineTargetReps(routines: List<RoutineWithItems>, workoutName: String): Map<String, Int> {
+    val routine = routines.firstOrNull { it.routine.name == workoutName } ?: return emptyMap()
+    val targets = mutableMapOf<String, Int>()
+    for (row in routine.sortedItems) {
+        val exerciseId = row.exercise?.id ?: continue
+        if (row.item.targetReps > 0 && exerciseId !in targets) targets[exerciseId] = row.item.targetReps
+    }
+    return targets
+}
+
+/** The sets "Use" writes to and the suggestion watches: open, not a warm-up, not a drop set. */
+internal fun SetRowUi.takesSuggestion(): Boolean = !isCompleted && kind != SetKind.Warmup && kind != SetKind.Drop
+
 /**
  * `currentExerciseIndex` — 1-based position of the open exercise, else of the first exercise
  * that still has work.
@@ -155,12 +221,15 @@ internal fun foldCurrentExercise(exercises: List<WorkoutExerciseUi>, expandedId:
 
 /**
  * One Room section folded into one [WorkoutExerciseUi] — `setNumber(for:in:)` (warm-ups do not
- * count), `currentSetID(in:)` and the per-row `previous(for:in:)` ghost by [SetSlot].
+ * count), `currentSetID(in:)`, the per-row `previous(for:in:)` ghost by [SetSlot] and
+ * `suggestion(for:)` ([suggestion] is the one the previous session allows; it is kept only while
+ * an open set still has the previous top weight).
  */
 internal fun WorkoutExerciseWithSets.toUi(
     locale: Locale,
     previousLast: SetValue?,
     previous: (SetSlot) -> SetValue?,
+    suggestion: WeightSuggestion? = null,
 ): WorkoutExerciseUi {
     val ordered = sortedSets
     val currentSetId = ordered.firstOrNull { !it.isCompleted }?.id
@@ -190,6 +259,9 @@ internal fun WorkoutExerciseWithSets.toUi(
         isDone = isDone,
         last = previousLast,
         sets = rows,
+        suggestion = suggestion?.takeIf { s ->
+            showsSuggestion(s, rows.filter { it.takesSuggestion() }.map { it.weightKg })
+        },
     )
 }
 

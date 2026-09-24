@@ -78,6 +78,43 @@ struct MuscleModelView: View {
     }
 }
 
+/// The same front/back regions as `MuscleModelView`, each muscle filled with the `NT.Colors.heat` step for its sets:
+/// Progress → "Muscles this week". No labels; the card lists the numbers beside it.
+struct MuscleHeatView: View {
+    let setsByMuscle: [String: Int]
+
+    /// Step of `NT.Colors.heat` for a set count: 0 for none, then 1–3, 4–6, 7–9 and 10+.
+    static func level(sets: Int) -> Int {
+        switch sets {
+        case ...0: return 0
+        case 1...3: return 1
+        case 4...6: return 2
+        case 7...9: return 3
+        default: return 4
+        }
+    }
+
+    var body: some View {
+        Canvas { context, size in
+            for region in ExerciseMedia.regions {
+                var path = Path()
+                for (i, point) in region.points.enumerated() where point.count == 2 {
+                    let p = CGPoint(x: point[0] / 200 * size.width, y: point[1] / 300 * size.height)
+                    if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+                }
+                path.closeSubpath()
+                let color: Color = region.muscle == "outline"
+                    ? NT.Colors.surface3
+                    : NT.Colors.heat[Self.level(sets: setsByMuscle[region.muscle] ?? 0)]
+                context.fill(path, with: .color(color))
+                context.stroke(path, with: .color(NT.Colors.ground), lineWidth: 1)
+            }
+        }
+        .aspectRatio(2.0 / 3.0, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+}
+
 enum ExerciseMedia {
     struct Region: Decodable { let muscle: String; let points: [[Double]] }
     static let regions: [Region] = load("muscle_model") ?? []

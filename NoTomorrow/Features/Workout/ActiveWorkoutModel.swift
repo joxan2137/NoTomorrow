@@ -18,7 +18,7 @@ struct UpNextTarget: Equatable {
 }
 
 /// Derived state for one workout in progress: which exercise is open, ghost values from the last time
-/// each exercise was done, PR hints, and the set/exercise mutations behind the table.
+/// each exercise was done, the suggested weight, PR hints, and the set/exercise mutations behind the table.
 /// Owned by `WorkoutSessionController` (not the view), so it survives collapsing the workout into the mini bar.
 @Observable
 @MainActor
@@ -34,16 +34,21 @@ final class ActiveWorkoutModel {
     struct PreviousRows: Equatable {
         var warmups: [SetValue]
         var working: [SetValue]
+        /// The working sets that are not drop sets, in row order: what the suggested weight reads.
+        var normal: [SetValue]
 
-        init(warmups: [SetValue] = [], working: [SetValue] = []) {
+        init(warmups: [SetValue] = [], working: [SetValue] = [], normal: [SetValue] = []) {
             self.warmups = warmups
             self.working = working
+            self.normal = normal
         }
 
         /// From that session's completed sets, in row order.
         init(completed sets: [SetEntry]) {
             warmups = sets.filter { $0.kind == .warmup }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
             working = sets.filter { $0.kind != .warmup && $0.reps > 0 }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+            normal = sets.filter { $0.kind != .warmup && $0.kind != .drop && $0.reps > 0 }
+                .map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
         }
 
         /// The row at the same position: the k-th warm-up for a warm-up, the k-th working set otherwise.
@@ -59,6 +64,15 @@ final class ActiveWorkoutModel {
         var index: Int
     }
 
+    /// Progressive overload for one exercise: the weight to try today and the session it builds on (weights in kg).
+    struct Suggestion: Equatable {
+        /// The previous session's top weight (every one of its sets was at it).
+        var fromKg: Double
+        var toKg: Double
+        /// That session's reps, in row order ("8 · 8 · 8").
+        var reps: [Int]
+    }
+
     let workout: Workout
     private let context: ModelContext
 
@@ -70,6 +84,8 @@ final class ActiveWorkoutModel {
     /// Cached "previous" rows per exercise (from the most recent other finished workout that did it).
     private var previousRows: [PersistentIdentifier: PreviousRows] = [:]
     private var previousLast: [PersistentIdentifier: SetValue?] = [:]
+    /// Target reps per exercise from the routine this workout was started from (none for an ad-hoc workout).
+    private var targetReps: [PersistentIdentifier: Int] = [:]
     /// The user's weight unit: cells, Previous, "Last:", the rest card and the summary show it (stored in kg).
     private(set) var unit: WeightUnit = .kg
     /// Filled when the rest timer starts, read by RestTimerView.
@@ -159,12 +175,13 @@ final class ActiveWorkoutModel {
         return found
     }
 
-    /// Re-reads Previous / Last and the unit. On init, on every expand (history may have been edited meanwhile)
-    /// and after exercises are added.
+    /// Re-reads Previous / Last, the routine's target reps and the unit. On init, on every expand (history may have
+    /// been edited meanwhile) and after exercises are added.
     func reloadPrevious() {
         previousRows = [:]
         previousLast = [:]
         unit = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first?.units ?? .kg
+        targetReps = routineTargetReps()
         for we in exercises {
             guard let ex = we.exercise else { continue }
             let myID = workout.persistentModelID
@@ -198,6 +215,66 @@ final class ActiveWorkoutModel {
     private func fetchedLastSet(for exercise: Exercise) -> SetEntry? {
         fetchedRows(for: exercise).filter { $0.kind != .warmup && $0.reps > 0 }
             .max(by: RecordService.completedEarlier)
+    }
+
+    /// Target reps per exercise of the routine named like this workout (the name is the only link a workout keeps,
+    /// as for the suggested routine); the first item wins when a routine lists an exercise twice.
+    private func routineTargetReps() -> [PersistentIdentifier: Int] {
+        let name = workout.name
+        var d = FetchDescriptor<Routine>(predicate: #Predicate { $0.name == name }, sortBy: [SortDescriptor(\.order)])
+        d.fetchLimit = 1
+        guard let routine = (try? context.fetch(d))?.first else { return [:] }
+        var targets: [PersistentIdentifier: Int] = [:]
+        for item in routine.sortedItems {
+            guard let ex = item.exercise, item.targetReps > 0, targets[ex.persistentModelID] == nil else { continue }
+            targets[ex.persistentModelID] = item.targetReps
+        }
+        return targets
+    }
+
+    // MARK: Suggested weight
+
+    /// Weights closer than this (1 g) are one weight: a number typed in lb comes back from kg with a rounding tail.
+    private static let sameWeight = 0.001
+
+    /// Progressive overload from the previous session's sets of an exercise (completed, not warm-ups, not drop sets):
+    /// the top weight plus one step (2.5 kg, or 5 lb for lb users) when there are at least two such sets, all at one
+    /// weight above zero, and every one reached `targetReps` (the routine's target, when there is one) or, without a
+    /// target, none has fewer reps than the first. Otherwise nil.
+    static func suggestion(previous: [SetValue], targetReps: Int?, unit: WeightUnit) -> Suggestion? {
+        guard previous.count >= 2, let first = previous.first, first.weightKg > 0,
+              previous.allSatisfy({ abs($0.weightKg - first.weightKg) < sameWeight }) else { return nil }
+        let minReps = targetReps.flatMap { $0 > 0 ? $0 : nil } ?? first.reps
+        guard previous.allSatisfy({ $0.reps >= minReps }) else { return nil }
+        let step = unit == .kg ? 2.5 : SetInput.kg(fromDisplay: 5, unit: .lb)
+        return Suggestion(fromKg: first.weightKg, toKg: first.weightKg + step, reps: previous.map(\.reps))
+    }
+
+    /// The suggestion stays up while an open set (not a warm-up, not a drop set) still has the previous top weight;
+    /// "Use" moves them all off it, so the line goes. `openWeights` are those sets' weights in kg.
+    static func showsSuggestion(_ suggestion: Suggestion, openWeights: [Double]) -> Bool {
+        openWeights.contains { abs($0 - suggestion.fromKg) < sameWeight }
+    }
+
+    /// The suggestion for an expanded exercise, while it applies.
+    func suggestion(for exercise: WorkoutExercise) -> Suggestion? {
+        guard let ex = exercise.exercise,
+              let suggestion = Self.suggestion(previous: previousRows[ex.persistentModelID]?.normal ?? [],
+                                               targetReps: targetReps[ex.persistentModelID], unit: unit),
+              Self.showsSuggestion(suggestion, openWeights: Self.openNormalSets(of: exercise).map(\.weightKg))
+        else { return nil }
+        return suggestion
+    }
+
+    /// "Use": every open set of the exercise (not a warm-up, not a drop set) takes the suggested weight. Nothing
+    /// changes a weight without this tap.
+    func useSuggestion(_ suggestion: Suggestion, in exercise: WorkoutExercise) {
+        for set in Self.openNormalSets(of: exercise) { set.weightKg = suggestion.toKg }
+        try? context.save()
+    }
+
+    private static func openNormalSets(of exercise: WorkoutExercise) -> [SetEntry] {
+        exercise.sortedSets.filter { !$0.isCompleted && $0.kind != .warmup && $0.kind != .drop }
     }
 
     // MARK: Mutations

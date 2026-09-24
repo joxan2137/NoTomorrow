@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Badge
 import app.notomorrow.designsystem.KcalLabel
 import app.notomorrow.designsystem.MacroBar
+import app.notomorrow.designsystem.MacroRing
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
@@ -56,7 +57,6 @@ import app.notomorrow.designsystem.NtMenu
 import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
-import app.notomorrow.designsystem.ProgressRing
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
@@ -302,7 +302,10 @@ private fun StreakChip(streak: Int, modifier: Modifier = Modifier) {
 // Hero: ring + macro bars
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** `FuelHeroView` (`FuelHomeSubviews.swift:5`). */
+/**
+ * `FuelHeroView` (`FuelHomeSubviews.swift:6`): the kcal-left [MacroRing] (protein / carbs / fat
+ * arcs over `surface`) and the three macro bars in the macro hues.
+ */
 @Composable
 fun FuelHeroView(state: FuelUiState, modifier: Modifier = Modifier) {
     Row(
@@ -311,11 +314,13 @@ fun FuelHeroView(state: FuelUiState, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-            ProgressRing(
-                progress = state.ringProgress,
+            MacroRing(
+                protein = state.proteinEaten,
+                carbs = state.carbsEaten,
+                fat = state.fatEaten,
+                kcalGoal = state.goals.kcal,
                 modifier = Modifier.size(132.dp),
                 lineWidth = 10.dp,
-                color = NT.Colors.ember,
                 track = NT.Colors.surface,
             )
             Column(
@@ -346,19 +351,19 @@ fun FuelHeroView(state: FuelUiState, modifier: Modifier = Modifier) {
                 label = stringResource(S.macro_protein),
                 value = state.proteinEaten,
                 goal = state.goals.protein,
-                fill = NT.Colors.ink,
+                fill = NT.Colors.protein,
             )
             MacroBar(
                 label = stringResource(S.macro_carbs),
                 value = state.carbsEaten,
                 goal = state.goals.carbs,
-                fill = NT.Colors.ink2,
+                fill = NT.Colors.carbs,
             )
             MacroBar(
                 label = stringResource(S.macro_fat),
                 value = state.fatEaten,
                 goal = state.goals.fat,
-                fill = NT.Colors.ink2,
+                fill = NT.Colors.fat,
             )
             TabularText(
                 text = stringResource(
@@ -691,14 +696,14 @@ private fun StepperChevron(icon: NtIcons, enabled: Boolean, onClick: () -> Unit)
     }
 }
 
-/** The ember hint under the first empty slot. */
+/** The protein-blue hint under the first empty slot. */
 @Composable
 fun FuelProteinHint(grams: Double, modifier: Modifier = Modifier) {
     TabularText(
         text = stringResource(S.fuel_proteinToGo, Fmt.grams(grams)),
         modifier = modifier,
         style = NT.Fonts.footnoteBold,
-        color = NT.Colors.ember,
+        color = NT.Colors.protein,
     )
 }
 

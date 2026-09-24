@@ -83,6 +83,33 @@ struct ProgressSegmented<Option: Hashable>: View {
     }
 }
 
+// MARK: - Delta chip
+
+/// "↑ 14 kg in 3 months": ember on `emberTint` when positive, `ink2` on `neutral` otherwise. `neutral` is `surface`
+/// on the ground (`ExerciseProgressView`) and `surface2` inside a card (the Progress home focal card).
+struct ProgressDeltaChip: View {
+    var delta: Double
+    var range: ProgressRange
+    var unit: WeightUnit
+    var neutral: Color = NT.Colors.surface
+
+    private var positive: Bool { delta > 0 }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: positive ? "arrow.up" : (delta < 0 ? "arrow.down" : "minus"))
+                .font(.system(size: 12, weight: .bold))
+            Text(range.deltaLabel(Fmt.signedWeight(delta, unit: unit, withUnit: true)))
+                .font(NT.Fonts.footnoteBold)
+                .tabular()
+        }
+        .foregroundStyle(positive ? NT.Colors.ember : NT.Colors.ink2)
+        .padding(.horizontal, 12)
+        .frame(height: 30)
+        .background(positive ? NT.Colors.emberTint : neutral, in: Capsule())
+    }
+}
+
 // MARK: - Relative PR phrasing
 
 enum ProgressPhrase {

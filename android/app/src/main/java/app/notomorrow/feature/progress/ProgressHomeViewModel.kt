@@ -16,6 +16,7 @@ import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.Days
 import app.notomorrow.service.HealthService
 import app.notomorrow.service.localizedName
+import app.notomorrow.util.Fmt
 import app.notomorrow.util.LocaleProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,10 @@ class ProgressHomeViewModel(
     private val tab = MutableStateFlow(ProgressTab.Lifts)
     private val showsLogWeight = MutableStateFlow(false)
 
+    /** `ProgressHomeView.selectedLiftID` — `null` (or a lift that is gone) means the first lift. */
+    private val selectedLift = MutableStateFlow<String?>(null)
+    private val range = MutableStateFlow(ProgressRange.M3)
+
     /** `.onAppear` — the day every relative phrase is measured against. */
     private val today = MutableStateFlow(LocalDate.now(zone))
 
@@ -73,15 +78,26 @@ class ProgressHomeViewModel(
     /**
      * `ProgressModel.reload` — a full pass over every completed set plus the exercise-name
      * map, so it runs off the main thread: during a workout the set writes retrigger it on
-     * every completed set. Only the two UI flags are combined downstream, on the caller's
-     * dispatcher, so a tab switch still lands in the same frame.
+     * every completed set. Only the UI selections are combined downstream, on the caller's
+     * dispatcher, so a tab, chip or range switch still lands in the same frame.
      */
     private val derived = combine(store, today) { data, day -> derive(data, day) }
         .flowOn(Dispatchers.Default)
 
     val uiState: StateFlow<ProgressHomeUiState> =
-        combine(derived, tab, showsLogWeight) { data, selectedTab, sheet ->
-            data.copy(tab = selectedTab, showsLogWeight = sheet)
+        combine(
+            derived,
+            tab,
+            showsLogWeight,
+            selectedLift,
+            range,
+        ) { data, selectedTab, sheet, liftId, selectedRange ->
+            data.state.copy(
+                tab = selectedTab,
+                showsLogWeight = sheet,
+                focal = focal(data, liftId, selectedRange),
+                range = selectedRange,
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -92,6 +108,16 @@ class ProgressHomeViewModel(
 
     fun select(tab: ProgressTab) {
         this.tab.value = tab
+    }
+
+    /** A lift chip on the Lifts tab. */
+    fun selectLift(exerciseId: String) {
+        selectedLift.value = exerciseId
+    }
+
+    /** The focal card's 1M / 3M / 1Y / All. */
+    fun selectRange(range: ProgressRange) {
+        this.range.value = range
     }
 
     fun showLogWeight() {
@@ -134,12 +160,14 @@ class ProgressHomeViewModel(
 
     // MARK: - Derivation
 
-    private fun derive(data: Store, today: LocalDate): ProgressHomeUiState {
+    private fun derive(data: Store, today: LocalDate): Derived {
         val currentLocale = locale()
         val names = data.exercises.associate { it.id to it.localizedName(currentLocale) }
+        val muscles = data.exercises.associate { it.id to it.primaryMuscles }
         val lifts = ProgressDerivations.buildLifts(data.sets) { names[it] }
         val start = ProgressRange.M3.start(today, zone)
-        return ProgressHomeUiState(
+        val weekStart = Fmt.startOfIsoWeek(today).atStartOfDay(zone).toInstant()
+        val state = ProgressHomeUiState(
             unit = data.unit,
             lastPRDate = lifts.mapNotNull { it.lastPR }.maxOrNull()
                 ?.let { ProgressPhrase.eyebrowDate(it, today, zone, currentLocale) },
@@ -156,10 +184,36 @@ class ProgressHomeViewModel(
                 )
             },
             hasCompletedSets = lifts.isNotEmpty(),
+            muscles = ProgressDerivations.buildMuscleWeek(data.sets, weekStart) { muscles[it] },
             body = ProgressDerivations.buildBody(data.body, today),
             loaded = true,
         )
+        return Derived(state = state, lifts = lifts, today = today)
     }
+
+    /**
+     * `ProgressHomeView.focalCard`: the tapped lift, else the first, sliced to [range] — cheap,
+     * so it runs downstream of [derived] like `ExerciseProgressViewModel.state`.
+     */
+    private fun focal(data: Derived, liftId: String?, range: ProgressRange): FocalLiftState? {
+        val lift = data.lifts.firstOrNull { it.exerciseId == liftId }
+            ?: data.lifts.firstOrNull()
+            ?: return null
+        val start = range.start(data.today, zone)
+        return FocalLiftState(
+            exerciseId = lift.exerciseId,
+            current = lift.current,
+            delta = lift.delta(start),
+            points = lift.points(start).map { it.toChartPoint(zone) },
+        )
+    }
+
+    /** Everything the chip and range selections do not change, derived once per store emission. */
+    private data class Derived(
+        val state: ProgressHomeUiState,
+        val lifts: List<LiftSummary>,
+        val today: LocalDate,
+    )
 
     private data class Store(
         val unit: WeightUnit,

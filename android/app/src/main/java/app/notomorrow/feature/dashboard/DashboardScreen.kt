@@ -105,6 +105,8 @@ fun DashboardScreen() {
             )
             WeekStrip(
                 days = state.week,
+                isPaired = state.isPaired,
+                partnerName = state.partnerName,
                 modifier = Modifier.padding(top = NT.Spacing.section),
             )
             NextSessionCard(

@@ -97,6 +97,30 @@ struct NTCard<Content: View>: View {
     }
 }
 
+/// The one card per screen that holds what the user came to do (v2): the surface with a faint ember wash from the
+/// top-trailing corner and an ember hairline. Everything else on the screen stays on plain `NTCard`s or none.
+struct FocalCard<Content: View>: View {
+    var padding: CGFloat = NT.Spacing.cardPadding
+    @ViewBuilder var content: () -> Content
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: NT.Radius.card, style: .continuous) }
+
+    var body: some View {
+        content()
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                ZStack {
+                    NT.Colors.surface
+                    RadialGradient(colors: [NT.Colors.ember.opacity(0.13), NT.Colors.ember.opacity(0)],
+                                   center: .topTrailing, startRadius: 0, endRadius: 320)
+                }
+            }
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(NT.Colors.ember.opacity(0.12), lineWidth: 1))
+    }
+}
+
 /// Small stat tile (label + value).
 struct StatTile: View {
     var label: LocalizedStringKey
@@ -198,6 +222,64 @@ struct ProgressRing: View {
                 .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.easeOut(duration: 0.6), value: progress)
+        }
+    }
+}
+
+/// The kcal ring split by where the calories came from (v2): protein, carbs and fat arcs in their own hues, each
+/// sized by its share of the kcal goal (4 / 4 / 9 kcal per gram), clockwise from 12 o'clock with a small gap between
+/// arcs. Past the goal the arcs scale down together so the ring reads full rather than wrapping.
+struct MacroRing: View {
+    var protein: Double
+    var carbs: Double
+    var fat: Double
+    var kcalGoal: Double
+    var lineWidth: CGFloat = 6
+    var track: Color = NT.Colors.surface2
+
+    struct Arc: Equatable {
+        var start: Double
+        var end: Double
+        var colorIndex: Int
+    }
+
+    /// Arcs as trim fractions. `gap` is the fraction of the circumference left clear between arcs, measured between
+    /// the round caps.
+    static func arcs(protein: Double, carbs: Double, fat: Double, kcalGoal: Double, gap: Double) -> [Arc] {
+        guard kcalGoal > 0 else { return [] }
+        let shares = [protein * 4, carbs * 4, fat * 9].map { max(0, $0) / kcalGoal }
+        let total = shares.reduce(0, +)
+        let scale = total > 1 ? 1 / total : 1
+        var arcs: [Arc] = []
+        var cursor = 0.0
+        for (index, share) in shares.enumerated() {
+            let length = share * scale
+            if length > gap {
+                arcs.append(Arc(start: cursor, end: cursor + length - gap, colorIndex: index))
+            }
+            cursor += length
+        }
+        return arcs
+    }
+
+    private static let colors = [NT.Colors.protein, NT.Colors.carbs, NT.Colors.fat]
+
+    var body: some View {
+        GeometryReader { geo in
+            let circumference = Double.pi * min(geo.size.width, geo.size.height)
+            let gap = circumference > 0 ? Double(lineWidth + 3) / circumference : 0
+            let arcs = Self.arcs(protein: protein, carbs: carbs, fat: fat, kcalGoal: kcalGoal, gap: gap)
+            ZStack {
+                Circle().stroke(track, lineWidth: lineWidth)
+                ForEach(arcs.indices, id: \.self) { i in
+                    Circle()
+                        .trim(from: arcs[i].start, to: arcs[i].end)
+                        .stroke(Self.colors[arcs[i].colorIndex], style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .animation(.easeOut(duration: 0.6), value: arcs)
         }
     }
 }

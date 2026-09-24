@@ -18,9 +18,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.notomorrow.designsystem.Eyebrow
+import app.notomorrow.designsystem.FocalCard
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
-import app.notomorrow.designsystem.NTCard
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtText
@@ -37,8 +37,8 @@ import app.notomorrow.util.rememberNtStrings
 import java.time.Instant
 
 /**
- * The one card on the dashboard: next session time, relative day + countdown, bro row,
- * action row — the port of `NextSessionCard` (`Features/Dashboard/NextSessionCard.swift`).
+ * The one card on the dashboard (its [FocalCard]): next session time, relative day + countdown,
+ * bro row, action row — the port of `NextSessionCard` (`Features/Dashboard/NextSessionCard.swift`).
  */
 @Composable
 fun NextSessionCard(
@@ -55,7 +55,7 @@ fun NextSessionCard(
     val isOut = sessionIsToday && state.myState.isMissedOrCancelled
     val partnerIsIn = state.partnerState is DayState.Confirmed || state.partnerState is DayState.Attended
 
-    NTCard(modifier) {
+    FocalCard(modifier) {
         Column(
             Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(14.dp),

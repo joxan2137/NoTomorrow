@@ -66,6 +66,11 @@ struct ActiveWorkoutView: View {
             header(model)
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.top, 8)
+            if !model.exercises.isEmpty {
+                rail(model)
+                    .padding(.horizontal, NT.Spacing.screenH)
+                    .padding(.top, 6)
+            }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 0) {
@@ -168,6 +173,38 @@ struct ActiveWorkoutView: View {
             }
             .buttonStyle(PressScale())
         }
+    }
+
+    /// One 4 pt capsule per exercise, filled in ember by its completed share of sets; the current one's track is
+    /// brighter. A tap (16 pt tall target) opens that exercise, as its collapsed row does.
+    private func rail(_ model: ActiveWorkoutModel) -> some View {
+        let exercises = model.exercises
+        let current = model.currentExerciseIndex - 1
+        return HStack(spacing: 4) {
+            ForEach(Array(exercises.enumerated()), id: \.element.persistentModelID) { index, exercise in
+                let done = Double(exercise.sets.filter(\.isCompleted).count)
+                let fraction = exercise.sets.isEmpty ? 0 : done / Double(exercise.sets.count)
+                Button {
+                    if model.expandedExerciseID != exercise.persistentModelID { model.toggleExpanded(exercise) }
+                } label: {
+                    Capsule()
+                        .fill(Color.white.opacity(index == current ? 0.24 : 0.10))
+                        .overlay(alignment: .leading) {
+                            GeometryReader { geo in
+                                Rectangle().fill(NT.Colors.ember).frame(width: geo.size.width * fraction)
+                            }
+                        }
+                        .clipShape(Capsule())
+                        .frame(height: 4)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 16)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: exercise.exercise?.localizedName ?? ""))
+            }
+        }
+        .animation(.easeOut(duration: 0.3), value: model.workout.completedSetCount)
     }
 
     // MARK: Actions

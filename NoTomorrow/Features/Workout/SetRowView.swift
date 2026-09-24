@@ -35,7 +35,13 @@ struct SetRowView: View {
             SetCheckButton(isOn: set.isCompleted, action: onToggle)
         }
         .frame(height: NT.Size.control)
-        .opacity(set.isCompleted ? 0.55 : 1)
+        // A done row sits on a faint ember tint; its numbers stay at full strength.
+        .background {
+            if set.isCompleted {
+                RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous)
+                    .fill(NT.Colors.ember.opacity(0.07))
+            }
+        }
         .onAppear { model.prefillFromPrevious(set, in: exercise) }
     }
 }

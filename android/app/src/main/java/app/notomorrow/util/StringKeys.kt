@@ -127,6 +127,7 @@ object S {
     val dashboard_settings = R.string.dashboard_settings
     val dashboard_startWorkout = R.string.dashboard_startWorkout
     val dashboard_todaysSession = R.string.dashboard_todaysSession
+    val dashboard_week_partnerDone_s = R.string.dashboard_week_partnerDone_s  // dashboard.week.partnerDone %@
     val dashboard_youreIn = R.string.dashboard_youreIn
     val dashboard_youreOut = R.string.dashboard_youreOut
     val day_today = R.string.day_today
@@ -434,10 +435,12 @@ object S {
     val progress_lifts = R.string.progress_lifts
     val progress_logWeight = R.string.progress_logWeight
     val progress_mostReps = R.string.progress_mostReps
+    val progress_musclesThisWeek = R.string.progress_musclesThisWeek
     val progress_noPRYet = R.string.progress_noPRYet
     val progress_noSessionsInRange = R.string.progress_noSessionsInRange
     val progress_noVolumeYet = R.string.progress_noVolumeYet
     val progress_noWeightYet = R.string.progress_noWeightYet
+    val progress_notTrainedYet_s = R.string.progress_notTrainedYet_s  // progress.notTrainedYet %@
     val progress_over4Weeks_n = R.string.progress_over4Weeks_n  // progress.over4Weeks %lld
     val progress_prOn_s = R.string.progress_prOn_s  // progress.prOn %@
     val progress_prToday = R.string.progress_prToday
@@ -593,6 +596,7 @@ object S {
     val timer_setOf_n_n = R.string.timer_setOf_n_n  // timer.setOf %lld %lld
     val timer_skip = R.string.timer_skip
     val timer_upNext = R.string.timer_upNext
+    val train_upNext = R.string.train_upNext
     val unit_g = R.string.unit_g
     val unit_kcal = R.string.unit_kcal
     val unit_kg = R.string.unit_kg
@@ -667,6 +671,9 @@ object S {
     val workout_finish = R.string.workout_finish
     val workout_finishConfirm = R.string.workout_finishConfirm
     val workout_history = R.string.workout_history
+    val workout_history_earlier = R.string.workout_history_earlier
+    val workout_history_lastWeek = R.string.workout_history_lastWeek
+    val workout_history_thisWeek = R.string.workout_history_thisWeek
     val workout_inProgress = R.string.workout_inProgress
     val workout_last = R.string.workout_last
     val workout_miniBar_action = R.string.workout_miniBar_action
@@ -690,6 +697,9 @@ object S {
     val workout_sets = R.string.workout_sets
     val workout_start = R.string.workout_start
     val workout_startEmpty = R.string.workout_startEmpty
+    val workout_suggest_last_s_s = R.string.workout_suggest_last_s_s  // workout.suggest.last %@ %@
+    val workout_suggest_try_s = R.string.workout_suggest_try_s  // workout.suggest.try %@
+    val workout_suggest_use = R.string.workout_suggest_use
     val workout_time = R.string.workout_time
     val workout_untitled = R.string.workout_untitled
     val workout_volume = R.string.workout_volume

@@ -1,6 +1,7 @@
 package app.notomorrow.feature.progress
 
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.feature.workout.muscleHeatLevel
 import app.notomorrow.model.SetKind
 import app.notomorrow.util.S
 import org.junit.Assert.assertEquals
@@ -14,8 +15,8 @@ import java.time.ZoneId
 
 /**
  * The pure half of the Progress tab — `ProgressModel.buildLifts` / `buildWeekly` /
- * `buildBody` and `ProgressPhrase`, ported from `Features/Progress/ProgressModel.swift`
- * and `ProgressSupport.swift`.
+ * `buildMuscleWeek` / `buildBody` and `ProgressPhrase`, ported from
+ * `Features/Progress/ProgressModel.swift` and `ProgressSupport.swift`.
  */
 class ProgressDerivationsTest {
 
@@ -224,6 +225,87 @@ class ProgressDerivationsTest {
     fun `week over week is null when last week was empty`() {
         val weekly = ProgressDerivations.buildWeekly(listOf(row()), today, zone)
         assertNull(ProgressDerivations.weekOverWeek(weekly))
+    }
+
+    // MARK: - Muscles this week (`ProgressMuscleWeekTests.swift`)
+
+    private val primary = mapOf(
+        "bench" to listOf("chest"),
+        "squat" to listOf("quadriceps", "glutes"),
+        "custom-curl" to emptyList(),
+    )
+    private val weekStart: Instant = LocalDate.of(2026, 8, 31).atStartOfDay(zone).toInstant()   // Monday
+
+    @Test
+    fun `muscle week counts completed sets per primary muscle of finished workouts this week`() {
+        val week = ProgressDerivations.buildMuscleWeek(
+            listOf(
+                row(exerciseId = "bench"),
+                row(exerciseId = "bench"),
+                row(exerciseId = "bench", kind = SetKind.Warmup),               // counts, as on iOS
+                row(exerciseId = "squat", weightKg = 0.0),                      // bodyweight too
+                row(exerciseId = "squat"),
+                row(exerciseId = "custom-curl"),                                // total only
+                row(exerciseId = null),                                         // deleted: total only
+                row(exerciseId = "bench", started = LocalDate.of(2026, 8, 30)), // last Sunday
+                row(exerciseId = "squat", ended = false),                       // still running
+            ),
+            weekStart,
+        ) { primary[it] }
+
+        assertEquals(mapOf("chest" to 3, "quadriceps" to 2, "glutes" to 2), week.setsByMuscle)
+        assertEquals(7, week.totalSets)
+    }
+
+    @Test
+    fun `nothing this week is an empty muscle week`() {
+        val week = ProgressDerivations.buildMuscleWeek(
+            listOf(row(exerciseId = "bench", started = LocalDate.of(2026, 8, 30))),
+            weekStart,
+        ) { primary[it] }
+
+        assertEquals(MuscleWeek(), week)
+        assertTrue(week.top.isEmpty())
+        assertTrue(week.notTrainedYet.isEmpty())
+    }
+
+    @Test
+    fun `top five sorts by sets, then by name`() {
+        val week = MuscleWeek(
+            setsByMuscle = mapOf(
+                "quadriceps" to 10, "middle back" to 7, "lats" to 8, "hamstrings" to 7,
+                "glutes" to 7, "chest" to 2,
+            ),
+            totalSets = 30,
+        )
+        assertEquals(
+            listOf("quadriceps", "lats", "glutes", "hamstrings", "middle back"),
+            week.top.map { it.first },
+        )
+        assertEquals(listOf(10, 8, 7, 7, 7), week.top.map { it.second })
+    }
+
+    @Test
+    fun `not trained yet lists the key muscles at zero, in order`() {
+        assertEquals(
+            listOf("shoulders", "quadriceps", "hamstrings"),
+            MuscleWeek(mapOf("chest" to 3, "lats" to 2, "biceps" to 4), totalSets = 9).notTrainedYet,
+        )
+        // Sets logged, none on a muscle the model knows: every key muscle is still untrained.
+        assertEquals(MuscleWeek.KEY_MUSCLES, MuscleWeek(emptyMap(), totalSets = 2).notTrainedYet)
+        assertEquals(
+            emptyList<String>(),
+            MuscleWeek(MuscleWeek.KEY_MUSCLES.associateWith { 1 }, totalSets = 5).notTrainedYet,
+        )
+        assertEquals(emptyList<String>(), MuscleWeek().notTrainedYet)
+    }
+
+    @Test
+    fun `heat levels step at 1, 4, 7 and 10 sets`() {
+        val expected = mapOf(
+            0 to 0, 1 to 1, 3 to 1, 4 to 2, 6 to 2, 7 to 3, 9 to 3, 10 to 4, 25 to 4, -1 to 0,
+        )
+        for ((sets, level) in expected) assertEquals("$sets sets", level, muscleHeatLevel(sets))
     }
 
     // MARK: - buildBody

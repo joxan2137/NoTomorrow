@@ -53,6 +53,11 @@ object NT {
         val heat: List<Color> =
             listOf(surface2, Color(0xFF693927), Color(0xFF98492B), Color(0xFFCA592C), ember)
 
+        /** Macro hues (v2). They only ever mean food; ember stays "you and progress". */
+        val protein = Color(0xFF5EB8FF)
+        val carbs = Color(0xFFF5C04A)
+        val fat = Color(0xFFB18CFF)
+
         val hairline = Color.White.copy(alpha = 0.12f)
         val border = Color.White.copy(alpha = 0.20f)
     }
