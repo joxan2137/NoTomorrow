@@ -39,7 +39,9 @@ iOS `.ipa` (AltStore, Sideloadly and friends re-sign it on install) plus an Andr
 `.aab` to the release. The tag (`v1.2.3`) becomes the version string and the run number the build
 number. The Android build is signed with your own keystore when the `ANDROID_KEYSTORE_BASE64`,
 `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` repository secrets
-exist, and with the debug key otherwise. The workflow can also be run by hand from the Actions tab.
+exist, and with the debug key otherwise. The workflow can also be run by hand from the Actions tab:
+on its own it only builds the files; with *publish* (and a version) it also creates release `v<version>`
+on that commit, attaches the files and publishes it, with notes from *notes_file* if given.
 
 Both apps talk to `https://notomorrow-api.fly.dev` by default (`AppConfig` in each app); point them
 at your own deployment, or flip the in-app *demo data* switch to run fully offline.
