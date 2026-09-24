@@ -101,6 +101,32 @@ object ProgressDerivations {
         }
     }
 
+    /**
+     * `ProgressModel.buildMuscleWeek`: completed sets of the finished workouts started since
+     * [weekStart], per primary muscle of each set's exercise. Every set counts towards
+     * [MuscleWeek.totalSets] once, warm-ups included, as `Workout.completedSetCount` does.
+     *
+     * @param primaryMuscles resolves an exercise id to its `primaryMuscles`; `null` (a deleted
+     *   exercise) counts the set without a muscle, like Swift's
+     *   `entry.exercise?.primaryMuscles ?? []`.
+     */
+    fun buildMuscleWeek(
+        sets: List<CompletedSetRow>,
+        weekStart: Instant,
+        primaryMuscles: (String) -> List<String>?,
+    ): MuscleWeek {
+        val counts = HashMap<String, Int>()
+        var total = 0
+        val since = weekStart.toEpochMilli()
+        for (set in sets) {
+            if (set.workoutEndedAt == null || set.workoutStartedAt < since) continue
+            total += 1
+            val muscles = set.exerciseId?.let(primaryMuscles).orEmpty()
+            for (muscle in muscles.distinct()) counts[muscle] = (counts[muscle] ?: 0) + 1
+        }
+        return MuscleWeek(setsByMuscle = counts, totalSets = total)
+    }
+
     /** 4-week delta, days logged and the 7-day trailing average (`ProgressModel.swift:171`). */
     fun buildBody(entries: List<BodyEntry>, today: LocalDate): BodyStats {
         val latest = entries.lastOrNull() ?: return BodyStats(entries = entries)

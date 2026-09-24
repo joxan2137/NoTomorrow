@@ -119,6 +119,32 @@ struct BodyStats {
     var isEmpty: Bool { entries.isEmpty }
 }
 
+/// Completed sets per muscle this ISO week, for the "Muscles this week" card. Muscle names are free-exercise-db's,
+/// the same ones `muscle_model.json` draws ("chest", "middle back").
+struct MuscleWeek: Equatable {
+    /// Muscle → sets; only muscles with at least one. A set counts once for each primary muscle of its exercise.
+    var setsByMuscle: [String: Int] = [:]
+    /// Completed sets this week, each counted once.
+    var totalSets = 0
+
+    /// The muscles the "not trained yet" line checks, in the order it lists them.
+    static let keyMuscles = ["chest", "shoulders", "lats", "quadriceps", "hamstrings"]
+
+    /// The five most-trained muscles, most sets first; ties by name so the order is stable.
+    var top: [(muscle: String, sets: Int)] {
+        setsByMuscle
+            .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+            .prefix(5)
+            .map { (muscle: $0.key, sets: $0.value) }
+    }
+
+    /// Key muscles still at zero sets; empty until something was logged this week.
+    var notTrainedYet: [String] {
+        guard totalSets > 0 else { return [] }
+        return Self.keyMuscles.filter { (setsByMuscle[$0] ?? 0) == 0 }
+    }
+}
+
 // MARK: - Model
 
 /// Everything the Progress tab shows, derived from SwiftData in one pass. Call `reload` on appear and after edits.
@@ -127,6 +153,7 @@ final class ProgressModel {
     private(set) var lifts: [LiftSummary] = []
     private(set) var weekly: [WeekVolume] = []
     private(set) var body = BodyStats()
+    private(set) var muscles = MuscleWeek()
     private(set) var unit: WeightUnit = .kg
     private(set) var hasCompletedSets = false
 
@@ -151,6 +178,7 @@ final class ProgressModel {
         lifts = Self.buildLifts(from: sets)
         hasCompletedSets = !lifts.isEmpty
         weekly = Self.buildWeekly(from: workouts)
+        muscles = Self.buildMuscleWeek(from: workouts, since: Calendar.current.startOfISOWeek(for: .now))
         body = Self.buildBody(from: weights)
     }
 
@@ -217,6 +245,25 @@ final class ProgressModel {
             guard let week = cal.date(byAdding: .weekOfYear, value: -offset, to: thisWeek) else { return nil }
             return WeekVolume(weekStart: week, volumeKg: totals[week] ?? 0, isCurrent: offset == 0)
         }
+    }
+
+    // MARK: Muscles this week
+
+    /// Completed sets of the finished workouts started since `weekStart`, per primary muscle of each set's exercise.
+    /// Every set counts towards `totalSets` once, warm-ups included, as `Workout.completedSetCount` does.
+    static func buildMuscleWeek(from workouts: [Workout], since weekStart: Date) -> MuscleWeek {
+        var week = MuscleWeek()
+        for workout in workouts where workout.endedAt != nil && workout.startedAt >= weekStart {
+            for entry in workout.exercises {
+                let done = entry.sets.filter(\.isCompleted).count
+                guard done > 0 else { continue }
+                week.totalSets += done
+                for muscle in Set(entry.exercise?.primaryMuscles ?? []) {
+                    week.setsByMuscle[muscle, default: 0] += done
+                }
+            }
+        }
+        return week
     }
 
     // MARK: Body weight

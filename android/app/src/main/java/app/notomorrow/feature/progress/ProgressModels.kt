@@ -116,6 +116,18 @@ data class LiftSummary(
         get() = sets.maxWithOrNull(compareBy({ it.reps }, { it.weightKg }))
 }
 
+/**
+ * [E1RMPoint] as [E1RMChart][app.notomorrow.designsystem.E1RMChart] plots it. `date` labels the
+ * axis; `atMillis` places the mark, so two sessions of the same lift on one day are two x
+ * positions, as in Swift Charts.
+ */
+fun E1RMPoint.toChartPoint(zone: ZoneId): E1RMChartPoint = E1RMChartPoint(
+    date = date.atZone(zone).toLocalDate(),
+    atMillis = date.toEpochMilli(),
+    e1RM = e1RM,
+    isPR = isPR,
+)
+
 /** One ISO week of training volume across every lift. */
 @Immutable
 data class WeekVolume(
@@ -151,6 +163,45 @@ data class BodyStats(
     val isEmpty: Boolean get() = entries.isEmpty()
 }
 
+// MARK: - Muscles this week
+
+/**
+ * Completed sets per muscle this ISO week, for the "Muscles this week" card — `MuscleWeek`
+ * (`ProgressModel.swift`). Muscle names are free-exercise-db's, the same ones
+ * `muscle_model.json` draws ("chest", "middle back").
+ */
+@Immutable
+data class MuscleWeek(
+    /**
+     * Muscle → sets; only muscles with at least one. A set counts once for each primary muscle
+     * of its exercise.
+     */
+    val setsByMuscle: Map<String, Int> = emptyMap(),
+    /** Completed sets this week, each counted once. */
+    val totalSets: Int = 0,
+) {
+    /** The five most-trained muscles, most sets first; ties by name so the order is stable. */
+    val top: List<Pair<String, Int>>
+        get() = setsByMuscle.entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .take(5)
+            .map { it.key to it.value }
+
+    /** Key muscles still at zero sets; empty until something was logged this week. */
+    val notTrainedYet: List<String>
+        get() = if (totalSets <= 0) {
+            emptyList()
+        } else {
+            KEY_MUSCLES.filter { (setsByMuscle[it] ?: 0) == 0 }
+        }
+
+    companion object {
+        /** The muscles the "not trained yet" line checks, in the order it lists them. */
+        val KEY_MUSCLES: List<String> =
+            listOf("chest", "shoulders", "lats", "quadriceps", "hamstrings")
+    }
+}
+
 // MARK: - Screen state
 
 /** One row of the home list, already derived (`ProgressLiftRow.swift`). */
@@ -168,6 +219,15 @@ data class LiftRowState(
     val isHot: Boolean,
 )
 
+/** The Lifts tab's focal card: the selected lift, sliced to the selected range. */
+@Immutable
+data class FocalLiftState(
+    val exerciseId: String,
+    val current: Double,
+    val delta: Double,
+    val points: List<E1RMChartPoint>,
+)
+
 /** Everything `ProgressHomeScreen` renders. */
 @Immutable
 data class ProgressHomeUiState(
@@ -176,6 +236,11 @@ data class ProgressHomeUiState(
     val lastPRDate: ProgressPhraseRef? = null,
     val lifts: List<LiftRowState> = emptyList(),
     val hasCompletedSets: Boolean = false,
+    /** The lift whose chip is on (the one tapped, else the first); `null` with no lifts. */
+    val focal: FocalLiftState? = null,
+    /** The focal card's range (`ProgressHomeView`'s `@State range`). */
+    val range: ProgressRange = ProgressRange.M3,
+    val muscles: MuscleWeek = MuscleWeek(),
     val body: BodyStats = BodyStats(),
     val tab: ProgressTab = ProgressTab.Lifts,
     val showsLogWeight: Boolean = false,

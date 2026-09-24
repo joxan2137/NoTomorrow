@@ -82,25 +82,9 @@ struct ExerciseProgressView: View {
                 }
             }
             Spacer()
-            deltaChip(delta)
+            ProgressDeltaChip(delta: delta, range: range, unit: model.unit)
                 .padding(.bottom, 6)
         }
-    }
-
-    private func deltaChip(_ delta: Double) -> some View {
-        let positive = delta > 0
-        let value = Fmt.signedWeight(delta, unit: model.unit, withUnit: true)
-        return HStack(spacing: 6) {
-            Image(systemName: positive ? "arrow.up" : (delta < 0 ? "arrow.down" : "minus"))
-                .font(.system(size: 12, weight: .bold))
-            Text(range.deltaLabel(value))
-                .font(NT.Fonts.footnoteBold)
-                .tabular()
-        }
-        .foregroundStyle(positive ? NT.Colors.ember : NT.Colors.ink2)
-        .padding(.horizontal, 12)
-        .frame(height: 30)
-        .background(positive ? NT.Colors.emberTint : NT.Colors.surface, in: Capsule())
     }
 
     // MARK: Chart

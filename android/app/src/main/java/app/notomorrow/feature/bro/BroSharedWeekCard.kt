@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.notomorrow.designsystem.FocalCard
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
-import app.notomorrow.designsystem.NTCard
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.service.DayState
@@ -32,7 +32,7 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * The one card on the Bro tab — the port of `BroSharedWeekCard`
+ * The one card on the Bro tab, drawn as its [FocalCard] (v2) — the port of `BroSharedWeekCard`
  * (`Features/Bro/BroSharedWeekCard.swift`): Mon–Sun letters, a row of cells for me and one
  * for the partner, then the next session line with who confirmed when.
  */
@@ -43,7 +43,7 @@ fun BroSharedWeekCard(
     session: BroSessionLine?,
     modifier: Modifier = Modifier,
 ) {
-    NTCard(modifier = modifier, padding = 0.dp) {
+    FocalCard(modifier = modifier, padding = 0.dp) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

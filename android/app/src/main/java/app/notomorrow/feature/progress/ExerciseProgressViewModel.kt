@@ -7,7 +7,6 @@ import app.notomorrow.data.dao.ProfileDao
 import app.notomorrow.data.dao.WorkoutDao
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.relation.CompletedSetRow
-import app.notomorrow.designsystem.E1RMChartPoint
 import app.notomorrow.designsystem.WeekVolumeBar
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.Days
@@ -123,16 +122,7 @@ class ExerciseProgressViewModel(
             hasLift = true,
             current = lift.current,
             delta = lift.delta(start),
-            points = lift.points(start).map {
-                E1RMChartPoint(
-                    // `date` labels the axis; `atMillis` places the mark, so two sessions of the
-                    // same lift on one day are two x positions, as in Swift Charts.
-                    date = it.date.atZone(zone).toLocalDate(),
-                    atMillis = it.date.toEpochMilli(),
-                    e1RM = it.e1RM,
-                    isPR = it.isPR,
-                )
-            },
+            points = lift.points(start).map { it.toChartPoint(zone) },
             lastPR = data.lastPR,
             thisWeekVolume = data.thisWeekVolume,
             sessions = lift.sessions(start),
