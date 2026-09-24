@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -25,12 +26,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.notomorrow.designsystem.MacroBar
+import app.notomorrow.designsystem.MacroRing
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSansFamily
 import app.notomorrow.designsystem.NtText
-import app.notomorrow.designsystem.ProgressRingBox
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
@@ -40,9 +41,9 @@ import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.S
 
 /**
- * "Fuel" header with eaten / goal, a 64 dp kcal-left ring and three macro bars — the port
- * of `FuelSummaryRow` (`Features/Dashboard/FuelSummaryRow.swift`). Tapping goes to the
- * Fuel tab.
+ * "Fuel" header with eaten / goal, a 64 dp kcal-left [MacroRing] and three macro bars in the
+ * macro hues — the port of `FuelSummaryRow` (`Features/Dashboard/FuelSummaryRow.swift`).
+ * Tapping goes to the Fuel tab.
  */
 @Composable
 fun FuelSummaryRow(
@@ -52,7 +53,6 @@ fun FuelSummaryRow(
     modifier: Modifier = Modifier,
 ) {
     val kcalLeft = maxOf(0.0, goals.kcal - totals.kcal)
-    val progress = if (goals.kcal > 0) totals.kcal / goals.kcal else 0.0
 
     Column(
         // `.accessibilityElement(children: .combine)` — headline, ratio, chevron, ring and
@@ -96,7 +96,7 @@ fun FuelSummaryRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            KcalRing(progress = progress, kcalLeft = kcalLeft)
+            KcalRing(totals = totals, goals = goals, kcalLeft = kcalLeft)
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
@@ -105,31 +105,37 @@ fun FuelSummaryRow(
                     label = stringResource(S.macro_protein),
                     value = totals.protein,
                     goal = goals.protein,
-                    fill = NT.Colors.ink,
+                    fill = NT.Colors.protein,
                 )
                 MacroBar(
                     label = stringResource(S.macro_carbs),
                     value = totals.carbs,
                     goal = goals.carbs,
+                    fill = NT.Colors.carbs,
                 )
                 MacroBar(
                     label = stringResource(S.macro_fat),
                     value = totals.fat,
                     goal = goals.fat,
+                    fill = NT.Colors.fat,
                 )
             }
         }
     }
 }
 
-/** 64 dp ring with the kcal left and a hand-rolled 8 sp "LEFT" micro-eyebrow inside it. */
+/** 64 dp [MacroRing] with the kcal left and a hand-rolled 8 sp "LEFT" micro-eyebrow inside it. */
 @Composable
-private fun KcalRing(progress: Double, kcalLeft: Double) {
-    ProgressRingBox(
-        progress = progress,
-        modifier = Modifier.size(64.dp),
-        lineWidth = 6.dp,
-    ) {
+private fun KcalRing(totals: FuelTotals, goals: FuelGoals, kcalLeft: Double) {
+    Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+        MacroRing(
+            protein = totals.protein,
+            carbs = totals.carbs,
+            fat = totals.fat,
+            kcalGoal = goals.kcal,
+            modifier = Modifier.fillMaxSize(),
+            lineWidth = 6.dp,
+        )
         Column(
             modifier = Modifier.padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp),

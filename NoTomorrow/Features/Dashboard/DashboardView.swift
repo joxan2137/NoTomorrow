@@ -107,7 +107,7 @@ struct DashboardScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                WeekStripView(days: week)
+                WeekStripView(days: week, isPaired: isPaired, partnerName: partnerName)
                     .padding(.top, NT.Spacing.section)
                 NextSessionCard(
                     session: nextSession,

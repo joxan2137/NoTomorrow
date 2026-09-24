@@ -32,14 +32,14 @@ struct FuelGoals: Equatable {
     }
 }
 
-/// "Fuel" header with eaten / goal, a 64 pt kcal-left ring and three macro bars. Tapping goes to the Fuel tab.
+/// "Fuel" header with eaten / goal, a 64 pt kcal-left `MacroRing` and three macro bars in the macro hues. Tapping goes
+/// to the Fuel tab.
 struct FuelSummaryRow: View {
     var totals: FuelTotals
     var goals: FuelGoals
     var action: () -> Void
 
     private var kcalLeft: Double { max(0, goals.kcal - totals.kcal) }
-    private var progress: Double { goals.kcal > 0 ? totals.kcal / goals.kcal : 0 }
 
     var body: some View {
         Button(action: action) {
@@ -60,9 +60,9 @@ struct FuelSummaryRow: View {
                 HStack(spacing: 16) {
                     ring
                     VStack(spacing: 9) {
-                        MacroBar(label: "macro.protein", value: totals.protein, goal: goals.protein, fill: NT.Colors.ink)
-                        MacroBar(label: "macro.carbs", value: totals.carbs, goal: goals.carbs)
-                        MacroBar(label: "macro.fat", value: totals.fat, goal: goals.fat)
+                        MacroBar(label: "macro.protein", value: totals.protein, goal: goals.protein, fill: NT.Colors.protein)
+                        MacroBar(label: "macro.carbs", value: totals.carbs, goal: goals.carbs, fill: NT.Colors.carbs)
+                        MacroBar(label: "macro.fat", value: totals.fat, goal: goals.fat, fill: NT.Colors.fat)
                     }
                 }
             }
@@ -74,7 +74,7 @@ struct FuelSummaryRow: View {
 
     private var ring: some View {
         ZStack {
-            ProgressRing(progress: progress, lineWidth: 6)
+            MacroRing(protein: totals.protein, carbs: totals.carbs, fat: totals.fat, kcalGoal: goals.kcal, lineWidth: 6)
             VStack(spacing: 0) {
                 Text(Fmt.kcal(kcalLeft, withUnit: false))
                     .font(.system(size: 14, weight: .bold))

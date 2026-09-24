@@ -2,13 +2,15 @@ import SwiftUI
 
 // MARK: - Hero: ring + macro bars
 
+/// The kcal-left `MacroRing` (protein / carbs / fat arcs over `surface`) and the three macro bars in the macro hues.
 struct FuelHeroView: View {
     var model: FuelModel
 
     var body: some View {
         HStack(alignment: .center, spacing: 22) {
             ZStack {
-                ProgressRing(progress: model.ringProgress, lineWidth: 10, color: NT.Colors.ember, track: NT.Colors.surface)
+                MacroRing(protein: model.proteinEaten, carbs: model.carbsEaten, fat: model.fatEaten,
+                          kcalGoal: model.goals.kcal, lineWidth: 10, track: NT.Colors.surface)
                     .frame(width: 132, height: 132)
                 VStack(spacing: 2) {
                     Text(Fmt.kcal(model.kcalLeft, withUnit: false))
@@ -24,9 +26,9 @@ struct FuelHeroView: View {
             .accessibilityElement(children: .combine)
 
             VStack(alignment: .leading, spacing: 12) {
-                MacroBar(label: "macro.protein", value: model.proteinEaten, goal: model.goals.protein, fill: NT.Colors.ink)
-                MacroBar(label: "macro.carbs", value: model.carbsEaten, goal: model.goals.carbs, fill: NT.Colors.ink2)
-                MacroBar(label: "macro.fat", value: model.fatEaten, goal: model.goals.fat, fill: NT.Colors.ink2)
+                MacroBar(label: "macro.protein", value: model.proteinEaten, goal: model.goals.protein, fill: NT.Colors.protein)
+                MacroBar(label: "macro.carbs", value: model.carbsEaten, goal: model.goals.carbs, fill: NT.Colors.carbs)
+                MacroBar(label: "macro.fat", value: model.fatEaten, goal: model.goals.fat, fill: NT.Colors.fat)
                 Text(FuelText.format("fuel.eatenGoal",
                                      Fmt.kcal(model.kcalEaten, withUnit: false),
                                      Fmt.kcal(model.goals.kcal, withUnit: false)))
@@ -125,7 +127,7 @@ struct FuelMealRows: View {
         if entries.isEmpty, proteinRemaining > 0 {
             Text(FuelText.format("fuel.proteinToGo", Fmt.grams(proteinRemaining)))
                 .font(NT.Fonts.footnoteBold)
-                .foregroundStyle(NT.Colors.ember)
+                .foregroundStyle(NT.Colors.protein)
                 .tabular()
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
