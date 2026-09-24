@@ -27,6 +27,11 @@ enum NT {
         /// saturated per step, ending on ember itself.
         static let heat: [Color] = [surface2, Color(hex: 0x693927), Color(hex: 0x98492B), Color(hex: 0xCA592C), ember]
 
+        /// Macro hues (v2). They only ever mean food; ember stays "you and progress".
+        static let protein = Color(hex: 0x5EB8FF)
+        static let carbs   = Color(hex: 0xF5C04A)
+        static let fat     = Color(hex: 0xB18CFF)
+
         static let hairline = Color.white.opacity(0.12)
         static let border   = Color.white.opacity(0.20)
     }

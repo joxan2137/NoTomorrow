@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
@@ -201,6 +206,38 @@ fun NTCard(
         modifier = modifier
             .fillMaxWidth()
             .background(NT.Colors.surface, NtShapes.card)
+            .padding(padding),
+        horizontalAlignment = Alignment.Start,
+        content = content,
+    )
+}
+
+/**
+ * `Components.swift` `FocalCard` (v2). The one card per screen that holds what the user came to do:
+ * the surface with a faint ember wash from the top-trailing corner (13 % ember fading out over
+ * 320 dp) and a 1 dp ember hairline at 12 %. Everything else stays on plain [NTCard]s or none.
+ */
+@Composable
+fun FocalCard(
+    modifier: Modifier = Modifier,
+    padding: Dp = NT.Spacing.cardPadding,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(NtShapes.card)
+            .background(NT.Colors.surface)
+            .drawBehind {
+                drawRect(
+                    Brush.radialGradient(
+                        colors = listOf(NT.Colors.ember.copy(alpha = 0.13f), NT.Colors.ember.copy(alpha = 0f)),
+                        center = Offset(size.width, 0f),
+                        radius = 320.dp.toPx(),
+                    )
+                )
+            }
+            .border(1.dp, NT.Colors.ember.copy(alpha = 0.12f), NtShapes.card)
             .padding(padding),
         horizontalAlignment = Alignment.Start,
         content = content,

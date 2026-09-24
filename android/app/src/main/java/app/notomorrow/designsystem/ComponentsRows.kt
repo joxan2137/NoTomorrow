@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -125,6 +126,70 @@ fun ProgressRing(
                 // `.rotationEffect(.degrees(-90))` — 12 o'clock.
                 startAngle = -90f,
                 sweepAngle = 360f * p,
+                useCenter = false,
+                topLeft = topLeft,
+                size = Size(d, d),
+                style = Stroke(width = w, cap = StrokeCap.Round),
+            )
+        }
+    }
+}
+
+/** One arc of [MacroRing], as fractions of the circle from 12 o'clock. `macro` is 0 protein, 1 carbs, 2 fat. */
+data class MacroArc(val start: Float, val end: Float, val macro: Int)
+
+/**
+ * `MacroRing.arcs` in `Components.swift`: each macro's share of the kcal goal (4 / 4 / 9 kcal per gram), laid
+ * end to end clockwise, scaled down together past the goal so the ring reads full rather than wrapping. [gap] is
+ * the fraction of the circumference left clear between arcs (between the round caps).
+ */
+fun macroRingArcs(protein: Double, carbs: Double, fat: Double, kcalGoal: Double, gap: Float): List<MacroArc> {
+    if (kcalGoal <= 0.0) return emptyList()
+    val shares = listOf(protein * 4, carbs * 4, fat * 9).map { (maxOf(0.0, it) / kcalGoal).toFloat() }
+    val total = shares.sum()
+    val scale = if (total > 1f) 1f / total else 1f
+    val arcs = mutableListOf<MacroArc>()
+    var cursor = 0f
+    shares.forEachIndexed { index, share ->
+        val length = share * scale
+        if (length > gap) arcs += MacroArc(cursor, cursor + length - gap, index)
+        cursor += length
+    }
+    return arcs
+}
+
+/**
+ * `Components.swift` `MacroRing` (v2): the kcal ring split by where the calories came from — protein,
+ * carbs and fat arcs in [NT.Colors.protein] / [NT.Colors.carbs] / [NT.Colors.fat] over [track].
+ * Same geometry as [ProgressRing] (stroke centred on a circle of `size.minDimension`); the gap between
+ * arcs is `lineWidth + 3` dp of arc length.
+ */
+@Composable
+fun MacroRing(
+    protein: Double,
+    carbs: Double,
+    fat: Double,
+    kcalGoal: Double,
+    modifier: Modifier = Modifier,
+    lineWidth: Dp = 6.dp,
+    track: Color = NT.Colors.surface2,
+) {
+    val p by animateFloatAsState(protein.toFloat(), NT.Anim.easeOut60, label = "MacroRingP")
+    val c by animateFloatAsState(carbs.toFloat(), NT.Anim.easeOut60, label = "MacroRingC")
+    val f by animateFloatAsState(fat.toFloat(), NT.Anim.easeOut60, label = "MacroRingF")
+    val colors = listOf(NT.Colors.protein, NT.Colors.carbs, NT.Colors.fat)
+    Canvas(modifier) {
+        val w = lineWidth.toPx()
+        val d = size.minDimension
+        val topLeft = Offset((size.width - d) / 2f, (size.height - d) / 2f)
+        drawCircle(color = track, radius = d / 2f, center = center, style = Stroke(w))
+        val circumference = (Math.PI * d).toFloat()
+        val gap = if (circumference > 0f) (w + 3.dp.toPx()) / circumference else 0f
+        macroRingArcs(p.toDouble(), c.toDouble(), f.toDouble(), kcalGoal, gap).forEach { arc ->
+            drawArc(
+                color = colors[arc.macro],
+                startAngle = -90f + 360f * arc.start,
+                sweepAngle = 360f * (arc.end - arc.start),
                 useCenter = false,
                 topLeft = topLeft,
                 size = Size(d, d),

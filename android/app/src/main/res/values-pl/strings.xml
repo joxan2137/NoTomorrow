@@ -112,6 +112,7 @@
     <string name="dashboard_settings">Ustawienia</string>
     <string name="dashboard_startWorkout">Zacznij trening</string>
     <string name="dashboard_todaysSession">Dzisiejszy trening</string>
+    <string name="dashboard_week_partnerDone_s">%s: trening zaliczony</string>
     <string name="dashboard_youreIn">Wchodzisz</string>
     <string name="dashboard_youreOut">Dziś odpuszczasz</string>
     <string name="day_today">Dziś</string>
@@ -419,10 +420,12 @@
     <string name="progress_lifts">Boje</string>
     <string name="progress_logWeight">Zapisz wagę</string>
     <string name="progress_mostReps">Najwięcej powtórzeń</string>
+    <string name="progress_musclesThisWeek">Mięśnie w tym tygodniu</string>
     <string name="progress_noPRYet">Jeszcze bez PR</string>
     <string name="progress_noSessionsInRange">Brak treningów w tym zakresie.</string>
     <string name="progress_noVolumeYet">W tym tygodniu jeszcze nic nie przerzucone.</string>
     <string name="progress_noWeightYet">Jeszcze bez zapisanej wagi.</string>
+    <string name="progress_notTrainedYet_s">W tym tygodniu jeszcze bez: %s</string>
     <string name="progress_over4Weeks_n">w 4 tygodnie · zapisane %d z 28 dni</string>
     <string name="progress_prOn_s">PR %s</string>
     <string name="progress_prToday">PR dziś</string>
@@ -578,6 +581,7 @@
     <string name="timer_setOf_n_n">Seria %1$d z %2$d</string>
     <string name="timer_skip">Pomiń przerwę</string>
     <string name="timer_upNext">Następna</string>
+    <string name="train_upNext">Następny</string>
     <string name="unit_g">g</string>
     <string name="unit_kcal">kcal</string>
     <string name="unit_kg">kg</string>
@@ -652,6 +656,9 @@
     <string name="workout_finish">Zakończ</string>
     <string name="workout_finishConfirm">Zakończyć trening?</string>
     <string name="workout_history">Historia</string>
+    <string name="workout_history_earlier">Wcześniej</string>
+    <string name="workout_history_lastWeek">Zeszły tydzień</string>
+    <string name="workout_history_thisWeek">Ten tydzień</string>
     <string name="workout_inProgress">Trening w toku</string>
     <string name="workout_last">Ostatnio</string>
     <string name="workout_miniBar_action">otworzyć trening</string>
@@ -675,6 +682,9 @@
     <string name="workout_sets">Serie</string>
     <string name="workout_start">Zacznij trening</string>
     <string name="workout_startEmpty">Zacznij pusty trening</string>
+    <string name="workout_suggest_last_s_s">Ostatnio %1$s przy %2$s</string>
+    <string name="workout_suggest_try_s">Dziś spróbuj %s</string>
+    <string name="workout_suggest_use">Użyj</string>
     <string name="workout_time">Czas</string>
     <string name="workout_untitled">Trening</string>
     <string name="workout_volume">Objętość</string>

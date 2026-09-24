@@ -112,6 +112,7 @@
     <string name="dashboard_settings">Settings</string>
     <string name="dashboard_startWorkout">Start workout</string>
     <string name="dashboard_todaysSession">Today\'s session</string>
+    <string name="dashboard_week_partnerDone_s">%s trained</string>
     <string name="dashboard_youreIn">You\'re in</string>
     <string name="dashboard_youreOut">You\'re out today</string>
     <string name="day_today">Today</string>
@@ -419,10 +420,12 @@
     <string name="progress_lifts">Lifts</string>
     <string name="progress_logWeight">Log weight</string>
     <string name="progress_mostReps">Most reps</string>
+    <string name="progress_musclesThisWeek">Muscles this week</string>
     <string name="progress_noPRYet">No PR yet</string>
     <string name="progress_noSessionsInRange">No sessions in this range.</string>
     <string name="progress_noVolumeYet">Nothing lifted yet this week.</string>
     <string name="progress_noWeightYet">No weight logged yet.</string>
+    <string name="progress_notTrainedYet_s">Not trained yet this week: %s</string>
     <string name="progress_over4Weeks_n">over 4 weeks · logged %d of 28 days</string>
     <string name="progress_prOn_s">PR %s</string>
     <string name="progress_prToday">PR today</string>
@@ -578,6 +581,7 @@
     <string name="timer_setOf_n_n">Set %1$d of %2$d</string>
     <string name="timer_skip">Skip rest</string>
     <string name="timer_upNext">Up next</string>
+    <string name="train_upNext">Up next</string>
     <string name="unit_g">g</string>
     <string name="unit_kcal">kcal</string>
     <string name="unit_kg">kg</string>
@@ -652,6 +656,9 @@
     <string name="workout_finish">Finish</string>
     <string name="workout_finishConfirm">Finish workout?</string>
     <string name="workout_history">History</string>
+    <string name="workout_history_earlier">Earlier</string>
+    <string name="workout_history_lastWeek">Last week</string>
+    <string name="workout_history_thisWeek">This week</string>
     <string name="workout_inProgress">Workout in progress</string>
     <string name="workout_last">Last</string>
     <string name="workout_miniBar_action">open the workout</string>
@@ -675,6 +682,9 @@
     <string name="workout_sets">Sets</string>
     <string name="workout_start">Start workout</string>
     <string name="workout_startEmpty">Start empty workout</string>
+    <string name="workout_suggest_last_s_s">%1$s at %2$s last time</string>
+    <string name="workout_suggest_try_s">Try %s today</string>
+    <string name="workout_suggest_use">Use</string>
     <string name="workout_time">Time</string>
     <string name="workout_untitled">Workout</string>
     <string name="workout_volume">Volume</string>
