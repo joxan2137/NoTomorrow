@@ -1,7 +1,10 @@
 name: Release
 
 # Builds the iOS and Android binaries for every published GitHub release and attaches
-# them to it. Can also be run by hand (workflow_dispatch) to produce artifacts only.
+# them to it. Can also be run by hand (workflow_dispatch): by default that only produces
+# artifacts; with `publish` it also creates release v<version> on the commit it runs on,
+# as a draft that is published once both builds are attached (a draft left over from a
+# failed run is reused on the next one).
 #
 # Versioning: the release tag (v1.2.3) becomes the version string, the workflow run
 # number becomes the build number (CURRENT_PROJECT_VERSION / versionCode).
@@ -23,6 +26,15 @@ on:
     inputs:
       version:
         description: "Version to stamp into the binaries (e.g. 1.2.3). Empty = keep project defaults."
+        required: false
+        type: string
+      publish:
+        description: "Also create and publish release v<version> on this commit, with the binaries attached."
+        required: false
+        type: boolean
+        default: false
+      notes_file:
+        description: "Release notes for publish: a Markdown file in the repo. Empty = GitHub's generated notes."
         required: false
         type: string
 
@@ -47,16 +59,24 @@ jobs:
       ios_version: ${{ steps.resolve.outputs.ios_version }}
       label: ${{ steps.resolve.outputs.label }}
       build: ${{ steps.resolve.outputs.build }}
+      draft: ${{ steps.resolve.outputs.draft }}
     steps:
       - id: resolve
         env:
           TAG: ${{ github.event.release.tag_name }}
           INPUT_VERSION: ${{ inputs.version }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
           set -euo pipefail
           tag="${TAG:-}"
           version="${tag#v}"
           if [ -z "$version" ]; then version="${INPUT_VERSION:-}"; fi
+          draft=false
+          if [ "${PUBLISH:-}" = "true" ]; then
+            if [ -z "$version" ]; then echo "::error title=Publish::publish needs a version"; exit 1; fi
+            tag="v$version"
+            draft=true
+          fi
           if [ -n "$version" ]; then label="$version"; else label="dev-${GITHUB_SHA::7}"; fi
           # CFBundleShortVersionString must be 1-3 dot-separated integers; keep that prefix only.
           ios_version="$(printf '%s' "$version" | grep -oE '^[0-9]+(\.[0-9]+){0,2}' || true)"
@@ -66,8 +86,32 @@ jobs:
             echo "ios_version=$ios_version"
             echo "label=$label"
             echo "build=$GITHUB_RUN_NUMBER"
+            echo "draft=$draft"
           } >> "$GITHUB_OUTPUT"
-          echo "version=$version ios_version=$ios_version label=$label build=$GITHUB_RUN_NUMBER"
+          echo "tag=$tag version=$version ios_version=$ios_version label=$label build=$GITHUB_RUN_NUMBER draft=$draft"
+
+      - uses: actions/checkout@v7
+        if: steps.resolve.outputs.draft == 'true'
+
+      - name: Create draft release
+        if: steps.resolve.outputs.draft == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          NOTES_FILE: ${{ inputs.notes_file }}
+        run: |
+          set -euo pipefail
+          if is_draft="$(gh release view "$TAG" --json isDraft --jq .isDraft --repo "$GITHUB_REPOSITORY" 2>/dev/null)"; then
+            if [ "$is_draft" != "true" ]; then
+              echo "::error title=Publish::$TAG is already published"
+              exit 1
+            fi
+            echo "Reusing the existing draft of $TAG"
+            exit 0
+          fi
+          notes=(--generate-notes)
+          if [ -n "${NOTES_FILE:-}" ]; then notes=(--notes-file "$NOTES_FILE"); fi
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "$TAG" "${notes[@]}" --repo "$GITHUB_REPOSITORY"
 
   ios:
     name: iOS (unsigned IPA)
@@ -139,7 +183,7 @@ jobs:
           if-no-files-found: error
 
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: needs.meta.outputs.tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.meta.outputs.tag }}
@@ -216,9 +260,20 @@ jobs:
           if-no-files-found: error
 
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: needs.meta.outputs.tag != ''
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.meta.outputs.tag }}
         run: gh release upload "$TAG" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  publish:
+    name: Publish release
+    needs: [meta, ios, android]
+    if: needs.meta.outputs.draft == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.meta.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false --latest --repo "$GITHUB_REPOSITORY"
