@@ -180,8 +180,8 @@
   @media (max-width: 640px) { .surfaces { grid-template-columns: 1fr; } }
   .surf { height: 170px; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; font-size: 13px; color: var(--ink-2); position: relative; overflow: hidden; }
   .surf b { color: var(--ink); font-size: 15px; display: block; }
-  .surf.card { background: linear-gradient(180deg, #1F1F22, #19191B 60%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.09); }
-  .surf.herocard { background: radial-gradient(120% 85% at 100% 0%, rgba(255,106,43,0.30), rgba(255,106,43,0.06) 45%, transparent 70%), linear-gradient(180deg, #1F1B1A, #171618 70%); box-shadow: inset 0 1px 0 rgba(255,170,130,0.18), inset 0 0 0 1px rgba(255,106,43,0.16), 0 20px 50px -20px rgba(255,106,43,0.25); }
+  .surf.card { background: #1C1C1E; }
+  .surf.herocard { background: radial-gradient(90% 70% at 100% 0%, rgba(255,106,43,0.13), transparent 65%), #1C1C1E; box-shadow: inset 0 1px 0 rgba(255,190,160,0.10), inset 0 0 0 1px rgba(255,106,43,0.12); }
   .surf.glassy { background: repeating-linear-gradient(90deg, #26262a 0 18px, #1a1a1d 18px 36px); }
   .surf.glassy .g { position: absolute; left: 14px; right: 14px; top: 16px; height: 44px; border-radius: 22px; background: rgba(28,28,31,0.72); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.08); }
   pre { margin: 0; background: #0c0c0e; border-radius: 16px; padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #d7d7de; box-shadow: inset 0 0 0 1px var(--line); }
@@ -217,7 +217,7 @@
     <a class="mark" href="#"><span>No</span> Tomorrow<small>v2 proposal</small></a>
     <nav aria-label="Sections">
       <a href="#problems">Diagnosis</a>
-      <a href="#moves">Seven moves</a>
+      <a href="#moves">Six moves</a>
       <a href="#compare">Before / after</a>
       <a href="#system">Design system</a>
       <a href="#plan">Shipping it</a>
@@ -232,7 +232,7 @@
       <div>
         <div class="eyebrow ember">UI redesign proposal · No Tomorrow v2</div>
         <h1 class="display">Keep the ember.<br><span class="e">Lose the empty space.</span></h1>
-        <p class="lead">The current app is tidy, but most screens are grey numbers in lists, whole screens sit empty until there's data, and the partner feature the app is built around lives in the fifth tab. This proposal keeps the ember-on-black identity and the iOS&nbsp;26 glass. It gives each screen one clear job, draws the data instead of listing it, and puts your bro on every screen.</p>
+        <p class="lead">The current app is tidy, but most screens are grey numbers in lists, whole screens sit empty until there's data, and the partner feature the app is built around lives in the fifth tab. This proposal keeps what already works: the ember-on-black look, the iOS&nbsp;26 Liquid Glass tab bar, and screens as quiet as they are today. It gives each screen one clear focus, draws data where a shape says more than a number, and brings your bro onto the screens where it matters.</p>
         <div class="ctas">
           <a class="btn primary" href="app/">Open the prototype
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -241,7 +241,7 @@
         <div class="facts">
           <div><b class="num">6</b><span>screens redesigned: five tabs plus the live workout, all tappable</span></div>
           <div><b class="num">12</b><span>flows to try, from ticking a PR set to logging dinner from a photo</span></div>
-          <div><b class="num">0</b><span>backend changes for phases 1 and 2; phase 3 needs two small ones</span></div>
+          <div><b class="num">0</b><span>backend changes for phases 1 and 2; phase 3 needs one small one</span></div>
         </div>
       </div>
       <div class="live">
@@ -257,7 +257,7 @@
           <button data-tab="progress">Progress</button>
           <button data-tab="bro">Bro</button>
         </div>
-        <div class="hint">It's live: tap <b>I'm in</b>, start the workout, tick a set.</div>
+        <div class="hint">It's live: tap <b>I'm in</b>, start the workout, tick a set. Drag along the tab bar.</div>
       </div>
     </div>
   </div>
@@ -305,44 +305,39 @@
     <div class="wrap">
       <div class="sec-head">
         <div class="eyebrow">02 · The redesign</div>
-        <h2 class="display">Seven moves</h2>
-        <p class="lead">No new brand, no new navigation. The same five tabs, fonts and ember, used with more intent.</p>
+        <h2 class="display">Six moves</h2>
+        <p class="lead">No new brand, no new navigation, no extra chrome. The same five tabs, fonts and ember, with fewer and clearer things on each screen.</p>
       </div>
       <div class="moves">
         <article class="move">
           <div class="n">1</div>
-          <div><h3>One hero per screen</h3><p>Each tab lifts exactly one object on an ember-lit card: the next session on Today, today's routine on Train, the day's ring on Fuel, your lift on Progress, the shared scoreboard on Bro. Everything else steps back to plain surfaces.</p><button class="see" data-go="today">See it on Today →</button></div>
-          <div class="crop"><img src="img/after-today.webp" alt="" style="object-position:50% 58%"></div>
+          <div><h3>One focal point per screen</h3><p>Each tab lifts one thing onto a card with a faint ember wash: the next session on Today, today's routine on Train, your lift on Progress, the week you share on Bro. Everything else stays on the plain surfaces the app already uses.</p><button class="see" data-go="today">See it on Today →</button></div>
+          <div class="crop"><img src="img/after-today.webp" alt="" style="object-position:50% 45%"></div>
         </article>
         <article class="move">
           <div class="n">2</div>
-          <div><h3>Shapes before digits</h3><p>The e1RM chart with PR markers and range chips, a sparkline for every lift, weekly volume bars, a body-weight trend drawn through raw weigh-ins, and a muscle map built from the <code class="inl">muscle_model.json</code> the app already ships.</p><button class="see" data-go="progress">See it on Progress →</button></div>
-          <div class="crop"><img src="img/after-progress.webp" alt="" style="object-position:50% 37%"></div>
+          <div><h3>Shapes where they help</h3><p>Progress gets a real chart: estimated 1RM with record markers and ranges, a sparkline per lift, a body-weight trend drawn through the raw weigh-ins, and a weekly muscle map from the <code class="inl">muscle_model.json</code> the app already ships. The other tabs stay lists.</p><button class="see" data-go="progress">See it on Progress →</button></div>
+          <div class="crop"><img src="img/after-progress.webp" alt="" style="object-position:50% 38%"></div>
         </article>
         <article class="move">
           <div class="n">3</div>
-          <div><h3>Your bro on every screen</h3><p>Two avatars and a one-tap answer on Today. Both of you in the week strip. His check-in at the top of your workout. The Bro tab turns into a scoreboard: sessions together, a You/Tomek week grid and a friendly head-to-head.</p><button class="see" data-go="bro">See it on Bro →</button></div>
-          <div class="crop"><img src="img/after-bro.webp" alt="" style="object-position:50% 24%"></div>
+          <div><h3>Your bro, where it matters</h3><p>Two avatars and a one-tap answer on the next-session card. A dot under each day for who trained. One quiet line in the workout when he's training too. The Bro tab opens on your shared week instead of a settings-style page.</p><button class="see" data-go="bro">See it on Bro →</button></div>
+          <div class="crop"><img src="img/after-bro.webp" alt="" style="object-position:50% 18%"></div>
         </article>
         <article class="move">
           <div class="n">4</div>
-          <div><h3>Colour with a job</h3><p>Ember means <em>you</em>, progress and records. Green means your partner and “confirmed”. Red only ever means “missed”. Protein, carbs and fat get their own hues, so the kcal ring can show what the calories are made of without borrowing ember.</p><button class="see" data-go="fuel">See it on Fuel →</button></div>
-          <div class="crop"><img src="img/after-fuel.webp" alt="" style="object-position:50% 19%"></div>
+          <div><h3>Colour with a job</h3><p>Ember means you, progress and records. Green means your partner and “confirmed”. Red only ever means “missed”. Protein, carbs and fat get their own hues so the kcal ring shows what the calories are made of. No other colour is added.</p><button class="see" data-go="fuel">See it on Fuel →</button></div>
+          <div class="crop"><img src="img/after-fuel.webp" alt="" style="object-position:50% 16%"></div>
         </article>
         <article class="move">
           <div class="n">5</div>
-          <div><h3>Empty states that coach</h3><p>An empty dinner becomes “Post-workout dinner: aim for 70&nbsp;g protein”. A blank muscle map says “Chest and triceps haven't been hit this week, Push A tonight fixes that.” Every gap on screen points at the next thing to do.</p><button class="see" data-go="fuel">See the empty dinner →</button></div>
-          <div class="crop"><img src="img/after-fuel-dinner.webp" alt="" style="object-position:50% 78%"></div>
+          <div><h3>A calmer workout screen</h3><p>A thin rail shows where you are. The next weight is suggested in one line (“82.5 kg today, you hit 8 · 8 · 7 at 80”) with Undo. Ticks are bigger, done sets are tinted, the rest timer sits at thumb height, and the other exercises collapse into a plain list.</p><button class="see" data-go="workout">Start a workout →</button></div>
+          <div class="crop"><img src="img/after-workout.webp" alt="" style="object-position:50% 32%"></div>
         </article>
         <article class="move">
           <div class="n">6</div>
-          <div><h3>A workout screen for sweaty thumbs</h3><p>A rail showing where you are in the session, the current set highlighted, 44&nbsp;pt ticks, plate math under the bar, a progressive-overload suggestion with Undo, and the rest timer pinned at thumb height with −15 / +15 / Skip.</p><button class="see" data-go="workout">Start a workout →</button></div>
-          <div class="crop"><img src="img/after-workout.webp" alt="" style="object-position:50% 54%"></div>
-        </article>
-        <article class="move">
-          <div class="n">7</div>
-          <div><h3>Motion as feedback</h3><p>Ticks pop, rings and bars fill when a tab appears, the tab pill springs, and beating a record fires a PR toast with sparks the moment you tick the set, not after the workout. All of it respects Reduce Motion.</p><button class="see" data-go="workout">Tick a PR set →</button></div>
-          <div class="crop"><img src="img/after-pr.webp" alt="" style="object-position:50% 4%"></div>
+          <div><h3>Native motion, kept</h3><p>The Liquid Glass tab bar works as it does in the shipped app, built to the numbers in <code class="inl">docs/android-glass.md</code>. The selection swells on touch, becomes a magnifying lens with a spectral rim while it slides or you drag it, then settles into the flat pill. Ticking a record set shows a short PR toast.</p><button class="see" data-go="today">Drag along the tab bar →</button></div>
+          <div class="crop"><img src="img/after-lens.webp" alt="" style="object-fit:contain;background:#0A0A0B"></div>
         </article>
       </div>
     </div>
@@ -378,7 +373,7 @@
       <div class="sec-head">
         <div class="eyebrow">04 · Design system v2</div>
         <h2 class="display">What changes<br>in the tokens</h2>
-        <p class="lead">Additive. Existing <code class="inl">NT.Colors</code>, fonts and radii keep their names; v2 adds three macro hues, a lighter surface step and three surface styles. Android picks up the same values in its designsystem module.</p>
+        <p class="lead">Small and additive. Existing <code class="inl">NT.Colors</code>, fonts, radii and surfaces stay as they are. v2 adds three macro hues and one focal-card style. Android picks up the same values in its designsystem module.</p>
       </div>
       <div class="ds">
         <div class="panel wide">
@@ -387,10 +382,9 @@
             <div class="sw-row">
               <div class="sw"><div class="chip" style="background:#0A0A0B;box-shadow:inset 0 0 0 1px var(--line)"></div><div class="meta"><b>ground</b><code>#0A0A0B</code></div></div>
               <div class="sw"><div class="chip" style="background:#1C1C1E"></div><div class="meta"><b>surface</b><code>#1C1C1E</code></div></div>
-              <div class="sw new"><div class="chip" style="background:linear-gradient(180deg,#1F1F22,#19191B)"></div><div class="meta"><b>surfaceHi</b><code>#1F1F22 → #19191B</code></div></div>
               <div class="sw"><div class="chip" style="background:#2A2A2E"></div><div class="meta"><b>surface2</b><code>#2A2A2E</code></div></div>
               <div class="sw"><div class="chip" style="background:#F2F2F4"></div><div class="meta"><b>ink</b><code>#F2F2F4</code></div></div>
-              <div class="sw new"><div class="chip" style="background:rgba(255,255,255,0.09)"></div><div class="meta"><b>rim</b><code>white 9%</code><span> · 1 pt top light</span></div></div>
+              <div class="sw"><div class="chip" style="background:#38383C"></div><div class="meta"><b>surface3</b><code>#38383C</code></div></div>
             </div>
             <div class="sw-row">
               <div class="sw"><div class="chip" style="background:#FF6A2B"></div><div class="meta"><b>ember</b><code>#FF6A2B</code><span> · you, progress, PRs</span></div></div>
@@ -407,11 +401,11 @@
               <div class="sw"><div class="chip" style="background:#CA592C"></div><div class="meta"><b>heat 3</b></div></div>
               <div class="sw"><div class="chip" style="background:#FF6A2B"></div><div class="meta"><b>heat 4</b><span>on target</span></div></div>
             </div>
-            <p style="margin:6px 0 0;font-size:13px;color:var(--ink-3)">The existing heat ramp now also drives the muscle map (sets per muscle) and the week strip on Fuel.</p>
+            <p style="margin:6px 0 0;font-size:13px;color:var(--ink-3)">The existing heat ramp also drives the muscle map (sets per muscle).</p>
           </div>
         </div>
         <div class="panel">
-          <h3>Type</h3><p>Big Shoulders moves from “hero numbers only” to “every number worth celebrating”.</p>
+          <h3>Type</h3><p>Unchanged. Big Shoulders stays for the one big number on each screen.</p>
           <div class="type-spec">
             <div class="row"><span class="k">display 84</span><span class="display" style="font-size:72px;text-transform:none">18:00</span></div>
             <div class="row"><span class="k">display 48</span><span class="display" style="font-size:44px;text-transform:none">1 124 <span style="font-family:var(--font);font-size:15px;font-weight:500;color:var(--ink-2);text-transform:none">kcal left</span></span></div>
@@ -421,11 +415,11 @@
           </div>
         </div>
         <div class="panel">
-          <h3>Surfaces</h3><p>Three levels. Only one hero per screen.</p>
+          <h3>Surfaces</h3><p>Plain cards as today, one focal card per screen, glass only for chrome.</p>
           <div class="surfaces">
-            <div class="surf card"><b>Card</b>Gradient + 1 pt rim light</div>
-            <div class="surf herocard"><b>Hero</b>Ember radial, inner hairline, soft glow</div>
-            <div class="surf glassy"><div class="g"></div><b>Glass bar</b>Tab bar, Fuel actions, rest timer, mini bar</div>
+            <div class="surf card"><b>Card</b>#1C1C1E, as today</div>
+            <div class="surf herocard"><b>Focal card</b>Faint ember wash and hairline</div>
+            <div class="surf glassy"><div class="g"></div><b>Glass</b>Tab bar, Fuel actions, rest timer, mini bar</div>
           </div>
         </div>
         <div class="panel wide">
@@ -434,17 +428,15 @@
             <div><h4>Theme.swift: new tokens</h4>
 <pre><span class="k">enum</span> <span class="t">Colors</span> {
     <span class="c">// …existing tokens unchanged…</span>
-    <span class="k">static let</span> surfaceHi = <span class="t">Color</span>(hex: <span class="s">0x1F1F22</span>)
-    <span class="k">static let</span> rim       = <span class="t">Color</span>.white.opacity(<span class="s">0.09</span>)
 
     <span class="c">// Macro hues. Ember stays "you + progress".</span>
     <span class="k">static let</span> protein   = <span class="t">Color</span>(hex: <span class="s">0x5EB8FF</span>)
     <span class="k">static let</span> carbs     = <span class="t">Color</span>(hex: <span class="s">0xF5C04A</span>)
     <span class="k">static let</span> fat       = <span class="t">Color</span>(hex: <span class="s">0xB18CFF</span>)
 }</pre></div>
-            <div><h4>Components.swift: the hero surface</h4>
+            <div><h4>Components.swift: the focal card</h4>
 <pre><span class="c">/// One per screen: the thing the user came to do.</span>
-<span class="k">struct</span> <span class="t">HeroCard</span>&lt;<span class="t">Content</span>: <span class="t">View</span>&gt;: <span class="t">View</span> {
+<span class="k">struct</span> <span class="t">FocalCard</span>&lt;<span class="t">Content</span>: <span class="t">View</span>&gt;: <span class="t">View</span> {
     <span class="k">@ViewBuilder var</span> content: () -&gt; <span class="t">Content</span>
     <span class="k">private let</span> shape = <span class="t">RoundedRectangle</span>(
         cornerRadius: <span class="t">NT</span>.Radius.card, style: .continuous)
@@ -455,14 +447,14 @@
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 <span class="t">RadialGradient</span>(
-                    colors: [<span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.3</span>), .clear],
+                    colors: [<span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.13</span>), .clear],
                     center: .topTrailing,
                     startRadius: <span class="s">0</span>, endRadius: <span class="s">320</span>)
                 .background(<span class="t">NT</span>.Colors.surface)
             }
             .clipShape(shape)
             .overlay(shape.strokeBorder(
-                <span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.16</span>)))
+                <span class="t">NT</span>.Colors.ember.opacity(<span class="s">0.12</span>)))
     }
 }</pre></div>
           </div>
@@ -484,10 +476,9 @@
           <div class="ph"><span class="eyebrow">Phase</span><b>1</b></div>
           <h3>Foundation</h3>
           <ul>
-            <li>Macro hues, <code class="inl">surfaceHi</code>, rim light</li>
-            <li><code class="inl">HeroCard</code>, glass accessory bar</li>
-            <li>Segmented ring, sparkline, streak chip</li>
-            <li>Week strip v2 with both of you</li>
+            <li>Macro hues and the <code class="inl">FocalCard</code> style</li>
+            <li>Macro-coloured ring, sparkline</li>
+            <li>Week strip dots for both of you</li>
           </ul>
           <div class="be">No backend changes</div>
         </article>
@@ -495,10 +486,10 @@
           <div class="ph"><span class="eyebrow">Phase</span><b>2</b></div>
           <h3>Today, Train, Workout</h3>
           <ul>
-            <li>Hero states: next, in progress, done, out</li>
-            <li>Routine carousel; history by week</li>
-            <li>Set row v2, exercise rail, rest pill</li>
-            <li>Overload suggestion, plate math, PR toast</li>
+            <li>Next-session card with both of you</li>
+            <li>Today's routine card; routine rows with play</li>
+            <li>Workout rail, weight suggestion, bigger ticks</li>
+            <li>PR toast when a record set is ticked</li>
           </ul>
           <div class="be">No backend changes. Uses data the app already stores.</div>
         </article>
@@ -506,12 +497,11 @@
           <div class="ph"><span class="eyebrow">Phase</span><b>3</b></div>
           <h3>Fuel, Progress, Bro</h3>
           <ul>
-            <li>Macro ring, meal cards, coaching empty states</li>
-            <li>e1RM chart, muscle map from the bundled model</li>
-            <li>Weekly volume, lift sparklines, body trend</li>
-            <li>Scoreboard, head-to-head, one-tap heads-ups</li>
+            <li>Ring and protein hint on Fuel</li>
+            <li>e1RM chart, muscle map, lift sparklines, body trend</li>
+            <li>Bro week grid and one-tap heads-ups</li>
           </ul>
-          <div class="be some">Two small backend additions: a partner monthly summary for head-to-head, and a “started workout” attendance event for the live check-in.</div>
+          <div class="be some">One small backend addition: a “started workout” attendance event, so “Tomek is training too” can show live.</div>
         </article>
       </div>
     </div>
@@ -561,36 +551,33 @@
 
   // before / after
   const NOTES = {
-    today: { t: 'Today', d: 'From a dashboard of equal rows to one question: are you going tonight?', li: [
-      '<b>The next session is the hero.</b> Ember glow, the time in Big Shoulders, what you\'ll train, and whether your bro is in, answered with one tap.',
-      '<b>The week strip shows both of you:</b> ember dot for you, green for Tomek, red for a miss, and “2 of 4 this week”.',
-      '<b>Fuel shrinks to one row</b> with coloured macros and the single nudge that matters: “70 g protein to go”.',
-      '<b>Body weight and weekly volume</b> become glanceable tiles; the last session lists its records instead of one grey line.' ] },
+    today: { t: 'Today', d: 'Same layout, one clear question: are you going tonight?', li: [
+      '<b>The next session is the focal card,</b> with a faint ember wash. It shows the time, and whether your bro is in, with a one-tap answer.',
+      '<b>The week strip keeps its circles.</b> A dot under each day now shows who trained: ember for you, green for Tomek, red for a miss.',
+      '<b>Fuel keeps its row</b>, with macros in their own colours.',
+      '<b>Last session is one line</b> with its record count.' ] },
     train: { t: 'Train', d: 'One routine is scheduled today. Now it looks like it.', li: [
-      '<b>One primary action.</b> Today\'s routine gets the hero card with a muscle map, planned weights (with the ↑ suggestion) and one ember Start button.',
-      '<b>Other routines move to a swipeable row</b> with a small play button, so three white pills no longer compete.',
-      '<b>History is grouped by week</b> with volume totals and PR counts, with dates you can scan down the left edge.' ] },
-    workout: { t: 'Live workout', d: 'The screen you stare at between sets, rebuilt for glances and sweaty thumbs.', li: [
-      '<b>A progress rail</b> shows where you are in the session; finished exercises collapse to a ring.',
-      '<b>Progressive overload inline:</b> “You hit 8 · 8 · 7 at 80 kg last time. Today\'s sets start at 82.5 kg.” With Undo.',
-      '<b>44 pt ticks, the current set highlighted, plate math under the bar.</b> A done set turns ember, not just a filled circle.',
-      '<b>The rest timer is a glass pill at thumb height</b> with −15 / +15 / Skip. Beating a record fires the PR toast right away.',
-      '<b>Your bro\'s check-in</b> sits at the top: “Tomek started Legs · 6 min ago”.' ] },
-    fuel: { t: 'Fuel', d: 'The ring shows what the calories are made of, not just how many are left.', li: [
-      '<b>A macro-segmented ring.</b> Tap it to flip between left and eaten. Macros get their own hues, so ember stays for progress.',
-      '<b>A week of calorie adherence</b> on the existing heat ramp, with today outlined.',
-      '<b>Meals become cards</b> with a macro strip, per-item macros and an AI tag. An empty meal turns into a coaching prompt.',
-      '<b>AI photo, Barcode and Search</b> sit in a glass bar at thumb height, with AI photo emphasised. The AI flow keeps the disclaimer and the pre-added cooking-oil line.' ] },
+      '<b>One primary action.</b> Today\'s routine gets the focal card with its exercises, planned weights (the suggested increase marked ↑) and one Start button.',
+      '<b>The other routines become plain rows</b> with a small play button. There are no longer three identical white buttons competing.',
+      '<b>History is grouped by week</b>, with a record count where there is one.' ] },
+    workout: { t: 'Live workout', d: 'The screen you look at between sets, with less to read.', li: [
+      '<b>A thin rail</b> shows your place in the session, with “Exercise 1 of 5” and one quiet line when Tomek is training too.',
+      '<b>The next weight is suggested in one line</b>: “82.5 kg today. You hit 8 · 8 · 7 at 80 last time.” Undo puts it back.',
+      '<b>Bigger ticks.</b> Done sets are tinted and a record gets a small PR mark.',
+      '<b>The rest timer sits at thumb height</b> with −15 / +15 / Skip. The other exercises collapse into a plain list.' ] },
+    fuel: { t: 'Fuel', d: 'The ring shows what the calories are made of. The rest stays a simple log.', li: [
+      '<b>A macro-coloured ring.</b> Tap it to switch between left and eaten.',
+      '<b>Meals stay plain lists</b> with an AI tag on estimates. An empty meal shows how much protein is left.',
+      '<b>AI photo, Barcode and Search</b> sit in the glass bar at thumb height, as they do today.' ] },
     progress: { t: 'Progress', d: 'The home screen finally has a chart on it.', li: [
-      '<b>e1RM chart first,</b> with PR markers and 1M / 3M / 1Y / All, and a delta chip that follows the range.',
-      '<b>Muscles this week</b> uses the muscle model the app already bundles for exercise details. It shows what\'s been trained and what hasn\'t.',
-      '<b>Weekly volume bars, and a sparkline plus 3-month delta for every lift.</b>',
-      '<b>Body:</b> raw weigh-ins as dots, the trend as a line, rate per week and an ETA to your goal.' ] },
-    bro: { t: 'Bro', d: 'From a settings-style page to a shared scoreboard.', li: [
-      '<b>Sessions together this month</b> in Big Shoulders, with a You / Tomek × weekday grid: done, missed, “IN”, planned.',
-      '<b>Today\'s status and your answer</b> sit at the top; heads-ups are one tap: Can\'t make it · 15 min late · Let\'s go · Custom.',
-      '<b>Head to head for the month</b> (sessions, volume, PRs, protein days) gives the pair something to play for.',
-      '<b>The log reads like a feed,</b> with heads-up quotes and PRs called out. (The “before” shows the signed-out state; the paired state had the same list layout.)' ] },
+      '<b>An e1RM chart first,</b> with record markers, 1M / 3M / 1Y / All and a change label that follows the range.',
+      '<b>Muscles this week</b> reuses the muscle model the app already bundles, and says which muscles haven\'t been trained yet.',
+      '<b>Every lift gets a sparkline</b> and its 3-month change.',
+      '<b>Body:</b> raw weigh-ins as dots, the trend as a line, and the rate per week.' ] },
+    bro: { t: 'Bro', d: 'Opens on the week you share.', li: [
+      '<b>A You / Tomek × weekday grid</b> showing done, missed, “IN” and planned, plus “8 of 11 together in September”.',
+      '<b>Today\'s status and your answer</b> come next, then one-tap heads-ups: Can\'t make it · 15 min late · Let\'s go · Custom.',
+      '<b>The log reads like a feed</b>, with heads-up quotes and records. (The “before” shows the signed-out state; the paired screen used the same list layout.)' ] },
   };
   const tabs = document.querySelectorAll('.tabs button');
   const notes = document.getElementById('notes');

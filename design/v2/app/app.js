@@ -69,6 +69,23 @@ const P = {
   down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
   scale: '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.3 9.2a5.2 5.2 0 0 1 7.4 0L13.4 12a2 2 0 0 0-2.8 0z"/>',
 };
+const TAB_GLYPH = {
+  today: '<path d="M11.2 3.4a1.3 1.3 0 0 1 1.6 0l8.4 6.9a.9.9 0 0 1-.6 1.6H19v7.6a1.5 1.5 0 0 1-1.5 1.5H14v-5.3h-4V21H6.5A1.5 1.5 0 0 1 5 19.5v-7.6H3.4a.9.9 0 0 1-.6-1.6z" fill="currentColor"/>',
+  train: '<rect x="1.8" y="8.6" width="2.6" height="6.8" rx="1.1" fill="currentColor"/><rect x="5.2" y="5.6" width="3.4" height="12.8" rx="1.4" fill="currentColor"/><rect x="8.6" y="10.9" width="6.8" height="2.2" fill="currentColor"/><rect x="15.4" y="5.6" width="3.4" height="12.8" rx="1.4" fill="currentColor"/><rect x="19.6" y="8.6" width="2.6" height="6.8" rx="1.1" fill="currentColor"/>',
+  fuel: '<path d="M6.5 2.8v5.6a2.4 2.4 0 0 0 4.8 0V2.8M8.9 2.8v18.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M17.8 21.2V2.8c-2.3 1.4-3.6 4.2-3.6 7.6 0 2 1 3.2 3.6 3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="currentColor"/>',
+  progress: '<path d="M3.2 3.2v17.6h17.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="m6.8 15.4 4-4.6 3 3 5.4-6.4M15.4 7.4h3.8v3.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  bro: '<circle cx="8.8" cy="7.6" r="3.7" fill="currentColor"/><path d="M1.9 20.2c0-4 3-6.6 6.9-6.6s6.9 2.6 6.9 6.6c0 .5-.4.9-.9.9H2.8a.9.9 0 0 1-.9-.9z" fill="currentColor"/><circle cx="17.2" cy="8.6" r="3" fill="currentColor"/><path d="M16.4 13.9c3.6.1 5.9 2.5 5.9 5.9 0 .7-.5 1.3-1.2 1.3h-4c.3-2.9-.1-5.1-.7-7.2z" fill="currentColor"/>',
+};
+const TABS = [['today', 'Today'], ['train', 'Train'], ['fuel', 'Fuel'], ['progress', 'Progress'], ['bro', 'Bro']];
+function tabItems(real) {
+  return TABS.map(([id, label], i) => {
+    const inner = `<svg class="tb-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_GLYPH[id]}</svg><span class="tb-lb">${label}</span>${id === 'bro' ? '<i class="badge"></i>' : ''}`;
+    return real
+      ? `<button class="tb-item" data-i="${i}" data-tabid="${id}" aria-label="${label}">${inner}</button>`
+      : `<div class="tb-item" data-i="${i}">${inner}</div>`;
+  }).join('');
+}
+
 const ic = (name, size = 22, sw = 2) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name]}</svg>`;
 
@@ -332,10 +349,9 @@ app.innerHTML = `
   </div>
   <div class="accessory" id="acc-fuel" style="display:none"></div>
   <div class="accessory" id="acc-mini" style="display:none"></div>
-  <nav class="tabbar" id="tabbar">
-    <div class="pill" id="tabpill"></div>
-    ${[['today', 'home', 'Today'], ['train', 'train', 'Train'], ['fuel', 'fuel', 'Fuel'], ['progress', 'progress', 'Progress'], ['bro', 'bro', 'Bro']]
-      .map(([id, icon, label]) => `<button data-tab="${id}" aria-label="${label}">${ic(icon, 24, id === 'train' ? 2.6 : 2)}<span>${label}</span>${id === 'bro' ? '<i class="badge" id="bro-badge"></i>' : ''}</button>`).join('')}
+  <nav class="tabbar" id="tabbar" aria-label="Tabs">
+    <div class="tb-row" id="tbItems">${tabItems(true)}</div>
+    <div class="tb-lens" id="tbLens" aria-hidden="true"><div class="tb-row tb-copy" id="tbCopy">${tabItems(false)}</div></div>
   </nav>
   <section class="cover" id="cover" aria-label="Workout"></section>
   <div class="rest glass" id="rest"></div>
@@ -377,15 +393,124 @@ function grow(root, animate = true) {
 function setTab(tab, push = true) {
   S.tab = tab;
   $$('.screen').forEach(s => s.classList.toggle('on', s.id === 's-' + tab));
-  $$('#tabbar button').forEach((b, i) => {
-    const on = b.dataset.tab === tab;
+  const i = TABS.findIndex(([id]) => id === tab);
+  $$('#tabbar .tb-item').forEach(b => {
+    const on = +b.dataset.i === i;
     b.classList.toggle('on', on);
-    if (on) { const pill = $('#tabpill'); pill.style.width = b.offsetWidth + 'px'; pill.style.transform = `translateX(${b.offsetLeft - 4}px)`; }
+    if (b.tagName === 'BUTTON') b.setAttribute('aria-current', on ? 'page' : 'false');
   });
+  lensTo(i);
   render(tab, { animate: true });
   renderAccessories();
   if (push && !EMBED) history.replaceState(null, '', '#' + tab);
 }
+
+// ─────────────────────────── Liquid Glass tab bar ───────────────────────────
+// Numbers from docs/android-glass.md §1.2 and design/ios26-reference/pill (the iOS 26.1 burst):
+// platter 62 tall, items 54 tall on pitch (W − 16.25) / 5, 8.25 wider than the pitch; the pill
+// rides spring(response 0.35, damping 0.70) and while it moves becomes a clear lens that grows
+// 15 pt, magnifies what is under it and fringes (violet leads, red trails), then settles into the
+// flat +31/255 capsule ~150 ms after it lands. Touch-down swells it to a third before it moves.
+
+const LENS = { x: 0, v: 0, target: 0, motion: 0, drift: 0, pressed: false, dragging: false, raf: 0, last: 0 };
+const W0 = 2 * Math.PI / 0.35, ZETA = 0.7, VMAX = 5, RELEASE = 0.15, PRESS = 0.35, GROW = 15, MAG = 0.16;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SLOW = params.has('slow') ? 10 : 1;  // like the simulator's Slow Animations, for checking frames
+const TBG = { W: 360, pitch: 68.75, item: 77 };
+const tabbar = $('#tabbar'), lens = $('#tbLens'), lensRow = $('#tbCopy');
+
+function tbLayout() {
+  const W = tabbar.clientWidth || 360;
+  TBG.W = W; TBG.pitch = (W - 16.25) / 5; TBG.item = TBG.pitch + 8.25;
+  $$('#tabbar .tb-item').forEach(b => { b.style.left = (4 + TBG.pitch * +b.dataset.i) + 'px'; b.style.width = TBG.item + 'px'; });
+  lensRow.style.width = W + 'px';
+  lensDraw();
+}
+
+function lensDraw() {
+  const m = LENS.motion, grow = GROW * m;
+  const w = TBG.item + grow, h = 54 + grow;
+  const cx = 4 + TBG.pitch * LENS.x + TBG.item / 2;
+  const left = cx - w / 2, top = (62 - h) / 2;
+  lens.style.transform = `translate(${left.toFixed(2)}px, ${top.toFixed(2)}px)`;
+  lens.style.width = w.toFixed(2) + 'px';
+  lens.style.height = h.toFixed(2) + 'px';
+  lens.style.borderRadius = (h / 2).toFixed(2) + 'px';
+  lens.style.setProperty('--m', m.toFixed(3));
+  lens.style.setProperty('--fill', (0.145 * Math.max(0, 1 - m * 1.8)).toFixed(3));
+  const sc = 1 + MAG * m;
+  lensRow.style.transform = `translate(${(-left).toFixed(2)}px, ${(-top).toFixed(2)}px) translate(${cx.toFixed(2)}px, 31px) scale(${sc.toFixed(4)}) translate(${(-cx).toFixed(2)}px, -31px)`;
+  if (m > 0.02) {
+    const dir = LENS.drift >= 0 ? 1 : -1, d = (0.3 + 0.5 * Math.abs(LENS.drift)) * m, a = (0.42 * m).toFixed(3);
+    lensRow.style.filter = `drop-shadow(${(d * dir).toFixed(2)}px 0 0 rgba(128,96,255,${a})) drop-shadow(${(-d * dir).toFixed(2)}px 0 0 rgba(255,72,48,${a}))`;
+  } else lensRow.style.filter = '';
+}
+
+function lensKick() {
+  if (LENS.raf) return;
+  LENS.last = performance.now();
+  LENS.raf = requestAnimationFrame(lensStep);
+}
+function lensStep(now) {
+  const dt = Math.min((now - LENS.last) / 1000, 1 / 20) / SLOW;
+  LENS.last = now;
+  for (let k = 0; k < 4; k++) {
+    const h = dt / 4, a = -W0 * W0 * (LENS.x - LENS.target) - 2 * ZETA * W0 * LENS.v;
+    LENS.v += a * h; LENS.x += LENS.v * h;
+  }
+  const speed = Math.min(1, Math.abs(LENS.v) / VMAX);
+  const floor = LENS.dragging ? 1 : LENS.pressed ? PRESS : 0;
+  LENS.motion = Math.max(speed, LENS.motion - dt / RELEASE, floor);
+  LENS.drift = clamp(LENS.v / VMAX, -1, 1);
+  const still = Math.abs(LENS.x - LENS.target) < 0.0005 && Math.abs(LENS.v) < 0.005;
+  if (still && !LENS.dragging && LENS.motion <= floor + 0.0005) {
+    LENS.x = LENS.target; LENS.v = 0; LENS.motion = floor; LENS.drift = 0;
+    lensDraw(); LENS.raf = 0; return;
+  }
+  lensDraw();
+  LENS.raf = requestAnimationFrame(lensStep);
+}
+function lensTo(i, instant = false) {
+  LENS.target = i;
+  if (instant || REDUCED) { LENS.x = i; LENS.v = 0; LENS.motion = 0; lensDraw(); return; }
+  lensKick();
+}
+
+// press, tap and drag, as on iOS 26: touch-down swells the lens, dragging carries it, release picks
+let tbPtr = null;
+function tbIndexAt(clientX) {
+  const r = tabbar.getBoundingClientRect(), scale = r.width / tabbar.offsetWidth;
+  const x = (clientX - r.left) / scale;
+  return clamp((x - 4 - TBG.item / 2) / TBG.pitch, 0, TABS.length - 1);
+}
+tabbar.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  tbPtr = { id: e.pointerId, x0: e.clientX, moved: false };
+  try { tabbar.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+  if (!REDUCED) { LENS.pressed = true; lensKick(); }
+});
+tabbar.addEventListener('pointermove', e => {
+  if (!tbPtr || e.pointerId !== tbPtr.id) return;
+  const scale = tabbar.getBoundingClientRect().width / tabbar.offsetWidth;
+  if (!tbPtr.moved && Math.abs(e.clientX - tbPtr.x0) > 8 * scale) { tbPtr.moved = true; LENS.dragging = !REDUCED; }
+  if (tbPtr.moved) { LENS.target = tbIndexAt(e.clientX); lensKick(); }
+});
+function tbRelease(e, pick) {
+  if (!tbPtr || e.pointerId !== tbPtr.id) return;
+  const idx = Math.round(tbIndexAt(e.clientX));
+  LENS.pressed = false; LENS.dragging = false; tbPtr = null;
+  if (pick) {
+    const tab = TABS[idx][0];
+    if (S.workout && !S.workout.minimized && !S.workout.summary) return;
+    if (tab === S.tab) lensTo(idx); else setTab(tab);
+  } else lensTo(TABS.findIndex(([id]) => id === S.tab));
+  lensKick();
+}
+tabbar.addEventListener('pointerup', e => tbRelease(e, true));
+tabbar.addEventListener('pointercancel', e => tbRelease(e, false));
+// keyboard (Enter / Space on a focused tab) arrives as a click with no pointer detail
+tabbar.addEventListener('click', e => { const b = e.target.closest('button.tb-item'); if (b && e.detail === 0) setTab(b.dataset.tabid); });
+addEventListener('resize', tbLayout);
 
 // ─────────────────────────── Today ───────────────────────────
 
@@ -395,26 +520,21 @@ function weekDays() {
     { dl: 'M', d: 21, st: 'done', k: 'k', t: 't' },
     { dl: 'T', d: 22, st: 'off' },
     { dl: 'W', d: 23, st: 'done', k: 'k', t: 'x' },
-    { dl: 'T', d: 24, st: done ? 'done' : out ? 'missed' : 'planned', today: true, k: done ? 'k' : out ? 'x' : null, t: null },
+    { dl: 'T', d: 24, st: done ? 'done' : out ? 'missed' : 'planned', today: true, k: done ? 'k' : null, t: done ? 't' : null },
     { dl: 'F', d: 25, st: S.out && S.out.makeup === 'Fri 25' ? 'planned' : 'off' },
     { dl: 'S', d: 26, st: 'planned' },
     { dl: 'S', d: 27, st: S.out && S.out.makeup === 'Sun 27' ? 'planned' : 'off' },
   ];
 }
 
+// Circles as before; the dots underneath now show both of you (ember you, green Tomek, red a miss).
 function weekStrip() {
-  const days = weekDays();
-  const doneCount = days.filter(d => d.st === 'done').length;
-  const planned = days.filter(d => d.st !== 'off').length;
-  return `
-    <div class="week">${days.map(d => `
+  return `<div class="week">${weekDays().map(d => `
       <div class="day ${d.st} ${d.today ? 'today' : ''}">
         <span class="dl">${d.dl}</span>
-        <div class="dd num">${d.st === 'done' ? ic('check', 18, 3) : d.d}</div>
+        <div class="dd num">${d.st === 'done' ? ic('check', 16, 3) : d.d}</div>
         <div class="bros">${d.k ? `<i class="${d.k}"></i>` : ''}${d.t ? `<i class="${d.t}"></i>` : ''}</div>
-      </div>`).join('')}
-    </div>
-    <div class="week-legend"><span><i style="background:var(--ember)"></i>You</span><span><i style="background:var(--good)"></i>${BRO}</span><span><i style="background:var(--bad)"></i>Missed</span><span style="margin-left:auto" class="num">${doneCount} of ${planned} this week</span></div>`;
+      </div>`).join('')}</div>`;
 }
 
 function heroToday() {
@@ -424,49 +544,46 @@ function heroToday() {
     const all = w.ex.reduce((a, e) => a + e.sets.length, 0);
     return `
     <section class="card hero pressable" data-act="open-workout">
-      <div class="flex between center"><span class="eyebrow ember"><span class="live-dot" style="background:var(--ember);margin-right:7px;vertical-align:0"></span>Workout in progress</span><span class="cap ink2">${w.name}</span></div>
+      <div class="flex between center"><span class="eyebrow ember">Workout in progress</span><span class="cap ink2">${w.name}</span></div>
       <div class="next-time"><span class="display" data-bind="elapsed">${clock(Math.floor((Date.now() - w.startedAt) / 1000))}</span>
-        <div style="padding-bottom:8px"><div class="hl">${w.ex[w.cur].name}</div><div class="sub ink2">${done} of ${all} sets</div></div></div>
-      <div class="bar mt16"><i data-w="${Math.round(done / all * 100)}%" style="background:var(--ember)"></i></div>
-      <div class="btn-row mt16"><button class="btn ember" data-act="open-workout">${ic('play', 18)} Resume</button></div>
+        <div class="pb8"><div class="hl">${w.ex[w.cur].name}</div><div class="sub ink2">${done} of ${all} sets</div></div></div>
+      <button class="btn ember block mt16" data-act="open-workout">${ic('play', 18)} Resume</button>
     </section>`;
   }
   if (S.todayDone) {
     const d = S.todayDone;
     return `
     <section class="card hero">
-      <div class="flex between center"><span class="eyebrow good">${ic('check', 12, 3.2).replace('<svg', '<svg style="display:inline;vertical-align:-1px;margin-right:4px"')}Done today</span><span class="cap ink2">Push A</span></div>
-      <div class="next-time"><span class="display">${d.min}<span style="font-size:40px"> min</span></span>
-        <div style="padding-bottom:8px"><div class="hl num">${n0(d.volume)} kg</div><div class="sub ink2">${d.sets} sets · ${d.prs.length} PR${d.prs.length === 1 ? '' : 's'}</div></div></div>
+      <div class="flex between center"><span class="eyebrow good">Done today</span><span class="cap ink2">Push A</span></div>
+      <div class="next-time"><span class="display">${d.min}<span class="display-unit"> min</span></span>
+        <div class="pb8"><div class="hl num">${n0(d.volume)} kg</div><div class="sub ink2">${d.sets} sets${d.prs.length ? ` · ${d.prs.length} PR${d.prs.length === 1 ? '' : 's'}` : ''}</div></div></div>
       <div class="hair mt16"></div>
-      <div class="duo-row"><div class="avatars"><span class="avatar sm me ring-good">K</span><span class="avatar sm bro ring-good">T</span></div>
+      <div class="duo-row"><div class="avatars"><span class="avatar sm ring-good">K</span><span class="avatar sm ring-good">T</span></div>
         <div class="grow"><div class="sub bold">Both showed up</div><div class="fn ink2">Next: Sat 26 · 18:00 · Legs</div></div></div>
     </section>`;
   }
   if (S.out) {
     return `
     <section class="card">
-      <div class="flex between center"><span class="eyebrow" style="color:#FF6B88">You're out today</span><span class="cap ink2">Push A</span></div>
-      <div class="t2 mt12">${BRO} knows.</div>
+      <div class="flex between center"><span class="eyebrow bad">You're out today</span><span class="cap ink2">Push A</span></div>
+      <div class="t3 mt12">${BRO} knows.</div>
       <div class="sub ink2 mt4">${S.out.reason ? S.out.reason + ' · ' : ''}${S.out.makeup === 'skip' ? 'No make-up day' : `Make-up on ${S.out.makeup} at 18:00`}</div>
-      <div class="btn-row mt16"><button class="btn secondary" data-act="undo-out">${ic('undo', 18)} I can make it after all</button></div>
+      <button class="btn secondary block mt16" data-act="undo-out">I can make it after all</button>
     </section>`;
   }
   const both = S.imIn;
   return `
     <section class="card hero">
-      <div class="flex between center"><span class="eyebrow ember">Next session</span><span class="chip quiet" style="height:26px">Push A · ~60 min</span></div>
+      <div class="flex between center"><span class="eyebrow ember">Next session</span><span class="cap ink2">Push A</span></div>
       <div class="next-time"><span class="display">18:00</span>
-        <div style="padding-bottom:8px"><div class="hl">Today</div><div class="sub ink2">in 8 h 19 min</div></div></div>
-      <div class="preview-ex">${ROUTINES.pushA.ex.slice(0, 3).map(e => `<span class="chip">${e.name}</span>`).join('')}<span class="chip">+2</span></div>
+        <div class="pb8"><div class="hl">Today</div><div class="sub ink2">in 8 h 19 min</div></div></div>
       <div class="hair mt16"></div>
       <div class="duo-row">
-        <div class="avatars"><span class="avatar sm me ${both ? 'ring-good' : 'ring-ember'}">K</span><span class="avatar sm bro ring-good">T</span></div>
-        <div class="grow"><div class="sub bold">${both ? 'Both in. See you at 18:00.' : `${BRO}'s in. You?`}</div><div class="fn ink2">${both ? `${BRO} gets a push now` : `${BRO} confirmed at 12:40`}</div></div>
-        <span class="live-dot"></span>
+        <div class="avatars"><span class="avatar sm ${both ? 'ring-good' : 'ring-ember'}">K</span><span class="avatar sm ring-good">T</span></div>
+        <div class="grow"><div class="sub bold">${both ? 'Both in. See you at 18:00.' : `${BRO}'s in. You?`}</div><div class="fn ink2">${both ? `${BRO} got a heads-up` : 'Confirmed at 12:40'}</div></div>
       </div>
       ${both
-        ? `<div class="btn-row"><button class="btn ember" style="flex:2.2" data-act="start" data-r="pushA">${ic('play', 18)} Start workout</button><button class="btn secondary" data-act="cant">Can't</button></div>`
+        ? `<div class="btn-row"><button class="btn ember" style="flex:2" data-act="start" data-r="pushA">${ic('play', 18)} Start workout</button><button class="btn secondary" data-act="cant">Can't</button></div>`
         : `<div class="btn-row"><button class="btn primary" data-act="imin">I'm in</button><button class="btn secondary" data-act="cant">Can't make it</button></div>`}
     </section>`;
 }
@@ -474,15 +591,10 @@ function heroToday() {
 function renderToday() {
   const t = totals();
   const left = GOAL.k - t.k;
-  const bwVals = S.bw.trend.slice(-30);
-  const bwNow = S.bw.raw[S.bw.raw.length - 1];
-  const bwRate = (S.bw.trend[S.bw.trend.length - 1] - S.bw.trend[S.bw.trend.length - 29]) / 4;
-  const days = [6640, 0, 6840, S.todayDone ? S.todayDone.volume : 0, 0, 0, 0];
-  const dmax = Math.max(...days, 7000);
   return `
     <header class="hdr">
       <div><span class="eyebrow">Thursday, 24 September</span><h1 class="lt">Today</h1></div>
-      <div class="hdr-actions"><button class="streak pressable" data-act="toast" data-msg="6 weeks in a row hitting every planned session">${ic('flame', 16)}6</button><button class="avatar me pressable" data-act="toast" data-msg="Settings live behind your avatar">K</button></div>
+      <div class="hdr-actions"><button class="streak pressable" data-act="toast" data-msg="6 weeks in a row without missing a planned session">${ic('flame', 15)}6</button><button class="avatar pressable" data-act="toast" data-msg="Settings live behind your avatar">K</button></div>
     </header>
     ${weekStrip()}
     <div class="mt20">${heroToday()}</div>
@@ -490,30 +602,14 @@ function renderToday() {
     <div class="section-h"><span class="hl">Fuel</span><button class="link" data-tab="fuel">${n0(t.k)} / ${n0(GOAL.k)} kcal ${ic('chevR', 16)}</button></div>
     <section class="card pressable" data-tab="fuel" style="padding:16px">
       <div class="fuel-strip">
-        <div style="position:relative;width:88px;height:88px;flex:none">${ring(0, { size: 88, sw: 9, segs: [[t.p * 4 / GOAL.k, 'var(--protein)'], [t.c * 4 / GOAL.k, 'var(--carbs)'], [t.f * 9 / GOAL.k, 'var(--fat)']], gap: 3 })}
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span class="display" style="font-size:28px">${n0(Math.max(0, left))}</span><span class="eyebrow" style="font-size:9px;margin-top:2px">kcal left</span></div></div>
+        <div style="position:relative;width:76px;height:76px;flex:none">${ring(0, { size: 76, sw: 7, segs: [[t.p * 4 / GOAL.k, 'var(--protein)'], [t.c * 4 / GOAL.k, 'var(--carbs)'], [t.f * 9 / GOAL.k, 'var(--fat)']], gap: 3 })}
+          <div class="ring-center"><span class="hl num" style="font-size:16px">${n0(Math.max(0, left))}</span><span class="eyebrow" style="font-size:9px">left</span></div></div>
         <div class="macro-mini">
           ${[['Protein', t.p, GOAL.p, 'var(--protein)'], ['Carbs', t.c, GOAL.c, 'var(--carbs)'], ['Fat', t.f, GOAL.f, 'var(--fat)']].map(([l, v, g, col]) => `
-          <div class="m"><span class="ink2">${l}</span><div class="bar"><i data-w="${Math.min(100, v / g * 100)}%" style="background:${col}"></i></div><span class="num" style="font-weight:600">${Math.round(v)}<span class="ink3">/${g}</span></span></div>`).join('')}
+          <div class="m"><span class="ink2">${l}</span><div class="bar"><i data-w="${Math.min(100, v / g * 100)}%" style="background:${col}"></i></div><span class="num">${Math.round(v)}<span class="ink3">/${g}</span></span></div>`).join('')}
         </div>
       </div>
-      ${S.meals.dinner.items.length ? '' : `<div class="flex center gap8 mt12 fn" style="color:var(--protein)">${ic('bolt', 14)}<span>${Math.round(GOAL.p - t.p)} g protein to go · dinner after training</span></div>`}
     </section>
-
-    <div class="row2 mt12">
-      <section class="tile pressable" data-act="go-body">
-        <div class="eyebrow">Body weight</div>
-        <div class="flex center gap6 mt8" style="align-items:baseline"><span class="display" style="font-size:34px">${n1(bwNow)}</span><span class="fn ink2">kg</span></div>
-        <div class="fn ink2 mt4 num">${bwRate < 0 ? '↓' : '↑'} ${Math.abs(bwRate).toFixed(1)} kg / week</div>
-        <div class="mt8">${spark(bwVals, { h: 32, color: 'rgba(235,235,245,0.55)', dot: true })}</div>
-      </section>
-      <section class="tile pressable" data-tab="progress">
-        <div class="eyebrow">Volume · week</div>
-        <div class="flex center gap6 mt8" style="align-items:baseline"><span class="display" style="font-size:34px">${n1(weekVolume() / 1000)}</span><span class="fn ink2">t</span></div>
-        <div class="fn mt4 num" style="color:${S.todayDone ? 'var(--good)' : 'var(--ink-2)'}">${S.todayDone ? `↑ ${Math.round((weekVolume() / 11600 - 1) * 100)}% vs last week` : '2 of 4 sessions in'}</div>
-        <div class="flex gap6 mt8" style="align-items:flex-end;height:32px">${days.map((v, i) => `<i style="flex:1;border-radius:3px;height:${Math.max(4, v / dmax * 32)}px;background:${i === 3 ? 'var(--ember)' : v ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.08)'}"></i>`).join('')}</div>
-      </section>
-    </div>
 
     <div class="section-h"><span class="hl">Last session</span><button class="link" data-tab="train">History ${ic('chevR', 16)}</button></div>
     ${lastSession()}
@@ -522,40 +618,29 @@ function renderToday() {
 
 function lastSession() {
   const d = S.todayDone;
-  const head = d
-    ? `<div class="li"><div class="lead">${ic('train', 20, 2.6)}</div><div class="grow"><div class="title">Push A</div><div class="meta num">Today · ${d.min} min · ${n0(d.volume)} kg</div></div>${d.prs.length ? `<span class="chip ember">${ic('trophy', 14)} ${d.prs.length} PR${d.prs.length > 1 ? 's' : ''}</span>` : ''}</div>`
-    : `<div class="li"><div class="lead">${ic('train', 20, 2.6)}</div><div class="grow"><div class="title">Pull A</div><div class="meta">Wed 23 Sep · 58 min · 6${NB}840 kg</div></div><span class="chip ember">${ic('trophy', 14)} 2 PRs</span></div>`;
-  const prs = d
-    ? d.prs.map(p => [`${p.ex} · ${n1(p.kg)} kg × ${p.reps}`, `Best estimated 1RM · ${n1(p.e1)} kg (+${n1(p.d)})`])
-    : [['Deadlift · 160 kg × 5', 'Heaviest set ever · +5 kg'], ['Barbell Row · 85 kg × 8', 'Best estimated 1RM · 107.7 kg']];
-  return `<section class="list">${head}${prs.map(([t, m]) => `<div class="li"><div class="lead" style="background:var(--ember-tint);color:var(--ember)">${ic('trophy', 18)}</div><div class="grow"><div class="title">${t}</div><div class="meta">${m}</div></div></div>`).join('')}</section>`;
+  return `<section class="list"><div class="li">${d
+    ? `<div class="grow"><div class="title">Push A</div><div class="meta num">Today · ${d.min} min · ${n0(d.volume)} kg</div></div>${d.prs.length ? `<span class="chip ember">${ic('trophy', 14)} ${d.prs.length} PR${d.prs.length > 1 ? 's' : ''}</span>` : ''}`
+    : `<div class="grow"><div class="title">Pull A</div><div class="meta">Wed 23 Sep · 58 min · 6${NB}840 kg</div></div><span class="chip ember">${ic('trophy', 14)} 2 PRs</span>`}</div></section>`;
 }
 
 // ─────────────────────────── Train ───────────────────────────
 
 function renderTrain() {
-  const r = ROUTINES.pushA;
-  const w = S.workout;
-  const hero = S.todayDone ? `
-    <section class="card">
-      <div class="flex between center"><span class="eyebrow good">Done today</span><span class="cap ink2">Next · Sat 26 · 18:00</span></div>
-      <div class="flex between mt12" style="align-items:center"><div><div class="t2">Legs</div><div class="sub ink2 mt4">5 exercises · 15 sets · ~65 min</div></div>${bodyMap(levelsFrom(ROUTINES.legs.muscles), { h: 86 })}</div>
-    </section>` : `
+  const w = S.workout, live = w && !w.summary;
+  const key = S.todayDone ? 'legs' : 'pushA';
+  const r = ROUTINES[key];
+  const others = ['pushA', 'pullA', 'legs'].filter(k => k !== key);
+  const hero = `
     <section class="card hero">
-      <div class="flex between center"><span class="eyebrow ember">${w && !w.summary ? 'In progress' : 'Up next · Today 18:00'}</span><button class="icon-btn" style="width:32px;height:32px" data-act="toast" data-msg="Edit routine: reorder, swap, set targets">${ic('more', 18)}</button></div>
-      <div class="flex between mt8" style="align-items:center;gap:8px">
-        <div><div class="t2" style="font-size:28px;line-height:34px">${r.name}</div><div class="sub ink2 mt4">5 exercises · 16 sets · ~60 min</div></div>
-        ${bodyMap(levelsFrom(r.muscles), { h: 92 })}
-      </div>
-      <div class="mt12">${r.ex.map((e, i) => `
-        <div class="flex center gap10" style="padding:7px 0;${i ? 'border-top:1px solid var(--line)' : ''}">
-          <span class="num ink3" style="width:16px;font-size:13px;font-weight:700">${i + 1}</span>
-          <span class="sub grow" style="font-weight:500">${e.name}</span>
+      <div class="flex between center"><span class="eyebrow ${S.todayDone ? '' : 'ember'}">${live ? 'In progress' : S.todayDone ? 'Next · Sat 26 · 18:00' : 'Today · 18:00'}</span><span class="cap ink2">~60 min</span></div>
+      <div class="t2 mt8" style="font-size:28px;line-height:34px">${r.name}</div>
+      <div class="mt8">${r.ex.map((e, i) => `
+        <div class="ex-line${i ? ' sep' : ''}">
+          <span class="sub grow">${e.name}</span>
           <span class="fn ink2 num">${e.sets.filter(s => s.kind !== 'W').length} × ${e.sets[e.sets.length - 1].reps}</span>
-          <span class="fn num nowrap" style="min-width:58px;text-align:right;${e.suggest ? 'color:var(--ember-hi);font-weight:600' : 'color:var(--ink-2)'}">${e.suggest ? '↑ ' : ''}${n1(e.sets[e.sets.length - 1].kg)} kg</span>
+          <span class="fn num nowrap" style="min-width:58px;text-align:right;${e.suggest && !S.todayDone ? 'color:var(--ember-hi);font-weight:600' : 'color:var(--ink-2)'}">${e.suggest && !S.todayDone ? '↑ ' : ''}${e.sets[e.sets.length - 1].kg ? n1(e.sets[e.sets.length - 1].kg) + ' kg' : 'BW'}</span>
         </div>`).join('')}</div>
-      <button class="btn ember block mt16" data-act="${w && !w.summary ? 'open-workout' : 'start'}" data-r="pushA">${ic('play', 18)} ${w && !w.summary ? 'Resume workout' : 'Start workout'}</button>
-      <div class="fn ink3 mt12" style="text-align:center">Last time · ${r.last}</div>
+      ${S.todayDone ? '' : `<button class="btn ember block mt16" data-act="${live ? 'open-workout' : 'start'}" data-r="${key}">${ic('play', 18)} ${live ? 'Resume workout' : 'Start workout'}</button>`}
     </section>`;
 
   return `
@@ -565,28 +650,20 @@ function renderTrain() {
     </header>
     <div class="mt12">${hero}</div>
 
-    <div class="section-h"><span class="hl">Routines</span><span class="link">3</span></div>
-    <div class="hscroll">
-      ${['pullA', 'legs', 'pushA'].filter(k => S.todayDone ? k !== 'legs' : k !== 'pushA').map(k => {
-        const rr = ROUTINES[k];
-        return `<section class="tile routine-card">
-          <div class="flex between" style="align-items:flex-start"><div><div class="t3">${rr.name}</div><div class="fn ink2 mt4">${rr.ex.length} exercises</div></div>${bodyMap(levelsFrom(rr.muscles), { h: 64 })}</div>
-          <div class="fn ink2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rr.ex.map(e => e.name).join(' · ')}</div>
-          <div class="flex between center" style="margin-top:auto"><span class="cap ink3">${rr.last}</span><button class="play pressable" data-act="start" data-r="${k}" aria-label="Start ${rr.name}">${ic('play', 18)}</button></div>
-        </section>`;
-      }).join('')}
-      <button class="tile routine-card" style="width:150px;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,0.1);background:transparent;color:var(--ink-2)" data-act="start-empty">
-        <span class="icon-btn">${ic('plus', 20)}</span><span class="sub bold" style="color:var(--ink)">Empty workout</span><span class="fn">Log as you go</span>
-      </button>
-    </div>
+    <div class="section-h"><span class="hl">Routines</span></div>
+    <section class="list">
+      ${others.map(k => { const rr = ROUTINES[k]; return `
+        <div class="li"><div class="grow"><div class="title">${rr.name}</div><div class="meta">${rr.ex.length} exercises · ${rr.ex.slice(0, 3).map(e => e.name).join(', ')}</div></div>
+          <button class="icon-btn" data-act="start" data-r="${k}" aria-label="Start ${rr.name}">${ic('play', 16)}</button></div>`; }).join('')}
+      <button class="li pressable" style="width:100%;text-align:left" data-act="start-empty"><div class="grow"><div class="title">Empty workout</div><div class="meta">Add exercises as you go</div></div><span class="icon-btn">${ic('plus', 18)}</span></button>
+    </section>
 
     <div class="section-h"><span class="hl">History</span><span class="link">${S.history.reduce((a, g) => a + g.items.length, 0)} sessions</span></div>
     ${S.history.map(g => `
-      <div class="week-label"><span>${g.week}</span><span class="num">${n1(g.items.reduce((a, i) => a + i.kg, 0) / 1000)} t</span></div>
+      <div class="week-label"><span>${g.week}</span></div>
       <section class="list">${g.items.map(i => `
         <div class="li pressable">
-          <div class="lead" style="flex-direction:column;gap:0;width:44px"><span class="cap ink3" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase">${i.when.slice(0, 3)}</span><span class="hl num" style="line-height:18px">${i.when.split(' ')[1]}</span></div>
-          <div class="grow"><div class="title">${i.name}</div><div class="meta num">${i.min} min · ${n0(i.kg)} kg</div></div>
+          <div class="grow"><div class="title">${i.name}</div><div class="meta num">${i.when} · ${i.min} min · ${n0(i.kg)} kg</div></div>
           ${i.prs ? `<span class="chip ember">${ic('trophy', 14)} ${i.prs}</span>` : ''}
           <span class="chev">${ic('chevR', 18)}</span>
         </div>`).join('')}
@@ -638,54 +715,37 @@ function recomputePRs(e) {
   e.best = best;
 }
 
-function plates(kg) {
-  let side = (kg - 20) / 2; const out = [];
-  [25, 20, 15, 10, 5, 2.5, 1.25].forEach(p => { while (side >= p - 1e-9) { out.push(p); side -= p; } });
-  return out;
+function exRow(e, i) {
+  const doneN = e.sets.filter(s => s.done).length, top = e.sets[e.sets.length - 1];
+  const pct = doneN / e.sets.length;
+  return `<button class="li pressable" style="width:100%;text-align:left" data-act="focus-ex" data-i="${i}">
+    <div class="grow"><div class="title">${e.name}</div><div class="meta num">${e.sets.length} sets · ${top.kg ? n1(top.kg) + ' kg × ' : ''}${top.reps}${e.sets.some(s => s.pr) ? ' · <span style="color:var(--ember)">PR</span>' : ''}</div></div>
+    <span class="num fn ${pct === 1 ? 'good-t' : 'ink3'}">${pct === 1 ? ic('check', 16, 3) : `${doneN}/${e.sets.length}`}</span>
+  </button>`;
 }
-const PLATE_STYLE = { 25: ['#E5484D', 34], 20: ['#3E7BFA', 34], 15: ['#F5C04A', 30], 10: ['#30A46C', 26], 5: ['#E6E6EA', 21], 2.5: ['#56565C', 17], 1.25: ['#9A9AA2', 13] };
 
 function exCard(e, i) {
-  const w = S.workout;
-  const cur = i === w.cur;
-  const doneN = e.sets.filter(s => s.done).length;
-  if (!cur) {
-    const top = e.sets[e.sets.length - 1];
-    const pct = doneN / e.sets.length;
-    return `<section class="ex-card collapsed pressable" data-act="focus-ex" data-i="${i}">
-      <div style="position:relative;width:36px;height:36px">${ring(pct, { size: 36, sw: 4, color: pct === 1 ? 'var(--good)' : 'var(--ember)', instant: true })}
-        <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700" class="num">${pct === 1 ? ic('check', 14, 3) : `${doneN}/${e.sets.length}`}</span></div>
-      <div class="grow"><div class="hl">${e.name}</div><div class="fn ink2 num">${e.sets.length} sets · ${(top.kg ? n1(top.kg) + ' kg × ' : '')}${top.reps}${e.sets.some(s => s.pr) ? ' · <span style="color:var(--ember)">PR</span>' : ''}</div></div>
-      <span class="chev">${ic('chevR', 18)}</span>
-    </section>`;
-  }
   const nextIdx = e.sets.findIndex(s => !s.done);
-  const curSet = e.sets[nextIdx === -1 ? e.sets.length - 1 : nextIdx];
   let n = 0;
   return `<section class="ex-card cur" id="ex-${i}">
     <div class="ex-head">
-      <div class="grow"><div class="ex-name">${e.name}</div><div class="fn ink2 mt4">${e.eq} · ${e.muscle} · best e1RM <span class="num">${n1(e.best || e.bestE1)} kg</span></div></div>
+      <div class="grow"><div class="ex-name">${e.name}</div><div class="fn ink2 mt4">${e.muscle} · best e1RM <span class="num">${n1(e.best || e.bestE1)} kg</span></div></div>
       <button class="icon-btn" style="width:36px;height:36px" data-act="toast" data-msg="Swap exercise, reorder, rest time, notes">${ic('more', 18)}</button>
     </div>
-    ${e.suggest && e.suggestOn ? `<div class="suggest">${ic('up', 18, 2.4).replace('<svg', '<svg style="color:var(--ember)"')}<div class="grow">You hit <b>${e.suggest.last}</b> at ${e.suggest.from} kg last time. Today's sets start at <b>${e.suggest.to} kg</b>.</div><button class="btn xs secondary" data-act="suggest-undo" data-i="${i}">Undo</button></div>` : ''}
+    ${e.suggest && e.suggestOn ? `<div class="suggest">${ic('up', 15, 2.6)}<span class="grow"><b>${e.suggest.to} kg</b> today. You hit ${e.suggest.last} at ${e.suggest.from} last time.</span><button class="link-btn" data-act="suggest-undo" data-i="${i}">Undo</button></div>` : ''}
     <div class="set-head"><span>Set</span><span>Previous</span><span>kg</span><span>Reps</span><span></span></div>
     ${e.sets.map((s, si) => {
       const label = s.kind === 'W' ? 'W' : String(++n);
-      const isCur = si === nextIdx;
-      return `<div class="set-row ${s.done ? 'done' : ''} ${isCur ? 'cur' : ''}" data-i="${i}" data-si="${si}">
+      return `<div class="set-row ${s.done ? 'done' : ''} ${si === nextIdx ? 'cur' : ''}" data-i="${i}" data-si="${si}">
         <span class="n ${s.kind === 'W' ? 'w' : ''}">${label}</span>
         <span class="prev">${s.prev}</span>
         <input type="number" inputmode="decimal" step="2.5" value="${s.kg}" data-f="kg" aria-label="Weight, set ${label}">
         <input type="number" inputmode="numeric" value="${s.reps}" data-f="reps" aria-label="Reps, set ${label}">
         <button class="tick" data-act="tick" data-i="${i}" data-si="${si}" aria-label="Complete set ${label}">${ic('check', 20, 3)}</button>
-        ${s.pr ? `<span class="pr-badge">${ic('trophy', 10, 2.6)}PR +${n1(s.pr)} e1RM</span>` : ''}
+        ${s.pr ? `<span class="pr-badge">${ic('trophy', 10, 2.6)}PR</span>` : ''}
       </div>`;
     }).join('')}
     <button class="add-set" data-act="add-set" data-i="${i}">${ic('plus', 18)} Add set</button>
-    ${e.barbell && curSet.kg > 20 ? (() => {
-      const ps = plates(curSet.kg);
-      return `<div class="plates"><div class="bar-viz"><span class="sleeve" style="width:14px"></span><span class="collar"></span>${ps.map(p => `<span class="plate" style="background:${PLATE_STYLE[p][0]};height:${PLATE_STYLE[p][1]}px"></span>`).join('')}<span class="sleeve" style="width:22px"></span></div><div class="grow"><div style="color:var(--ink);font-weight:600" class="num">${n1(curSet.kg)} kg</div><div class="num">per side ${ps.join(' + ')}</div></div></div>`;
-    })() : ''}
   </section>`;
 }
 
@@ -698,17 +758,18 @@ function renderCover() {
   el.innerHTML = `
     <div class="wk-top">
       <button class="icon-btn" data-act="minimize" aria-label="Minimize">${ic('chevD', 22)}</button>
-      <div class="grow"><div class="wk-title">${w.name}</div><div class="wk-clock"><i></i><span data-bind="elapsed">${clock(Math.floor((Date.now() - w.startedAt) / 1000))}</span></div></div>
+      <div class="grow"><div class="wk-title">${w.name}</div><div class="wk-clock"><span data-bind="elapsed">${clock(Math.floor((Date.now() - w.startedAt) / 1000))}</span></div></div>
       <button class="btn sm primary" data-act="finish">Finish</button>
     </div>
     <div class="rail">${w.ex.map((e, i) => {
       const pct = e.sets.filter(s => s.done).length / e.sets.length * 100;
-      return `<button class="${i === w.cur ? 'cur' : ''}" data-act="focus-ex" data-i="${i}"><b><i style="width:${pct}%"></i></b><span>${e.name.split(' ')[0]}</span></button>`;
+      return `<button class="${i === w.cur ? 'cur' : ''}" data-act="focus-ex" data-i="${i}" aria-label="${e.name}"><b><i style="width:${pct}%"></i></b></button>`;
     }).join('')}</div>
+    <div class="wk-sub"><span>Exercise ${w.cur + 1} of ${w.ex.length}</span><span><i class="dot-good"></i>${BRO} is training too</span></div>
     <div class="scroll">
-      <div class="bro-live"><span class="avatar xs bro">T</span><div class="grow"><b>${BRO}</b> <span class="ink2">started Legs · 6 min ago</span></div><span class="live-dot"></span></div>
-      ${w.ex.map((e, i) => exCard(e, i)).join('')}
-      <div style="padding:4px 12px 0"><button class="btn ghost block" data-act="toast" data-msg="Exercise picker: search 876 exercises, EN/PL">${ic('plus', 18)} Add exercise</button></div>
+      ${exCard(w.ex[w.cur], w.cur)}
+      <section class="list" style="margin:0 12px">${w.ex.map((e, i) => i === w.cur ? '' : exRow(e, i)).join('')}</section>
+      <div style="padding:12px 12px 0"><button class="btn ghost block" data-act="toast" data-msg="Exercise picker: search 876 exercises, EN/PL">${ic('plus', 18)} Add exercise</button></div>
     </div>`;
   const nsc = $('.scroll', el); nsc.scrollTop = top;
 }
@@ -720,28 +781,21 @@ function summaryHTML() {
     <div class="wk-top"><span style="width:40px"></span><div class="grow"><div class="wk-title">Workout saved</div></div><button class="icon-btn" data-act="share" aria-label="Share">${ic('share', 20)}</button></div>
     <div class="scroll">
       <div class="summary-hero">
-        <div class="medal">${ic('trophy', 44, 2)}</div>
-        <div class="eyebrow ember">${w.name} · Thursday</div>
-        <div class="display mt12">${sum.min}<span style="font-size:48px"> min</span></div>
-        <div class="sub ink2 mt8">${sum.prs.length ? `${sum.prs.length} new record${sum.prs.length > 1 ? 's' : ''}. That's how it's done.` : 'Every set logged. Same time Saturday.'}</div>
+        <div class="medal">${ic('trophy', 34, 2)}</div>
+        <div class="eyebrow">${w.name} · Thursday</div>
+        <div class="display mt12">${sum.min}<span class="display-unit"> min</span></div>
+        <div class="sub ink2 mt8">${sum.prs.length ? `${sum.prs.length} new record${sum.prs.length > 1 ? 's' : ''}.` : 'Every set logged.'} ${BRO} sees it in your shared log.</div>
       </div>
       <div class="stat3">
         <div class="tile"><div class="eyebrow">Volume</div><div class="v">${n0(sum.volume)}<span class="fn ink2"> kg</span></div></div>
         <div class="tile"><div class="eyebrow">Sets</div><div class="v">${sum.sets}</div></div>
-        <div class="tile"><div class="eyebrow">Records</div><div class="v" style="color:var(--ember)">${sum.prs.length}</div></div>
+        <div class="tile"><div class="eyebrow">Records</div><div class="v" style="${sum.prs.length ? 'color:var(--ember)' : ''}">${sum.prs.length}</div></div>
       </div>
       ${sum.prs.length ? `<div class="section-h"><span class="hl">Records</span></div>
-      <section class="list">${sum.prs.map(p => `<div class="li"><div class="lead" style="background:var(--ember-tint);color:var(--ember)">${ic('trophy', 18)}</div><div class="grow"><div class="title">${p.ex} · ${n1(p.kg)} kg × ${p.reps}</div><div class="meta">Best estimated 1RM · ${n1(p.e1)} kg (+${n1(p.d)})</div></div></div>`).join('')}</section>` : ''}
-      <div class="section-h"><span class="hl">Worked</span><span class="link">this session</span></div>
-      <section class="card flex center" style="justify-content:space-around">${bodyMap(levelsFrom(PUSH_ADDS_LVL), { h: 170 })}
-        <div class="muscle-list">${[['Chest', 6], ['Shoulders', 6], ['Triceps', 3]].map(([m, v]) => `<div class="m"><span>${m}</span><span class="num ink2">${v} sets</span><div class="bar"><i data-w="${v / 6 * 100}%" style="background:var(--ember)"></i></div></div>`).join('')}</div>
-      </section>
-      <section class="card mt12 flex center gap12" style="padding:14px 16px"><div class="avatars"><span class="avatar sm me">K</span><span class="avatar sm bro">T</span></div><div class="grow fn ink2">${BRO} sees this in your shared log. He's still on Legs.</div></section>
-      <div class="pad mt16 btn-row"><button class="btn secondary" data-act="share">${ic('share', 18)} Share</button><button class="btn primary" data-act="done">Done</button></div>
+      <section class="list">${sum.prs.map(p => `<div class="li"><div class="grow"><div class="title">${p.ex} · ${n1(p.kg)} kg × ${p.reps}</div><div class="meta">Best estimated 1RM · ${n1(p.e1)} kg (+${n1(p.d)})</div></div><span class="chev" style="color:var(--ember)">${ic('trophy', 18)}</span></div>`).join('')}</section>` : ''}
+      <div class="pad mt24 btn-row"><button class="btn secondary" data-act="share">${ic('share', 18)} Share</button><button class="btn primary" data-act="done">Done</button></div>
     </div>`;
 }
-const PUSH_ADDS_LVL = { chest: 3, shoulders: 3, triceps: 2 };
-
 function workoutSummary() {
   const w = S.workout;
   let volume = 0, sets = 0; const prs = [];
@@ -791,7 +845,7 @@ function burst(anchor) {
   b.style.left = ((r.left - pr.left + r.width / 2) / scale) + 'px';
   b.style.top = ((r.top - pr.top + r.height / 2) / scale) + 'px';
   const cols = ['#FF6A2B', '#FF8A55', '#FFC29C', '#F5C04A', '#fff'];
-  for (let k = 0; k < 22; k++) {
+  for (let k = 0; k < 14; k++) {
     const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 70;
     const i = document.createElement('i');
     i.style.background = cols[k % cols.length];
@@ -852,7 +906,7 @@ function renderAccessories() {
   const w = S.workout;
   const showMini = w && w.minimized && !w.summary;
   mini.style.display = showMini ? '' : 'none';
-  mini.style.bottom = onFuel ? `calc(var(--safe-bottom) + 138px)` : '';
+  mini.style.bottom = onFuel ? 'calc(max(calc(var(--safe-bottom) - 13px), 12px) + 142px)' : '';
   if (showMini) {
     const done = w.ex.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
     const all = w.ex.reduce((a, e) => a + e.sets.length, 0);
@@ -871,8 +925,7 @@ function renderAccessories() {
 
 function macroThumb(i) {
   const kp = i.p * 4, kc = i.c * 4, kf = i.f * 9;
-  const dom = kp >= kc && kp >= kf ? 'p' : kc >= kf ? 'c' : 'f';
-  const col = FOOD_COLORS[dom];
+  const col = FOOD_COLORS[kp >= kc && kp >= kf ? 'p' : kc >= kf ? 'c' : 'f'];
   const initials = i.name.split(/[\s,]+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   return `<span class="thumb" style="background:color-mix(in srgb, ${col} 16%, transparent);color:${col}">${initials}</span>`;
 }
@@ -880,52 +933,33 @@ function macroThumb(i) {
 function renderFuel() {
   const t = totals();
   const left = GOAL.k - t.k;
-  const heatLevels = [4, 3, 4, (() => { const r = t.k / GOAL.k; return r < 0.25 ? 1 : r < 0.5 ? 2 : r < 0.85 ? 3 : 4; })(), null, null, null];
   const meals = Object.entries(S.meals);
   return `
     <header class="hdr">
       <div><span class="date-nav"><button data-act="toast" data-msg="Swipe or tap to step through days">${ic('chevL', 16, 2.4)}</button><span class="eyebrow" style="margin:0">Thu, 24 Sep</span><button style="opacity:.35">${ic('chevR', 16, 2.4)}</button></span><h1 class="lt">Fuel</h1></div>
-      <div class="hdr-actions"><span class="streak" style="background:linear-gradient(180deg,rgba(94,184,255,.22),rgba(94,184,255,.08));box-shadow:inset 0 0 0 1px rgba(94,184,255,.3);color:#8ECFFF">${ic('target', 16)}11 days</span></div>
+      <div class="hdr-actions"><button class="chip quiet pressable" data-act="toast" data-msg="Protein goal hit 11 days in a row">${ic('target', 14)} 11 days</button></div>
     </header>
 
-    <section class="card hero mt12" style="background:radial-gradient(120% 85% at 100% 0%, rgba(94,184,255,0.16), transparent 60%), linear-gradient(180deg,#1C1D20,#171719 70%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), inset 0 0 0 1px rgba(255,255,255,0.05)">
+    <section class="card mt12">
       <div class="fuel-hero">
         <div class="ring-host" data-act="flip-kcal">
-          ${ring(0, { size: 150, sw: 13, segs: [[t.p * 4 / GOAL.k, 'var(--protein)'], [t.c * 4 / GOAL.k, 'var(--carbs)'], [t.f * 9 / GOAL.k, 'var(--fat)']], gap: 5 })}
+          ${ring(0, { size: 140, sw: 11, segs: [[t.p * 4 / GOAL.k, 'var(--protein)'], [t.c * 4 / GOAL.k, 'var(--carbs)'], [t.f * 9 / GOAL.k, 'var(--fat)']], gap: 5 })}
           <div class="center"><span class="display">${n0(S.fuelLeft ? Math.max(0, left) : t.k)}</span><span class="fn ink2">${S.fuelLeft ? 'kcal left' : 'kcal eaten'}</span></div>
         </div>
         <div class="macro-rows">
           ${[['Protein', t.p, GOAL.p, 'var(--protein)'], ['Carbs', t.c, GOAL.c, 'var(--carbs)'], ['Fat', t.f, GOAL.f, 'var(--fat)']].map(([l, v, g, col]) => `
-          <div class="m"><div class="top"><span><i class="dot" style="background:${col}"></i>${l}</span><span class="num"><b>${Math.round(v)}</b><span class="ink3"> / ${g} g</span></span></div><div class="bar"><i data-w="${Math.min(100, v / g * 100)}%" style="background:${col}"></i></div></div>`).join('')}
-          <div class="fn ink3 num">${n0(t.k)} eaten · ${n0(GOAL.k)} goal</div>
+          <div class="m"><div class="top"><span class="ink2">${l}</span><span class="num"><b>${Math.round(v)}</b><span class="ink3"> / ${g} g</span></span></div><div class="bar"><i data-w="${Math.min(100, v / g * 100)}%" style="background:${col}"></i></div></div>`).join('')}
         </div>
       </div>
     </section>
 
-    <div class="section-h"><span class="hl">This week</span><button class="link" data-act="toast" data-msg="Full heatmap: every day scored against your goal">History ${ic('chevR', 16)}</button></div>
-    <div class="pad">
-      <div class="heat">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => {
-        const lv = heatLevels[i];
-        return `<div class="c ${lv == null ? 'future' : ''} ${i === 3 ? 'today' : ''}" style="${lv != null ? `background:${HEAT[lv]}` : ''}">${d}</div>`;
-      }).join('')}</div>
-    </div>
-
-    <div class="section-h"><span class="hl">Meals</span><span class="link">${meals.reduce((a, [, m]) => a + m.items.length, 0)} items</span></div>
     ${meals.map(([key, m]) => {
       const k = m.items.reduce((a, i) => a + i.k, 0);
-      if (!m.items.length) {
-        return `<section class="card flush meal">
-          <div class="meal-h"><span class="t3" style="font-size:17px">${m.name}</span><span class="kcal ink3">Nothing yet</span></div>
-          <button class="meal-empty" data-act="ai" style="width:calc(100% - 24px)"><span class="plus">${ic('plus', 18)}</span><span style="text-align:left"><span style="color:var(--ink);font-weight:600">Post-workout dinner</span><br><span class="num">Aim for ${Math.round(GOAL.p - t.p)} g protein · ${n0(Math.max(0, left))} kcal left</span></span></button>
-        </section>`;
-      }
-      const mp = m.items.reduce((a, i) => a + i.p * 4, 0), mc = m.items.reduce((a, i) => a + i.c * 4, 0), mf = m.items.reduce((a, i) => a + i.f * 9, 0), mt = mp + mc + mf || 1;
-      return `<section class="card flush meal">
-        <div class="meal-h"><span class="t3" style="font-size:17px">${m.name}</span><span class="cap ink3">${m.time}</span><span class="kcal">${n0(k)} <span class="fn ink3">kcal</span></span></div>
-        <div class="meal-bar"><i style="flex:${mp / mt};background:var(--protein)"></i><i style="flex:${mc / mt};background:var(--carbs)"></i><i style="flex:${mf / mt};background:var(--fat)"></i></div>
-        ${m.items.map(i => `<div class="food">${macroThumb(i)}<div class="grow"><div class="name">${i.name}${i.ai ? '<span class="ai-tag">AI</span>' : ''}</div><div class="q num">${i.q} · P ${Math.round(i.p)} · C ${Math.round(i.c)} · F ${Math.round(i.f)}</div></div><span class="k">${n0(i.k)}</span></div>`).join('')}
-        <div style="height:6px"></div>
-      </section>`;
+      return `<div class="section-h"><span class="hl">${m.name}</span><span class="link num">${m.items.length ? `${n0(k)} kcal` : 'Nothing yet'}</span></div>
+      ${m.items.length ? `<section class="list">${m.items.map(i => `
+        <div class="li"><div class="grow"><div class="title" style="font-weight:500">${i.name}${i.ai ? ' <span class="ai-tag">AI</span>' : ''}</div><div class="meta num">${i.q}</div></div><span class="num ink2">${n0(i.k)}</span></div>`).join('')}
+      </section>` : `<section class="list"><button class="li pressable" style="width:100%;text-align:left" data-act="search">
+        <div class="grow"><div class="title" style="font-weight:500">Add dinner</div><div class="meta num" style="color:var(--protein)">${Math.round(GOAL.p - t.p)} g protein to go</div></div><span class="icon-btn">${ic('plus', 18)}</span></button></section>`}`;
     }).join('')}
   `;
 }
@@ -964,47 +998,34 @@ function progressLifts() {
   const n = RANGES[S.prog.range];
   const vis = full.slice(-n);
   const delta = vis[vis.length - 1] - vis[0];
-  // PR points: new all-time highs inside the visible window (last 3)
   const prIdx = []; let hi = Math.max(...full.slice(0, full.length - n));
   vis.forEach((v, i) => { if (v > hi) { hi = v; if (i < vis.length - 1) prIdx.push(i); } });
   const muscles = weekMuscles();
   const levels = {}; Object.entries(muscles).forEach(([k, v]) => { levels[k] = setsToLevel(v); });
-  const top = Object.entries(muscles).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const vols = VOLUME_WEEKS.concat([weekVolume() / 1000]);
-  const vmax = Math.max(...vols);
+  const top = Object.entries(muscles).sort((a, b) => b[1] - a[1]).slice(0, 5);
   return `
-    <div class="hscroll mt12">${LIFTS.map(l => `<button class="chip ${l.id === S.prog.lift ? '' : 'quiet'}" style="${l.id === S.prog.lift ? 'background:var(--ink);color:var(--ground)' : ''}" data-act="lift" data-v="${l.id}">${l.name}</button>`).join('')}</div>
+    <div class="hscroll mt12">${LIFTS.map(l => `<button class="chip ${l.id === S.prog.lift ? 'sel' : 'quiet'}" data-act="lift" data-v="${l.id}">${l.name}</button>`).join('')}</div>
     <section class="card hero lift-hero mt12">
       <div class="top"><div><div class="eyebrow">Estimated 1RM</div>
         <div class="big-num"><span class="display">${n1(full[full.length - 1])}</span><span class="unit">kg</span></div></div>
-        <span class="chip ${delta > 0 ? 'good' : 'quiet'}" style="margin-top:2px">${delta > 0 ? ic('up', 14, 2.6) : ''}${delta > 0 ? '+' : ''}${n1(delta)} kg ${RANGE_WORD[S.prog.range]}</span></div>
-      ${lineChart(vis, { w: 330, h: 170, step: 5, xLabels: xLabelsFor(vis.length), prs: prIdx.slice(-3), id: 'lift' })}
+        <span class="chip ${delta > 0 ? 'good' : 'quiet'}" style="margin-top:2px">${delta > 0 ? '+' : ''}${n1(delta)} kg ${RANGE_WORD[S.prog.range]}</span></div>
+      ${lineChart(vis, { w: 330, h: 160, step: 5, xLabels: xLabelsFor(vis.length), prs: prIdx.slice(-3), id: 'lift' })}
       <div class="range">${Object.keys(RANGES).map(r => `<button class="${r === S.prog.range ? 'on' : ''}" data-act="range" data-v="${r}">${r}</button>`).join('')}</div>
     </section>
-    <div class="row2 mt12">
-      <div class="tile"><div class="eyebrow">Best set</div><div class="hl num mt8" style="font-size:20px">${L.best}</div><div class="fn ink2 mt4">${L.bestWhen}</div></div>
-      <div class="tile"><div class="eyebrow">Next milestone</div><div class="hl num mt8" style="font-size:20px">${Math.ceil((full[full.length - 1] + 0.1) / 10) * 10} kg</div><div class="fn ink2 mt4">~${Math.max(1, Math.round((Math.ceil((full[full.length - 1] + 0.1) / 10) * 10 - full[full.length - 1]) / Math.max(0.3, (full[full.length - 1] - full[full.length - 14]) / 13)))} weeks at this pace</div></div>
-    </div>
 
     <div class="section-h"><span class="hl">Muscles this week</span><span class="link">${Object.values(muscles).reduce((a, b) => a + b, 0)} sets</span></div>
     <section class="card">
-      <div class="flex center" style="gap:14px">
-        <div class="body-map">${bodyMap(levels, { h: 196 })}</div>
-        <div class="muscle-list grow">${top.map(([m, v]) => `<div class="m"><span style="text-transform:capitalize">${m}</span><span class="num ink2">${v}</span><div class="bar"><i data-w="${Math.min(100, v / 12 * 100)}%" style="background:${HEAT[Math.max(1, setsToLevel(v))]}"></i></div></div>`).join('')}</div>
+      <div class="flex center" style="gap:16px">
+        <div class="body-map">${bodyMap(levels, { h: 180 })}</div>
+        <div class="muscle-list grow">${top.map(([m, v]) => `<div class="m"><span style="text-transform:capitalize">${m}</span><span class="num ink2">${v}</span></div>`).join('')}</div>
       </div>
-      <div class="flex between center mt12"><div class="muscle-legend">Sets per muscle ${HEAT.map(c => `<i style="background:${c}"></i>`).join('')} 10+</div></div>
-      ${muscles.chest ? '' : `<div class="suggest" style="margin:12px 0 0">${ic('bolt', 16)}<div class="grow">Chest and triceps haven't been hit this week. <b>Push A tonight</b> fixes that.</div></div>`}
+      ${muscles.chest ? '' : '<div class="fn ink2 mt12">Chest and triceps not trained yet this week.</div>'}
     </section>
 
-    <div class="section-h"><span class="hl">Weekly volume</span><span class="link num">${n1(vols[vols.length - 1])} t this week</span></div>
-    <section class="card">
-      <div class="vol-bars">${vols.map((v, i) => `<div class="${i === vols.length - 1 ? 'cur' : ''}"><i style="height:${v / vmax * 78}%"></i><span>${i === vols.length - 1 ? 'Now' : 'W' + (32 + i)}</span></div>`).join('')}</div>
-    </section>
-
-    <div class="section-h"><span class="hl">All lifts</span><span class="link">e1RM · 3 months</span></div>
+    <div class="section-h"><span class="hl">All lifts</span><span class="link">3 months</span></div>
     <section class="list">${LIFTS.map(l => {
       const s = liftSeries(l), d = s[s.length - 1] - s[s.length - 14];
-      return `<button class="li lift-li pressable" style="width:100%;text-align:left" data-act="lift" data-v="${l.id}"><div class="grow"><div class="title">${l.name}</div><div class="meta">${l.routine}</div></div>${spark(s.slice(-14), { w: 72, h: 30, fill: false })}<div style="text-align:right;min-width:64px"><div class="hl num">${n1(s[s.length - 1])} kg</div><div class="delta ${d > 0 ? '' : 'flat'}">${d > 0 ? '+' : ''}${n1(d)}</div></div></button>`;
+      return `<button class="li lift-li pressable" style="width:100%;text-align:left" data-act="lift" data-v="${l.id}"><div class="grow"><div class="title">${l.name}</div><div class="meta">${l.routine}</div></div>${spark(s.slice(-14), { w: 64, h: 28, fill: false })}<div style="text-align:right;min-width:64px"><div class="hl num">${n1(s[s.length - 1])} kg</div><div class="delta ${d > 0 ? '' : 'flat'}">${d > 0 ? '+' : ''}${n1(d)}</div></div></button>`;
     }).join('')}</section>`;
 }
 
@@ -1015,22 +1036,17 @@ function progressBody() {
   const now = vt[vt.length - 1];
   const rate = (now - trend[trend.length - 29]) / 4;
   const xl = [[0, n === 30 ? '25 Aug' : '26 Jun'], [Math.round((n - 1) / 2), n === 30 ? '9 Sep' : '10 Aug'], [n - 1, 'Now']];
-  const logged = raw.slice(-28).filter(v => v != null).length;
   const recent = raw.map((v, i) => [v, i]).filter(([v]) => v != null).slice(-5).reverse();
   return `
     <section class="card hero mt12">
       <div class="top flex between" style="align-items:flex-start"><div><div class="eyebrow">Body weight · trend</div>
         <div class="big-num"><span class="display">${n1(now)}</span><span class="unit">kg</span></div></div>
-        <span class="chip quiet num" style="margin-top:2px">${ic(rate < 0 ? 'down' : 'up', 14, 2.6)} ${Math.abs(rate).toFixed(1)} kg / week</span></div>
-      ${lineChart(vt, { w: 330, h: 170, step: 1, xLabels: xl, raw: vr, id: 'bw', color: 'var(--ember)' })}
+        <span class="chip quiet num" style="margin-top:2px">${rate < 0 ? '−' : '+'}${Math.abs(rate).toFixed(1)} kg / week</span></div>
+      ${lineChart(vt, { w: 330, h: 160, step: 1, xLabels: xl, raw: vr, id: 'bw', color: 'var(--ember)' })}
       <div class="range">${['1M', '3M'].map(r => `<button class="${(S.prog.bwRange || '3M') === r ? 'on' : ''}" data-act="bwrange" data-v="${r}">${r}</button>`).join('')}</div>
       <button class="btn primary block mt16" data-act="logweight">${ic('plus', 18)} Log weight</button>
     </section>
-    <div class="row2 mt12">
-      <div class="tile"><div class="eyebrow">Consistency</div><div class="hl num mt8" style="font-size:20px">${logged} of 28 days</div><div class="bar mt8"><i data-w="${logged / 28 * 100}%" style="background:var(--ink)"></i></div></div>
-      <div class="tile"><div class="eyebrow">Goal · 80 kg</div><div class="hl num mt8" style="font-size:20px">~${Math.round((now - 80) / Math.abs(rate))} weeks</div><div class="fn ink2 mt4">at this pace</div></div>
-    </div>
-    <div class="section-h"><span class="hl">Recent</span><span class="link">Dots = weigh-ins · line = trend</span></div>
+    <div class="section-h"><span class="hl">Recent</span><span class="link">Last 5 weigh-ins</span></div>
     <section class="list">${recent.map(([v, i]) => {
       const d = new Date(TODAY); d.setDate(d.getDate() - (raw.length - 1 - i));
       return `<div class="li"><div class="grow"><div class="title" style="font-weight:500">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</div></div><span class="hl num">${n1(v)} kg</span></div>`;
@@ -1042,61 +1058,47 @@ function progressBody() {
 function renderBro() {
   const out = !!S.out, done = !!S.todayDone, inn = S.imIn || done || (S.workout && !S.workout.summary);
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const K = ['done-k', '', 'done-k', done ? 'done-k' : out ? 'miss' : inn ? 'in' : 'pending', S.out && S.out.makeup === 'Fri 25' ? 'plan' : '', 'plan', ''];
-  const T = ['done-t', '', 'miss', 'in', '', 'plan', ''];
-  const cellInner = c => c === 'done-k' || c === 'done-t' ? ic('check', 14, 3.2) : c === 'miss' ? ic('x', 12, 3) : c === 'in' ? 'IN' : '';
-  const together = 8 + (done ? 1 : 0);
+  const K = ['done-k', '', 'done-k', done ? 'done-k' : out ? 'miss' : inn ? 'in' : 'pending', S.out && S.out.makeup === 'Fri 25' ? 'plan' : '', 'plan', S.out && S.out.makeup === 'Sun 27' ? 'plan' : ''];
+  const T = ['done-t', '', 'miss', done ? 'done-t' : 'in', '', 'plan', ''];
+  const cellInner = c => c === 'done-k' || c === 'done-t' ? ic('check', 13, 3.2) : c === 'miss' ? ic('x', 11, 3) : c === 'in' ? 'IN' : '';
   return `
     <header class="hdr">
       <div><span class="eyebrow">${ME} & ${BRO}</span><h1 class="lt">Bro</h1></div>
-      <div class="hdr-actions"><span class="streak">${ic('flame', 16)}6 wk</span></div>
+      <div class="hdr-actions"><span class="streak">${ic('flame', 15)}6 wk</span></div>
     </header>
 
     <section class="card hero mt12">
-      <div class="flex between" style="align-items:flex-end">
-        <div><div class="eyebrow ember">September together</div><div class="flex mt8" style="align-items:baseline;gap:4px"><span class="display" style="font-size:64px">${together}</span><span class="display ink3" style="font-size:36px">/ 11</span></div></div>
-        <div class="avatars" style="margin-bottom:6px"><span class="avatar me ring-ember">K</span><span class="avatar bro ring-good">T</span></div>
-      </div>
-      <div class="fn ink2 mt8">Sessions you both showed up for. Best month yet was 10.</div>
+      <div class="flex between center"><span class="eyebrow ember">This week</span><span class="cap ink2 num">${8 + (done ? 1 : 0)} of 11 together in September</span></div>
       <div class="board mt16">
         <span></span>${days.map((d, i) => `<span class="dl ${i === 3 ? 'today' : ''}">${d}</span>`).join('')}
-        <span class="who"><span class="avatar xs me">K</span>You</span>${K.map(c => `<span class="cell ${c}">${cellInner(c)}</span>`).join('')}
-        <span class="who"><span class="avatar xs bro">T</span>${BRO}</span>${T.map(c => `<span class="cell ${c}">${cellInner(c)}</span>`).join('')}
+        <span class="who">You</span>${K.map(c => `<span class="cell ${c}">${cellInner(c)}</span>`).join('')}
+        <span class="who">${BRO}</span>${T.map(c => `<span class="cell ${c}">${cellInner(c)}</span>`).join('')}
       </div>
     </section>
 
-    ${done ? '' : out ? `
-    <section class="card mt12" style="padding:16px">
-      <div class="flex center gap12"><span class="avatar sm me" style="opacity:.5">K</span><div class="grow"><div class="sub bold">You're out today</div><div class="fn ink2">${BRO} got your heads-up${S.out.makeup !== 'skip' ? ` · make-up ${S.out.makeup}` : ''}</div></div><button class="btn xs secondary" data-act="undo-out">Undo</button></div>
-    </section>` : `
+    ${done ? '' : `
     <section class="card mt12" style="padding:16px">
       <div class="flex center gap12">
-        <span class="avatar sm bro ring-good">T</span>
-        <div class="grow"><div class="sub bold">${inn ? 'Both in for 18:00' : `${BRO}'s in for 18:00`}</div><div class="fn ink2">Push A · he confirmed at 12:40</div></div>
-        ${inn ? `<span class="chip good">${ic('check', 14, 3)} You're in</span>` : `<button class="btn sm primary" data-act="imin">I'm in</button>`}
+        <span class="avatar sm ${out ? '' : 'ring-good'}">${out ? 'K' : 'T'}</span>
+        <div class="grow">${out
+          ? `<div class="sub bold">You're out today</div><div class="fn ink2">${BRO} got your heads-up${S.out.makeup !== 'skip' ? ` · make-up ${S.out.makeup}` : ''}</div>`
+          : `<div class="sub bold">${inn ? 'Both in for 18:00' : `${BRO}'s in for 18:00`}</div><div class="fn ink2">Push A · confirmed at 12:40</div>`}</div>
+        ${out ? `<button class="btn xs secondary" data-act="undo-out">Undo</button>` : inn ? `<span class="chip good">${ic('check', 14, 3)} You're in</span>` : `<button class="btn sm primary" data-act="imin">I'm in</button>`}
       </div>
     </section>`}
 
     <div class="section-h"><span class="hl">Heads-up to ${BRO}</span></div>
-    <div class="headsup">
-      <button data-act="cant"><span class="ic" style="background:var(--bad-tint);color:#FF6B88">${ic('x', 16, 2.6)}</span>Can't make it</button>
-      <button data-act="send" data-msg="15 min late"><span class="ic" style="background:rgba(245,192,74,.14);color:var(--carbs)">${ic('clock', 16)}</span>15 min late</button>
-      <button data-act="send" data-msg="Let's go!"><span class="ic" style="background:var(--ember-tint);color:var(--ember)">${ic('flame', 16)}</span>Let's go</button>
-      <button data-act="send" data-msg="Custom message"><span class="ic" style="background:rgba(255,255,255,.08)">${ic('msg', 16)}</span>Custom</button>
+    <div class="hscroll">
+      <button class="btn sm secondary" data-act="cant">Can't make it</button>
+      <button class="btn sm secondary" data-act="send" data-msg="15 min late">15 min late</button>
+      <button class="btn sm secondary" data-act="send" data-msg="Let's go!">Let's go</button>
+      <button class="btn sm secondary" data-act="toast" data-msg="Short message, up to 80 characters">Custom…</button>
     </div>
 
-    <div class="section-h"><span class="hl">Head to head</span><span class="link">September</span></div>
-    <section class="card">
-      <div class="flex between center" style="margin-bottom:14px"><span class="flex center gap8 fn bold"><span class="avatar xs me">K</span>You</span><span class="flex center gap8 fn bold">${BRO}<span class="avatar xs bro">T</span></span></div>
-      <div class="vs">${[['Sessions', 9 + (done ? 1 : 0), 8, ''], ['Volume', 48.2 + (done ? (S.todayDone.volume / 1000) : 0), 51.0, ' t'], ['PRs', 4 + (done ? S.todayDone.prs.length : 0), 3, ''], ['Protein days', 11, 7, '']].map(([l, a, b, u]) => `
-        <div class="r"><div class="lbl"><b class="num" style="${a >= b ? 'color:var(--ember-hi)' : ''}">${n1(a)}${u}</b><span class="ink2">${l}</span><b class="num" style="${b > a ? 'color:var(--good)' : ''}">${n1(b)}${u}</b></div>
-        <div class="split"><i style="flex:${a}"></i><i style="flex:${b}"></i></div></div>`).join('')}</div>
-    </section>
-
-    <div class="section-h"><span class="hl">Log</span><span class="link">Since 12 Aug · 18 sessions · 2 missed</span></div>
+    <div class="section-h"><span class="hl">Log</span><span class="link">18 sessions · 2 missed</span></div>
     <section class="list">${S.broLog.map(l => `
       <div class="log-item">
-        <span class="ico" style="background:${l.tone === 'bad' ? 'var(--bad-tint)' : l.tone === 'ember' ? 'var(--ember-tint)' : l.tone === 'you' ? 'rgba(255,255,255,.08)' : 'var(--good-tint)'};color:${l.tone === 'bad' ? '#FF6B88' : l.tone === 'ember' ? 'var(--ember)' : l.tone === 'you' ? 'var(--ink)' : 'var(--good)'}">${ic(l.icon, 16, 2.6)}</span>
+        <span class="ico ${l.tone}">${ic(l.icon, 14, 2.8)}</span>
         <div class="grow"><div class="sub bold">${l.title}</div>${l.quote ? `<div class="quote">${l.quote}</div>` : ''}${l.meta ? `<div class="fn ink2 mt4">${l.meta}</div>` : ''}</div>
         <span class="when">${l.when}</span>
       </div>`).join('')}
@@ -1269,7 +1271,6 @@ function act(a, ev) {
       if (!any) { showToast('ok', '<div class="grow"><div class="hl">Log a set first</div><div class="fn ink2">Tap the check next to a set when it’s done.</div></div>', 2400, ic('check', 20, 3)); break; }
       S.rest = null; renderRest();
       w.summary = true; renderCover();
-      setTimeout(() => burst($('.medal')), 350);
       break;
     }
     case 'share': note('Shares a summary card to your bro or stories'); break;
@@ -1361,10 +1362,13 @@ function seedMidWorkout() {
 }
 
 renderAll();
+tbLayout();
 const hash = location.hash.replace('#', '') || 'today';
 const tabOf = { pr: 'train', today: 'today', train: 'train', fuel: 'fuel', progress: 'progress', body: 'progress', bro: 'bro', workout: 'train', summary: 'today', ai: 'fuel', cant: 'today', search: 'fuel', 'done-today': 'today', minibar: 'fuel' };
 if (hash === 'body') S.prog.seg = 'body';
 requestAnimationFrame(() => {
+  tbLayout();
+  lensTo(TABS.findIndex(([id]) => id === (tabOf[hash] || 'today')), true);
   setTab(tabOf[hash] || 'today', false);
   if (hash === 'workout') seedMidWorkout();
   if (hash === 'summary') { seedMidWorkout(); const w = S.workout; w.ex[0].sets[2].done = true; w.ex[0].sets[3].done = true; w.ex[1].sets.forEach(s => { s.done = true; }); w.ex[2].sets.forEach(s => { s.done = true; }); recomputePRs(w.ex[0]); w.demoMin = 58; S.rest = null; w.summary = true; renderRest(); renderCover(); }
