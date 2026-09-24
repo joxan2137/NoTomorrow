@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Interactive prototype of the No Tomorrow v2 redesign: Today, Train, live workout, Fuel, Progress and Bro.">
+<title>No Tomorrow v2 prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="stage">
+  <aside class="guide" aria-label="How to use this prototype">
+    <a class="back" href="../">← No Tomorrow v2 proposal</a>
+    <h1><span>No</span> Tomorrow <em>v2</em></h1>
+    <p>A working prototype. Everything on the phone responds, with invented sample data.</p>
+    <ol>
+      <li><b>Today</b> Tap <i>I'm in</i>, then <i>Start workout</i>.</li>
+      <li><b>Workout</b> Tick sets. The first working set beats your bench record. The rest timer starts on its own.</li>
+      <li><b>Minimize</b> the workout with the chevron and walk around the tabs.</li>
+      <li><b>Finish</b> and watch Today, Train, Progress and Bro update.</li>
+      <li><b>Fuel</b> Try <i>AI photo</i>, <i>Barcode</i> and <i>Search</i>. Tap the ring.</li>
+      <li><b>Progress</b> Switch lifts, ranges, and Body.</li>
+      <li><b>Bro</b> Send a heads-up, or say you can't make it.</li>
+    </ol>
+    <p class="small">Reload to start over. On a phone, open this page directly for a full-screen version.</p>
+  </aside>
+  <div class="device" id="device">
+    <div class="phone" id="phone">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="num">09:41</span>
+        <span class="icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0z"/><path d="M8 5.6a6.2 6.2 0 0 1 4.3 1.8l-1.3 1.3a4.4 4.4 0 0 0-6 0L3.7 7.4A6.2 6.2 0 0 1 8 5.6z"/><path d="M8 1.6c2.8 0 5.3 1.1 7.2 2.9L13.9 5.8A8.4 8.4 0 0 0 8 3.4a8.4 8.4 0 0 0-5.9 2.4L.8 4.5A10.2 10.2 0 0 1 8 1.6z"/></svg>
+          <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="currentColor" opacity="0.45"/></svg>
+        </span>
+      </div>
+      <div id="app"></div>
+      <div class="home-ind"></div>
+    </div>
+  </div>
+</div>
+<script src="muscles.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
