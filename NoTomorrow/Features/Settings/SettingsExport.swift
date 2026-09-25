@@ -72,7 +72,7 @@ enum ExportCSV {
         workoutsDescriptor.predicate = #Predicate { $0.endedAt != nil }
         let workouts = (try? context.fetch(workoutsDescriptor)) ?? []
         counts.workouts = workouts.count
-        var rows = ["workout_id,workout_name,started_at,ended_at,exercise,set,kind,weight_kg,reps,completed_at,pr,set_record"]
+        var rows = ["workout_id,workout_name,started_at,ended_at,exercise,set,kind,weight_kg,reps,seconds,completed_at,pr,set_record"]
         for w in workouts {
             for ex in w.sortedExercises {
                 for s in ex.sortedSets where s.isCompleted {
@@ -80,7 +80,7 @@ enum ExportCSV {
                     rows.append(line([
                         w.id.uuidString, w.name, iso(w.startedAt), w.endedAt.map(iso) ?? "",
                         ex.exercise?.name ?? "", String(s.order + 1), s.kind.rawValue,
-                        number(s.weightKg), String(s.reps), s.completedAt.map(iso) ?? "",
+                        number(s.weightKg), String(s.reps), s.seconds > 0 ? String(s.seconds) : "", s.completedAt.map(iso) ?? "",
                         s.isPR ? "1" : "0", s.isSetRecord ? "1" : "0",
                     ]))
                 }

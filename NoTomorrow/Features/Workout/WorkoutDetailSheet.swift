@@ -201,7 +201,7 @@ struct WorkoutDetailExercise: View {
                 .tabular()
                 .frame(width: 24, height: 24)
                 .background(NT.Colors.surface2, in: Circle())
-            Text(Fmt.set(set.weightKg, set.reps, unit: unit))
+            Text(Fmt.set(set, unit: unit))
                 .font(NT.Fonts.subheadline)
                 .foregroundStyle(NT.Colors.ink)
                 .tabular()

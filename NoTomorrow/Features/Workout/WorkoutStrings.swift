@@ -54,6 +54,15 @@ enum WorkoutStrings {
             .replacingOccurrences(of: "-", with: "_")
     }
 
+    /// "Weight × reps" / "Bodyweight reps" / "Timed hold": the choices under "Track as".
+    static func tracking(_ tracking: ExerciseTracking) -> String {
+        switch tracking {
+        case .weightReps: String(localized: "tracking.weightReps")
+        case .bodyweightReps: String(localized: "tracking.bodyweightReps")
+        case .duration: String(localized: "tracking.duration")
+        }
+    }
+
     /// Localized muscle name ("chest" → "Chest" / "Klatka"). Unknown values fall back to a capitalized raw string.
     static func muscle(_ raw: String) -> String {
         let key = "muscleName.\(slug(raw))"

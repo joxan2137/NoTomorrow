@@ -196,7 +196,7 @@ struct WorkoutRecordRow: View {
             }
             .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(exerciseName) · \(Fmt.set(entry.weightKg, entry.reps, unit: unit))")
+                Text("\(exerciseName) · \(Fmt.set(entry, unit: unit))")
                     .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1)
                 detail
                     .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular().lineLimit(1)
@@ -212,6 +212,12 @@ struct WorkoutRecordRow: View {
     }
 
     private var detail: Text {
+        // Body weight and holds have no e1RM: the record is the reps or the seconds.
+        switch entry.tracking {
+        case .weightReps: break
+        case .bodyweightReps: return Text(entry.isPR ? LocalizedStringKey("workout.done.newBest") : "workout.done.mostReps")
+        case .duration: return Text(entry.isPR ? LocalizedStringKey("workout.done.newBest") : "workout.done.longestHold")
+        }
         if entry.isPR {
             let before = entry.workoutExercise?.exercise.map { RecordService.previousSets(for: $0, before: entry) }?
                 .map(\.estimatedOneRepMax).max() ?? 0

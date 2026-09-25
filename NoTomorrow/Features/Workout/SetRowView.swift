@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// One 44 pt row of the set table: kind/number menu · previous ghost · weight cell · reps cell · check.
-/// Weights show and parse in the user's unit (stored in kg).
+/// One 44 pt row of the set table: kind/number menu · previous ghost · weight cell · reps (or seconds) cell · check.
+/// Weights show and parse in the user's unit (stored in kg); for a body-weight or timed exercise it is added weight.
 struct SetRowView: View {
     let set: SetEntry
     let exercise: WorkoutExercise
@@ -13,13 +13,14 @@ struct SetRowView: View {
     var onDelete: () -> Void
 
     private var unit: WeightUnit { model.unit }
+    private var tracking: ExerciseTracking { exercise.exercise?.tracking ?? .weightReps }
     private var previous: ActiveWorkoutModel.SetValue? { model.previous(for: set, in: exercise) }
 
     var body: some View {
         HStack(spacing: 8) {
             SetKindMenu(kind: set.kind, number: model.setNumber(for: set, in: exercise),
                         onKind: { model.setKind($0, for: set) }, onDelete: onDelete)
-            Text(previous.map { Fmt.set($0.weightKg, $0.reps, unit: unit) } ?? "—")
+            Text(previous.map { Fmt.set($0.weightKg, $0.reps, seconds: $0.seconds, tracking: tracking, unit: unit) } ?? "—")
                 .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
                 .frame(maxWidth: .infinity)
             SetNumberCell(text: SetInput.text(weightKg: set.weightKg, unit: unit),
@@ -27,10 +28,10 @@ struct SetRowView: View {
                           keyboard: .decimalPad, isCurrent: isCurrent, isEnabled: !set.isCompleted) { text in
                 set.weightKg = SetInput.weightKg(text, unit: unit)
             }
-            SetNumberCell(text: SetInput.text(reps: set.reps),
+            SetNumberCell(text: SetInput.amountText(reps: set.reps, seconds: set.seconds, tracking: tracking),
                           field: SetField(setID: set.persistentModelID, isReps: true), focus: focus,
                           keyboard: .numberPad, isCurrent: isCurrent, isEnabled: !set.isCompleted) { text in
-                set.reps = SetInput.reps(text)
+                if tracking == .duration { set.seconds = SetInput.seconds(text) } else { set.reps = SetInput.reps(text) }
             }
             SetCheckButton(isOn: set.isCompleted, action: onToggle)
         }

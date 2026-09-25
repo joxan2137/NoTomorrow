@@ -55,7 +55,7 @@ struct ExercisePickerRow: View {
 
     private var lastSetLabel: String? {
         guard let set = RecordService.lastSet(for: exercise) else { return nil }
-        return Fmt.set(set.weightKg, set.reps, unit: unit)
+        return Fmt.set(set, unit: unit)
     }
 
     var body: some View {

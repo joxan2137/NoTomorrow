@@ -45,6 +45,8 @@ struct ExerciseDraft: Identifiable, Equatable {
     var primaryMuscle: String?
     var restSeconds: Int
     var sets: [SetDraft]
+    /// What the rows record (their second cell is seconds for a timed exercise).
+    var tracking: ExerciseTracking = .weightReps
 }
 
 struct SetDraft: Identifiable, Equatable {
@@ -54,6 +56,7 @@ struct SetDraft: Identifiable, Equatable {
         var weightKg: Double
         var reps: Int
         var isDone: Bool
+        var seconds: Int = 0
     }
 
     let id: UUID
@@ -62,8 +65,12 @@ struct SetDraft: Identifiable, Equatable {
     var kind: SetKind
     var weightKg: Double
     var reps: Int
-    /// Ticked. It only counts (✓, saved as completed) while it has reps: clearing the reps to retype them
-    /// does not lose the tick, and nothing is ever logged as "0 × 0".
+    /// Seconds held, for a timed exercise.
+    var seconds: Int = 0
+    /// Its exercise's type: whether reps or seconds make the row count.
+    var tracking: ExerciseTracking = .weightReps
+    /// Ticked. It only counts (✓, saved as completed) while it has reps (seconds, for a timed exercise): clearing
+    /// them to retype does not lose the tick, and nothing is ever logged as "0 × 0".
     var isDone: Bool
     /// `completedAt` as saved. Save remaps it when the start or the duration changes.
     var originalCompletedAt: Date?
@@ -73,12 +80,15 @@ struct SetDraft: Identifiable, Equatable {
     /// Counts as completed: ticked with reps, or a row completed before the no-"0 × 0" rule (reps 0) that the user
     /// has left exactly as it was. Saving any other edit (a rename) must not un-log it, which could also take the
     /// day's attendance with it.
-    var isLogged: Bool { isDone && (reps > 0 || isUntouchedCompleted) }
+    var isLogged: Bool { isDone && (amount > 0 || isUntouchedCompleted) }
+
+    /// Reps, or seconds for a timed exercise, as `SetEntry.amount`.
+    var amount: Int { ExerciseTracking.amount(reps: reps, seconds: seconds, tracking: tracking) }
 
     /// Completed when the editor opened and not changed since.
     var isUntouchedCompleted: Bool {
         guard let saved, saved.isDone, originalCompletedAt != nil else { return false }
-        return saved == Saved(kind: kind, weightKg: weightKg, reps: reps, isDone: isDone)
+        return saved == Saved(kind: kind, weightKg: weightKg, reps: reps, isDone: isDone, seconds: seconds)
     }
 }
 
@@ -89,15 +99,19 @@ extension WorkoutDraft {
         startedAt = workout.startedAt
         duration = max(0, (workout.endedAt ?? workout.startedAt).timeIntervalSince(workout.startedAt))
         exercises = workout.sortedExercises.map { entry in
-            ExerciseDraft(
+            let tracking = entry.exercise?.tracking ?? .weightReps
+            return ExerciseDraft(
                 id: UUID(), sourceID: entry.persistentModelID,
                 exerciseID: entry.exercise?.id ?? "", name: entry.exercise?.localizedName ?? "",
                 primaryMuscle: entry.exercise?.primaryMuscles.first, restSeconds: entry.restSeconds,
                 sets: entry.sortedSets.map { set in
                     SetDraft(id: UUID(), sourceID: set.persistentModelID, kind: set.kind, weightKg: set.weightKg,
-                             reps: set.reps, isDone: set.isCompleted, originalCompletedAt: set.completedAt,
-                             saved: .init(kind: set.kind, weightKg: set.weightKg, reps: set.reps, isDone: set.isCompleted))
-                })
+                             reps: set.reps, seconds: set.seconds, tracking: tracking,
+                             isDone: set.isCompleted, originalCompletedAt: set.completedAt,
+                             saved: .init(kind: set.kind, weightKg: set.weightKg, reps: set.reps, isDone: set.isCompleted,
+                                          seconds: set.seconds))
+                },
+                tracking: tracking)
         }
     }
 
@@ -164,7 +178,8 @@ extension WorkoutDraft {
         let last = exercises[e].sets.last
         let kind: SetKind = last.map { $0.kind == .warmup ? .normal : $0.kind } ?? .normal
         exercises[e].sets.append(SetDraft(id: UUID(), sourceID: nil, kind: kind, weightKg: last?.weightKg ?? 0,
-                                          reps: last?.reps ?? 0, isDone: true, originalCompletedAt: nil))
+                                          reps: last?.reps ?? 0, seconds: last?.seconds ?? 0,
+                                          tracking: exercises[e].tracking, isDone: true, originalCompletedAt: nil))
     }
 
     mutating func deleteSet(_ setID: UUID, in exerciseID: UUID) {
@@ -186,12 +201,15 @@ extension WorkoutDraft {
 
     /// An exercise added from the picker: one ticked row, prefilled from the last time it was done.
     mutating func appendExercise(id: String, name: String, primaryMuscle: String?, restSeconds: Int,
-                                 template: (weightKg: Double, reps: Int)?) {
+                                 template: (weightKg: Double, reps: Int)?, seconds: Int = 0,
+                                 tracking: ExerciseTracking = .weightReps) {
         guard !exerciseIDs.contains(id) else { return }
         let set = SetDraft(id: UUID(), sourceID: nil, kind: .normal, weightKg: template?.weightKg ?? 0,
-                           reps: template?.reps ?? 0, isDone: true, originalCompletedAt: nil)
+                           reps: template?.reps ?? 0, seconds: seconds, tracking: tracking,
+                           isDone: true, originalCompletedAt: nil)
         exercises.append(ExerciseDraft(id: UUID(), sourceID: nil, exerciseID: id, name: name,
-                                       primaryMuscle: primaryMuscle, restSeconds: restSeconds, sets: [set]))
+                                       primaryMuscle: primaryMuscle, restSeconds: restSeconds, sets: [set],
+                                       tracking: tracking))
     }
 
     /// Row number in the Set column: warm-ups don't count (same as the active table).

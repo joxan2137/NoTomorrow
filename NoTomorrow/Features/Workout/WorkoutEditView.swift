@@ -190,7 +190,7 @@ private struct WorkoutEditExerciseSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            SetColumnHeader(unit: model.unit, showsPrevious: false)
+            SetColumnHeader(unit: model.unit, showsPrevious: false, tracking: exercise.tracking)
             ForEach(exercise.sets) { set in
                 row(set)
             }
@@ -251,7 +251,7 @@ private struct WorkoutEditExerciseSection: View {
                           field: SetField(setID: set.id, isReps: false), focus: focus, keyboard: .decimalPad) {
                 model.setWeight($0, for: set.id, in: exercise.id)
             }
-            SetNumberCell(text: SetInput.text(reps: set.reps),
+            SetNumberCell(text: SetInput.amountText(reps: set.reps, seconds: set.seconds, tracking: set.tracking),
                           field: SetField(setID: set.id, isReps: true), focus: focus, keyboard: .numberPad) {
                 model.setReps($0, for: set.id, in: exercise.id)
             }
@@ -264,7 +264,7 @@ private struct WorkoutEditExerciseSection: View {
         if model.draft.toggleDone(set.id, in: exercise.id) {
             Haptics.tap()
         } else {
-            // Nothing to log without reps: send the user to the reps cell.
+            // Nothing to log without reps (seconds): send the user to that cell.
             Haptics.warning()
             focus.wrappedValue = SetField(setID: set.id, isReps: true)
         }
