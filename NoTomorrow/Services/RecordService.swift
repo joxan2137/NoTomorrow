@@ -3,6 +3,7 @@ import SwiftData
 
 /// Personal records. A PR is a new best Epley e1RM or a new heaviest weight for the exercise;
 /// a set record is the most reps ever done at that exact weight. Warm-ups never count, in either direction.
+/// For a timed exercise "reps" read as seconds held (the longest hold at a weight) and there is no e1RM.
 enum RecordService {
 
     struct Evaluation {
@@ -14,14 +15,11 @@ enum RecordService {
     /// Compares `set` against every completed working set of the same exercise done before it
     /// (earlier sets of the current workout included, later ones excluded). Does not mutate the set.
     static func evaluate(set: SetEntry, in context: ModelContext) -> (isPR: Bool, isSetRecord: Bool, bestBefore: SetEntry?) {
-        guard let exercise = set.workoutExercise?.exercise, set.kind != .warmup, set.reps > 0 else {
+        guard let exercise = set.workoutExercise?.exercise, set.kind != .warmup, set.amount > 0 else {
             return (false, false, nil)
         }
         let previous = previousSets(for: exercise, before: set)
-        let best = previous.max { lhs, rhs in
-            if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax { return lhs.estimatedOneRepMax < rhs.estimatedOneRepMax }
-            return lhs.weightKg < rhs.weightKg
-        }
+        let best = previous.max(by: betterSetLast)
         // The first logged working set of an exercise is its first record.
         guard !previous.isEmpty else { return (true, false, nil) }
 
@@ -32,8 +30,8 @@ enum RecordService {
         var isSetRecord = false
         if !isPR {
             let sameWeight = previous.filter { $0.weightKg == set.weightKg }
-            if let maxReps = sameWeight.map(\.reps).max() {
-                isSetRecord = set.reps > maxReps
+            if let maxAmount = sameWeight.map(\.amount).max() {
+                isSetRecord = set.amount > maxAmount
             }
         }
         return (isPR, isSetRecord, best)
@@ -54,7 +52,7 @@ enum RecordService {
     static func completedSets(for exercise: Exercise) -> [SetEntry] {
         exercise.usages
             .flatMap(\.sets)
-            .filter { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+            .filter { $0.isCompleted && $0.kind != .warmup && $0.amount > 0 }
     }
 
     /// Completed working sets of the same exercise finished before `set` (excluding `set` itself and anything later).
@@ -71,12 +69,17 @@ enum RecordService {
         }
     }
 
-    /// Highest-e1RM completed set ever (ties → heavier weight).
+    /// Highest-e1RM completed set ever (ties → heavier weight, then more reps or the longer hold).
     static func bestSet(for exercise: Exercise) -> SetEntry? {
-        completedSets(for: exercise).max { lhs, rhs in
-            if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax { return lhs.estimatedOneRepMax < rhs.estimatedOneRepMax }
-            return lhs.weightKg < rhs.weightKg
-        }
+        completedSets(for: exercise).max(by: betterSetLast)
+    }
+
+    /// "Best set" order: e1RM, then weight, then reps / seconds. The last tie-break is what ranks sets at body weight
+    /// and timed sets, which have no e1RM.
+    static func betterSetLast(_ lhs: SetEntry, _ rhs: SetEntry) -> Bool {
+        if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax { return lhs.estimatedOneRepMax < rhs.estimatedOneRepMax }
+        if lhs.weightKg != rhs.weightKg { return lhs.weightKg < rhs.weightKg }
+        return lhs.amount < rhs.amount
     }
 
     /// Heaviest completed set ever (ties → more reps).
@@ -87,10 +90,10 @@ enum RecordService {
         }
     }
 
-    /// Completed set with the most reps ever (ties → heavier).
+    /// Completed set with the most reps (the longest hold, for a timed exercise) ever (ties → heavier).
     static func mostRepsSet(for exercise: Exercise) -> SetEntry? {
         completedSets(for: exercise).max { lhs, rhs in
-            if lhs.reps != rhs.reps { return lhs.reps < rhs.reps }
+            if lhs.amount != rhs.amount { return lhs.amount < rhs.amount }
             return lhs.weightKg < rhs.weightKg
         }
     }
@@ -157,10 +160,15 @@ enum RecordService {
         var kind: SetKind
         var weightKg: Double
         var reps: Int
+        var seconds: Int = 0
+        var tracking: ExerciseTracking = .weightReps
+
+        /// Reps, or seconds for a timed exercise, as `SetEntry.amount`.
+        var amount: Int { ExerciseTracking.amount(reps: reps, seconds: seconds, tracking: tracking) }
 
         /// Epley, as `SetEntry.estimatedOneRepMax`.
         var estimatedOneRepMax: Double {
-            guard reps > 0, weightKg > 0 else { return 0 }
+            guard reps > 0, weightKg > 0, tracking != .duration else { return 0 }
             if reps == 1 { return weightKg }
             return weightKg * (1 + Double(reps) / 30)
         }
@@ -173,12 +181,12 @@ enum RecordService {
 
     /// Flags for every row of ONE exercise, exactly as `evaluate` would have set them had each completed working set
     /// been ticked in `completedAt` order (same tie rule: equal timestamps only see earlier rows of the same
-    /// `WorkoutExercise`). Open sets, warm-ups and 0-rep sets get no flag.
+    /// `WorkoutExercise`). Open sets, warm-ups and 0-rep (0-second) sets get no flag.
     static func rebuildFlags(_ rows: [RecordRow]) -> [AnyHashable: RecordFlags] {
         var result: [AnyHashable: RecordFlags] = [:]
         for row in rows { result[row.id] = RecordFlags(isPR: false, isSetRecord: false) }
 
-        let working = rows.filter { $0.completedAt != nil && $0.kind != .warmup && $0.reps > 0 }
+        let working = rows.filter { $0.completedAt != nil && $0.kind != .warmup && $0.amount > 0 }
         let byInstant = Dictionary(grouping: working) { $0.completedAt ?? .distantPast }
         var seen = 0
         var maxE1RM = 0.0
@@ -199,9 +207,9 @@ enum RecordService {
                 let isPR = row.estimatedOneRepMax > priorE1RM || row.weightKg > priorWeight
                 var isSetRecord = false
                 if !isPR {
-                    let localReps = local.filter { $0.weightKg == row.weightKg }.map(\.reps).max()
+                    let localReps = local.filter { $0.weightKg == row.weightKg }.map(\.amount).max()
                     if let best = [repsAtWeight[row.weightKg], localReps].compactMap({ $0 }).max() {
-                        isSetRecord = row.reps > best
+                        isSetRecord = row.amount > best
                     }
                 }
                 result[row.id] = RecordFlags(isPR: isPR, isSetRecord: isSetRecord)
@@ -210,7 +218,7 @@ enum RecordService {
                 seen += 1
                 maxE1RM = max(maxE1RM, row.estimatedOneRepMax)
                 maxWeight = max(maxWeight, row.weightKg)
-                repsAtWeight[row.weightKg] = max(repsAtWeight[row.weightKg] ?? 0, row.reps)
+                repsAtWeight[row.weightKg] = max(repsAtWeight[row.weightKg] ?? 0, row.amount)
             }
         }
         return result
@@ -234,7 +242,7 @@ enum RecordService {
                 RecordRow(id: set.persistentModelID,
                           group: set.workoutExercise.map { AnyHashable($0.persistentModelID) } ?? AnyHashable(0),
                           order: set.order, completedAt: set.completedAt, kind: set.kind,
-                          weightKg: set.weightKg, reps: set.reps)
+                          weightKg: set.weightKg, reps: set.reps, seconds: set.seconds, tracking: set.tracking)
             }
             let flags = rebuildFlags(rows)
             for set in sets {

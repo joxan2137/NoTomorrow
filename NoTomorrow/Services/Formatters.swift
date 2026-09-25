@@ -42,6 +42,26 @@ enum Fmt {
         "\(weight(kg, unit: unit, withUnit: false)) × \(reps)"
     }
 
+    /// A set in its exercise's type: "85 × 7" (weight × reps), "BW × 12" / "+10 × 12" (body weight, added weight),
+    /// "45 s" / "+10 kg · 1:30" (timed). A row logged before the type changed shows what it holds.
+    static func set(_ kg: Double, _ reps: Int, seconds: Int, tracking: ExerciseTracking, unit: WeightUnit = .kg) -> String {
+        if seconds > 0 && (tracking == .duration || reps == 0) {
+            let time = hold(seconds)
+            return kg > 0 ? "+\(weight(kg, unit: unit)) · \(time)" : time
+        }
+        guard tracking.weightIsAdded else { return set(kg, reps, unit: unit) }
+        return kg > 0 ? "+\(set(kg, reps, unit: unit))" : "\(localized("workout.bw")) × \(reps)"
+    }
+
+    static func set(_ entry: SetEntry, unit: WeightUnit = .kg) -> String {
+        set(entry.weightKg, entry.reps, seconds: entry.seconds, tracking: entry.tracking, unit: unit)
+    }
+
+    /// A hold: "45 s" under a minute, "1:30" from there.
+    static func hold(_ seconds: Int) -> String {
+        seconds < 60 ? "\(seconds)\u{00A0}s" : clock(TimeInterval(seconds))
+    }
+
     /// "1:12"
     static func clock(_ seconds: TimeInterval) -> String {
         let s = max(0, Int(seconds.rounded()))

@@ -126,7 +126,8 @@ enum WorkoutStarter {
     }
 
     /// Appends one exercise (with prefilled rows) to an existing workout and marks it used.
-    /// Rows copy the last session's sets row by row; an exercise never done gets `targetReps` and no weight.
+    /// Rows copy the last session's sets row by row; an exercise never done gets `targetReps` and no weight (a timed
+    /// one gets nothing: a routine's target is reps).
     /// Rest defaults to the user's Rest length setting (heavy compounds a little longer).
     @discardableResult
     static func append(_ exercise: Exercise, to workout: Workout, order: Int, setCount: Int = 3, targetReps: Int = 0,
@@ -137,9 +138,11 @@ enum WorkoutStarter {
         workoutExercise.workout = workout
 
         let template = lastCompletedSets(for: exercise, excluding: workout)
+        let fallbackReps = exercise.tracking == .duration ? 0 : targetReps
         for index in 0..<setCount {
             let source = index < template.count ? template[index] : template.last
-            let set = SetEntry(order: index, kind: .normal, weightKg: source?.weightKg ?? 0, reps: source?.reps ?? targetReps)
+            let set = SetEntry(order: index, kind: .normal, weightKg: source?.weightKg ?? 0,
+                               reps: source?.reps ?? fallbackReps, seconds: source?.seconds ?? 0)
             context.insert(set)
             set.workoutExercise = workoutExercise
         }
@@ -161,11 +164,11 @@ enum WorkoutStarter {
         let candidates = exercise.usages.filter { usage in
             guard let workout = usage.workout, workout.endedAt != nil else { return false }
             if let current, workout.persistentModelID == current.persistentModelID { return false }
-            return usage.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+            return usage.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.amount > 0 }
         }
         guard let latest = candidates.max(by: { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }) else {
             return []
         }
-        return latest.sortedSets.filter { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+        return latest.sortedSets.filter { $0.isCompleted && $0.kind != .warmup && $0.amount > 0 }
     }
 }

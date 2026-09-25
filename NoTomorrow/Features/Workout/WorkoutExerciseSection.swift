@@ -14,10 +14,18 @@ struct WorkoutExerciseSection: View {
     @Environment(\.modelContext) private var context
 
     private var name: String { exercise.exercise?.localizedName ?? "" }
+    private var tracking: ExerciseTracking { exercise.exercise?.tracking ?? .weightReps }
 
     private var lastLine: String? {
         guard let last = model.lastSet(for: exercise) else { return nil }
-        return "\(String(localized: "workout.last")): \(Fmt.weight(last.weightKg, unit: model.unit)) × \(last.reps)"
+        let text = tracking == .weightReps
+            ? "\(Fmt.weight(last.weightKg, unit: model.unit)) × \(last.reps)"
+            : setText(last)
+        return "\(String(localized: "workout.last")): \(text)"
+    }
+
+    private func setText(_ value: ActiveWorkoutModel.SetValue) -> String {
+        Fmt.set(value.weightKg, value.reps, seconds: value.seconds, tracking: tracking, unit: model.unit)
     }
 
     var body: some View {
@@ -54,7 +62,7 @@ struct WorkoutExerciseSection: View {
                 suggestionRow(suggestion)
                     .transition(.opacity)
             }
-            SetColumnHeader(unit: model.unit)
+            SetColumnHeader(unit: model.unit, tracking: tracking)
             ForEach(exercise.sortedSets) { set in
                 SetRowView(set: set, exercise: exercise, model: model,
                            isCurrent: model.currentSetID(in: exercise) == set.persistentModelID,
@@ -82,6 +90,12 @@ struct WorkoutExerciseSection: View {
             .buttonStyle(.plain)
             Spacer(minLength: 8)
             Menu {
+                if let ex = exercise.exercise {
+                    Picker("workout.trackAs", selection: Binding(get: { ex.tracking }, set: { setTracking($0, of: ex) })) {
+                        ForEach(ExerciseTracking.allCases, id: \.self) { Text(WorkoutStrings.tracking($0)).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
                 Button("workout.removeExercise", role: .destructive) { model.remove(exercise) }
             } label: {
                 Image(systemName: "ellipsis")
@@ -92,6 +106,25 @@ struct WorkoutExerciseSection: View {
             }
             .menuIndicator(.hidden)
         }
+    }
+
+    /// "Track as" in the ⋯ menu: the exercise keeps the type from here on, in every workout. Open rows move their
+    /// number across (a plank row prefilled with "60" reps becomes 60 s), so switching doesn't lose what was typed.
+    private func setTracking(_ new: ExerciseTracking, of ex: Exercise) {
+        let old = ex.tracking
+        guard new != old else { return }
+        ex.tracking = new
+        for set in exercise.sets where !set.isCompleted {
+            if new == .duration, set.seconds == 0 {
+                set.seconds = set.reps
+                set.reps = 0
+            } else if old == .duration, set.reps == 0 {
+                set.reps = set.seconds
+                set.seconds = 0
+            }
+        }
+        try? context.save()
+        model.reloadPrevious()
     }
 
     private var subtitle: String {
@@ -125,10 +158,10 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    private func hint(set: SetEntry, best: (weightKg: Double, reps: Int)) -> some View {
+    private func hint(set: SetEntry, best: ActiveWorkoutModel.SetValue) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "trophy").font(.system(size: 12, weight: .semibold))
-            Text("workout.beatsBest \(Fmt.set(set.weightKg, set.reps, unit: model.unit)) \(Fmt.set(best.weightKg, best.reps, unit: model.unit))")
+            Text("workout.beatsBest \(Fmt.set(set, unit: model.unit)) \(setText(best))")
                 .font(NT.Fonts.footnoteBold).tabular()
         }
         .foregroundStyle(NT.Colors.ember)

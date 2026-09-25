@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Identifies one numeric cell for the shared keyboard focus. `setID` is the set's `PersistentIdentifier` in the
-/// active workout and the draft row's UUID in the workout editor.
+/// active workout and the draft row's UUID in the workout editor. `isReps` is the second cell: reps, or seconds for a
+/// timed exercise.
 struct SetField: Hashable {
     var setID: AnyHashable
     var isReps: Bool
@@ -45,6 +46,19 @@ enum SetInput {
 
     static func reps(_ text: String) -> Int {
         Int(min(number(text), 9_999).rounded())
+    }
+
+    /// Cell text for a hold, in whole seconds ("90"), empty for none.
+    static func text(seconds: Int) -> String { seconds > 0 ? "\(seconds)" : "" }
+
+    /// Typed seconds, up to 24 hours.
+    static func seconds(_ text: String) -> Int {
+        Int(min(number(text), 86_400).rounded())
+    }
+
+    /// The second cell's text in the exercise's type: seconds for a timed exercise, reps otherwise.
+    static func amountText(reps: Int, seconds: Int, tracking: ExerciseTracking) -> String {
+        tracking == .duration ? text(seconds: seconds) : text(reps: reps)
     }
 }
 
@@ -173,9 +187,11 @@ struct AddSetButton: View {
 }
 
 /// Set · Previous · kg (or lb) · Reps · ✓ column titles. The editor leaves the Previous column blank.
+/// A body-weight exercise's weight column is "+kg" (added weight); a timed one's second column is seconds.
 struct SetColumnHeader: View {
     var unit: WeightUnit
     var showsPrevious: Bool = true
+    var tracking: ExerciseTracking = .weightReps
 
     var body: some View {
         HStack(spacing: 8) {
@@ -185,8 +201,8 @@ struct SetColumnHeader: View {
             } else {
                 Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
             }
-            Text(verbatim: unit.rawValue).frame(width: 60)
-            Text("workout.reps").frame(width: 60)
+            Text(verbatim: tracking.weightIsAdded ? "+\(unit.rawValue)" : unit.rawValue).frame(width: 60)
+            Text(tracking == .duration ? LocalizedStringKey("workout.seconds") : "workout.reps").frame(width: 60)
             Color.clear.frame(width: 48, height: 1)
         }
         .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
