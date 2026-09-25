@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(StoreLoader.self) private var store
     @Environment(WorkoutSessionController.self) private var session
     @Environment(\.modelContext) private var modelContext
+    @State private var updateChecker = UpdateChecker.shared
 
     var body: some View {
         Group {
@@ -17,7 +18,18 @@ struct RootView: View {
                 OnboardingFlow()
             }
         }
+        .overlay(alignment: .top) {
+            if let tag = updateChecker.availableTag {
+                UpdateBanner(tag: tag) {
+                    withAnimation(.snappy) { updateChecker.dismiss() }
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: updateChecker.availableTag)
         .environment(\.locale, AppLocale.effective(languageOverride: appState.languageOverride))
+        // Once per launch; silent when offline or rate-limited (`UpdateChecker`).
+        .task { await updateChecker.checkOnce() }
         // Once per opened store: at launch, and again after StoreErrorView recovers one.
         .task(id: store.generation) {
             guard store.isOpen else { return }
