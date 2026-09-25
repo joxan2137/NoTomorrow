@@ -18,7 +18,8 @@ struct RootView: View {
                 OnboardingFlow()
             }
         }
-        .overlay(alignment: .top) {
+        // An inset, not an overlay, so every screen's own header starts below the banner instead of under it.
+        .safeAreaInset(edge: .top, spacing: 0) {
             if let tag = updateChecker.availableTag {
                 UpdateBanner(tag: tag) {
                     withAnimation(.snappy) { updateChecker.dismiss() }

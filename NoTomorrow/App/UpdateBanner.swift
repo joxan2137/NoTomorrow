@@ -48,5 +48,6 @@ struct UpdateBanner: View {
         .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
         .padding(.horizontal, NT.Spacing.screenH / 2)
         .padding(.top, 4)
+        .padding(.bottom, 8)
     }
 }
