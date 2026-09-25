@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Break timer widget's live countdown (docs/widgets.md): a system-rendered Chronometer
+     counting down to the rest's end, embedded through Glance's AndroidRemoteViews over the ember
+     ring. The widget flips to idle when the rest ends (WidgetUpdater / RestTimerReceiver). -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_rest_countdown"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:countDown="true"
+    android:fontFamily="@font/bigshouldersdisplay_extrabold"
+    android:fontFeatureSettings="tnum"
+    android:gravity="center"
+    android:includeFontPadding="false"
+    android:maxLines="1"
+    android:textColor="@color/nt_ink"
+    android:textSize="26sp" />

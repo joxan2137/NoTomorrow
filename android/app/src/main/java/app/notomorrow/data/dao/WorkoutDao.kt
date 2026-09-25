@@ -90,6 +90,23 @@ interface WorkoutDao {
     )
     fun observeCountedWorkoutsBetween(from: Long, to: Long): Flow<Int>
 
+    /**
+     * Start times of the finished workouts with a completed set that started at or after [from] —
+     * the Fuel calendar widget's trained days and its 30-day session count (`docs/widgets.md`).
+     */
+    @Query(
+        """
+        SELECT w.startedAt FROM workout w
+        WHERE w.endedAt IS NOT NULL AND w.startedAt >= :from
+          AND EXISTS (
+            SELECT 1 FROM set_entry s JOIN workout_exercise we ON we.id = s.workoutExerciseId
+            WHERE we.workoutId = w.id AND s.completedAt IS NOT NULL
+          )
+        ORDER BY w.startedAt
+        """
+    )
+    suspend fun countedWorkoutStartsSince(from: Long): List<Long>
+
     @Query("SELECT * FROM workout WHERE id = :id")
     fun observeWorkout(id: String): Flow<WorkoutEntity?>
 

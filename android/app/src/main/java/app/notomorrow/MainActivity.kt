@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * The extras `push/PushNotifier` puts on its `PendingIntent`: `EXTRA_ROUTE`
-     * (`restTimer | activeWorkout | bro | settings`), `EXTRA_KIND` and `EXTRA_SESSION_DAY`.
+     * (`restTimer | activeWorkout | bro | settings | fuel | today`, the last two from the widgets), `EXTRA_KIND` and `EXTRA_SESSION_DAY`.
      * `RootScreen` consumes the resulting `pendingRoute`.
      */
     private fun handlePushIntent(intent: Intent?) {

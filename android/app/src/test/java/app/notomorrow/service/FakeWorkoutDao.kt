@@ -100,6 +100,12 @@ class FakeWorkoutDao : WorkoutDao {
             }
         }
 
+    override suspend fun countedWorkoutStartsSince(from: Long): List<Long> =
+        finished()
+            .filter { w -> w.startedAt >= from && setsOf(w.id).any { it.completedAt != null } }
+            .map { it.startedAt }
+            .sorted()
+
     // MARK: - History
 
     override fun observeFinishedWorkouts(): Flow<List<WorkoutEntity>> = workouts.map { finished() }

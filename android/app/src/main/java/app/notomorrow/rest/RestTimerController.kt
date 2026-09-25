@@ -44,9 +44,19 @@ class RestTimerController(
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val haptics = RestHaptics(appContext)
+    private val chime = RestChime(appContext)
 
     private val _state = MutableStateFlow(RestTimerState())
     val state: StateFlow<RestTimerState> = _state.asStateFlow()
+
+    private val _lastEndedAt = MutableStateFlow<Long?>(null)
+
+    /**
+     * When the last rest ran out on its own (its `endAt`), until the next start or skip — the Break
+     * timer widget's "just ended" state (`docs/widgets.md`). In memory only: after a process death
+     * the widget simply reads idle.
+     */
+    val lastEndedAt: StateFlow<Long?> = _lastEndedAt.asStateFlow()
 
     private val restored = CompletableDeferred<Unit>()
 
@@ -91,6 +101,7 @@ class RestTimerController(
             nextSetLabel = nextSetLabel,
             workoutName = workoutName,
         )
+        _lastEndedAt.value = null
         _state.value = next
         // A delivered "Rest is over" belongs to the rest before this one.
         notifier.cancelDone()
@@ -117,6 +128,7 @@ class RestTimerController(
     /** Clears the rest, cancels the alarm and both notifications. No haptic on iOS. */
     fun skip() {
         val next = _state.value.copy(endAt = null)
+        _lastEndedAt.value = null
         _state.value = next
         alarms.cancel()
         notifier.cancelRunning()
@@ -132,7 +144,7 @@ class RestTimerController(
         val current = _state.value
         val end = current.endAt ?: return
         if (end > System.currentTimeMillis()) return
-        clearElapsed()
+        clearElapsed(endedAt = end)
         announceEnd(current, restEndAlert(isAppInForeground(), isWorkoutOnScreen()))
     }
 
@@ -149,12 +161,18 @@ class RestTimerController(
         val foreground = isAppInForeground()
         // In the foreground the watcher got there first: the rest is closed and announced.
         if (foreground && current.endAt == null) return
-        clearElapsed()
+        // A cold start already dropped the past `endAt` (restore); the alarm's own time stands in.
+        clearElapsed(endedAt = current.endAt ?: System.currentTimeMillis())
         announceEnd(current, restEndAlert(foreground, isWorkoutOnScreen()))
     }
 
+    /**
+     * Over the full-screen workout the notification (and with it the channel's chime) is
+     * suppressed, so the chime plays in-app — `RestChime` on iOS (`docs/widgets.md`, "The rest chime").
+     */
     private fun announceEnd(rest: RestTimerState, alert: RestEndAlert) {
         if (alert != RestEndAlert.Notification) haptics.success()
+        if (alert == RestEndAlert.Haptic) chime.play()
         if (alert != RestEndAlert.Haptic) notifier.notifyDone(rest.exerciseName, rest.nextSetLabel)
     }
 
@@ -214,7 +232,8 @@ class RestTimerController(
         notifier.showRunning(end, next.totalSeconds, next.exerciseName, next.nextSetLabel)
     }
 
-    private fun clearElapsed() {
+    private fun clearElapsed(endedAt: Long) {
+        _lastEndedAt.value = endedAt
         _state.value = _state.value.copy(endAt = null)
         alarms.cancel()
         notifier.cancelRunning()

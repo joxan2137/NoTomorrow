@@ -141,6 +141,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.prefs)
     implementation(libs.androidx.work.ktx)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.profileinstaller)
 
