@@ -51,3 +51,27 @@ struct UpdateBanner: View {
         .padding(.bottom, 8)
     }
 }
+
+extension View {
+    /// Shows `UpdateBanner` as a top safe-area inset, so the screen's own header starts below it.
+    func updateBannerInset() -> some View {
+        modifier(UpdateBannerInset())
+    }
+}
+
+private struct UpdateBannerInset: ViewModifier {
+    @State private var checker = UpdateChecker.shared
+
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let tag = checker.availableTag {
+                    UpdateBanner(tag: tag) {
+                        withAnimation(.snappy) { checker.dismiss() }
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.snappy, value: checker.availableTag)
+    }
+}
