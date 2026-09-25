@@ -72,45 +72,73 @@ struct ExercisePickerView: View {
 
     // MARK: Search
 
+    /// A 52 pt capsule in a glowing liquid-metal ring (1.5 pt, a little bolder than the library's 1 pt pill),
+    /// brighter while it has focus. The metal circle at its end adds the picked exercises and shows how many there
+    /// are — the libraries.dev composer pattern, with the send button as "add".
     private var searchField: some View {
         MetalFx(variant: .button, preset: .chromatic, theme: .dark,
-                strength: searchFocused ? 1 : ExercisePickerView.idleMetalStrength, ringWidth: 1,
-                cornerRadius: Double(NT.Radius.field), glow: false, tilt: false, fill: NT.Colors.surface) {
-            searchFieldContent
+                strength: searchFocused ? 1 : ExercisePickerView.idleMetalStrength, ringWidth: 1.5,
+                tilt: false, fill: NT.Colors.surface) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(NT.Colors.ink2)
+                TextField("exercises.search", text: $model.query)
+                    .font(NT.Fonts.body)
+                    .foregroundStyle(NT.Colors.ink)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                    .focused($searchFocused)
+                if !model.query.isEmpty {
+                    Button {
+                        model.query = ""
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .heavy))
+                            .foregroundStyle(NT.Colors.ground)
+                            .frame(width: 20, height: 20)
+                            .background(NT.Colors.ink3, in: Circle())
+                            .frame(width: 36, height: ExercisePickerView.searchHeight)
+                            .contentShape(Rectangle())
+                    }
+                }
+                addCircle
+            }
+            .padding(.leading, 18)
+            .padding(.trailing, 7)
+            .frame(height: ExercisePickerView.searchHeight)
         }
     }
 
-    /// The edge stays visible but quiet until the field is tapped.
-    private static let idleMetalStrength: Double = 0.45
+    private static let searchHeight: CGFloat = 52
+    /// The ring stays visible but quieter until the field is tapped.
+    private static let idleMetalStrength: Double = 0.7
 
-    private var searchFieldContent: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(NT.Colors.ink2)
-            TextField("exercises.search", text: $model.query)
-                .font(NT.Fonts.body)
-                .foregroundStyle(NT.Colors.ink)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($searchFocused)
-            if !model.query.isEmpty {
-                Button {
-                    model.query = ""
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .heavy))
-                        .foregroundStyle(NT.Colors.ground)
-                        .frame(width: 20, height: 20)
-                        .background(NT.Colors.ink3, in: Circle())
-                        .frame(width: NT.Size.control, height: NT.Size.control)
-                        .contentShape(Rectangle())
+    /// The metal "add" circle: the picked count once there is one (tap adds them), a faint plus before that.
+    private var addCircle: some View {
+        let count = model.selectedCount
+        return Button(action: addSelected) {
+            MetalFx(variant: .circle, preset: .chromatic, theme: .dark, strength: count > 0 ? 1 : 0.4,
+                    innerShadow: true, glow: count > 0, tilt: false, fill: NT.Colors.surface2) {
+                Group {
+                    if count > 0 {
+                        Text(verbatim: "\(count)")
+                            .font(NT.Fonts.subheadlineBold)
+                            .foregroundStyle(NT.Colors.ink)
+                            .contentTransition(.numericText())
+                    } else {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(NT.Colors.ink3)
+                    }
                 }
+                .frame(width: 38, height: 38)
             }
         }
-        .padding(.leading, 14)
-        .padding(.trailing, model.query.isEmpty ? 14 : 2)
-        .frame(height: NT.Size.control)
+        .buttonStyle(PressScale())
+        .disabled(count == 0)
+        .animation(.snappy(duration: 0.25), value: count)
+        .accessibilityLabel(Text(WorkoutStrings.add(max(count, 1))))
     }
 
     // MARK: Chips (bleed to the screen edge)
@@ -176,29 +204,46 @@ struct ExercisePickerView: View {
 
     // MARK: Add bar
 
+    /// "Add n exercises" as a liquid-metal pill (the libraries.dev "Upgrade to Pro" button), once something is picked.
     @ViewBuilder
     private var addBar: some View {
         if model.selectedCount > 0 {
-            PrimaryButton(title: LocalizedStringKey(WorkoutStrings.add(model.selectedCount))) {
-                let exercises = model.selectedExercises()
-                let now = Date.now
-                exercises.forEach { $0.lastUsedAt = now }
-                if let targetWorkout {
-                    var order = (targetWorkout.exercises.map(\.order).max() ?? -1) + 1
-                    for exercise in exercises {
-                        WorkoutStarter.append(exercise, to: targetWorkout, order: order, in: modelContext)
-                        order += 1
-                    }
+            Button(action: addSelected) {
+                MetalFx(variant: .button, preset: .chromatic, theme: .dark, tilt: false, fill: NT.Colors.surface2) {
+                    Text(WorkoutStrings.add(model.selectedCount))
+                        .font(NT.Fonts.headline)
+                        .foregroundStyle(NT.Colors.ink)
+                        .lineLimit(1)
+                        .contentTransition(.numericText())
+                        .frame(maxWidth: .infinity)
+                        .frame(height: NT.Size.primaryButton)
                 }
-                try? modelContext.save()
-                onAdd(exercises)
-                dismiss()
             }
+            .buttonStyle(PressScale())
+            .animation(.snappy(duration: 0.25), value: model.selectedCount)
             .padding(.horizontal, NT.Spacing.screenH)
             .padding(.top, 8)
             .padding(.bottom, 8)
             .background(NT.Colors.ground)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
+    }
+
+    /// Appends the picked exercises (to the target workout, if any), reports them and closes the picker.
+    private func addSelected() {
+        guard model.selectedCount > 0 else { return }
+        let exercises = model.selectedExercises()
+        let now = Date.now
+        exercises.forEach { $0.lastUsedAt = now }
+        if let targetWorkout {
+            var order = (targetWorkout.exercises.map(\.order).max() ?? -1) + 1
+            for exercise in exercises {
+                WorkoutStarter.append(exercise, to: targetWorkout, order: order, in: modelContext)
+                order += 1
+            }
+        }
+        try? modelContext.save()
+        onAdd(exercises)
+        dismiss()
     }
 }

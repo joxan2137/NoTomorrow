@@ -107,10 +107,17 @@ public struct MetalSheetMapping: Equatable, Sendable {
     public static let canonicalWidth: Float = 140
     public static let canonicalHeight: Float = 40
 
+    /// No Tomorrow patch: the largest share of the sheet one shape's window may span. The material fades out toward
+    /// the sheet's edges, so a shape bigger than the canonical 140 × 40 pt at its zoom (a full-width field or card)
+    /// used to sample those edges and lose its ring at both ends (and top and bottom). Canonical-size shapes are
+    /// unaffected. Mirrored by `sheetMapping` in the Android app's `MetalMaterial.kt`.
+    public static let maxWindowX: Float = 0.72
+    public static let maxWindowY: Float = 0.85
+
     public init(size: CGSize, shaderScale: Float) {
         let w = max(1, Float(size.width)), h = max(1, Float(size.height))
-        let fx = min(1, w / (MetalSheetMapping.canonicalWidth * shaderScale))
-        let fy = min(1, h / (MetalSheetMapping.canonicalHeight * shaderScale))
+        let fx = min(MetalSheetMapping.maxWindowX, w / (MetalSheetMapping.canonicalWidth * shaderScale))
+        let fy = min(MetalSheetMapping.maxWindowY, h / (MetalSheetMapping.canonicalHeight * shaderScale))
         scale = SIMD2<Float>(fx / w, fy / h)
         origin = SIMD2<Float>(0.5 - 0.5 * fx, 0.5 - 0.5 * fy)
     }

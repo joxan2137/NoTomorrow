@@ -1,130 +1,154 @@
 package app.notomorrow.designsystem.effects
 
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
 import android.graphics.RuntimeShader
+import android.graphics.Shader
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathFillType
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.min
 
+/** `MetalFxVariant`: a pill with a 1 pt band at zoom 1.6, or a circle with a 2 pt band at zoom 1.3. */
+enum class MetalVariant(internal val ring: Float, internal val shaderScale: Float) {
+    Button(1f, 1.6f),
+    Circle(2f, 1.3f),
+}
+
 /**
- * Liquid metal for a surface's edge — `MetalFx(variant: .button, glow: false, tilt: false)` from
- * MetalFxKit (libraries.dev `metal-fx`, MIT, © Jakub Antalik), the configuration the app uses.
+ * The liquid-metal ring round any content — `MetalFx` from MetalFxKit (libraries.dev `metal-fx`,
+ * MIT, © Jakub Antalik), dark theme, without the tilt bend and reflections (which the iOS call
+ * sites leave off too).
  *
- * Draws, behind [content]: the [fill] in the rounded box, a [ringWidth] band of the animated
- * material along its edge, and the 1 dp white rim over the band. The material is Paper Shaders'
- * `liquidMetal` (Apache-2.0, © Paper Design, Inc.) as upstream's React Native port writes it in
- * SkSL (`metal-fx-native/src/shader.ts`), which AGSL accepts as is.
+ * Behind [content], in upstream's order: the [fill], the animated metal band along the edge, the
+ * circle variant's dark hairline, the white rim, the wandering glow halo (see `MetalGlow.kt`) and,
+ * with [innerShadow], the light hairline along the band's top inside edge. The halo reaches up to
+ * 48 dp past the box, so give the component room.
  *
- * AGSL needs API 33; below it (or if the shader fails to compile) the band is a still, brushed
- * silver gradient. The tilt bend and the glow halo of the iOS package are left out on both
- * platforms at the call sites, so this is the whole look.
+ * The material is Paper Shaders' `liquidMetal` (Apache-2.0) as AGSL — API 33+; below that the
+ * band is a still silver gradient and everything else is unchanged. A shape's window onto the
+ * material is capped ([sheetMapping]) so a full-width ring stays whole end to end.
+ *
+ * @param ringWidth the band, in dp; defaults to the variant's (pill 1, circle 2).
+ * @param cornerRadius null rounds fully (a capsule or circle).
+ * @param innerShadow upstream uses it on the 2 dp circle; on a 1 dp band it whitens the whole ring.
+ * @param strength 0…1, multiplies the material's opacity and the glow.
  */
 @Composable
-fun LiquidMetalSurface(
-    cornerRadius: Dp,
+fun MetalFx(
     modifier: Modifier = Modifier,
-    preset: LiquidMetalPreset = LiquidMetalPreset.Silver,
+    variant: MetalVariant = MetalVariant.Button,
+    preset: LiquidMetalPreset = LiquidMetalPreset.Chromatic,
     strength: Float = 1f,
-    ringWidth: Dp = 1.dp,
+    ringWidth: Dp? = null,
+    cornerRadius: Dp? = null,
+    innerShadow: Boolean = false,
+    glow: Boolean = true,
+    glowGain: Float = 1f,
     fill: Color = Color(0xFF272727),
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shader = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) rememberMetalShader() else null
-    val time = rememberEffectTime(running = shader != null)
+    val glowState = remember { MetalGlowState() }
+    val paints = remember { MetalPaints() }
+    val time = rememberEffectTime()
     Box(
         modifier.drawBehind {
-            val radius = min(cornerRadius.toPx(), size.minDimension / 2)
-            val ring = ringWidth.toPx()
-            val outer = RoundRect(0f, 0f, size.width, size.height, CornerRadius(radius))
-            drawPath(Path().apply { addRoundRect(outer) }, fill)
-
-            val band = bandPath(outer, ring, radius)
-            val brush = if (shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                shader.update(this, preset, time.value, strength)
-                shader.brush
-            } else {
-                Brush.verticalGradient(
-                    listOf(Color.White.copy(alpha = 0.75f * strength), Color.White.copy(alpha = 0.2f * strength)),
-                )
-            }
-            drawPath(band, brush)
-            // the 1 dp rim over the band: white 10 % on dark
-            drawPath(bandPath(outer, 1.dp.toPx(), radius), Color.White.copy(alpha = 0.1f))
+            drawMetal(
+                paints, shader, glowState, time.value, variant, preset, strength.coerceIn(0f, 1f),
+                ringWidth?.value, cornerRadius?.value, innerShadow, glow, glowGain, fill,
+            )
         },
         content = content,
     )
 }
 
-/** The rounded box minus its inset, even-odd, so only the ring is painted. */
-private fun bandPath(outer: RoundRect, inset: Float, radius: Float): Path = Path().apply {
-    fillType = PathFillType.EvenOdd
-    addRoundRect(outer)
-    addRoundRect(
-        RoundRect(
-            inset, inset, outer.right - inset, outer.bottom - inset, CornerRadius(max(0f, radius - inset)),
-        ),
-    )
+private class MetalPaints {
+    val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+    val band = Paint(Paint.ANTI_ALIAS_FLAG)
+    val solid = Paint(Paint.ANTI_ALIAS_FLAG)
+    val hair = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+        color = android.graphics.Color.argb(115, 0, 0, 0)
+    }
+    val sprite = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    val dstIn = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
+    val dstOut = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+    }
+    val layer = Paint()
 }
 
-/**
- * The dark-theme presets (`MetalMaterial.preset`): the same silver material, told apart by the
- * colour-burn tint (whose alpha is the burn amount) and the channel dispersion.
- */
-enum class LiquidMetalPreset(
-    internal val tint: FloatArray,
-    internal val speed: Float,
-    internal val repetition: Float,
-    internal val softness: Float,
-    internal val shiftRed: Float,
-    internal val shiftBlue: Float,
-    internal val shaderOpacity: Float,
+private const val GLOW_MARGIN = 48f
+
+private fun roundRectPath(path: Path, l: Float, t: Float, r: Float, b: Float, radius: Float) {
+    val rr = max(0f, min(radius, min(r - l, b - t) / 2))
+    path.addRoundRect(RectF(l, t, r, b), rr, rr, Path.Direction.CW)
+}
+
+/** The box minus its inset, even-odd, so only the ring is painted. */
+private fun bandPath(w: Float, h: Float, radius: Float, inset: Float): Path = Path().apply {
+    fillType = Path.FillType.EVEN_ODD
+    roundRectPath(this, 0f, 0f, w, h, radius)
+    roundRectPath(this, inset, inset, w - inset, h - inset, max(0f, radius - inset))
+}
+
+private fun DrawScope.drawMetal(
+    paints: MetalPaints,
+    shader: RuntimeShader?,
+    glowState: MetalGlowState,
+    t: Double,
+    variant: MetalVariant,
+    preset: LiquidMetalPreset,
+    strength: Float,
+    ringWidthPt: Float?,
+    cornerRadiusPt: Float?,
+    innerShadow: Boolean,
+    glow: Boolean,
+    glowGain: Float,
+    fill: Color,
 ) {
-    /** Iridescent: a cool blue burn and a wide R/B split. `#88ccff2e`. */
-    Chromatic(floatArrayOf(0x88 / 255f, 0xCC / 255f, 1f, 0x2E / 255f), 1f, 2f, 0.09f, 0.75f, 0.75f, 1f),
+    val d = density
+    val w = size.width / d
+    val h = size.height / d
+    if (w < 1f || h < 1f) return
+    val radius = min(cornerRadiusPt ?: Float.MAX_VALUE, min(w, h) / 2)
+    val kind = metalShapeKind(w, h, radius)
+    val mapping = sheetMapping(w, h, variant.shaderScale)
+    val ring = ringWidthPt ?: variant.ring
+    val nc = drawContext.canvas.nativeCanvas
 
-    /** Cool steel: Paper's material nearly untouched. `#ffffff66`. */
-    Silver(floatArrayOf(1f, 1f, 1f, 0x66 / 255f), 1f, 1.5f, 0.05f, 0.3f, 0.3f, 0.88f),
-}
+    nc.save()
+    // Everything below is in points, like the iOS package, so the material's window and the
+    // glow's numbers carry over unchanged.
+    nc.scale(d, d)
 
-// Paper `fullScreenPreset` values shared by every preset.
-private const val DISTORTION = 0.1f
-private const val CONTOUR = 0.4f
-private const val ANGLE = 90f
+    val outer = Path().apply { roundRectPath(this, 0f, 0f, w, h, radius) }
+    paints.fill.color = fill.toArgb()
+    nc.drawPath(outer, paints.fill)
 
-/** `MetalSheetMapping`: the material is laid out on a 140 × 40 pt sheet, zoomed by the variant's 1.6. */
-private const val CANONICAL_W = 140f
-private const val CANONICAL_H = 40f
-private const val BUTTON_SHADER_SCALE = 1.6f
-
-private class MetalShader(val shader: RuntimeShader) {
-    val brush = ShaderBrush(shader)
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun update(scope: DrawScope, preset: LiquidMetalPreset, t: Double, strength: Float) {
-        // The mapping is defined in points; the shader sees pixels, so fold density into the scale.
-        val d = scope.density
-        val w = max(1f, scope.size.width / d)
-        val h = max(1f, scope.size.height / d)
-        val fx = min(1f, w / (CANONICAL_W * BUTTON_SHADER_SCALE))
-        val fy = min(1f, h / (CANONICAL_H * BUTTON_SHADER_SCALE))
-        shader.setFloatUniform("uvOrigin", 0.5f - 0.5f * fx, 0.5f - 0.5f * fy)
-        shader.setFloatUniform("uvScale", fx / w / d, fy / h / d)
+    val band = bandPath(w, h, radius, ring)
+    if (shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        shader.setFloatUniform("uvOrigin", mapping.ox, mapping.oy)
+        shader.setFloatUniform("uvScale", mapping.sx, mapping.sy)
         shader.setFloatUniform("time", (t * preset.speed).toFloat())
         shader.setFloatUniform("colorBack", 0f, 0f, 0f, 0f)
         shader.setFloatUniform("colorTint", preset.tint)
@@ -132,19 +156,114 @@ private class MetalShader(val shader: RuntimeShader) {
         shader.setFloatUniform("softness", preset.softness)
         shader.setFloatUniform("shiftRed", preset.shiftRed)
         shader.setFloatUniform("shiftBlue", preset.shiftBlue)
-        shader.setFloatUniform("distortion", DISTORTION)
-        shader.setFloatUniform("contour", CONTOUR)
-        shader.setFloatUniform("angle", ANGLE)
-        shader.setFloatUniform("opacityMul", strength.coerceIn(0f, 1f) * preset.shaderOpacity)
-        // positions already arrive in pixels
-        shader.setFloatUniform("ditherScale", 1f)
+        shader.setFloatUniform("distortion", preset.distortion)
+        shader.setFloatUniform("contour", preset.contour)
+        shader.setFloatUniform("angle", preset.angle)
+        shader.setFloatUniform("opacityMul", strength * preset.shaderOpacity)
+        shader.setFloatUniform("ditherScale", d)
+        paints.band.shader = shader
+        paints.band.alpha = 255
+    } else {
+        paints.band.shader = LinearGradient(
+            0f, 0f, 0f, h,
+            intArrayOf(0xFFF4F4F8.toInt(), 0xFF6E6E74.toInt(), 0xFFE4E4EA.toInt()),
+            null, Shader.TileMode.CLAMP,
+        )
+        paints.band.alpha = (strength * 255).toInt()
     }
+    nc.drawPath(band, paints.band)
+
+    if (variant == MetalVariant.Circle) {
+        val hair = Path().apply { roundRectPath(this, -0.5f, -0.5f, w + 0.5f, h + 0.5f, radius + 0.5f) }
+        nc.drawPath(hair, paints.hair)
+    }
+    // the white 10 % rim over the band (1 pt on a pill, 2 pt on a circle — the band's own width)
+    paints.solid.color = android.graphics.Color.argb(26, 255, 255, 255)
+    nc.drawPath(band, paints.solid)
+
+    if (glow) drawGlow(nc, paints, glowState, t, d, w, h, radius, kind, mapping, preset, strength * glowGain, band)
+
+    if (innerShadow) {
+        // The band minus itself shifted down 1 pt: a light hairline on the band's top inside edge.
+        paints.layer.alpha = (0.9f * 255).toInt()
+        val save = nc.saveLayer(-1f, -1f, w + 1f, h + 2f, paints.layer)
+        paints.solid.color = android.graphics.Color.WHITE
+        nc.drawPath(band, paints.solid)
+        nc.save()
+        nc.translate(0f, 1f)
+        nc.drawPath(band, paints.dstOut)
+        nc.restore()
+        nc.restoreToCount(save)
+    }
+    nc.restore()
 }
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun drawGlow(
+    nc: android.graphics.Canvas,
+    paints: MetalPaints,
+    state: MetalGlowState,
+    t: Double,
+    density: Float,
+    w: Float,
+    h: Float,
+    radius: Float,
+    kind: MetalShapeKind,
+    mapping: SheetMapping,
+    preset: LiquidMetalPreset,
+    strength: Float,
+    band: Path,
+) {
+    state.configure(w, h, radius, kind)
+    val frame = state.tick((t * 1000).toFloat(), { x, y ->
+        sampleMetal(preset, (mapping.ox + x * mapping.sx).toDouble(), (mapping.oy + y * mapping.sy).toDouble(), t)
+    }, strength) ?: return
+    val ratio = shapePerim(w, h, radius, kind) / rrPerim(140f, 40f, 20f)
+    // sprites are baked at the screen's density, then drawn in points
+    val halo = haloSprite(max(1f, HALO_HALF_LEN * ratio), density)
+    val extra = extraSprite(max(0.6f, EXTRA_HALF_LEN * ratio), density)
+    val m = GLOW_MARGIN
+
+    paints.layer.alpha = (frame.env * 0.7f * 255).toInt().coerceIn(0, 255)
+    val save = nc.saveLayer(-m, -m, w + m, h + m, paints.layer)
+    val deg = Math.toDegrees(frame.tangent.toDouble()).toFloat()
+
+    paints.sprite.alpha = (frame.haloOp * 255).toInt().coerceIn(0, 255)
+    paints.sprite.colorFilter = PorterDuffColorFilter(
+        android.graphics.Color.rgb(
+            (frame.tint[0] * 255).toInt(), (frame.tint[1] * 255).toInt(), (frame.tint[2] * 255).toInt(),
+        ),
+        PorterDuff.Mode.MULTIPLY,
+    )
+    drawSprite(nc, halo, frame.x, frame.y, deg, paints.sprite)
+    paints.sprite.alpha = (frame.extraOp * 255).toInt().coerceIn(0, 255)
+    paints.sprite.colorFilter = null
+    drawSprite(nc, extra, frame.ex, frame.ey, deg, paints.sprite)
+
+    // Mask: half strength everywhere, full strength on the band itself.
+    val mask = nc.saveLayer(-m, -m, w + m, h + m, paints.dstIn)
+    paints.solid.color = android.graphics.Color.argb(128, 255, 255, 255)
+    nc.drawRect(-m, -m, w + m, h + m, paints.solid)
+    paints.solid.color = android.graphics.Color.WHITE
+    nc.drawPath(band, paints.solid)
+    nc.restoreToCount(mask)
+    nc.restoreToCount(save)
+}
+
+private fun drawSprite(nc: android.graphics.Canvas, sprite: GlowSprite, x: Float, y: Float, deg: Float, paint: Paint) {
+    nc.save()
+    nc.translate(x, y)
+    nc.rotate(deg)
+    nc.drawBitmap(
+        sprite.bitmap, null,
+        RectF(-sprite.widthPt / 2, -sprite.heightPt / 2, sprite.widthPt / 2, sprite.heightPt / 2),
+        paint,
+    )
+    nc.restore()
+}
+
 @Composable
-private fun rememberMetalShader(): MetalShader? = remember {
-    runCatching { MetalShader(RuntimeShader(LIQUID_METAL_AGSL)) }.getOrNull()
+private fun rememberMetalShader(): RuntimeShader? = remember {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) runCatching { RuntimeShader(LIQUID_METAL_AGSL) }.getOrNull() else null
 }
 
 /**

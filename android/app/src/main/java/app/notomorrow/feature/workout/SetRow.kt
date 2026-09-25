@@ -183,7 +183,7 @@ fun SetRow(
             onEdit = { onReps(SetInput.reps(it)) },
         )
 
-        CheckButton(isCompleted = row.isCompleted, onToggle = onToggle)
+        SetCheckButton(isCompleted = row.isCompleted, onToggle = onToggle)
     }
 }
 
@@ -301,33 +301,6 @@ private fun NumericCell(
             }
         },
     )
-}
-
-/**
- * `SetCheckButton`: a 36 dp rounded square (radius 10) inside a 48 × 44 hit column — ember with a
- * dark check when done, `surface2` with a faint check when not.
- */
-@Composable
-private fun CheckButton(isCompleted: Boolean, onToggle: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(width = SetTable.check, height = NT.Size.control)
-            .ntPlainClickable(onClick = onToggle),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .background(if (isCompleted) NT.Colors.ember else NT.Colors.surface2, NtShapes.cell),
-            contentAlignment = Alignment.Center,
-        ) {
-            NtIcon(
-                NtIcons.Checkmark,
-                size = sfIconSize(15f),
-                tint = if (isCompleted) NT.Colors.onPrimary else NT.Colors.ink3,
-            )
-        }
-    }
 }
 
 // MARK: - Text ↔ model

@@ -50,11 +50,12 @@ import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSheet
 import app.notomorrow.designsystem.NtText
-import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.effects.LiquidMetalPreset
-import app.notomorrow.designsystem.effects.LiquidMetalSurface
+import app.notomorrow.designsystem.effects.MetalFx
+import app.notomorrow.designsystem.effects.MetalVariant
 import app.notomorrow.designsystem.ntDismissKeyboardOnScroll
 import app.notomorrow.designsystem.ntPlainClickable
+import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.di.ntViewModel
 import app.notomorrow.service.ExerciseLibrary
@@ -90,6 +91,12 @@ fun ExercisePickerSheet(
     // presentation; the Android view model outlives the sheet (it is scoped to the host), so the
     // sheet clears the query, the chip and the selection each time it opens.
     LaunchedEffect(Unit) { model.reset(alreadyIn) }
+    val addSelected: () -> Unit = {
+        model.add { ids ->
+            onAdd(ids)
+            onDismiss()
+        }
+    }
 
     NtSheet(
         onDismiss = onDismiss,
@@ -102,6 +109,8 @@ fun ExercisePickerSheet(
         PickerSearchField(
             query = state.query,
             onQueryChange = model::setQuery,
+            selectedCount = state.selectedCount,
+            onAdd = addSelected,
             modifier = Modifier
                 .padding(horizontal = NT.Spacing.screenH)
                 .padding(top = 12.dp),
@@ -171,15 +180,7 @@ fun ExercisePickerSheet(
                     .padding(horizontal = NT.Spacing.screenH)
                     .padding(vertical = 8.dp),
             ) {
-                PrimaryButton(
-                    title = stringResource(S.exercises_addCount, state.selectedCount),
-                    onClick = {
-                        model.add { ids ->
-                            onAdd(ids)
-                            onDismiss()
-                        }
-                    },
-                )
+                MetalAddButton(count = state.selectedCount, onClick = addSelected)
             }
         }
     }
@@ -218,34 +219,38 @@ private fun PickerHeader(onCancel: () -> Unit) {
     }
 }
 
-/** The search field's edge stays visible but quiet until the field has focus. */
-private const val IdleMetalStrength = 0.45f
+/** The ring stays visible but quieter until the field has focus. */
+private const val IdleMetalStrength = 0.7f
+private val SearchHeight = 52.dp
 
 /**
- * 44 dp `surface` field with a chromatic liquid-metal edge: magnifier, the query, and a clear
- * button once there is one.
+ * A 52 dp capsule in a glowing liquid-metal ring (1.5 dp, a little bolder than the library's 1 dp
+ * pill), brighter while it has focus, with the metal "add" circle at its end —
+ * `ExercisePickerView.searchField`.
  */
 @Composable
 private fun PickerSearchField(
     query: String,
     onQueryChange: (String) -> Unit,
+    selectedCount: Int,
+    onAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     var focused by remember { mutableStateOf(false) }
-    LiquidMetalSurface(
-        cornerRadius = NT.Radius.field,
+    MetalFx(
         modifier = modifier.fillMaxWidth(),
         preset = LiquidMetalPreset.Chromatic,
         strength = if (focused) 1f else IdleMetalStrength,
+        ringWidth = 1.5.dp,
         fill = NT.Colors.surface,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(NT.Size.control)
-                .padding(start = 14.dp, end = if (query.isEmpty()) 14.dp else 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .height(SearchHeight)
+                .padding(start = 18.dp, end = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NtIcon(
@@ -270,7 +275,7 @@ private fun PickerSearchField(
                     cursorBrush = SolidColor(NT.Colors.ink),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        // `ExercisePickerView.swift:76` only calls `.autocorrectionDisabled()`, so iOS
+                        // `ExercisePickerView.swift` only calls `.autocorrectionDisabled()`, so iOS
                         // keeps the default `.sentences` capitalization.
                         capitalization = KeyboardCapitalization.Sentences,
                         autoCorrectEnabled = false,
@@ -282,7 +287,7 @@ private fun PickerSearchField(
             if (query.isNotEmpty()) {
                 Box(
                     modifier = Modifier
-                        .size(NT.Size.control)
+                        .size(width = 36.dp, height = SearchHeight)
                         .ntPlainClickable(onClick = { onQueryChange("") }),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -298,7 +303,54 @@ private fun PickerSearchField(
                     }
                 }
             }
+            MetalAddCircle(count = selectedCount, onClick = onAdd)
         }
+    }
+}
+
+/** The metal "add" circle: the picked count once there is one (tap adds them), a faint plus before that. */
+@Composable
+private fun MetalAddCircle(count: Int, onClick: () -> Unit) {
+    val label = stringResource(S.exercises_addCount, maxOf(count, 1))
+    MetalFx(
+        modifier = Modifier
+            .size(38.dp)
+            .pressScale(enabled = count > 0, onClickLabel = label, onClick = onClick),
+        variant = MetalVariant.Circle,
+        preset = LiquidMetalPreset.Chromatic,
+        strength = if (count > 0) 1f else 0.4f,
+        innerShadow = true,
+        glow = count > 0,
+        fill = NT.Colors.surface2,
+    ) {
+        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+            if (count > 0) {
+                NtText(text = count.toString(), style = NT.Fonts.subheadlineBold, color = NT.Colors.ink, maxLines = 1)
+            } else {
+                NtIcon(icon = NtIcons.Plus, size = sfIconSize(14f), tint = NT.Colors.ink3)
+            }
+        }
+    }
+}
+
+/** "Add n exercises" as a liquid-metal pill (the libraries.dev "Upgrade to Pro" button). */
+@Composable
+private fun MetalAddButton(count: Int, onClick: () -> Unit) {
+    MetalFx(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(NT.Size.primaryButton)
+            .pressScale(onClick = onClick),
+        preset = LiquidMetalPreset.Chromatic,
+        fill = NT.Colors.surface2,
+    ) {
+        NtText(
+            text = stringResource(S.exercises_addCount, count),
+            modifier = Modifier.align(Alignment.Center),
+            style = NT.Fonts.headline,
+            color = NT.Colors.ink,
+            maxLines = 1,
+        )
     }
 }
 

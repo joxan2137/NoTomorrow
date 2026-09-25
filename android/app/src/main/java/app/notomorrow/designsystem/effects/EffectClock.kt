@@ -10,7 +10,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * The clock behind the libraries.dev effects ([ThinkingOrb], [BorderBeam], [LiquidMetalSurface]) —
+ * The clock behind the libraries.dev effects ([ThinkingOrb], [BorderBeam], [MetalFx]) —
  * SwiftUI's `TimelineView(.animation)`: seconds of the shared frame clock, so every instance on
  * screen stays in phase, and nothing ticks once the composable leaves the composition.
  *

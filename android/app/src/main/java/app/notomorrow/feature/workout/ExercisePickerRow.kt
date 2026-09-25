@@ -29,7 +29,7 @@ import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.effects.LiquidMetalPreset
-import app.notomorrow.designsystem.effects.LiquidMetalSurface
+import app.notomorrow.designsystem.effects.MetalFx
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.model.WeightUnit
@@ -47,7 +47,7 @@ internal val ExerciseLastColumnTrailing = ExerciseDetailsWidth + 26.dp + 12.dp
 /**
  * One search result as a card (`ExerciseResultCard`, `ExercisePickerRow.swift`): the picker row and
  * a details button on a `surface` tile. A selected exercise's tile turns liquid metal — a silver
- * edge from [LiquidMetalSurface] — so the picks stand out while scrolling.
+ * [MetalFx] ring with its glow — so the picks stand out while scrolling.
  */
 @Composable
 fun ExerciseResultCard(
@@ -81,10 +81,10 @@ fun ExerciseResultCard(
         }
     }
     if (state == ExercisePickerRowState.Selected) {
-        LiquidMetalSurface(
-            cornerRadius = NT.Radius.tile,
+        MetalFx(
             modifier = modifier.fillMaxWidth(),
             preset = LiquidMetalPreset.Silver,
+            cornerRadius = NT.Radius.tile,
             fill = NT.Colors.surface,
         ) { content() }
     } else {

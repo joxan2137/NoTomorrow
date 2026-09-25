@@ -2,7 +2,7 @@ import SwiftUI
 import MetalFxKit
 
 /// One search result as a card: the picker row and a details button on a `surface` tile. A selected exercise's tile
-/// turns liquid metal — a silver MetalFx edge (`MetalFxKit`, libraries.dev) — so the picks stand out while scrolling.
+/// turns liquid metal — a silver MetalFx ring with its glow (`MetalFxKit`, libraries.dev) — so the picks stand out.
 struct ExerciseResultCard: View {
     var exercise: Exercise
     var unit: WeightUnit
@@ -16,9 +16,8 @@ struct ExerciseResultCard: View {
 
     var body: some View {
         if state == .selected {
-            // No tilt bend or glow: several of these can be on screen at once, and the edge alone reads as "picked".
-            MetalFx(variant: .button, preset: .silver, theme: .dark, ringWidth: 1,
-                    cornerRadius: Double(NT.Radius.tile), glow: false, tilt: false, fill: NT.Colors.surface) {
+            MetalFx(variant: .button, preset: .silver, theme: .dark, cornerRadius: Double(NT.Radius.tile),
+                    tilt: false, fill: NT.Colors.surface) {
                 content
             }
         } else {
