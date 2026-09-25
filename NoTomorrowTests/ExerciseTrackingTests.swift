@@ -119,6 +119,32 @@ final class ExerciseTrackingTests: XCTestCase {
         XCTAssertTrue(set.isPR, "the first hold is the exercise's first record")
     }
 
+    func testSwitchingToTimedKeepsATickedRowLogged() {
+        let exercise = Exercise(id: "custom-plank", name: "My plank", primaryMuscles: ["abdominals"], isCustom: true)
+        context.insert(exercise)
+        let start = Date(timeIntervalSinceReferenceDate: 1_000_000)
+        // Logged as reps before the user noticed: 60 "reps", ticked, and an open row with 45.
+        let (today, entry) = workout(exercise, start: start, finished: false, rows: [(0, 60, 0, true), (0, 45, 0, false)])
+        let model = ActiveWorkoutModel(workout: today, context: context)
+
+        model.setTracking(.duration, of: entry)
+        let sets = entry.sortedSets
+        XCTAssertEqual(exercise.tracking, .duration)
+        XCTAssertEqual(sets.map(\.seconds), [60, 45])
+        XCTAssertEqual(sets.map(\.reps), [0, 0])
+        XCTAssertTrue(sets[0].isCompleted)
+        XCTAssertEqual(sets[0].amount, 60)
+        XCTAssertTrue(sets[0].isPR, "records are re-derived: it is the exercise's first hold")
+
+        // The history editor still counts it as a logged set (a done row without seconds would not be).
+        XCTAssertEqual(WorkoutDraft(workout: today).exercises[0].sets.map(\.isLogged), [true, false])
+
+        // And back: the seconds become reps again.
+        model.setTracking(.weightReps, of: entry)
+        XCTAssertEqual(entry.sortedSets.map(\.reps), [60, 45])
+        XCTAssertEqual(entry.sortedSets.map(\.seconds), [0, 0])
+    }
+
     // MARK: Records
 
     func testTheLongestHoldAtAWeightIsASetRecord() {

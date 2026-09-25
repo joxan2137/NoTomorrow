@@ -91,7 +91,8 @@ struct WorkoutExerciseSection: View {
             Spacer(minLength: 8)
             Menu {
                 if let ex = exercise.exercise {
-                    Picker("workout.trackAs", selection: Binding(get: { ex.tracking }, set: { setTracking($0, of: ex) })) {
+                    Picker("workout.trackAs", selection: Binding(get: { ex.tracking },
+                                                                 set: { model.setTracking($0, of: exercise) })) {
                         ForEach(ExerciseTracking.allCases, id: \.self) { Text(WorkoutStrings.tracking($0)).tag($0) }
                     }
                     .pickerStyle(.menu)
@@ -106,25 +107,6 @@ struct WorkoutExerciseSection: View {
             }
             .menuIndicator(.hidden)
         }
-    }
-
-    /// "Track as" in the ⋯ menu: the exercise keeps the type from here on, in every workout. Open rows move their
-    /// number across (a plank row prefilled with "60" reps becomes 60 s), so switching doesn't lose what was typed.
-    private func setTracking(_ new: ExerciseTracking, of ex: Exercise) {
-        let old = ex.tracking
-        guard new != old else { return }
-        ex.tracking = new
-        for set in exercise.sets where !set.isCompleted {
-            if new == .duration, set.seconds == 0 {
-                set.seconds = set.reps
-                set.reps = 0
-            } else if old == .duration, set.reps == 0 {
-                set.reps = set.seconds
-                set.seconds = 0
-            }
-        }
-        try? context.save()
-        model.reloadPrevious()
     }
 
     private var subtitle: String {

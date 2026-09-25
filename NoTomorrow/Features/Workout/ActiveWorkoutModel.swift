@@ -373,6 +373,37 @@ final class ActiveWorkoutModel {
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
     }
 
+    /// "Track as" in the exercise's ⋯ menu: the exercise keeps the type from here on, in every workout. This
+    /// workout's rows, done ones included, move their number across (a plank logged as "60" reps becomes 60 s), so a
+    /// ticked row stays a logged set instead of one Finish would no longer count. Records are re-derived for the
+    /// exercise, since what counts as its best changed.
+    func setTracking(_ new: ExerciseTracking, of exercise: WorkoutExercise) {
+        guard let ex = exercise.exercise else { return }
+        let old = ex.tracking
+        guard new != old else { return }
+        ex.tracking = new
+        Self.carryAmounts(of: exercise.sets, from: old, to: new)
+        RecordService.rebuild(exerciseIDs: [ex.id], in: context)
+        if let id = hintSetID, exercise.sets.contains(where: { $0.persistentModelID == id }) { hintSetID = nil }
+        try? context.save()
+        reloadPrevious()
+    }
+
+    /// Moves reps into seconds when a type becomes timed, and back when it stops being timed. A row that already
+    /// holds the other number keeps it. Between weight × reps and bodyweight reps nothing moves.
+    static func carryAmounts(of sets: [SetEntry], from old: ExerciseTracking, to new: ExerciseTracking) {
+        guard (old == .duration) != (new == .duration) else { return }
+        for set in sets {
+            if new == .duration, set.seconds == 0 {
+                set.seconds = set.reps
+                set.reps = 0
+            } else if old == .duration, set.reps == 0 {
+                set.reps = set.seconds
+                set.seconds = 0
+            }
+        }
+    }
+
     func toggleExpanded(_ exercise: WorkoutExercise) {
         expandedExerciseID = expandedExerciseID == exercise.persistentModelID ? nil : exercise.persistentModelID
     }
