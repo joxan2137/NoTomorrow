@@ -76,6 +76,8 @@ targets:
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        # Shared with the widget extension (docs/widgets.md): the widget snapshot, quick-log queue, rest timer.
+        com.apple.security.application-groups: [group.app.notomorrow.ios]
     dependencies:
       - target: NoTomorrowWidgets
         embed: true
@@ -98,17 +100,33 @@ targets:
       - path: NoTomorrowWidgets
         excludes:
           - "Info.plist"
+          - "*.entitlements"
       - path: Shared
+      # The widgets speak the app's language and use its display face; one catalog and one font file for both targets.
+      - path: NoTomorrow/Resources/Localizable.xcstrings
+      - path: NoTomorrow/Resources/Fonts
     info:
       path: NoTomorrowWidgets/Info.plist
       properties:
-        CFBundleDisplayName: No Tomorrow Timer
+        CFBundleDisplayName: No Tomorrow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, pl]
+        CFBundleDevelopmentRegion: en
+        UIAppFonts:
+          - BigShouldersDisplay-ExtraBold.ttf
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: NoTomorrowWidgets/NoTomorrowWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.notomorrow.ios]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios.widgets
         SKIP_INSTALL: YES
+        # Shared/WidgetIntents.swift runs the Break timer intents through the app when compiled into it.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) WIDGET_EXTENSION
 
   NoTomorrowTests:
     type: bundle.unit-test

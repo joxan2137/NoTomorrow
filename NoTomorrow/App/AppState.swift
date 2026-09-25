@@ -54,6 +54,9 @@ final class AppState {
         case activeWorkout
         case bro
         case settings
+        /// Home-screen widgets: Fuel on today (Quick log, Fuel calendar) and Today (Gym week).
+        case fuel
+        case today
     }
 
     init() {
@@ -71,7 +74,8 @@ extension AppState.Route {
     static let urlScheme = "notomorrow"
 
     /// `notomorrow://workout` → the workout in progress, `notomorrow://workout/rest` → it plus the rest sheet
-    /// (Live Activity taps), `notomorrow://bro`, `notomorrow://settings`. Anything else is ignored.
+    /// (Live Activity and Break timer taps), `notomorrow://bro`, `notomorrow://settings`, `notomorrow://fuel`,
+    /// `notomorrow://today` (widgets). Anything else is ignored.
     init?(url: URL) {
         guard url.scheme?.lowercased() == Self.urlScheme else { return nil }
         let parts = ([url.host ?? ""] + url.pathComponents)
@@ -82,6 +86,8 @@ extension AppState.Route {
         case ["workout", "rest"]: self = .restTimer
         case ["bro"]: self = .bro
         case ["settings"]: self = .settings
+        case ["fuel"]: self = .fuel
+        case ["today"]: self = .today
         default: return nil
         }
     }

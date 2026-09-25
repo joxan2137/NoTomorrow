@@ -2,14 +2,6 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-private enum W {
-    static let ground = Color(red: 10/255, green: 10/255, blue: 11/255)
-    static let ink = Color(red: 242/255, green: 242/255, blue: 244/255)
-    static let ink2 = Color(red: 235/255, green: 235/255, blue: 245/255).opacity(0.6)
-    static let ember = Color(red: 255/255, green: 106/255, blue: 43/255)
-    static let track = Color(red: 42/255, green: 42/255, blue: 46/255)
-}
-
 struct RestTimerLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestTimerAttributes.self) { context in
@@ -75,9 +67,10 @@ struct RestTimerLiveActivity: Widget {
         context.isStale || context.state.endDate <= .now
     }
 
+    /// "Exercise · Set 3 of 3 · 85 × 7", whichever half exists; empty for a break started from the widget.
     private func detail(_ context: ActivityViewContext<RestTimerAttributes>) -> String {
         let state = context.state
-        return state.nextSetLabel.isEmpty ? state.exerciseName : "\(state.exerciseName) · \(state.nextSetLabel)"
+        return [state.exerciseName, state.nextSetLabel].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     @ViewBuilder

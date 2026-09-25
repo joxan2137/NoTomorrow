@@ -18,6 +18,8 @@ struct RootView: View {
             }
         }
         .environment(\.locale, AppLocale.effective(languageOverride: appState.languageOverride))
+        // Home-screen widgets: the snapshot they render and the quick-log taps they queue.
+        .widgetSync()
         // Once per opened store: at launch, and again after StoreErrorView recovers one.
         .task(id: store.generation) {
             guard store.isOpen else { return }
@@ -124,6 +126,10 @@ struct MainTabView: View {
             appState.selectedTab = .bro
         case .settings:
             appState.selectedTab = .today   // the Settings sheet belongs to the Today screen
+        case .fuel:
+            appState.openFuelToday()
+        case .today:
+            appState.selectedTab = .today
         }
     }
 }

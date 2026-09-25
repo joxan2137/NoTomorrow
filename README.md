@@ -7,7 +7,8 @@ weekly schedule, and each of you sees whether the other actually showed up. Arou
 routines and set-by-set workout logging with rest timers (a workout in progress shrinks to a bar
 above the tabs, and finished workouts can be edited), a food log with day-by-day history and a
 calorie heatmap scored against your goal, barcode and text search (Open Food Facts), AI photo
-estimates and nutrition-label reads, and progress charts per exercise.
+estimates and nutrition-label reads, and progress charts per exercise. Home-screen widgets on both platforms log a usual food in one tap, show the
+calorie calendar with your training days, the gym week and a break timer ([`docs/widgets.md`](docs/widgets.md)).
 
 There are two native apps and one small backend:
 
