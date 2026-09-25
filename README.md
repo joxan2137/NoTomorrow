@@ -69,7 +69,8 @@ way and are checked against the shared fixtures next to it.
 
 ```
 NoTomorrow/          iOS app (Features/, Services/, Models/, Resources/Localizable.xcstrings)
-android/app/src/     Android app (app.notomorrow: feature/, designsystem/, service/, data/, net/)
+Packages/            vendored libraries.dev effects for iOS (thinking orbs, border beam, liquid metal)
+android/app/src/     Android app (app.notomorrow: feature/, designsystem/ incl. effects/, service/, data/, net/)
 backend/src/         API (routes/, auth/, ai.ts, aiFinalize.ts, push.ts, jobs.ts), migrations/, test/
 backend/data/ai/     AI spec (prompts, schemas, food table) + fixtures, shared with both apps
 docs/                architecture.md, backend.md, android-*.md — the specs

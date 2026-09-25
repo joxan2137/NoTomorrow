@@ -1,4 +1,48 @@
 import SwiftUI
+import MetalFxKit
+
+/// One search result as a card: the picker row and a details button on a `surface` tile. A selected exercise's tile
+/// turns liquid metal — a silver MetalFx edge (`MetalFxKit`, libraries.dev) — so the picks stand out while scrolling.
+struct ExerciseResultCard: View {
+    var exercise: Exercise
+    var unit: WeightUnit
+    var state: ExercisePickerRow.State
+    var onToggle: () -> Void
+    var onDetails: () -> Void
+
+    /// Trailing inset of the last-set column inside a card: details button + the 26 pt selection ring + spacing.
+    static let lastColumnTrailing: CGFloat = detailsWidth + 26 + 12
+    static let detailsWidth: CGFloat = 44
+
+    var body: some View {
+        if state == .selected {
+            // No tilt bend or glow: several of these can be on screen at once, and the edge alone reads as "picked".
+            MetalFx(variant: .button, preset: .silver, theme: .dark, ringWidth: 1,
+                    cornerRadius: Double(NT.Radius.tile), glow: false, tilt: false, fill: NT.Colors.surface) {
+                content
+            }
+        } else {
+            content
+                .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
+        }
+    }
+
+    private var content: some View {
+        HStack(spacing: 0) {
+            ExercisePickerRow(exercise: exercise, unit: unit, state: state, action: onToggle)
+                .padding(.leading, 14)
+            Button(action: onDetails) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(NT.Colors.ink2)
+                    .frame(width: ExerciseResultCard.detailsWidth, height: 64)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressScale())
+            .accessibilityLabel(Text("exercises.details"))
+        }
+    }
+}
 
 /// 64 pt picker row: name + muscles, last set (or "Never done"), then a selection ring or "In".
 struct ExercisePickerRow: View {
@@ -46,7 +90,6 @@ struct ExercisePickerRow: View {
         }
         .buttonStyle(PressScale())
         .disabled(state == .alreadyIn)
-        .overlay(alignment: .bottom) { Hairline() }
     }
 
     @ViewBuilder

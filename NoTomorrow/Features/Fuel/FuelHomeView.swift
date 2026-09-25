@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import ThinkingOrbsKit
 
 /// Fuel tab: day header, kcal ring + macros, four meal slots, and the add bar (AI photo / Barcode / Search).
 /// The header's date button opens the History sheet (`FuelCalendarSheet`). Deletes and copies to today show an
@@ -343,7 +344,7 @@ struct FuelHomeView: View {
 
     private var lookupPill: some View {
         HStack(spacing: 10) {
-            ProgressView().tint(NT.Colors.ink)
+            ThinkingOrb(state: .connecting, size: .px20, theme: .dark).accessibilityHidden(true)
             Text("fuel.lookingUp").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink)
         }
         .padding(.horizontal, 16)

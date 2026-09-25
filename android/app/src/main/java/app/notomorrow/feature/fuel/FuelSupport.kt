@@ -1,6 +1,5 @@
 package app.notomorrow.feature.fuel
 
-import app.notomorrow.designsystem.NtSpinner
 import app.notomorrow.util.S
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.NtIcons
@@ -30,6 +29,9 @@ import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.effects.OrbSize
+import app.notomorrow.designsystem.effects.OrbState
+import app.notomorrow.designsystem.effects.ThinkingOrb
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.model.FoodCandidate
 import app.notomorrow.model.FoodSource
@@ -751,7 +753,7 @@ fun FuelLookupPill(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        NtSpinner(color = NT.Colors.ink)
+        ThinkingOrb(state = OrbState.Connecting, size = OrbSize.Px20)
         NtText(
             text = stringResource(S.fuel_lookingUp),
             style = NT.Fonts.footnote,

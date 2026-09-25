@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import BorderBeamKit
+import ThinkingOrbsKit
 
 /// AI photo estimate for one meal slot. Pick a source → analysing → editable result → log.
 /// Presented as a sheet / full-screen cover from the Fuel tab; dismisses itself after `onLogged`.
@@ -142,7 +144,8 @@ struct AIScanView: View {
 
 // MARK: - Analysing
 
-/// Photo with a spinner and the "looking at your plate" line while the estimate is in flight.
+/// Photo with a thinking orb and the "looking at your plate" line while the estimate is in flight. A sunset
+/// border beam runs round the photo the whole time (`BorderBeamKit`, `ThinkingOrbsKit` — libraries.dev).
 struct AIScanAnalyzingView: View {
     var image: UIImage?
 
@@ -151,8 +154,13 @@ struct AIScanAnalyzingView: View {
             AIScanPhoto(image: image, tags: [])
                 .overlay(NT.Colors.ground.opacity(0.35), in: RoundedRectangle(cornerRadius: NT.Radius.card, style: .continuous))
                 .overlay {
-                    ProgressView().tint(NT.Colors.ink).controlSize(.large)
+                    // The line under the photo says what is happening; the orb is decoration.
+                    ThinkingOrb(state: .searching, size: .px64, theme: .dark, displaySize: AIScanAnalyzingView.orbSize)
+                        .frame(width: AIScanAnalyzingView.orbBacking, height: AIScanAnalyzingView.orbBacking)
+                        .background(NT.Colors.ground.opacity(0.55), in: Circle())
+                        .accessibilityHidden(true)
                 }
+                .borderBeam(.md, colorVariant: .sunset, theme: .dark, borderRadius: Double(NT.Radius.card))
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.top, 12)
             Text("fuel.ai.analyzing")
@@ -161,6 +169,10 @@ struct AIScanAnalyzingView: View {
             Spacer()
         }
     }
+
+    /// The 64 pt preset drawn at 80 pt, on a dark disc so the dots read over a bright plate.
+    static let orbSize: Double = 80
+    static let orbBacking: CGFloat = 104
 }
 
 // MARK: - Failed
