@@ -7,6 +7,15 @@ options:
   generateEmptyDirectories: true
   groupSortPosition: top
 
+# UI effects from libraries.dev (MIT), vendored as local Swift packages — see Packages/README.md.
+packages:
+  ThinkingOrbsKit:
+    path: Packages/ThinkingOrbsKit
+  BorderBeamKit:
+    path: Packages/BorderBeamKit
+  MetalFxKit:
+    path: Packages/MetalFxKit
+
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -19,7 +28,7 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     DEVELOPMENT_LANGUAGE: en
-    MARKETING_VERSION: "0.4.0"
+    MARKETING_VERSION: "0.4.1"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -70,6 +79,9 @@ targets:
     dependencies:
       - target: NoTomorrowWidgets
         embed: true
+      - package: ThinkingOrbsKit
+      - package: BorderBeamKit
+      - package: MetalFxKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios

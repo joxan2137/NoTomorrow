@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import ThinkingOrbsKit
 import PhotosUI
 
 /// Saves a product the database cannot size (not in Open Food Facts, a name without nutrition, or an in-store code)
@@ -191,7 +192,7 @@ struct ProductLabelSheet: View {
             EmptyView()
         case .reading:
             HStack(spacing: 8) {
-                ProgressView().tint(NT.Colors.ink2)
+                ThinkingOrb(state: .searching, size: .px20, theme: .dark).accessibilityHidden(true)
                 Text("fuel.label.reading").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
             }
         case .filled(let needsReview):

@@ -1,7 +1,9 @@
 import SwiftUI
 import SwiftData
+import MetalFxKit
 
-/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle chips, rows, create row, "Add n".
+/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle chips, result cards, create row, "Add n".
+/// The search field has a liquid-metal edge that brightens while it has focus.
 struct ExercisePickerView: View {
     /// Ids of exercises already in the workout; shown as "In" and not selectable.
     var alreadyIn: Set<String>
@@ -71,6 +73,17 @@ struct ExercisePickerView: View {
     // MARK: Search
 
     private var searchField: some View {
+        MetalFx(variant: .button, preset: .chromatic, theme: .dark,
+                strength: searchFocused ? 1 : ExercisePickerView.idleMetalStrength, ringWidth: 1,
+                cornerRadius: Double(NT.Radius.field), glow: false, tilt: false, fill: NT.Colors.surface) {
+            searchFieldContent
+        }
+    }
+
+    /// The edge stays visible but quiet until the field is tapped.
+    private static let idleMetalStrength: Double = 0.45
+
+    private var searchFieldContent: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .semibold))
@@ -98,7 +111,6 @@ struct ExercisePickerView: View {
         .padding(.leading, 14)
         .padding(.trailing, model.query.isEmpty ? 14 : 2)
         .frame(height: NT.Size.control)
-        .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.field, style: .continuous))
     }
 
     // MARK: Chips (bleed to the screen edge)
@@ -125,22 +137,18 @@ struct ExercisePickerView: View {
                 HStack {
                     Text(WorkoutStrings.results(model.results.count)).eyebrow()
                     Spacer()
-                    Text("workout.last").eyebrow().padding(.trailing, 38)
+                    Text("workout.last").eyebrow().padding(.trailing, ExerciseResultCard.lastColumnTrailing)
                 }
                 .padding(.top, 18)
-                .padding(.bottom, 6)
+                .padding(.bottom, 8)
 
                 ForEach(model.results) { entry in
-                    HStack(spacing: 8) {
-                        ExercisePickerRow(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
-                            model.toggle(entry.exercise.id)
-                        }
-                        Button { detail = entry.exercise } label: {
-                            Image(systemName: "figure.strengthtraining.traditional")
-                                .frame(width: 44, height: 44)
-                        }
-                        .accessibilityLabel(Text("exercises.details"))
+                    ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
+                        model.toggle(entry.exercise.id)
+                    } onDetails: {
+                        detail = entry.exercise
                     }
+                    .padding(.bottom, 8)
                 }
 
                 if model.showsCreateRow {

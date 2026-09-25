@@ -32,10 +32,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.notomorrow.data.entity.ExerciseEntity
-import app.notomorrow.R
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -48,10 +48,11 @@ import app.notomorrow.designsystem.Eyebrow
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
-import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtSheet
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.PrimaryButton
+import app.notomorrow.designsystem.effects.LiquidMetalPreset
+import app.notomorrow.designsystem.effects.LiquidMetalSurface
 import app.notomorrow.designsystem.ntDismissKeyboardOnScroll
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
@@ -60,8 +61,9 @@ import app.notomorrow.service.ExerciseLibrary
 import app.notomorrow.util.S
 
 /**
- * Multi-select exercise picker sheet (`design/Exercises.dc.html`): search, muscle chips, rows,
- * create row, "Add n" — 1:1 port of `NoTomorrow/Features/Workout/ExercisePickerView.swift`.
+ * Multi-select exercise picker sheet (`design/Exercises.dc.html`): search, muscle chips, result
+ * cards, create row, "Add n" — 1:1 port of `NoTomorrow/Features/Workout/ExercisePickerView.swift`.
+ * The search field has a liquid-metal edge that brightens while it has focus.
  *
  * @param workoutId when set, the chosen exercises are appended to that workout (with prefilled
  *   rows) before [onAdd] runs, and everything already in it renders as "In".
@@ -124,18 +126,14 @@ fun ExercisePickerSheet(
             item(key = "header") { PickerResultsHeader(count = state.results.size) }
 
             items(state.results, key = { it.exercise.id }) { entry ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ExercisePickerRow(
-                        entry = entry,
-                        state = state.rowState(entry.exercise.id),
-                        onClick = { model.toggle(entry.exercise.id) },
-                        unit = state.unit,
-                        modifier = Modifier.weight(1f),
-                    )
-                    androidx.compose.material3.TextButton(onClick = { detail = entry.exercise }) {
-                        NtText(stringResource(R.string.exercises_details), style = NT.Fonts.footnote)
-                    }
-                }
+                ExerciseResultCard(
+                    entry = entry,
+                    state = state.rowState(entry.exercise.id),
+                    onToggle = { model.toggle(entry.exercise.id) },
+                    onDetails = { detail = entry.exercise },
+                    unit = state.unit,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
             }
 
             if (state.showsCreateRow) {
@@ -220,72 +218,84 @@ private fun PickerHeader(onCancel: () -> Unit) {
     }
 }
 
-/** 44 dp `surface` field: magnifier, the query, and a clear button once there is one. */
+/** The search field's edge stays visible but quiet until the field has focus. */
+private const val IdleMetalStrength = 0.45f
+
+/**
+ * 44 dp `surface` field with a chromatic liquid-metal edge: magnifier, the query, and a clear
+ * button once there is one.
+ */
 @Composable
 private fun PickerSearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var detail by remember { mutableStateOf<ExerciseEntity?>(null) }
-    detail?.let { ExerciseDetailSheet(it) { detail = null } }
     val keyboard = LocalSoftwareKeyboardController.current
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(NT.Size.control)
-            .background(NT.Colors.surface, NtShapes.field)
-            .padding(start = 14.dp, end = if (query.isEmpty()) 14.dp else 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    var focused by remember { mutableStateOf(false) }
+    LiquidMetalSurface(
+        cornerRadius = NT.Radius.field,
+        modifier = modifier.fillMaxWidth(),
+        preset = LiquidMetalPreset.Chromatic,
+        strength = if (focused) 1f else IdleMetalStrength,
+        fill = NT.Colors.surface,
     ) {
-        NtIcon(
-            icon = NtIcons.MagnifyingGlass,
-            size = sfIconSize(16f),
-            tint = NT.Colors.ink2,
-        )
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (query.isEmpty()) {
-                NtText(
-                    text = stringResource(S.exercises_search),
-                    style = NT.Fonts.body,
-                    color = NT.Colors.ink3,
-                    maxLines = 1,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(NT.Size.control)
+                .padding(start = 14.dp, end = if (query.isEmpty()) 14.dp else 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NtIcon(
+                icon = NtIcons.MagnifyingGlass,
+                size = sfIconSize(16f),
+                tint = NT.Colors.ink2,
+            )
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                if (query.isEmpty()) {
+                    NtText(
+                        text = stringResource(S.exercises_search),
+                        style = NT.Fonts.body,
+                        color = NT.Colors.ink3,
+                        maxLines = 1,
+                    )
+                }
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
+                    textStyle = NT.Fonts.body.copy(color = NT.Colors.ink),
+                    cursorBrush = SolidColor(NT.Colors.ink),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        // `ExercisePickerView.swift:76` only calls `.autocorrectionDisabled()`, so iOS
+                        // keeps the default `.sentences` capitalization.
+                        capitalization = KeyboardCapitalization.Sentences,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Search,
+                    ),
+                    keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                 )
             }
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = NT.Fonts.body.copy(color = NT.Colors.ink),
-                cursorBrush = SolidColor(NT.Colors.ink),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    // `ExercisePickerView.swift:76` only calls `.autocorrectionDisabled()`, so iOS
-                    // keeps the default `.sentences` capitalization.
-                    capitalization = KeyboardCapitalization.Sentences,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Search,
-                ),
-                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-            )
-        }
-        if (query.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .size(NT.Size.control)
-                    .ntPlainClickable(onClick = { onQueryChange("") }),
-                contentAlignment = Alignment.Center,
-            ) {
+            if (query.isNotEmpty()) {
                 Box(
-                    modifier = Modifier.size(20.dp).background(NT.Colors.ink3, CircleShape),
+                    modifier = Modifier
+                        .size(NT.Size.control)
+                        .ntPlainClickable(onClick = { onQueryChange("") }),
                     contentAlignment = Alignment.Center,
                 ) {
-                    NtIcon(
-                        icon = NtIcons.Xmark,
-                        size = sfIconSize(9f),
-                        tint = NT.Colors.ground,
-                    )
+                    Box(
+                        modifier = Modifier.size(20.dp).background(NT.Colors.ink3, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        NtIcon(
+                            icon = NtIcons.Xmark,
+                            size = sfIconSize(9f),
+                            tint = NT.Colors.ground,
+                        )
+                    }
                 }
             }
         }
@@ -320,14 +330,14 @@ private fun PickerResultsHeader(count: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 18.dp, bottom = 6.dp),
+            .padding(top = 18.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Eyebrow(stringResource(S.exercises_results, count))
         Spacer(Modifier.weight(1f).widthIn(min = 8.dp))
         Eyebrow(
             text = stringResource(S.workout_last),
-            modifier = Modifier.padding(end = 38.dp),
+            modifier = Modifier.padding(end = ExerciseLastColumnTrailing),
         )
     }
 }

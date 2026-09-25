@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -17,14 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.entity.ExerciseEntity
-import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
+import app.notomorrow.designsystem.effects.LiquidMetalPreset
+import app.notomorrow.designsystem.effects.LiquidMetalSurface
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.model.WeightUnit
@@ -33,6 +38,59 @@ import app.notomorrow.util.Fmt
 import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import java.util.Locale
+
+private val ExerciseDetailsWidth = 44.dp
+
+/** Trailing inset of the last-set column inside a result card: details button, the 26 dp ring, spacing. */
+internal val ExerciseLastColumnTrailing = ExerciseDetailsWidth + 26.dp + 12.dp
+
+/**
+ * One search result as a card (`ExerciseResultCard`, `ExercisePickerRow.swift`): the picker row and
+ * a details button on a `surface` tile. A selected exercise's tile turns liquid metal — a silver
+ * edge from [LiquidMetalSurface] — so the picks stand out while scrolling.
+ */
+@Composable
+fun ExerciseResultCard(
+    entry: ExercisePickerEntry,
+    state: ExercisePickerRowState,
+    onToggle: () -> Unit,
+    onDetails: () -> Unit,
+    modifier: Modifier = Modifier,
+    unit: WeightUnit = WeightUnit.Kg,
+) {
+    val detailsLabel = stringResource(S.exercises_details)
+    val content: @Composable () -> Unit = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ExercisePickerRow(
+                entry = entry,
+                state = state,
+                onClick = onToggle,
+                unit = unit,
+                modifier = Modifier.weight(1f).padding(start = 14.dp),
+            )
+            Box(
+                modifier = Modifier
+                    .width(ExerciseDetailsWidth)
+                    .height(64.dp)
+                    .pressScale(onClick = onDetails)
+                    .semantics { contentDescription = detailsLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                NtIcon(icon = NtIcons.InfoCircle, size = sfIconSize(17f), tint = NT.Colors.ink2)
+            }
+        }
+    }
+    if (state == ExercisePickerRowState.Selected) {
+        LiquidMetalSurface(
+            cornerRadius = NT.Radius.tile,
+            modifier = modifier.fillMaxWidth(),
+            preset = LiquidMetalPreset.Silver,
+            fill = NT.Colors.surface,
+        ) { content() }
+    } else {
+        Box(modifier.fillMaxWidth().background(NT.Colors.surface, NtShapes.tile)) { content() }
+    }
+}
 
 /**
  * 64 pt picker row: name + muscles, last set (or "Never done"), then a selection ring or "In"
@@ -93,7 +151,6 @@ fun ExercisePickerRow(
                 ExercisePickerRowTrailing(state)
             }
         }
-        Hairline()
     }
 }
 

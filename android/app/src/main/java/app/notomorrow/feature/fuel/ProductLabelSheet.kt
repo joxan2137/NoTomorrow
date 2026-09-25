@@ -59,10 +59,12 @@ import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSheet
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
-import app.notomorrow.designsystem.NtSpinner
 import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.SecondaryButton
 import app.notomorrow.designsystem.TabularText
+import app.notomorrow.designsystem.effects.OrbSize
+import app.notomorrow.designsystem.effects.OrbState
+import app.notomorrow.designsystem.effects.ThinkingOrb
 import app.notomorrow.designsystem.ntDismissKeyboardOnScroll
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
@@ -467,7 +469,7 @@ private fun LabelReadStatus(status: LabelPhotoReader.Status) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            NtSpinner(color = NT.Colors.ink2)
+            ThinkingOrb(state = OrbState.Searching, size = OrbSize.Px20)
             NtText(
                 text = stringResource(S.fuel_label_reading),
                 style = NT.Fonts.footnote,

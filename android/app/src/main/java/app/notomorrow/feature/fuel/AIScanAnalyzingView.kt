@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,13 +17,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtShapes
-import app.notomorrow.designsystem.NtSpinner
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.effects.BorderBeam
+import app.notomorrow.designsystem.effects.OrbSize
+import app.notomorrow.designsystem.effects.OrbState
+import app.notomorrow.designsystem.effects.ThinkingOrb
 import app.notomorrow.util.S
 
 /**
- * `AIScanAnalyzingView` (`AIScanView.swift:120`) — the photo dimmed under a spinner and the
- * "looking at your plate" line while the estimate is in flight.
+ * `AIScanAnalyzingView` (`AIScanView.swift:120`) — the photo dimmed under a thinking orb and the
+ * "looking at your plate" line while the estimate is in flight, with a sunset border beam running
+ * round the photo (libraries.dev effects, `designsystem/effects`).
  */
 @Composable
 fun AIScanAnalyzingView(
@@ -33,12 +39,12 @@ fun AIScanAnalyzingView(
         verticalArrangement = Arrangement.spacedBy(NT.Spacing.section),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        BorderBeam(
+            cornerRadius = NT.Radius.card,
             modifier = Modifier
                 .padding(top = 12.dp)
                 .padding(horizontal = NT.Spacing.screenH)
                 .fillMaxWidth(),
-            contentAlignment = Alignment.Center,
         ) {
             AIScanPhoto(photo = photo, tags = emptyList())
             Box(
@@ -47,8 +53,15 @@ fun AIScanAnalyzingView(
                     .background(NT.Colors.ground.copy(alpha = 0.35f), NtShapes.card),
                 contentAlignment = Alignment.Center,
             ) {
-                // `ProgressView().controlSize(.large)` — UIKit's large activity indicator, 37 pt.
-                NtSpinner(color = NT.Colors.ink, size = 37.dp, strokeWidth = 3.dp)
+                // The 64 pt preset drawn at 80 dp, on a dark disc so the dots read over a bright plate.
+                Box(
+                    modifier = Modifier
+                        .size(104.dp)
+                        .background(NT.Colors.ground.copy(alpha = 0.55f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ThinkingOrb(state = OrbState.Searching, size = OrbSize.Px64, displaySize = 80.dp)
+                }
             }
         }
         NtText(
