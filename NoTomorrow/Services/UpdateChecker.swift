@@ -4,7 +4,7 @@ import Observation
 /// A release version such as `v1.2.3`, `0.4` or `1.0.0-beta.2`, compared by semantic-versioning precedence: numeric
 /// parts left to right (missing parts count as 0, so `1.2` == `1.2.0`), then a pre-release sorts before its release.
 /// Build metadata (`+…`) is ignored.
-struct AppVersion: Comparable, CustomStringConvertible {
+struct ReleaseVersion: Comparable, CustomStringConvertible {
     let numbers: [Int]
     let preRelease: [String]
 
@@ -30,11 +30,11 @@ struct AppVersion: Comparable, CustomStringConvertible {
         numbers.map(String.init).joined(separator: ".") + (preRelease.isEmpty ? "" : "-" + preRelease.joined(separator: "."))
     }
 
-    static func == (lhs: AppVersion, rhs: AppVersion) -> Bool {
+    static func == (lhs: ReleaseVersion, rhs: ReleaseVersion) -> Bool {
         !(lhs < rhs) && !(rhs < lhs)
     }
 
-    static func < (lhs: AppVersion, rhs: AppVersion) -> Bool {
+    static func < (lhs: ReleaseVersion, rhs: ReleaseVersion) -> Bool {
         for i in 0..<max(lhs.numbers.count, rhs.numbers.count) {
             let l = i < lhs.numbers.count ? lhs.numbers[i] : 0
             let r = i < rhs.numbers.count ? rhs.numbers[i] : 0
@@ -47,12 +47,10 @@ struct AppVersion: Comparable, CustomStringConvertible {
         case (false, false): break
         }
         for (l, r) in zip(lhs.preRelease, rhs.preRelease) where l != r {
-            switch (Int(l), Int(r)) {
-            case let (l?, r?): return l < r
-            case (_?, nil): return true     // numeric identifiers sort before alphanumeric ones
-            case (nil, _?): return false
-            case (nil, nil): return l < r
-            }
+            let (ln, rn) = (Int(l), Int(r))
+            if let ln, let rn { return ln < rn }
+            if ln != nil || rn != nil { return ln != nil }   // numeric identifiers sort before alphanumeric ones
+            return l < r
         }
         return lhs.preRelease.count < rhs.preRelease.count
     }
@@ -106,8 +104,8 @@ final class UpdateChecker {
 
     func check() async {
         guard let tag = await latestTag(),
-              let latest = AppVersion(tag),
-              let current = currentVersion().flatMap(AppVersion.init),
+              let latest = ReleaseVersion(tag),
+              let current = currentVersion().flatMap(ReleaseVersion.init),
               current < latest,
               defaults.string(forKey: Keys.dismissedTag) != tag
         else { return }

@@ -10,7 +10,7 @@ final class UpdateCheckerTests: XCTestCase {
 
     // MARK: - Versions
 
-    private func v(_ string: String) -> AppVersion { AppVersion(string)! }
+    private func v(_ string: String) -> ReleaseVersion { ReleaseVersion(string)! }
 
     func testVersionOrder() {
         XCTAssertEqual(v("v0.4.1"), v("0.4.1"))
@@ -30,7 +30,7 @@ final class UpdateCheckerTests: XCTestCase {
 
     func testInvalidVersions() {
         for invalid in ["", "abc", "1..2", "1.0-", "1.x"] {
-            XCTAssertNil(AppVersion(invalid), invalid)
+            XCTAssertNil(ReleaseVersion(invalid), invalid)
         }
     }
 
