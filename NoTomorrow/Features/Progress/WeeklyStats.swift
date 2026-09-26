@@ -48,6 +48,12 @@ enum WeeklyStats {
         calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
     }
 
+    /// Start of the oldest of the last `count` weeks: sessions before it never show, so the card need not read them.
+    static func firstWeekStart(now: Date, calendar: Calendar = .current, count: Int = weekCount) -> Date {
+        weeks(sessions: [], now: now, calendar: calendar, count: count).first?.weekStart
+            ?? startOfWeek(for: now, calendar: calendar)
+    }
+
     /// The last `count` weeks, oldest first, ending with the week of `now`. Sessions outside them are ignored.
     static func weeks(sessions: [Session], now: Date, calendar: Calendar = .current, count: Int = weekCount) -> [Week] {
         let thisWeek = startOfWeek(for: now, calendar: calendar)

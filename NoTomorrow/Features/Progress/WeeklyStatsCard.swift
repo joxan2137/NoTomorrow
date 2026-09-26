@@ -11,7 +11,9 @@ struct WeeklyStatsCard: View {
     @State private var metric: WeeklyStats.Metric = .workouts
 
     var body: some View {
-        let sessions: [WeeklyStats.Session] = workouts.compactMap { workout in
+        // Newest first: only the eight weeks' workouts open their sets, not the whole history on every render.
+        let firstWeek = WeeklyStats.firstWeekStart(now: .now, calendar: Self.mondayFirst)
+        let sessions: [WeeklyStats.Session] = workouts.prefix(while: { $0.startedAt >= firstWeek }).compactMap { workout in
             let sets = workout.completedSetCount
             guard sets > 0 else { return nil }
             return WeeklyStats.Session(startedAt: workout.startedAt, duration: workout.duration,

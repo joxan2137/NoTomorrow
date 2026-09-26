@@ -35,4 +35,25 @@ final class TrainingCalendarTests: XCTestCase {
         XCTAssertEqual(TrainingCalendar.weekStreak(workoutDays: lastWeekOnly, today: today, calendar: calendar), 2)
         XCTAssertEqual(TrainingCalendar.weekStreak(workoutDays: [date(2026, 9, 1)], today: today, calendar: calendar), 0)
     }
+
+    func testStreakDaysStopReadingAtTheFirstGap() {
+        let today = date(2026, 9, 26)
+        // Newest first; 12 Sep has no completed set.
+        let items: [(day: Date, counts: Bool)] = [
+            (date(2026, 9, 21), true), (date(2026, 9, 16), true), (date(2026, 9, 12), false),
+            (date(2026, 9, 8), true), (date(2026, 8, 20), true), (date(2026, 8, 1), true),
+        ]
+        var opened: [Date] = []
+        let days = TrainingCalendar.streakDays(newestFirst: items, date: { $0.day },
+                                               counts: { opened.append($0.day); return $0.counts },
+                                               today: today, calendar: calendar)
+        XCTAssertEqual(days, [date(2026, 9, 21), date(2026, 9, 16), date(2026, 9, 8)])
+        XCTAssertEqual(opened.count, 4, "nothing past the gap before 7 Sep is opened")
+        XCTAssertEqual(TrainingCalendar.weekStreak(workoutDays: days, today: today, calendar: calendar),
+                       TrainingCalendar.weekStreak(workoutDays: items.filter { $0.counts }.map { $0.day }, today: today,
+                                                   calendar: calendar))
+        // Nothing this week or last: nothing to read.
+        XCTAssertEqual(TrainingCalendar.streakDays(newestFirst: [date(2026, 9, 1)], date: { $0 }, counts: { _ in true },
+                                                   today: today, calendar: calendar), [])
+    }
 }

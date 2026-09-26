@@ -15,10 +15,14 @@ struct TrainingCalendarCard: View {
     private let calendar = Calendar.current
 
     var body: some View {
-        let byDay = Dictionary(grouping: workouts.filter { $0.completedSetCount > 0 }) { calendar.startOfDay(for: $0.startedAt) }
+        // Only the shown month's workouts and the streak's own weeks open their sets: counting every workout's sets
+        // on each render (a month page, a new workout) stalls the tab once years of history are imported.
+        let shown = workouts.filter { calendar.isDate($0.startedAt, equalTo: month, toGranularity: .month) }
+        let byDay = Dictionary(grouping: shown.filter { $0.completedSetCount > 0 }) { calendar.startOfDay(for: $0.startedAt) }
         let weeks = TrainingCalendar.weeks(of: month, calendar: calendar)
-        let inMonth = byDay.filter { calendar.isDate($0.key, equalTo: month, toGranularity: .month) }
-        let streak = TrainingCalendar.weekStreak(workoutDays: Array(byDay.keys), today: .now, calendar: calendar)
+        let streakDays = TrainingCalendar.streakDays(newestFirst: workouts, date: { $0.startedAt },
+                                                     counts: { $0.completedSetCount > 0 }, today: .now, calendar: calendar)
+        let streak = TrainingCalendar.weekStreak(workoutDays: streakDays, today: .now, calendar: calendar)
 
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "calendar.title")
@@ -36,7 +40,7 @@ struct TrainingCalendarCard: View {
                         }
                     }
                     HStack {
-                        Text(verbatim: WorkoutStrings.workouts(inMonth.values.reduce(0) { $0 + $1.count }))
+                        Text(verbatim: WorkoutStrings.workouts(byDay.values.reduce(0) { $0 + $1.count }))
                         Spacer()
                         if streak > 0 {
                             Label {

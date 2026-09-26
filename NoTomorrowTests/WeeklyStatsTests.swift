@@ -31,6 +31,12 @@ final class WeeklyStatsTests: XCTestCase {
         XCTAssertTrue(weeks.allSatisfy { $0.workouts == 0 && $0.volumeKg == 0 && $0.duration == 0 && $0.sets == 0 })
     }
 
+    func testFirstWeekStartIsTheOldestShownWeek() {
+        let cal = calendar(firstWeekday: 2)
+        let now = date(2026, 9, 26, in: cal)
+        XCTAssertEqual(WeeklyStats.firstWeekStart(now: now, calendar: cal), cal.startOfDay(for: date(2026, 8, 3, in: cal)))
+    }
+
     func testWeeksFollowTheCalendarsFirstWeekday() {
         let cal = calendar(firstWeekday: 1)   // Sunday first
         let now = date(2026, 9, 26, in: cal)
