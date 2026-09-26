@@ -615,6 +615,15 @@ object S {
     val routine_duplicate = R.string.routine_duplicate
     val routine_edit = R.string.routine_edit
     val routine_empty = R.string.routine_empty
+    val routine_import = R.string.routine_import
+    val routine_import_add = R.string.routine_import_add
+    val routine_import_clear = R.string.routine_import_clear
+    val routine_import_defaultName = R.string.routine_import_defaultName
+    val routine_import_intro = R.string.routine_import_intro
+    val routine_import_invalid = R.string.routine_import_invalid
+    val routine_import_newExercise = R.string.routine_import_newExercise
+    val routine_import_paste = R.string.routine_import_paste
+    val routine_import_placeholder = R.string.routine_import_placeholder
     val routine_namePlaceholder = R.string.routine_namePlaceholder
     val routine_nameTaken = R.string.routine_nameTaken
     val routine_new = R.string.routine_new
@@ -622,6 +631,9 @@ object S {
     val routine_rest = R.string.routine_rest
     val routine_restDefault = R.string.routine_restDefault
     val routine_saveFromWorkout = R.string.routine_saveFromWorkout
+    val routine_share = R.string.routine_share
+    val routine_share_header_s = R.string.routine_share_header_s  // routine.share.header %@
+    val routine_share_rest_s = R.string.routine_share_rest_s  // routine.share.rest %@
     val rpe_clear = R.string.rpe_clear
     val rpe_title = R.string.rpe_title
     val settings_account = R.string.settings_account

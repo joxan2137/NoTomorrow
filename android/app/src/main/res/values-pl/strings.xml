@@ -600,6 +600,15 @@
     <string name="routine_duplicate">Duplikuj</string>
     <string name="routine_edit">Edytuj plan</string>
     <string name="routine_empty">Dodaj ćwiczenia, od których zaczyna się ten plan.</string>
+    <string name="routine_import">Importuj plan</string>
+    <string name="routine_import_add">Dodaj plan</string>
+    <string name="routine_import_clear">Wyczyść</string>
+    <string name="routine_import_defaultName">Udostępniony plan</string>
+    <string name="routine_import_intro">Wklej plan, który udostępnił Ci znajomy z No Tomorrow. Ćwiczenia, których jeszcze nie masz, zostaną dodane jako własne.</string>
+    <string name="routine_import_invalid">W tym tekście nie ma planu.</string>
+    <string name="routine_import_newExercise">Nowe</string>
+    <string name="routine_import_paste">Wklej</string>
+    <string name="routine_import_placeholder">Tekst udostępnionego planu</string>
     <string name="routine_namePlaceholder">Dzień push</string>
     <string name="routine_nameTaken">Inny plan ma już tę nazwę.</string>
     <string name="routine_new">Nowy plan</string>
@@ -607,6 +616,9 @@
     <string name="routine_rest">Przerwa</string>
     <string name="routine_restDefault">Domyślna</string>
     <string name="routine_saveFromWorkout">Zapisz jako plan</string>
+    <string name="routine_share">Udostępnij plan</string>
+    <string name="routine_share_header_s">Plan No Tomorrow: %s</string>
+    <string name="routine_share_rest_s">przerwa %s</string>
     <string name="rpe_clear">Usuń RPE</string>
     <string name="rpe_title">RPE</string>
     <string name="settings_account">Konto</string>
