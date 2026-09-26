@@ -100,6 +100,8 @@ fun WeeklyVolumeSection(state: ExerciseProgressUiState, modifier: Modifier = Mod
         ) {
             NtText(
                 text = stringResource(S.progress_weeklyVolume),
+                // A long title (Polish) otherwise runs straight into the volume summary.
+                modifier = Modifier.padding(end = 8.dp),
                 style = NT.Fonts.headline,
                 color = NT.Colors.ink,
                 maxLines = 1,

@@ -128,6 +128,7 @@ fun ExerciseHistorySheet(
                 Eyebrow(stringResource(S.history_title))
                 NtText(exerciseName, style = NT.Fonts.title2, color = NT.Colors.ink, maxLines = 1)
             }
+            Spacer(Modifier.width(12.dp))
             Box(
                 modifier = Modifier
                     .heightIn(min = NT.Size.control)
