@@ -92,3 +92,16 @@ data class BodyWeightEntryEntity(
     val kg: Double,
     val source: BodyWeightSource = BodyWeightSource.Manual,
 )
+
+/**
+ * `BodyMeasurement` (`Models.swift:350`) — one tape reading. [day] is local midnight; [kind] the
+ * `MeasurementKind` raw value (`waist`, `bodyFat`…); [value] centimetres, or percent for body fat.
+ * Logging a kind twice on a day replaces that day's row (`Measurements.save`). Schema 3.
+ */
+@Entity(tableName = "body_measurement", indices = [Index("day")])
+data class BodyMeasurementEntity(
+    @PrimaryKey val id: String,
+    val day: Long,
+    val kind: String,
+    val value: Double,
+)

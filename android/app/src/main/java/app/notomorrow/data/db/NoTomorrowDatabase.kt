@@ -6,6 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.withTransaction
 import app.notomorrow.data.dao.AttendanceDao
+import app.notomorrow.data.dao.BodyMeasurementDao
 import app.notomorrow.data.dao.BodyWeightDao
 import app.notomorrow.data.dao.BroPairingDao
 import app.notomorrow.data.dao.ExerciseDao
@@ -17,6 +18,7 @@ import app.notomorrow.data.dao.RoutineDao
 import app.notomorrow.data.dao.ScheduleDao
 import app.notomorrow.data.dao.WorkoutDao
 import app.notomorrow.data.entity.AttendanceRecordEntity
+import app.notomorrow.data.entity.BodyMeasurementEntity
 import app.notomorrow.data.entity.BodyWeightEntryEntity
 import app.notomorrow.data.entity.BroPairingEntity
 import app.notomorrow.data.entity.ExerciseEntity
@@ -32,7 +34,7 @@ import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 
 /**
- * The 14 entities of `NoTomorrowSchema.models`, in the same order.
+ * The 15 entities of `NoTomorrowSchema.models`, in the same order.
  *
  * Room turns foreign keys on (`PRAGMA foreign_keys=ON`), so a child written before its
  * parent throws: seed exercises before routines. `@Relation` reads never cascade —
@@ -51,6 +53,7 @@ import app.notomorrow.data.entity.WorkoutExerciseEntity
         FoodItemEntity::class,
         MealEntryEntity::class,
         BodyWeightEntryEntity::class,
+        BodyMeasurementEntity::class,
         BroPairingEntity::class,
         AttendanceRecordEntity::class,
         HeadsUpEntity::class,
@@ -60,6 +63,8 @@ import app.notomorrow.data.entity.WorkoutExerciseEntity
     autoMigrations = [
         // 2: `workout_exercise.supersetGroup` and `routine_item.supersetGroup` (nullable).
         AutoMigration(from = 1, to = 2),
+        // 3: the `body_measurement` table.
+        AutoMigration(from = 2, to = 3),
     ],
 )
 @TypeConverters(Converters::class)
@@ -73,12 +78,13 @@ abstract class NoTomorrowDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
     abstract fun mealDao(): MealDao
     abstract fun bodyWeightDao(): BodyWeightDao
+    abstract fun bodyMeasurementDao(): BodyMeasurementDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun headsUpDao(): HeadsUpDao
     abstract fun broPairingDao(): BroPairingDao
 
     companion object {
-        const val VERSION = 2
+        const val VERSION = 3
         const val NAME = "NoTomorrow"
     }
 }
@@ -110,6 +116,7 @@ internal object UserDataWipe {
         Step("attendance_record") { it.attendanceDao().deleteAll() },
         Step("bro_pairing") { it.broPairingDao().deleteAll() },
         Step("body_weight_entry") { it.bodyWeightDao().deleteAll() },
+        Step("body_measurement") { it.bodyMeasurementDao().deleteAll() },
         Step("meal_entry") { it.mealDao().deleteAll() },
         Step("food_item") { it.foodDao().deleteAll() },
         Step("set_entry") { it.workoutDao().deleteAllSets() },

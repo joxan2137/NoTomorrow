@@ -1,5 +1,6 @@
 package app.notomorrow.data.db
 
+import app.notomorrow.data.dao.BodyMeasurementDao
 import app.notomorrow.data.dao.BodyWeightDao
 import app.notomorrow.data.dao.BroPairingDao
 import app.notomorrow.data.dao.HeadsUpDao
@@ -125,6 +126,7 @@ class UserDataWipeTest {
         val headsUps = mockk<HeadsUpDao>(relaxed = true)
         val pairing = mockk<BroPairingDao>(relaxed = true)
         val bodyWeight = mockk<BodyWeightDao>(relaxed = true)
+        val measurements = mockk<BodyMeasurementDao>(relaxed = true)
 
         val db = mockk<NoTomorrowDatabase> {
             every { workoutDao() } returns workouts
@@ -138,6 +140,7 @@ class UserDataWipeTest {
             every { headsUpDao() } returns headsUps
             every { broPairingDao() } returns pairing
             every { bodyWeightDao() } returns bodyWeight
+            every { bodyMeasurementDao() } returns measurements
         }
 
         for (step in UserDataWipe.steps) step.run(db)
@@ -158,5 +161,6 @@ class UserDataWipeTest {
         coVerify(exactly = 1) { headsUps.deleteAll() }
         coVerify(exactly = 1) { pairing.deleteAll() }
         coVerify(exactly = 1) { bodyWeight.deleteAll() }
+        coVerify(exactly = 1) { measurements.deleteAll() }
     }
 }

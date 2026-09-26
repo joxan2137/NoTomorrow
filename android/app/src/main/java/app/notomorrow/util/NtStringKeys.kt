@@ -3,6 +3,7 @@ package app.notomorrow.util
 import androidx.annotation.StringRes
 import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
+import app.notomorrow.model.MeasurementKind
 import app.notomorrow.model.TrainingGoal
 
 /**
@@ -22,6 +23,18 @@ object NtKeys {
         MealSlot.Lunch -> S.meal_lunch
         MealSlot.Snack -> S.meal_snack
         MealSlot.Dinner -> S.meal_dinner
+    }
+
+    /** `"measure." + rawValue` — `Measurements.titleKey`. */
+    @StringRes
+    fun measure(kind: MeasurementKind): Int = when (kind) {
+        MeasurementKind.Waist -> S.measure_waist
+        MeasurementKind.Chest -> S.measure_chest
+        MeasurementKind.Hips -> S.measure_hips
+        MeasurementKind.Arm -> S.measure_arm
+        MeasurementKind.Thigh -> S.measure_thigh
+        MeasurementKind.Neck -> S.measure_neck
+        MeasurementKind.BodyFat -> S.measure_bodyFat
     }
 
     /** `"goal.\(rawValue)"` */
