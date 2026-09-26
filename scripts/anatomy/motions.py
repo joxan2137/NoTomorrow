@@ -124,6 +124,7 @@ EXERCISES = {
     "nt_hs_select_assisted_chin_up": "pull_up",
     "nt_hs_select_ab_crunch": "crunch",
     "nt_hs_select_back_extension": "back_extension",
+    "nt_hs_reverse_hyper": "reverse_hyper",
     "nt_hs_select_leg_extension": "leg_extension",
     "nt_hs_select_leg_curl": "leg_curl_lying",
     "nt_hs_select_seated_leg_curl": "leg_curl_seated",

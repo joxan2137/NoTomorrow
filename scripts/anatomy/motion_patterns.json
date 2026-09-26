@@ -2777,5 +2777,70 @@
     ]
    }
   ]
+ },
+ "reverse_hyper": {
+  "props": [
+   {
+    "type": "floor"
+   },
+   {
+    "type": "pad",
+    "from": [
+     96,
+     123
+    ],
+    "to": [
+     152,
+     123
+    ],
+    "width": 8
+   },
+   {
+    "type": "post",
+    "from": [
+     128,
+     127
+    ],
+    "to": [
+     128,
+     200
+    ]
+   },
+   {
+    "type": "bar",
+    "at": "wristn",
+    "layer": "front"
+   }
+  ],
+  "frames": [
+   {
+    "anchor": "hip",
+    "at": [
+     100,
+     110
+    ],
+    "torso": 90,
+    "neck": 0,
+    "thigh": 4,
+    "shin": 0,
+    "foot": 90,
+    "upper": 0,
+    "fore": 0
+   },
+   {
+    "anchor": "hip",
+    "at": [
+     100,
+     110
+    ],
+    "torso": 90,
+    "neck": 0,
+    "thigh": -82,
+    "shin": -84,
+    "foot": -60,
+    "upper": 0,
+    "fore": 0
+   }
+  ]
  }
 }
