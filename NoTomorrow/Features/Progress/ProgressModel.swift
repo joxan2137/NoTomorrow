@@ -85,12 +85,7 @@ struct LiftSummary: Identifiable {
             .reduce(0) { $0 + $1.weightKg * Double($1.reps) }
     }
 
-    var heaviest: LiftSet? {
-        sets.max { lhs, rhs in
-            if lhs.weightKg != rhs.weightKg { return lhs.weightKg < rhs.weightKg }
-            return lhs.reps < rhs.reps
-        }
-    }
+    var heaviest: LiftSet? { LiftRecords.heaviest(in: sets) }
 
     var mostReps: LiftSet? {
         sets.max { lhs, rhs in

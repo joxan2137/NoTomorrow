@@ -12609,6 +12609,86 @@
           }
         }
       }
+    },
+    "records.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All-time records"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rekordy wszech czasów"
+          }
+        }
+      }
+    },
+    "records.bestE1RM": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best e1RM"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najlepszy e1RM"
+          }
+        }
+      }
+    },
+    "records.heaviest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heaviest"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najcięższy"
+          }
+        }
+      }
+    },
+    "records.bestVolumeSet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best set"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najlepsza seria"
+          }
+        }
+      }
+    },
+    "records.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No records yet. Finish a workout and your PRs show up here."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze bez rekordów. Zakończ trening, a Twoje życiówki pojawią się tutaj."
+          }
+        }
+      }
     }
   }
 }

@@ -3,9 +3,11 @@ import SwiftData
 
 /// Progress tab: last-PR eyebrow, title, Lifts / Body segmented. Lifts: a chip per lift over the selected lift's
 /// focal card (e1RM, range delta, chart, range picker), the muscles trained this week, the e1RM list, the training
-/// calendar and the weekly stats.
+/// calendar and the weekly stats. Under the e1RM list, a link to the all-time records (`RecordsView`).
 struct ProgressHomeView: View {
     private enum Tab: Hashable { case lifts, body }
+    /// Screens Progress pushes besides a lift's page.
+    enum ProgressDestination: Hashable { case records }
 
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
@@ -49,6 +51,11 @@ struct ProgressHomeView: View {
             .navigationDestination(for: PersistentIdentifier.self) { id in
                 if let exercise = model.lifts.first(where: { $0.id == id })?.exercise {
                     ExerciseProgressView(exercise: exercise)
+                }
+            }
+            .navigationDestination(for: ProgressDestination.self) { destination in
+                switch destination {
+                case .records: RecordsView()
                 }
             }
         }
@@ -219,10 +226,33 @@ struct ProgressHomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                recordsLink.padding(.top, 12)
             } else {
                 emptyState
             }
         }
+    }
+
+    /// "All-time records ›" under the list: opens `RecordsView`.
+    private var recordsLink: some View {
+        NavigationLink(value: ProgressDestination.records) {
+            HStack(spacing: 12) {
+                Image(systemName: "trophy")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(NT.Colors.ember)
+                    .frame(width: 18)
+                Text("records.title").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(NT.Colors.ink3)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 48)
+            .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
