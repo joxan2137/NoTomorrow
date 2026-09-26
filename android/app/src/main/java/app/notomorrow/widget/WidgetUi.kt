@@ -120,6 +120,7 @@ internal fun Capsule(
     onClick: Action,
     modifier: GlanceModifier = GlanceModifier,
     primary: Boolean = false,
+    horizontalPadding: Dp = 12.dp,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
@@ -127,7 +128,7 @@ internal fun Capsule(
             .height(W.buttonHeight)
             .background(ImageProvider(if (primary) R.drawable.widget_capsule_primary else R.drawable.widget_capsule))
             .clickable(onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally,
         content = content,
@@ -137,7 +138,8 @@ internal fun Capsule(
 /** A capsule holding one short label (`1:00`, `+15`, Skip). */
 @Composable
 internal fun LabelCapsule(label: String, onClick: Action, modifier: GlanceModifier = GlanceModifier, primary: Boolean = false) {
-    Capsule(onClick, modifier, primary) {
+    // The label is centred, so it needs little padding: three of these share a small widget's width.
+    Capsule(onClick, modifier, primary, horizontalPadding = 2.dp) {
         Text(
             text = label,
             style = W.subheadlineBold.copy(color = if (primary) W.ground else W.ink),

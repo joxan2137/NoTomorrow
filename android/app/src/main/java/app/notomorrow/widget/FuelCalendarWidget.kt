@@ -61,7 +61,7 @@ private const val STATS_DP = 50f
 private const val GAP_DP = 10f
 
 @Composable
-private fun CalendarContent(data: CalendarData) {
+internal fun CalendarContent(data: CalendarData) {
     val context = LocalContext.current
     val size = LocalSize.current
     val large = size.height.value >= LARGE_MIN_HEIGHT_DP
@@ -98,9 +98,12 @@ private fun CalendarContent(data: CalendarData) {
 @Composable
 private fun Legend(context: Context) {
     Row(GlanceModifier.fillMaxWidth().height(LEGEND_DP.dp), verticalAlignment = Alignment.CenterVertically) {
-        NT.Colors.heat.forEachIndexed { index, color ->
-            if (index > 0) Spacer(GlanceModifier.width(3.dp))
-            Box(GlanceModifier.size(10.dp).background(W.color(color)).cornerRadius(2.5.dp)) {}
+        // The swatches get their own row: Glance drops the children of a Row past its 10th.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            NT.Colors.heat.forEachIndexed { index, color ->
+                if (index > 0) Spacer(GlanceModifier.width(3.dp))
+                Box(GlanceModifier.size(10.dp).background(W.color(color)).cornerRadius(2.5.dp)) {}
+            }
         }
         Spacer(GlanceModifier.width(6.dp))
         Text(context.getString(R.string.fuel_calendar_onTarget), style = W.caption, maxLines = 1)

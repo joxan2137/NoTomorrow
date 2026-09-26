@@ -47,14 +47,7 @@ struct QuickLogView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(verbatim: WidgetText.string("fuel.kcalLeft")).eyebrowStyle()
             Spacer(minLength: 6)
-            HStack(spacing: 12) {
-                ring(fuel, size: 70, line: 7, number: 22)
-                VStack(alignment: .leading, spacing: 4) {
-                    macroEaten(W.protein, fuel.protein)
-                    macroEaten(W.carbs, fuel.carbs)
-                    macroEaten(W.fat, fuel.fat)
-                }
-            }
+            ring(fuel, size: 64, line: 8, number: 26)
             Spacer(minLength: 8)
             if let food = snapshot.quickFoods.first {
                 Button(intent: LogQuickFoodIntent(key: food.key)) {
@@ -118,15 +111,6 @@ struct QuickLogView: View {
         .frame(width: size, height: size)
     }
 
-    /// "● 62 g" — grams eaten of one macro, in its hue.
-    private func macroEaten(_ color: Color, _ eaten: Double) -> some View {
-        HStack(spacing: 5) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text(verbatim: WidgetText.grams(eaten))
-                .font(W.caption).monospacedDigit().foregroundStyle(W.ink).lineLimit(1)
-        }
-    }
-
     private func smallButtonFace(_ food: QuickFood, logged: Bool) -> some View {
         HStack(spacing: 6) {
             Image(systemName: logged ? "checkmark" : "plus")
@@ -147,8 +131,7 @@ struct QuickLogView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: food.name).font(W.subheadlineBold).foregroundStyle(W.ink).lineLimit(1)
-                Text(verbatim: logged ? WidgetText.string("widget.fuel.logged")
-                                      : "\(WidgetText.grams(food.grams)) · \(WidgetText.kcal(food.kcal))\u{00A0}kcal")
+                Text(verbatim: logged ? WidgetText.string("widget.fuel.logged") : detail(food))
                     .font(W.footnote).monospacedDigit().foregroundStyle(logged ? W.good : W.ink2).lineLimit(1)
             }
             Spacer(minLength: 4)
@@ -162,6 +145,12 @@ struct QuickLogView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    /// "300 g · 186 kcal", or just "186 kcal" for a food logged without a weight.
+    private func detail(_ food: QuickFood) -> String {
+        let kcal = "\(WidgetText.kcal(food.kcal))\u{00A0}kcal"
+        return food.grams > 0 ? "\(WidgetText.grams(food.grams)) · \(kcal)" : kcal
     }
 
     private func isJustLogged(_ food: QuickFood, _ snapshot: WidgetSnapshot) -> Bool {

@@ -72,8 +72,9 @@ final class WidgetTests: XCTestCase {
         let container = try ModelContainer(for: Schema(NoTomorrowSchema.models),
                                            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
         let context = container.mainContext
-        let now = Date.now
+        // Midday, so the workout that started an hour earlier is still today whenever the test runs.
         let cal = Calendar.current
+        let now = cal.date(bySettingHour: 12, minute: 0, second: 0, of: .now) ?? .now
         context.insert(UserProfile(name: "Kuba", goal: .maintain, calorieGoal: 2400))
         context.insert(GymSchedule(weekdays: [1, 3, 5], defaultMinuteOfDay: 18 * 60))
         let food = FoodItem(id: "off:590", name: "Skyr", source: .openFoodFacts,

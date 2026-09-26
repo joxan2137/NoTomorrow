@@ -78,7 +78,7 @@ struct FuelCalendarView: View {
             VStack(alignment: .leading, spacing: 8) {
                 header(model)
                 if family == .systemLarge {
-                    HeatGrid(model: model, minColumns: 16, showsMonths: true)
+                    HeatGrid(model: model, minColumns: 10, showsMonths: true)
                     legend
                     stats(model)
                 } else {
@@ -133,7 +133,8 @@ struct FuelCalendarView: View {
 }
 
 /// Monday-first week columns, oldest left, as many whole weeks as fit (at most 26). Cells are square with a gap of a
-/// fifth of their side; `minColumns` trades height for bigger cells on the large size.
+/// fifth of their side; `minColumns` caps the cell side so the large size fills its height with at least that many
+/// weeks instead of leaving a gap above the grid.
 struct HeatGrid: View {
     let model: FuelCalendarModel
     let minColumns: Int
@@ -164,7 +165,7 @@ struct HeatGrid: View {
                 }
             }
             .frame(width: gridWidth, alignment: .leading)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: showsMonths ? .top : .center)
         }
     }
 

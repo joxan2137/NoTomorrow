@@ -57,7 +57,7 @@ class BreakTimerWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun BreakTimerContent(data: RestData) {
+internal fun BreakTimerContent(data: RestData) {
     val context = LocalContext.current
     val size = LocalSize.current
     val now = System.currentTimeMillis()

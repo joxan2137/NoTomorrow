@@ -75,7 +75,7 @@ struct BreakTimerView: View {
         switch (entry.phase, family) {
         case (.running, .systemMedium):
             HStack(spacing: 16) {
-                ring(size: 112, font: 34)
+                ring(size: 110, font: 34)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(verbatim: WidgetText.string("timer.rest")).eyebrowStyle(W.ember)
                     detailLines
@@ -89,7 +89,7 @@ struct BreakTimerView: View {
             }
         case (.running, _):
             VStack(spacing: 8) {
-                ring(size: 76, font: 24)
+                ring(size: 84, font: 26)
                 HStack(spacing: 6) {
                     Button(intent: AdjustBreakIntent(seconds: 15)) { CapsuleFace(title: "+15", height: 32) }.buttonStyle(.plain)
                     Button(intent: SkipBreakIntent()) { CapsuleFace(title: WidgetText.string("common.skip"), height: 32) }.buttonStyle(.plain)
@@ -97,14 +97,14 @@ struct BreakTimerView: View {
             }
         case (_, .systemMedium):
             HStack(alignment: .center, spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
+                idleRing(size: 110, font: 34)
+                VStack(alignment: .leading, spacing: 4) {
                     idleHeader
-                    Text(verbatim: WidgetText.duration(entry.defaultSeconds))
-                        .font(W.display(56)).monospacedDigit().foregroundStyle(W.ink)
                     caption
+                    Spacer(minLength: 6)
+                    HStack(spacing: 6) { presetButtons(height: 36) }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(spacing: 8) { presetButtons(height: 34) }.frame(width: 120)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
         default:
             VStack(alignment: .leading, spacing: 0) {
@@ -150,6 +150,18 @@ struct BreakTimerView: View {
         if !entry.rest.nextSetLabel.isEmpty {
             Text(verbatim: entry.rest.nextSetLabel).font(W.footnote).foregroundStyle(W.ink2).lineLimit(1)
         }
+    }
+
+    /// The idle ring: the empty track with the default rest inside, where the running ring will count down.
+    private func idleRing(size: CGFloat, font: CGFloat) -> some View {
+        ZStack {
+            Circle().stroke(W.track, lineWidth: 6)
+            Text(verbatim: WidgetText.duration(entry.defaultSeconds))
+                .font(W.display(font)).monospacedDigit().foregroundStyle(W.ink)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .frame(width: size - 20)
+        }
+        .frame(width: size, height: size)
     }
 
     /// The system draws the countdown and the ring from the rest's own start…end, so both tick without timeline

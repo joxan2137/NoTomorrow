@@ -77,7 +77,7 @@ struct WeekView: View {
                 HStack(alignment: .center, spacing: 16) {
                     nextBlock(next, week, timeSize: 44).frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .leading, spacing: 8) {
-                        strip(days, circle: 22, letters: true, dots: week.isPaired)
+                        strip(days, circle: 26, letters: true, dots: week.isPaired)
                         let gymDays = days.filter(\.isGymDay).count
                         if gymDays > 0 {
                             Text(verbatim: WidgetText.format("widget.week.done %lld %lld",
@@ -87,6 +87,7 @@ struct WeekView: View {
                     }
                     .fixedSize()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             default:
                 VStack(alignment: .leading, spacing: 0) {
                     nextBlock(next, week, timeSize: 40)
@@ -153,7 +154,7 @@ struct WeekView: View {
     // MARK: Strip
 
     private func strip(_ days: [WidgetSnapshot.Week.Day], circle: CGFloat, letters: Bool, dots: Bool) -> some View {
-        HStack(spacing: letters ? 5 : 4) {
+        HStack(spacing: 4) {
             ForEach(Array(days.enumerated()), id: \.offset) { index, day in
                 VStack(spacing: 4) {
                     if letters {

@@ -52,7 +52,7 @@ class WeekWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun WeekContent(data: WeekData) {
+internal fun WeekContent(data: WeekData) {
     val context = LocalContext.current
     val size = LocalSize.current
     val width = size.width.value - 2 * W.margin.value

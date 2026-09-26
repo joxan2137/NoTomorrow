@@ -50,7 +50,12 @@ enum WidgetText {
         return Bundle.main.preferredLocalizations.first ?? "en"
     }
 
-    static var locale: Locale { Locale(identifier: language) }
+    /// Same rule as the app's `AppLocale.effective`: the device locale, or the chosen language with the device's
+    /// region, so numbers, dates and times keep the user's regional format.
+    static var locale: Locale {
+        guard let languageOverride, !languageOverride.isEmpty else { return .current }
+        return Locale(identifier: "\(languageOverride)_\(Locale.current.region?.identifier ?? "PL")")
+    }
 
     private static func bundle(for language: String) -> Bundle {
         guard let path = Bundle.main.path(forResource: language, ofType: "lproj"), let bundle = Bundle(path: path)

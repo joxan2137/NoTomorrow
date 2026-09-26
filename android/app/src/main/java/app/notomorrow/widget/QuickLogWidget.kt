@@ -69,7 +69,7 @@ class QuickLogWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
-private fun QuickLogContent(data: QuickLogData) {
+internal fun QuickLogContent(data: QuickLogData) {
     val context = LocalContext.current
     val size = LocalSize.current
     val prefs = currentState<Preferences>()
@@ -176,7 +176,8 @@ private fun FoodRow(context: Context, food: QuickFood, isLogged: Boolean) {
                 text = if (isLogged) {
                     context.getString(R.string.widget_fuel_logged)
                 } else {
-                    "${Fmt.grams(food.grams)} · ${Fmt.kcal(food.kcal)}"
+                    // A food logged without a weight shows just its kcal, not "0 g".
+                    if (food.grams > 0) "${Fmt.grams(food.grams)} · ${Fmt.kcal(food.kcal)}" else Fmt.kcal(food.kcal)
                 },
                 style = W.footnote,
                 maxLines = 1,
