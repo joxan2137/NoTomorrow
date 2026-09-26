@@ -77,7 +77,7 @@ fun PlateCalculatorSheet(
     val defaultBar = PlateMath.bars(unit).first()
     val bar by remember(unit) { prefs.plateBar(unit) }.collectAsState(initial = defaultBar)
     val target = SetInput.display(weightKg, unit)
-    val load = PlateMath.load(target, bar, PlateMath.plates(unit))
+    val load = PlateMath.load(target, bar, PlateMath.plates(unit), limit = PlateMath.maxTarget(unit))
     var showsOneRepMax by rememberSaveable { mutableStateOf(false) }
 
     NtSheet(
@@ -112,7 +112,9 @@ fun PlateCalculatorSheet(
                     .clearAndSetSemantics {},
             )
             PerSideList(load = load, unit = unit, modifier = Modifier.padding(top = 20.dp))
-            if (load.isBelowBar) {
+            if (load.isOverMax) {
+                Note(stringResource(S.plates_overMax_s, Fmt.plate(PlateMath.maxTarget(unit), unit)))
+            } else if (load.isBelowBar) {
                 Note(stringResource(S.plates_belowBar))
             } else if (!load.isExact) {
                 val label = Fmt.plate(load.total, unit)

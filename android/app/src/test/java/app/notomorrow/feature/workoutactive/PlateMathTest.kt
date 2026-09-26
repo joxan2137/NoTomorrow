@@ -43,6 +43,18 @@ class PlateMathTest {
     }
 
     @Test
+    fun targetOverTheLimitLoadsNothing() {
+        val over = PlateMath.load(10_002.5, 20.0, PlateMath.plates(WeightUnit.Kg), limit = PlateMath.maxTarget(WeightUnit.Kg))
+        assertTrue(over.isOverMax)
+        assertTrue(over.perSide.isEmpty())
+        assertFalse(over.isExact)
+        val atLimit = PlateMath.load(500.0, 20.0, PlateMath.plates(WeightUnit.Kg), limit = PlateMath.maxTarget(WeightUnit.Kg))
+        assertFalse(atLimit.isOverMax)
+        assertTrue(atLimit.isExact)
+        assertTrue(PlateMath.load(1105.0, 45.0, PlateMath.plates(WeightUnit.Lb), limit = PlateMath.maxTarget(WeightUnit.Lb)).isOverMax)
+    }
+
+    @Test
     fun `loads heaviest plates first`() {
         val load = PlateMath.load(target = 142.5, bar = 20.0, plates = PlateMath.plates(WeightUnit.Kg))
         assertEquals(listOf(25.0, 25.0, 10.0, 1.25), load.perSide)

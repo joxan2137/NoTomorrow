@@ -498,6 +498,7 @@
     <string name="plates_belowBar">That\'s lighter than the bar.</string>
     <string name="plates_emptyBar">Just the bar.</string>
     <string name="plates_notExact_s">These plates can\'t make that exactly. The closest load is %s.</string>
+    <string name="plates_overMax_s">That\'s more than the calculator loads (up to %s). Check the weight in the set.</string>
     <string name="plates_perSide">Each side</string>
     <string name="plates_title">Plates</string>
     <string name="plates_use_s">Use %s</string>

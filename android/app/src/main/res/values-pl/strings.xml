@@ -498,6 +498,7 @@
     <string name="plates_belowBar">To mniej niż sam gryf.</string>
     <string name="plates_emptyBar">Sam gryf.</string>
     <string name="plates_notExact_s">Tymi talerzami nie da się tego ułożyć dokładnie. Najbliżej: %s.</string>
+    <string name="plates_overMax_s">To więcej, niż kalkulator obsługuje (do %s). Sprawdź ciężar w serii.</string>
     <string name="plates_perSide">Na każdą stronę</string>
     <string name="plates_title">Talerze</string>
     <string name="plates_use_s">Ustaw %s</string>

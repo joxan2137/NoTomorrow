@@ -513,6 +513,7 @@ object S {
     val plates_belowBar = R.string.plates_belowBar
     val plates_emptyBar = R.string.plates_emptyBar
     val plates_notExact_s = R.string.plates_notExact_s  // plates.notExact %@
+    val plates_overMax_s = R.string.plates_overMax_s  // plates.overMax %@
     val plates_perSide = R.string.plates_perSide
     val plates_title = R.string.plates_title
     val plates_use_s = R.string.plates_use_s  // plates.use %@

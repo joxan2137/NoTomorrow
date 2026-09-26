@@ -20,6 +20,9 @@ object PlateMath {
     fun bars(unit: WeightUnit): List<Double> =
         if (unit == WeightUnit.Kg) listOf(20.0, 15.0, 10.0) else listOf(45.0, 35.0, 15.0)
 
+    /** Heaviest target the calculator loads (above any real lift); a bigger number is a typo, not a bar to draw. */
+    fun maxTarget(unit: WeightUnit): Double = if (unit == WeightUnit.Kg) 500.0 else 1100.0
+
     /** One plate weight and how many of it go on a side ("2 × 20"). */
     data class PlateGroup(val plate: Double, val count: Int)
 
@@ -32,8 +35,10 @@ object PlateMath {
         val shortBy: Double,
         /** The target is lighter than the empty bar. */
         val isBelowBar: Boolean,
+        /** The target is over the calculator's limit: nothing is loaded. */
+        val isOverMax: Boolean = false,
     ) {
-        val isExact: Boolean get() = !isBelowBar && shortBy < 0.001
+        val isExact: Boolean get() = !isBelowBar && !isOverMax && shortBy < 0.001
 
         /** "2 × 20" style groups for the per-side list, heaviest first. */
         val groups: List<PlateGroup>
@@ -53,9 +58,10 @@ object PlateMath {
 
     /**
      * Greedy fill, heaviest plate first, never over the target (exact for standard plate sets).
-     * A target at or below the bar loads nothing. Works in hundredths so 1.25 steps add up exactly.
+     * A target at or below the bar loads nothing, and so does one over [limit]. Works in hundredths so 1.25 steps add up exactly.
      */
-    fun load(target: Double, bar: Double, plates: List<Double>): Load {
+    fun load(target: Double, bar: Double, plates: List<Double>, limit: Double = Double.POSITIVE_INFINITY): Load {
+        if (target > limit) return Load(perSide = emptyList(), total = bar, shortBy = 0.0, isBelowBar = false, isOverMax = true)
         val barUnits = units(bar)
         val targetUnits = units(max(0.0, target))
         var perSideUnits = max(0L, targetUnits - barUnits) / 2

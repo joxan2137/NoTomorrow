@@ -15,7 +15,8 @@ struct PlateCalculatorSheet: View {
 
     private var target: Double { SetInput.display(weightKg, unit: unit) }
     private var bar: Double { unit == .kg ? barKg : barLb }
-    private var load: PlateMath.Load { PlateMath.load(target: target, bar: bar, plates: PlateMath.plates(for: unit)) }
+    private var load: PlateMath.Load { PlateMath.load(target: target, bar: bar, plates: PlateMath.plates(for: unit),
+                                                                  limit: PlateMath.maxTarget(for: unit)) }
 
     var body: some View {
         let load = load
@@ -31,7 +32,9 @@ struct PlateCalculatorSheet: View {
                         .padding(.top, 20)
                         .accessibilityHidden(true)
                     perSideList(load).padding(.top, 20)
-                    if load.isBelowBar {
+                    if load.isOverMax {
+                        note("plates.overMax \(Fmt.plate(PlateMath.maxTarget(for: unit), unit: unit))")
+                    } else if load.isBelowBar {
                         note("plates.belowBar")
                     } else if !load.isExact {
                         closest(load)

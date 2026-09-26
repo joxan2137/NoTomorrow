@@ -14401,6 +14401,22 @@
           }
         }
       }
+    },
+    "plates.overMax %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's more than the calculator loads (up to %@). Check the weight in the set."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To więcej, niż kalkulator obsługuje (do %@). Sprawdź ciężar w serii."
+          }
+        }
+      }
     }
   }
 }

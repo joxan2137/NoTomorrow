@@ -13,6 +13,20 @@ final class PlateMathTests: XCTestCase {
         XCTAssertEqual(load.groups.map(\.count), [2, 1, 1])
     }
 
+    func testTargetOverTheLimitLoadsNothing() {
+        let over = PlateMath.load(target: 10_002.5, bar: 20, plates: PlateMath.plates(for: .kg),
+                                  limit: PlateMath.maxTarget(for: .kg))
+        XCTAssertTrue(over.isOverMax)
+        XCTAssertTrue(over.perSide.isEmpty)
+        XCTAssertFalse(over.isExact)
+        let atLimit = PlateMath.load(target: 500, bar: 20, plates: PlateMath.plates(for: .kg),
+                                     limit: PlateMath.maxTarget(for: .kg))
+        XCTAssertFalse(atLimit.isOverMax)
+        XCTAssertTrue(atLimit.isExact)
+        XCTAssertTrue(PlateMath.load(target: 1105, bar: 45, plates: PlateMath.plates(for: .lb),
+                                     limit: PlateMath.maxTarget(for: .lb)).isOverMax)
+    }
+
     func testPoundPlates() {
         let load = PlateMath.load(target: 225, bar: 45, plates: PlateMath.plates(for: .lb))
         XCTAssertEqual(load.perSide, [45, 45])

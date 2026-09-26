@@ -14,6 +14,9 @@ enum PlateMath {
         unit == .kg ? [20, 15, 10] : [45, 35, 15]
     }
 
+    /// Heaviest target the calculator loads (above any real lift); a bigger number is a typo, not a bar to draw.
+    static func maxTarget(for unit: WeightUnit) -> Double { unit == .kg ? 500 : 1100 }
+
     struct Load: Equatable {
         /// One side of the bar, heaviest first (the other side mirrors it).
         var perSide: [Double]
@@ -23,8 +26,10 @@ enum PlateMath {
         var shortBy: Double
         /// The target is lighter than the empty bar.
         var isBelowBar: Bool
+        /// The target is over the calculator's limit: nothing is loaded.
+        var isOverMax: Bool = false
 
-        var isExact: Bool { !isBelowBar && shortBy < 0.001 }
+        var isExact: Bool { !isBelowBar && !isOverMax && shortBy < 0.001 }
 
         /// "2 × 20" style groups for the per-side list, heaviest first.
         var groups: [(plate: Double, count: Int)] {
@@ -41,8 +46,12 @@ enum PlateMath {
     }
 
     /// Greedy fill, heaviest plate first, never over the target (exact for standard plate sets).
-    /// A target at or below the bar loads nothing. Works in hundredths so 1.25 steps add up exactly.
-    static func load(target: Double, bar: Double, plates: [Double]) -> Load {
+    /// A target at or below the bar loads nothing, and so does one over `limit`. Works in hundredths so 1.25 steps
+    /// add up exactly.
+    static func load(target: Double, bar: Double, plates: [Double], limit: Double = .infinity) -> Load {
+        if target > limit {
+            return Load(perSide: [], total: bar, shortBy: 0, isBelowBar: false, isOverMax: true)
+        }
         let scale = 100.0
         let barUnits = Int((bar * scale).rounded())
         let targetUnits = Int((max(0, target) * scale).rounded())
