@@ -1,9 +1,11 @@
 import SwiftUI
 
 /// One routine: name, "5 exercises · Bench, Press, Raise", and a round play button.
+/// Tapping the text opens the routine editor.
 struct RoutineRow: View {
     var routine: Routine
     var onStart: () -> Void
+    var onEdit: () -> Void = {}
 
     private var exerciseNames: [String] {
         routine.sortedItems.compactMap { $0.exercise?.localizedName }
@@ -17,17 +19,24 @@ struct RoutineRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(routine.name)
-                    .font(NT.Fonts.headline)
-                    .foregroundStyle(NT.Colors.ink)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(NT.Fonts.footnote)
-                    .foregroundStyle(NT.Colors.ink2)
-                    .lineLimit(2)
+            Button(action: onEdit) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(routine.name)
+                            .font(NT.Fonts.headline)
+                            .foregroundStyle(NT.Colors.ink)
+                            .lineLimit(1)
+                        Text(subtitle)
+                            .font(NT.Fonts.footnote)
+                            .foregroundStyle(NT.Colors.ink2)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 8)
+                }
+                .contentShape(Rectangle())
             }
-            Spacer(minLength: 8)
+            .buttonStyle(.plain)
+            .accessibilityHint(Text("routine.edit"))
             StartPlayButton(routineName: routine.name, action: onStart)
         }
         .padding(.vertical, 14)

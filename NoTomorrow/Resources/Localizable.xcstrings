@@ -11425,6 +11425,214 @@
           }
         }
       }
+    },
+    "routine.new": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowy plan"
+          }
+        }
+      }
+    },
+    "routine.edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj plan"
+          }
+        }
+      }
+    },
+    "routine.delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń plan"
+          }
+        }
+      }
+    },
+    "routine.deleteConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this routine? Past workouts stay."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten plan? Zapisane treningi zostaną."
+          }
+        }
+      }
+    },
+    "routine.discardConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard this routine's changes?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzucić zmiany w planie?"
+          }
+        }
+      }
+    },
+    "routine.duplicate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplikuj"
+          }
+        }
+      }
+    },
+    "routine.namePlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Push day"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzień push"
+          }
+        }
+      }
+    },
+    "routine.nameTaken": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another routine already has this name."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inny plan ma już tę nazwę."
+          }
+        }
+      }
+    },
+    "routine.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the exercises this routine starts with."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj ćwiczenia, od których zaczyna się ten plan."
+          }
+        }
+      }
+    },
+    "routine.reps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reps"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powt."
+          }
+        }
+      }
+    },
+    "routine.rest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przerwa"
+          }
+        }
+      }
+    },
+    "routine.restDefault": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślna"
+          }
+        }
+      }
+    },
+    "routine.saveFromWorkout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save as routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako plan"
+          }
+        }
+      }
     }
   }
 }

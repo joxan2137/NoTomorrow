@@ -14,6 +14,8 @@ struct TrainView: View {
     @Query private var profiles: [UserProfile]
 
     @State private var selectedWorkout: Workout?
+    @State private var routineEdit: RoutineEditRequest?
+    @State private var routineToDelete: Routine?
 
     private var unit: WeightUnit { profiles.first?.units ?? .kg }
 
@@ -40,6 +42,15 @@ struct TrainView: View {
         }
         .ntScreenBackground()
         .workoutDetailSheet($selectedWorkout, unit: unit)
+        .sheet(item: $routineEdit) { RoutineEditorSheet(request: $0) }
+        .alert("routine.deleteConfirm", isPresented: Binding(get: { routineToDelete != nil },
+                                                             set: { if !$0 { routineToDelete = nil } })) {
+            Button("routine.delete", role: .destructive) {
+                if let routine = routineToDelete { RoutineStore.delete(routine, in: modelContext) }
+                routineToDelete = nil
+            }
+            Button("common.cancel", role: .cancel) { routineToDelete = nil }
+        }
         // RootView imports the library once and seeds right after; this is a no-op once the routines exist.
         .task { RoutineSeeder.seedIfNeeded(context: modelContext) }
     }
@@ -69,9 +80,19 @@ struct TrainView: View {
                     Text(WorkoutStrings.exercises(items.count))
                         .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2).tabular()
                 }
-                Text(routine.name)
-                    .font(NT.Fonts.title1).foregroundStyle(NT.Colors.ink).lineLimit(1)
-                    .padding(.top, 8)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(routine.name)
+                        .font(NT.Fonts.title1).foregroundStyle(NT.Colors.ink).lineLimit(1)
+                    Spacer(minLength: 8)
+                    if !inProgress {
+                        Button { routineEdit = .edit(routine) } label: {
+                            Text("common.edit").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+                                .frame(minHeight: NT.Size.control)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 8)
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         if index > 0 { Hairline() }
@@ -86,6 +107,24 @@ struct TrainView: View {
                 .padding(.top, 16)
             }
         }
+        .contextMenu { routineMenu(routine) }
+    }
+
+    /// Long-press actions on a routine: Edit, Duplicate, Move up / down, Delete.
+    @ViewBuilder
+    private func routineMenu(_ routine: Routine) -> some View {
+        let index = routines.firstIndex { $0.persistentModelID == routine.persistentModelID } ?? 0
+        Button("routine.edit", systemImage: "pencil") { routineEdit = .edit(routine) }
+        Button("routine.duplicate", systemImage: "plus.square.on.square") {
+            RoutineStore.duplicate(routine, in: modelContext)
+        }
+        if index > 0 {
+            Button("workout.edit.moveUp", systemImage: "arrow.up") { RoutineStore.move(routine, by: -1, in: modelContext) }
+        }
+        if index < routines.count - 1 {
+            Button("workout.edit.moveDown", systemImage: "arrow.down") { RoutineStore.move(routine, by: 1, in: modelContext) }
+        }
+        Button("routine.delete", systemImage: "trash", role: .destructive) { routineToDelete = routine }
     }
 
     /// "Bench Press ······ 3 × 8": the exercise and its target sets × reps.
@@ -115,11 +154,16 @@ struct TrainView: View {
                     .padding(.vertical, 12)
             } else {
                 ForEach(routines.filter { $0.persistentModelID != upNext?.persistentModelID }) { routine in
-                    RoutineRow(routine: routine) { requestStart(.routine(routine)) }
+                    RoutineRow(routine: routine, onStart: { requestStart(.routine(routine)) },
+                               onEdit: { routineEdit = .edit(routine) })
+                        .contextMenu { routineMenu(routine) }
                     Hairline()
                 }
             }
-            GhostButton(title: "workout.startEmpty") { requestStart(.empty) }
+            VStack(spacing: 10) {
+                GhostButton(title: "routine.new", systemImage: "plus") { routineEdit = .new() }
+                GhostButton(title: "workout.startEmpty") { requestStart(.empty) }
+            }
             .padding(.top, 16)
         }
     }

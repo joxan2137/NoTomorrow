@@ -1,0 +1,83 @@
+name: Tests
+
+# Unit tests for both apps on every pull request that touches them (and by hand).
+#   iOS      - NoTomorrowTests on an iPhone simulator (the release build never runs them).
+#   Android  - :app:testDebugUnitTest (JVM + Robolectric).
+
+on:
+  pull_request:
+    paths:
+      - "NoTomorrow/**"
+      - "NoTomorrowTests/**"
+      - "NoTomorrowWidgets/**"
+      - "Shared/**"
+      - "Packages/**"
+      - "project.yml"
+      - "android/**"
+      - "backend/data/ai/**"
+      - ".github/workflows/tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ios:
+    name: iOS unit tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Test
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          # The newest available iPhone simulator, whatever this runner image ships.
+          udid="$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("^iPhone"))] | last | .udid')"
+          echo "Simulator: $udid"
+          xcodebuild test \
+            -project NoTomorrow.xcodeproj \
+            -scheme NoTomorrow \
+            -destination "id=$udid" \
+            -derivedDataPath build/ci/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+
+  android:
+    name: Android unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace

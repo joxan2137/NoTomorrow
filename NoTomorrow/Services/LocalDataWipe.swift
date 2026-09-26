@@ -38,6 +38,8 @@ enum LocalDataWipe {
         do {
             try run(in: context)
             defaults.removeObject(forKey: pendingKey)
+            // Routines were wiped: the next onboarding seeds the starter ones again.
+            defaults.removeObject(forKey: RoutineSeeder.seededKey)
             return true
         } catch {
             log.error("Local data wipe failed: \(String(describing: error), privacy: .public)")
