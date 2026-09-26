@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Search + muscle filter over the exercise library — 1:1 port of
+ * Search + muscle and equipment filters over the exercise library — 1:1 port of
  * `NoTomorrow/Features/Workout/ExercisePickerViewModel.swift`.
  *
  * Typing is debounced by **200 ms** before the list is refiltered (the field itself updates at
@@ -48,6 +49,11 @@ class ExercisePickerViewModel(
 
     /** The `alreadyIn` of the plain `init(alreadyIn:onAdd:)`; re-set by [reset] on every presentation. */
     private val alreadyInInput = MutableStateFlow(initialAlreadyIn)
+
+    private val equipmentInput = MutableStateFlow(ExerciseEquipment.All)
+
+    /** The equipment chip row; combines with the muscle chips and the search. */
+    val equipment: StateFlow<ExerciseEquipment> = equipmentInput.asStateFlow()
 
     /** Recently used first, then alphabetical — `load(context:)`. */
     private val library: Flow<List<ExerciseEntity>> =
@@ -80,8 +86,12 @@ class ExercisePickerViewModel(
         groupInput,
     ) { all, query, group -> ExerciseLibrary.filter(all, query, group) }
 
+    /** [results] narrowed by the equipment chip; a chip tap refilters immediately. */
+    private val filtered: Flow<List<ExerciseEntity>> =
+        combine(results, equipmentInput) { rows, equipment -> ExerciseEquipment.filter(rows, equipment) }
+
     val state: StateFlow<ExercisePickerUiState> = combine(
-        results,
+        filtered,
         lastSets,
         queryInput,
         groupInput,
@@ -123,6 +133,7 @@ class ExercisePickerViewModel(
         groupInput.value = ExerciseLibrary.MuscleGroup.All
         selectedInput.value = emptyList()
         alreadyInInput.value = alreadyIn
+        equipmentInput.value = ExerciseEquipment.All
     }
 
     fun setQuery(value: String) {
@@ -139,16 +150,24 @@ class ExercisePickerViewModel(
         selectedInput.value = if (current.contains(id)) current - id else current + id
     }
 
+    fun setEquipment(equipment: ExerciseEquipment) {
+        equipmentInput.value = equipment
+    }
+
     /**
      * `createExercise(context:)` — inserts a custom exercise named after the query, tagged with one
-     * representative muscle of the selected chip, selects it and clears the search so it sorts to
-     * the top.
+     * representative muscle of the selected chip and the equipment chip's equipment, selects it
+     * and clears the search so it sorts to the top.
      */
     fun createExercise() {
         val name = queryInput.value.trim()
         if (name.isEmpty()) return
         viewModelScope.launch {
-            val exercise = container.exerciseLibrary.createCustom(name, groupInput.value) ?: return@launch
+            val exercise = container.exerciseLibrary.createCustom(
+                name,
+                groupInput.value,
+                equipment = equipmentInput.value.representative,
+            ) ?: return@launch
             selectedInput.value = selectedInput.value + exercise.id
             queryInput.value = ""
         }

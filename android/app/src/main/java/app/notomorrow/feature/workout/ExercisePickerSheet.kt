@@ -116,6 +116,13 @@ fun ExercisePickerSheet(
             modifier = Modifier.padding(top = 12.dp),
         )
 
+        val equipment by model.equipment.collectAsStateWithLifecycle()
+        EquipmentChips(
+            selected = equipment,
+            onSelect = model::setEquipment,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
         LazyColumn(
             // `.scrollDismissesKeyboard(.immediately)` (`ExercisePickerView.swift:152`) — the
             // keyboard goes the moment the 876-row list starts moving.
@@ -328,6 +335,28 @@ private fun PickerChips(
                 title = stringResource(group.titleRes),
                 selected = group == selected,
                 onClick = { onSelect(group) },
+            )
+        }
+    }
+}
+
+/** Any equipment, Barbell, Dumbbell…: a second row under the muscles, combined with them and the search. */
+@Composable
+private fun EquipmentChips(
+    selected: ExerciseEquipment,
+    onSelect: (ExerciseEquipment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = NT.Spacing.screenH),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(ExerciseEquipment.entries.toList(), key = { it.raw }) { equipment ->
+            Chip(
+                title = stringResource(equipment.titleRes),
+                selected = equipment == selected,
+                onClick = { onSelect(equipment) },
             )
         }
     }

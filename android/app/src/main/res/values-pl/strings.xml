@@ -132,6 +132,7 @@
     <string name="day_today">Dziś</string>
     <string name="day_tomorrow">Jutro</string>
     <string name="day_yesterday">Wczoraj</string>
+    <string name="equipment_all">Dowolny sprzęt</string>
     <string name="equipment_bands">Gumy</string>
     <string name="equipment_barbell">Sztanga</string>
     <string name="equipment_body_only">Masa ciała</string>

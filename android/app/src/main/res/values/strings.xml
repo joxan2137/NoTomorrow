@@ -132,6 +132,7 @@
     <string name="day_today">Today</string>
     <string name="day_tomorrow">Tomorrow</string>
     <string name="day_yesterday">Yesterday</string>
+    <string name="equipment_all">Any equipment</string>
     <string name="equipment_bands">Bands</string>
     <string name="equipment_barbell">Barbell</string>
     <string name="equipment_body_only">Bodyweight</string>

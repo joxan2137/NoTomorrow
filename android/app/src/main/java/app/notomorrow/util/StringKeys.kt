@@ -147,6 +147,7 @@ object S {
     val day_today = R.string.day_today
     val day_tomorrow = R.string.day_tomorrow
     val day_yesterday = R.string.day_yesterday
+    val equipment_all = R.string.equipment_all
     val equipment_bands = R.string.equipment_bands
     val equipment_barbell = R.string.equipment_barbell
     val equipment_body_only = R.string.equipment_body_only

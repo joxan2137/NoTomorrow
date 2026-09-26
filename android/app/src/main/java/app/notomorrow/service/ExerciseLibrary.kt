@@ -123,6 +123,7 @@ class ExerciseLibrary(
         name: String,
         group: MuscleGroup = MuscleGroup.All,
         now: Long = System.currentTimeMillis(),
+        equipment: String? = null,
     ): ExerciseEntity? {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return null
@@ -130,6 +131,7 @@ class ExerciseLibrary(
             id = "custom-" + UUID.randomUUID().toString().lowercase(Locale.ROOT),
             name = trimmed,
             primaryMuscles = group.representativeMuscle?.let { listOf(it) } ?: emptyList(),
+            equipment = equipment,
             isCustom = true,
             lastUsedAt = now,
         )
