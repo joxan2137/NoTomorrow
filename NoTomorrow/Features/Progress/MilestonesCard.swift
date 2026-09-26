@@ -2,18 +2,18 @@ import SwiftUI
 import SwiftData
 
 /// Progress > Lifts: the latest milestone reached and the next few with how far along they are. The whole card opens
-/// `MilestonesView`. The evaluation lives in `Milestones`.
+/// `MilestonesView`. The evaluation lives in `Milestones`; the sessions come from `ProgressModel`, which reads the
+/// history once per reload instead of on every render.
 struct MilestonesCard: View {
     var unit: WeightUnit
+    var sessions: [Milestones.Session]
 
-    @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt)
-    private var workouts: [Workout]
     @Query(sort: \BodyWeightEntry.day) private var weights: [BodyWeightEntry]
     @Query private var profiles: [UserProfile]
 
     var body: some View {
         let milestones = Milestones.evaluate(
-            sessions: Milestones.sessions(from: workouts),
+            sessions: sessions,
             bodyWeightKg: Milestones.bodyWeight(entries: weights, profile: profiles.first))
         let latest = Milestones.latest(milestones)
         let upcoming = Array(Milestones.next(milestones).prefix(3))

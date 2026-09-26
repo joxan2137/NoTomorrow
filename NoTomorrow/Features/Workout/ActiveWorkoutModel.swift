@@ -522,6 +522,8 @@ final class ActiveWorkoutModel {
             WorkoutEditor.releaseAttendance(of: workout, in: context, today: now)
         }
         try? context.save()
+        // Progress (open under the mini bar) reloads: its milestones and lifts are built from the finished workouts.
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = true
     }
 
@@ -535,6 +537,7 @@ final class ActiveWorkoutModel {
     func reopen() {
         workout.endedAt = nil
         try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = false
     }
 

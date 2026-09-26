@@ -4,9 +4,10 @@ import SwiftData
 /// Progress > Milestones: every tier of every track — reached ones with their day, the rest with how far along they
 /// are. The strength track needs a body weight; without one it says how to unlock it.
 struct MilestonesView: View {
+    /// From `ProgressModel.milestoneSessions`: the history is read once per reload, not on every render.
+    var sessions: [Milestones.Session]
+
     @Environment(\.dismiss) private var dismiss
-    @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt)
-    private var workouts: [Workout]
     @Query(sort: \BodyWeightEntry.day) private var weights: [BodyWeightEntry]
     @Query private var profiles: [UserProfile]
 
@@ -14,7 +15,7 @@ struct MilestonesView: View {
 
     var body: some View {
         let bodyWeight = Milestones.bodyWeight(entries: weights, profile: profiles.first)
-        let milestones = Milestones.evaluate(sessions: Milestones.sessions(from: workouts), bodyWeightKg: bodyWeight)
+        let milestones = Milestones.evaluate(sessions: sessions, bodyWeightKg: bodyWeight)
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header

@@ -38,7 +38,7 @@ struct ProgressHomeView: View {
                         liftsSection.padding(.top, NT.Spacing.section)
                         TrainingCalendarCard(unit: model.unit).padding(.top, NT.Spacing.section)
                         WeeklyStatsCard(unit: model.unit).padding(.top, NT.Spacing.section)
-                        MilestonesCard(unit: model.unit).padding(.top, NT.Spacing.section)
+                        MilestonesCard(unit: model.unit, sessions: model.milestoneSessions).padding(.top, NT.Spacing.section)
                     case .body:
                         BodyTabView(stats: model.body, unit: model.unit) { showsLogWeight = true }
                             .padding(.top, 18)
@@ -59,7 +59,7 @@ struct ProgressHomeView: View {
             .navigationDestination(for: ProgressDestination.self) { destination in
                 switch destination {
                 case .records: RecordsView()
-                case .milestones: MilestonesView()
+                case .milestones: MilestonesView(sessions: model.milestoneSessions)
                 }
             }
         }
