@@ -18,7 +18,8 @@ struct RoutineEditRequest: Identifiable {
 }
 
 /// Create or edit a routine (Cancel · New routine / Edit routine · Save): its name, then one card per exercise with
-/// sets × reps steppers and a rest menu, Add exercise, and Delete routine at the bottom for an existing one.
+/// sets × reps steppers and a rest menu, Add exercise, Share routine (the draft as text, `RoutineShare`), and Delete
+/// routine at the bottom for an existing one.
 /// Everything edits a draft; Save writes it (`RoutineStore`).
 struct RoutineEditorSheet: View {
     let request: RoutineEditRequest
@@ -74,6 +75,22 @@ struct RoutineEditorSheet: View {
                         showsPicker = true
                     }
                     .padding(.top, 14)
+                    if !draft.items.isEmpty {
+                        STGroup {
+                            ShareLink(item: RoutineShare.text(draft, labels: .current)) {
+                                HStack(spacing: 12) {
+                                    Text("routine.share").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                                    Spacer(minLength: 8)
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(NT.Colors.ink2)
+                                }
+                                .frame(minHeight: NT.Size.control)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.top, 28)
+                    }
                     if let routine = request.routine {
                         STGroup {
                             STActionRow(label: "routine.delete", color: NT.Colors.bad) {

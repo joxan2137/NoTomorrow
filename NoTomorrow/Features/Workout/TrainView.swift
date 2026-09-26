@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 
 /// Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, New routine, Browse
-/// programs (`ProgramBrowserSheet`), the empty-workout ghost button, and finished-workout history grouped by week.
+/// programs (`ProgramBrowserSheet`), Import routine (`RoutineImportSheet`), the empty-workout ghost button, and
+/// finished-workout history grouped by week.
 /// A workout in progress lives in the mini bar above the tab bar; Start while one runs asks first (in the tab shell).
 struct TrainView: View {
     @Environment(WorkoutSessionController.self) private var session
@@ -17,6 +18,7 @@ struct TrainView: View {
     @State private var routineEdit: RoutineEditRequest?
     @State private var routineToDelete: Routine?
     @State private var showsPrograms = false
+    @State private var showsImport = false
 
     private var unit: WeightUnit { profiles.first?.units ?? .kg }
 
@@ -45,6 +47,7 @@ struct TrainView: View {
         .workoutDetailSheet($selectedWorkout, unit: unit)
         .sheet(item: $routineEdit) { RoutineEditorSheet(request: $0) }
         .sheet(isPresented: $showsPrograms) { ProgramBrowserSheet() }
+        .sheet(isPresented: $showsImport) { RoutineImportSheet() }
         .alert("routine.deleteConfirm", isPresented: Binding(get: { routineToDelete != nil },
                                                              set: { if !$0 { routineToDelete = nil } })) {
             Button("routine.delete", role: .destructive) {
@@ -112,13 +115,16 @@ struct TrainView: View {
         .contextMenu { routineMenu(routine) }
     }
 
-    /// Long-press actions on a routine: Edit, Duplicate, Move up / down, Delete.
-    @ViewBuilder
+    /// Long-press actions on a routine: Edit, Duplicate, Share (as text, `RoutineShare`), Move up / down, Delete.
+    @MainActor @ViewBuilder
     private func routineMenu(_ routine: Routine) -> some View {
         let index = routines.firstIndex { $0.persistentModelID == routine.persistentModelID } ?? 0
         Button("routine.edit", systemImage: "pencil") { routineEdit = .edit(routine) }
         Button("routine.duplicate", systemImage: "plus.square.on.square") {
             RoutineStore.duplicate(routine, in: modelContext)
+        }
+        ShareLink(item: RoutineStore.shareText(for: routine)) {
+            Label("routine.share", systemImage: "square.and.arrow.up")
         }
         if index > 0 {
             Button("workout.edit.moveUp", systemImage: "arrow.up") { RoutineStore.move(routine, by: -1, in: modelContext) }
@@ -165,6 +171,7 @@ struct TrainView: View {
             VStack(spacing: 10) {
                 GhostButton(title: "routine.new", systemImage: "plus") { routineEdit = .new() }
                 GhostButton(title: "program.browse", systemImage: "dumbbell") { showsPrograms = true }
+                GhostButton(title: "routine.import", systemImage: "square.and.arrow.down") { showsImport = true }
                 GhostButton(title: "workout.startEmpty") { requestStart(.empty) }
             }
             .padding(.top, 16)

@@ -86,6 +86,55 @@ enum RoutineStore {
         return drafts.filter { !$0.items.isEmpty }.map { save($0, into: nil, in: context) }
     }
 
+    // MARK: Sharing
+
+    /// "Share routine": the text a friend pastes into Import routine (`RoutineShare`), in the app's language.
+    static func shareText(for routine: Routine) -> String {
+        RoutineShare.text(draft(of: routine), labels: .current)
+    }
+
+    /// The user's exercises for matching a shared routine: by id, and by English and Polish name. Library exercises
+    /// win a name over custom ones.
+    static func shareCatalog(in context: ModelContext) -> RoutineShare.Catalog {
+        let all = ((try? context.fetch(FetchDescriptor<Exercise>())) ?? [])
+            .sorted { ($0.isCustom ? 1 : 0, $0.id) < ($1.isCustom ? 1 : 0, $1.id) }
+        var catalog = RoutineShare.Catalog()
+        for exercise in all {
+            let entry = RoutineShare.Catalog.Entry(id: exercise.id, name: exercise.localizedName,
+                                                   primaryMuscle: exercise.primaryMuscles.first)
+            catalog.add(entry, names: [exercise.name, exercise.namePL].compactMap { $0 })
+        }
+        return catalog
+    }
+
+    /// "Add routine" in the import sheet: lines the library did not match become custom exercises (as the workout
+    /// import does), then one new routine at the end of the list, named uniquely ("Push A 2" when taken).
+    @discardableResult
+    static func addShared(name: String, items: [RoutineShare.Planned], fallbackName: String,
+                          in context: ModelContext) -> Routine? {
+        guard !items.isEmpty else { return nil }
+        var lines: [RoutineItemDraft] = []
+        for item in items {
+            var exerciseID = item.exerciseID ?? ""
+            if item.exerciseID == nil {
+                let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: item.name,
+                                        primaryMuscles: [], isCustom: true)
+                context.insert(exercise)
+                exerciseID = exercise.id
+            }
+            lines.append(RoutineItemDraft(exerciseID: exerciseID, name: item.name, primaryMuscle: item.primaryMuscle,
+                                          sets: item.sets, reps: item.reps, restSeconds: item.restSeconds,
+                                          supersetGroup: item.supersetGroup))
+        }
+        try? context.save()
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        var draft = RoutineDraft(name: RoutineDraft.uniqueName(trimmed.isEmpty ? fallbackName : trimmed,
+                                                               taken: names(in: context)),
+                                 items: lines)
+        draft.normalizeSupersets()
+        return save(draft, into: nil, in: context)
+    }
+
     static func delete(_ routine: Routine, in context: ModelContext) {
         context.delete(routine)
         try? context.save()
