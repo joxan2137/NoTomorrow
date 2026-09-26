@@ -136,6 +136,19 @@ final class RoutineEditorTests: XCTestCase {
         XCTAssertEqual((try? context.fetchCount(FetchDescriptor<RoutineItem>())) ?? -1, 1)
     }
 
+    func testDeletingACustomExerciseLetsGoOfItsRoutineLines() {
+        _ = exercise("bench")
+        let custom = exercise("custom-press")
+        custom.isCustom = true
+        let routine = RoutineStore.save(RoutineDraft(name: "A", items: [line("bench"), line("custom-press")]),
+                                        into: nil, in: context)
+        CustomExerciseEditor.delete(custom, in: context)
+        XCTAssertEqual((try? context.fetchCount(FetchDescriptor<Exercise>(predicate: #Predicate { $0.isCustom }))) ?? -1, 0)
+        XCTAssertEqual(routine.sortedItems.count, 2)
+        XCTAssertEqual(routine.sortedItems.compactMap { $0.exercise?.id }, ["bench"])
+        XCTAssertEqual(RoutineStore.draft(of: routine).items.map(\.exerciseID), ["bench"])
+    }
+
     func testSaveAsRoutineReadsTheFinishedWorkout() {
         let bench = exercise("bench")
         let workout = Workout(name: "Push A")

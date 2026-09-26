@@ -84,6 +84,19 @@ struct CustomExerciseEditor: View {
         }
     }
 
+    /// The picker's Delete exercise (offered only while no workout uses it). Routine lines have no inverse
+    /// relationship to their exercise, so they are let go of first: a line left pointing at a deleted exercise
+    /// would fault on its next read (Train list, Today card). The routine keeps the line without an exercise, as
+    /// after an Android delete (`SET NULL`); the editor and Start already skip such lines.
+    @MainActor
+    static func delete(_ exercise: Exercise, in context: ModelContext) {
+        let id = exercise.persistentModelID
+        let items = (try? context.fetch(FetchDescriptor<RoutineItem>())) ?? []
+        for item in items where item.exercise?.persistentModelID == id { item.exercise = nil }
+        context.delete(exercise)
+        try? context.save()
+    }
+
     private func save() {
         exercise.name = trimmed
         exercise.primaryMuscles = muscle.map { [$0] } ?? []

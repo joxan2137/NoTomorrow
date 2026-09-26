@@ -184,8 +184,7 @@ struct ExercisePickerView: View {
                             if entry.exercise.usages.isEmpty {
                                 Button("customExercise.delete", systemImage: "trash", role: .destructive) {
                                     model.deselect(entry.exercise.id)
-                                    modelContext.delete(entry.exercise)
-                                    try? modelContext.save()
+                                    CustomExerciseEditor.delete(entry.exercise, in: modelContext)
                                     model.load(context: modelContext)
                                 }
                             }
