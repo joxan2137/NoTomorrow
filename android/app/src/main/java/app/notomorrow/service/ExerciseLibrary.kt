@@ -267,9 +267,11 @@ class ExerciseLibrary(
             exercises: List<ExerciseEntity>,
             query: String,
             group: MuscleGroup = MuscleGroup.All,
+            /** One muscle picked on the body map; replaces [group] when set. */
+            muscle: String? = null,
         ): List<ExerciseEntity> {
             val tokens = fold(query.trim()).split(' ').filter { it.isNotEmpty() }
-            val muscles = group.muscles
+            val muscles = muscle?.let { setOf(it) } ?: group.muscles
             return exercises.filter { exercise ->
                 if (muscles.isNotEmpty() && exercise.primaryMuscles.none { it in muscles }) return@filter false
                 val folded = fold(exercise.name + " " + (exercise.namePL ?: ""))

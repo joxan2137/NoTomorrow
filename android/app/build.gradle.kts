@@ -96,6 +96,7 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
             project.findProperty("widgetShots")?.let { test.systemProperty("widgetShots", file(it.toString()).absolutePath) }
+            project.findProperty("showcaseShots")?.let { test.systemProperty("showcaseShots", file(it.toString()).absolutePath) }
         }
     }
 

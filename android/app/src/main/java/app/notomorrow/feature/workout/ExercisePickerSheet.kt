@@ -84,6 +84,16 @@ fun ExercisePickerSheet(
     val state by model.state.collectAsStateWithLifecycle()
     var detail by remember { mutableStateOf<ExerciseEntity?>(null) }
     detail?.let { ExerciseDetailSheet(it) { detail = null } }
+    var showsMuscleFilter by remember { mutableStateOf(false) }
+    if (showsMuscleFilter) {
+        val counts by model.muscleCounts.collectAsStateWithLifecycle()
+        MuscleFilterSheet(
+            initial = state.muscle,
+            counts = counts,
+            onPick = model::setMuscle,
+            onDismiss = { showsMuscleFilter = false },
+        )
+    }
     val keyboard = LocalSoftwareKeyboardController.current
 
     // `@State private var model = ExercisePickerViewModel()` is rebuilt on every `.sheet`
@@ -109,6 +119,8 @@ fun ExercisePickerSheet(
 
         PickerChips(
             selected = state.group,
+            muscle = state.muscle,
+            onBodyMap = { showsMuscleFilter = true },
             onSelect = model::setGroup,
             modifier = Modifier.padding(top = 12.dp),
         )
@@ -306,6 +318,8 @@ private fun PickerSearchField(
 @Composable
 private fun PickerChips(
     selected: ExerciseLibrary.MuscleGroup,
+    muscle: String?,
+    onBodyMap: () -> Unit,
     onSelect: (ExerciseLibrary.MuscleGroup) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -314,10 +328,18 @@ private fun PickerChips(
         contentPadding = PaddingValues(horizontal = NT.Spacing.screenH),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        item(key = "bodyMap") {
+            Chip(
+                title = muscle?.let { workoutMuscleName(it) } ?: stringResource(S.exercises_bodyMap),
+                selected = muscle != null,
+                icon = NtIcons.FigureArmsOpen,
+                onClick = onBodyMap,
+            )
+        }
         items(ExerciseLibrary.MuscleGroup.entries.toList(), key = { it.raw }) { group ->
             Chip(
                 title = stringResource(group.titleRes),
-                selected = group == selected,
+                selected = muscle == null && group == selected,
                 onClick = { onSelect(group) },
             )
         }

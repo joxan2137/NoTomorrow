@@ -27,6 +27,7 @@ struct ExercisePickerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @State private var detail: Exercise?
+    @State private var showsMuscleFilter = false
     @State private var model = ExercisePickerViewModel()
     @FocusState private var searchFocused: Bool
 
@@ -48,6 +49,11 @@ struct ExercisePickerView: View {
         .presentationDragIndicator(.visible)
         .onAppear { model.load(context: modelContext) }
         .sheet(item: $detail) { ExerciseDetailView(exercise: $0) }
+        .sheet(isPresented: $showsMuscleFilter) {
+            MuscleFilterSheet(initial: model.muscle, count: { model.count(for: $0) }) { muscle in
+                if let muscle { model.muscle = muscle } else { model.group = .all }
+            }
+        }
     }
 
     // MARK: Header
@@ -118,9 +124,14 @@ struct ExercisePickerView: View {
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                Chip(title: model.muscle.map(WorkoutStrings.muscle) ?? String(localized: "exercises.bodyMap"),
+                     isSelected: model.muscle != nil,
+                     systemImage: "figure.arms.open") {
+                    showsMuscleFilter = true
+                }
                 ForEach(ExerciseLibrary.MuscleGroup.allCases) { group in
                     Chip(title: String(localized: String.LocalizationValue(group.titleKey)),
-                         isSelected: model.group == group) {
+                         isSelected: model.muscle == nil && model.group == group) {
                         model.group = group
                     }
                 }

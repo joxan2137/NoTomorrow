@@ -1,0 +1,2072 @@
+{
+ "Arnold_Dumbbell_Press": {
+  "en": {
+   "cues": [
+    "Keep your ribs down and your back against the pad.",
+    "Lower until your hands are around ear height.",
+    "Press straight up, forearms vertical."
+   ],
+   "mistakes": [
+    "Arching the lower back.",
+    "Cutting the range short at the bottom."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Żebra w dół, plecy przy oparciu.",
+    "Opuszczaj, aż dłonie będą mniej więcej na wysokości uszu.",
+    "Wypychaj prosto w górę, przedramiona pionowo."
+   ],
+   "mistakes": [
+    "Wyginanie odcinka lędźwiowego.",
+    "Skracanie ruchu na dole."
+   ]
+  }
+ },
+ "Barbell_Bench_Press_-_Medium_Grip": {
+  "en": {
+   "cues": [
+    "Pull your shoulder blades back and down and keep them there.",
+    "Plant your feet and keep your glutes on the bench.",
+    "Lower the bar to your lower chest with elbows about 45° from your body.",
+    "Press up and slightly back over your shoulders."
+   ],
+   "mistakes": [
+    "Flaring the elbows out to 90°.",
+    "Bouncing the bar off your chest.",
+    "Lifting your hips off the bench."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ściągnij łopatki do tyłu i w dół i trzymaj je tak.",
+    "Stopy mocno na ziemi, pośladki na ławce.",
+    "Opuszczaj sztangę na dolną część klatki, łokcie około 45° od tułowia.",
+    "Wypychaj w górę i lekko do tyłu, nad barki."
+   ],
+   "mistakes": [
+    "Łokcie rozłożone na 90°.",
+    "Odbijanie sztangi od klatki.",
+    "Odrywanie bioder od ławki."
+   ]
+  }
+ },
+ "Barbell_Curl": {
+  "en": {
+   "cues": [
+    "Pin your elbows to your sides.",
+    "Curl all the way up, then lower slowly to straight arms.",
+    "Keep your wrists straight."
+   ],
+   "mistakes": [
+    "Swinging the weight with your back.",
+    "Elbows drifting forward at the top."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie przy tułowiu.",
+    "Uginaj do końca, potem powoli opuszczaj do wyprostu.",
+    "Nadgarstki proste."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężaru plecami.",
+    "Wysuwanie łokci do przodu na górze."
+   ]
+  }
+ },
+ "Barbell_Deadlift": {
+  "en": {
+   "cues": [
+    "Bar over the middle of your foot, shins close to it.",
+    "Pull the slack out of the bar and set your lats before it leaves the floor.",
+    "Push the floor away with your legs, then drive your hips through.",
+    "Keep the bar dragging close to your legs the whole way."
+   ],
+   "mistakes": [
+    "Rounding the lower back.",
+    "Jerking the bar off the floor.",
+    "Leaning back at lockout."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Sztanga nad środkiem stopy, piszczele blisko niej.",
+    "Zanim sztanga oderwie się od podłogi, napnij ją i spinaj najszersze grzbietu.",
+    "Odpychaj podłogę nogami, potem dopchnij biodra.",
+    "Przez cały ruch prowadź sztangę blisko nóg."
+   ],
+   "mistakes": [
+    "Zaokrąglanie odcinka lędźwiowego.",
+    "Szarpanie sztangi z podłogi.",
+    "Odchylanie się do tyłu w zablokowaniu."
+   ]
+  }
+ },
+ "Barbell_Glute_Bridge": {
+  "en": {
+   "cues": [
+    "Rest the bench under your shoulder blades and tuck your chin.",
+    "Set your feet so your shins are vertical at the top.",
+    "Drive through your heels and squeeze your glutes to lock out."
+   ],
+   "mistakes": [
+    "Arching the lower back instead of extending the hips.",
+    "Pushing through your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Oprzyj ławkę pod łopatkami, broda przyciągnięta.",
+    "Ustaw stopy tak, żeby na górze piszczele były pionowo.",
+    "Wypychaj piętami i napnij pośladki w zablokowaniu."
+   ],
+   "mistakes": [
+    "Wyginanie lędźwi zamiast prostowania bioder.",
+    "Wypychanie palcami stóp."
+   ]
+  }
+ },
+ "Barbell_Hip_Thrust": {
+  "en": {
+   "cues": [
+    "Rest the bench under your shoulder blades and tuck your chin.",
+    "Set your feet so your shins are vertical at the top.",
+    "Drive through your heels and squeeze your glutes to lock out."
+   ],
+   "mistakes": [
+    "Arching the lower back instead of extending the hips.",
+    "Pushing through your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Oprzyj ławkę pod łopatkami, broda przyciągnięta.",
+    "Ustaw stopy tak, żeby na górze piszczele były pionowo.",
+    "Wypychaj piętami i napnij pośladki w zablokowaniu."
+   ],
+   "mistakes": [
+    "Wyginanie lędźwi zamiast prostowania bioder.",
+    "Wypychanie palcami stóp."
+   ]
+  }
+ },
+ "Barbell_Incline_Bench_Press_-_Medium_Grip": {
+  "en": {
+   "cues": [
+    "Pull your shoulder blades back and down and keep them there.",
+    "Plant your feet and keep your glutes on the bench.",
+    "Lower the bar to your lower chest with elbows about 45° from your body.",
+    "Press up and slightly back over your shoulders."
+   ],
+   "mistakes": [
+    "Flaring the elbows out to 90°.",
+    "Bouncing the bar off your chest.",
+    "Lifting your hips off the bench."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ściągnij łopatki do tyłu i w dół i trzymaj je tak.",
+    "Stopy mocno na ziemi, pośladki na ławce.",
+    "Opuszczaj sztangę na dolną część klatki, łokcie około 45° od tułowia.",
+    "Wypychaj w górę i lekko do tyłu, nad barki."
+   ],
+   "mistakes": [
+    "Łokcie rozłożone na 90°.",
+    "Odbijanie sztangi od klatki.",
+    "Odrywanie bioder od ławki."
+   ]
+  }
+ },
+ "Barbell_Lunge": {
+  "en": {
+   "cues": [
+    "Take a long enough step that your front shin stays close to vertical.",
+    "Drop the back knee straight down toward the floor.",
+    "Push through the front heel to come back up."
+   ],
+   "mistakes": [
+    "Front knee caving inward.",
+    "Short steps that push all the load onto the front knee."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Rób na tyle długi krok, żeby przednia piszczel była prawie pionowo.",
+    "Opuszczaj tylne kolano prosto w dół.",
+    "Wracaj, odpychając się piętą przedniej nogi."
+   ],
+   "mistakes": [
+    "Przednie kolano uciekające do środka.",
+    "Krótkie kroki przerzucające cały ciężar na przednie kolano."
+   ]
+  }
+ },
+ "Barbell_Squat": {
+  "en": {
+   "cues": [
+    "Brace your core before each rep: big breath into the belly, then hold it.",
+    "Push your knees out in line with your toes as you sit down.",
+    "Keep the bar over the middle of your foot the whole way.",
+    "Go as deep as you can while your lower back stays neutral."
+   ],
+   "mistakes": [
+    "Knees caving in on the way up.",
+    "Heels lifting off the floor.",
+    "Chest dropping so the squat turns into a good morning."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Przed każdym powtórzeniem napnij brzuch: głęboki wdech w brzuch i zatrzymaj powietrze.",
+    "Schodząc w dół, wypychaj kolana na zewnątrz, w linii palców stóp.",
+    "Sztanga przez cały ruch nad środkiem stopy.",
+    "Schodź tak nisko, jak pozwala neutralny odcinek lędźwiowy."
+   ],
+   "mistakes": [
+    "Kolana uciekające do środka przy wstawaniu.",
+    "Odrywanie pięt od podłogi.",
+    "Opadanie klatki, przez które przysiad zamienia się w skłon."
+   ]
+  }
+ },
+ "Bent_Over_Barbell_Row": {
+  "en": {
+   "cues": [
+    "Hinge until your torso is about 45° or lower, with a flat back.",
+    "Pull the bar to your lower ribs, leading with your elbows.",
+    "Squeeze your shoulder blades together at the top."
+   ],
+   "mistakes": [
+    "Standing up more with every rep.",
+    "Using your hips to swing the weight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Pochyl się do około 45° lub niżej, plecy proste.",
+    "Przyciągaj sztangę do dolnych żeber, prowadząc łokciami.",
+    "Na górze ściągnij łopatki."
+   ],
+   "mistakes": [
+    "Prostowanie się z każdym powtórzeniem.",
+    "Zarzucanie ciężaru biodrami."
+   ]
+  }
+ },
+ "Cable_Crossover": {
+  "en": {
+   "cues": [
+    "Keep a fixed, slight bend in your elbows.",
+    "Open wide until you feel a stretch across your chest.",
+    "Bring your hands together in a hugging arc."
+   ],
+   "mistakes": [
+    "Bending and straightening the elbows so it becomes a press.",
+    "Going so deep the shoulders roll forward."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte i w stałym kącie.",
+    "Rozchylaj ramiona do odczucia rozciągnięcia klatki.",
+    "Łącz dłonie łukiem, jak przy obejmowaniu."
+   ],
+   "mistakes": [
+    "Uginanie i prostowanie łokci, przez co wychodzi wyciskanie.",
+    "Zbyt głębokie rozciągnięcie, przy którym barki uciekają do przodu."
+   ]
+  }
+ },
+ "Chin-Up": {
+  "en": {
+   "cues": [
+    "Start from a dead hang with your shoulders pulled down.",
+    "Pull your chest toward the bar, elbows driving down and back.",
+    "Lower all the way down under control."
+   ],
+   "mistakes": [
+    "Kipping or swinging to get over the bar.",
+    "Half reps that stop short of straight arms."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Zacznij ze zwisu, barki ściągnięte w dół.",
+    "Przyciągaj klatkę do drążka, łokcie w dół i do tyłu.",
+    "Opuszczaj się kontrolowanie aż do końca."
+   ],
+   "mistakes": [
+    "Zamachy i bujanie, żeby przejść nad drążek.",
+    "Połówki powtórzeń bez wyprostu rąk."
+   ]
+  }
+ },
+ "Close-Grip_Barbell_Bench_Press": {
+  "en": {
+   "cues": [
+    "Pull your shoulder blades back and down and keep them there.",
+    "Plant your feet and keep your glutes on the bench.",
+    "Lower the bar to your lower chest with elbows about 45° from your body.",
+    "Press up and slightly back over your shoulders."
+   ],
+   "mistakes": [
+    "Flaring the elbows out to 90°.",
+    "Bouncing the bar off your chest.",
+    "Lifting your hips off the bench."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ściągnij łopatki do tyłu i w dół i trzymaj je tak.",
+    "Stopy mocno na ziemi, pośladki na ławce.",
+    "Opuszczaj sztangę na dolną część klatki, łokcie około 45° od tułowia.",
+    "Wypychaj w górę i lekko do tyłu, nad barki."
+   ],
+   "mistakes": [
+    "Łokcie rozłożone na 90°.",
+    "Odbijanie sztangi od klatki.",
+    "Odrywanie bioder od ławki."
+   ]
+  }
+ },
+ "Dips_-_Triceps_Version": {
+  "en": {
+   "cues": [
+    "Keep your shoulders down and away from your ears.",
+    "Lower until your upper arms are about parallel to the floor.",
+    "Stay upright to keep the work on the triceps."
+   ],
+   "mistakes": [
+    "Sinking so deep that your shoulders roll forward.",
+    "Flaring the elbows out wide."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Barki nisko, z dala od uszu.",
+    "Opuszczaj się, aż ramiona będą mniej więcej równoległe do podłogi.",
+    "Utrzymuj tułów pionowo, żeby pracował triceps."
+   ],
+   "mistakes": [
+    "Zbyt głębokie zejście, przy którym barki uciekają do przodu.",
+    "Szeroko rozłożone łokcie."
+   ]
+  }
+ },
+ "Dumbbell_Bench_Press": {
+  "en": {
+   "cues": [
+    "Keep your shoulder blades pinned to the bench.",
+    "Lower until you feel a stretch across your chest, elbows slightly tucked.",
+    "Press up and slightly together without clanking the weights."
+   ],
+   "mistakes": [
+    "Letting the shoulders roll forward at the top.",
+    "Dropping the weights too fast into the stretch."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łopatki przyklejone do ławki.",
+    "Opuszczaj do odczucia rozciągnięcia klatki, łokcie lekko przy tułowiu.",
+    "Wypychaj w górę i lekko do środka, bez stukania ciężarami."
+   ],
+   "mistakes": [
+    "Wysuwanie barków do przodu na górze.",
+    "Zbyt szybkie opuszczanie w rozciągnięcie."
+   ]
+  }
+ },
+ "Dumbbell_Bicep_Curl": {
+  "en": {
+   "cues": [
+    "Pin your elbows to your sides.",
+    "Curl all the way up, then lower slowly to straight arms.",
+    "Keep your wrists straight."
+   ],
+   "mistakes": [
+    "Swinging the weight with your back.",
+    "Elbows drifting forward at the top."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie przy tułowiu.",
+    "Uginaj do końca, potem powoli opuszczaj do wyprostu.",
+    "Nadgarstki proste."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężaru plecami.",
+    "Wysuwanie łokci do przodu na górze."
+   ]
+  }
+ },
+ "Dumbbell_Flyes": {
+  "en": {
+   "cues": [
+    "Keep a fixed, slight bend in your elbows.",
+    "Open wide until you feel a stretch across your chest.",
+    "Bring your hands together in a hugging arc."
+   ],
+   "mistakes": [
+    "Bending and straightening the elbows so it becomes a press.",
+    "Going so deep the shoulders roll forward."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte i w stałym kącie.",
+    "Rozchylaj ramiona do odczucia rozciągnięcia klatki.",
+    "Łącz dłonie łukiem, jak przy obejmowaniu."
+   ],
+   "mistakes": [
+    "Uginanie i prostowanie łokci, przez co wychodzi wyciskanie.",
+    "Zbyt głębokie rozciągnięcie, przy którym barki uciekają do przodu."
+   ]
+  }
+ },
+ "Dumbbell_Lunges": {
+  "en": {
+   "cues": [
+    "Take a long enough step that your front shin stays close to vertical.",
+    "Drop the back knee straight down toward the floor.",
+    "Push through the front heel to come back up."
+   ],
+   "mistakes": [
+    "Front knee caving inward.",
+    "Short steps that push all the load onto the front knee."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Rób na tyle długi krok, żeby przednia piszczel była prawie pionowo.",
+    "Opuszczaj tylne kolano prosto w dół.",
+    "Wracaj, odpychając się piętą przedniej nogi."
+   ],
+   "mistakes": [
+    "Przednie kolano uciekające do środka.",
+    "Krótkie kroki przerzucające cały ciężar na przednie kolano."
+   ]
+  }
+ },
+ "Dumbbell_Shoulder_Press": {
+  "en": {
+   "cues": [
+    "Keep your ribs down and your back against the pad.",
+    "Lower until your hands are around ear height.",
+    "Press straight up, forearms vertical."
+   ],
+   "mistakes": [
+    "Arching the lower back.",
+    "Cutting the range short at the bottom."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Żebra w dół, plecy przy oparciu.",
+    "Opuszczaj, aż dłonie będą mniej więcej na wysokości uszu.",
+    "Wypychaj prosto w górę, przedramiona pionowo."
+   ],
+   "mistakes": [
+    "Wyginanie odcinka lędźwiowego.",
+    "Skracanie ruchu na dole."
+   ]
+  }
+ },
+ "EZ-Bar_Skullcrusher": {
+  "en": {
+   "cues": [
+    "Keep your upper arms still and angled slightly back toward your head.",
+    "Lower the bar toward your forehead or just behind it.",
+    "Extend your elbows fully without locking hard."
+   ],
+   "mistakes": [
+    "Elbows flaring out.",
+    "Turning it into a press by moving the upper arms."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ramiona nieruchomo, lekko odchylone w stronę głowy.",
+    "Opuszczaj drążek do czoła albo tuż za głowę.",
+    "Prostuj łokcie do końca, bez gwałtownego blokowania."
+   ],
+   "mistakes": [
+    "Rozkładanie łokci na boki.",
+    "Zamienianie ruchu w wyciskanie przez ruszanie ramionami."
+   ]
+  }
+ },
+ "Face_Pull": {
+  "en": {
+   "cues": [
+    "Set the rope at about face height.",
+    "Pull toward your eyes and spread the rope apart.",
+    "Finish with your hands beside your ears, elbows high."
+   ],
+   "mistakes": [
+    "Pulling to the chest with low elbows, which turns it into a row.",
+    "Leaning back to move more weight."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw linkę mniej więcej na wysokości twarzy.",
+    "Ciągnij w stronę oczu i rozciągaj końce liny na boki.",
+    "Zakończ z dłońmi przy uszach, łokcie wysoko."
+   ],
+   "mistakes": [
+    "Ciągnięcie do klatki z nisko opuszczonymi łokciami, przez co wychodzi wiosłowanie.",
+    "Odchylanie się, żeby ruszyć większy ciężar."
+   ]
+  }
+ },
+ "Front_Barbell_Squat": {
+  "en": {
+   "cues": [
+    "Keep your elbows high so the bar sits on your shoulders, not your hands.",
+    "Stay upright: think of sitting straight down between your heels.",
+    "Brace hard before you descend and keep the breath until you're past the hardest part."
+   ],
+   "mistakes": [
+    "Elbows dropping, which rolls the bar forward.",
+    "Rounding the upper back at the bottom."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Trzymaj łokcie wysoko, żeby sztanga leżała na barkach, a nie na dłoniach.",
+    "Zostań wyprostowany: myśl o siadaniu prosto w dół między piętami.",
+    "Mocno napnij tułów przed zejściem i trzymaj powietrze aż miniesz najtrudniejszy moment."
+   ],
+   "mistakes": [
+    "Opadające łokcie, przez które sztanga zjeżdża do przodu.",
+    "Zaokrąglanie górnej części pleców na dole."
+   ]
+  }
+ },
+ "Goblet_Squat": {
+  "en": {
+   "cues": [
+    "Hold the weight against your chest with your elbows pointing down.",
+    "Sit between your heels and let your elbows brush the inside of your knees.",
+    "Drive through the whole foot to stand up."
+   ],
+   "mistakes": [
+    "Letting the weight drift away from your chest.",
+    "Rising onto your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Trzymaj ciężar przy klatce, łokcie skierowane w dół.",
+    "Siadaj między piętami, łokcie mogą muskać wewnętrzną stronę kolan.",
+    "Wstając, odpychaj się całą stopą."
+   ],
+   "mistakes": [
+    "Odsuwanie ciężaru od klatki.",
+    "Wspinanie się na palce."
+   ]
+  }
+ },
+ "Hack_Squat": {
+  "en": {
+   "cues": [
+    "Set your feet so your knees track over your toes at the bottom.",
+    "Keep your back and hips pressed into the pad.",
+    "Lower under control and don't bounce out of the bottom."
+   ],
+   "mistakes": [
+    "Locking the knees hard at the top.",
+    "Hips peeling off the pad as you go deep."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw stopy tak, żeby na dole kolana szły nad palcami.",
+    "Plecy i biodra dociśnięte do oparcia.",
+    "Opuszczaj się kontrolowanie i nie odbijaj się z dołu."
+   ],
+   "mistakes": [
+    "Gwałtowne blokowanie kolan na górze.",
+    "Odrywanie bioder od oparcia przy głębokim zejściu."
+   ]
+  }
+ },
+ "Hammer_Curls": {
+  "en": {
+   "cues": [
+    "Palms face each other the whole time.",
+    "Elbows stay by your sides; only the forearms move.",
+    "Lower under control to straight arms."
+   ],
+   "mistakes": [
+    "Swinging your torso.",
+    "Rotating the palms up halfway through."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Dłonie przez cały czas zwrócone do siebie.",
+    "Łokcie przy tułowiu, pracują tylko przedramiona.",
+    "Opuszczaj kontrolowanie do wyprostu."
+   ],
+   "mistakes": [
+    "Bujanie tułowiem.",
+    "Obracanie dłoni do góry w połowie ruchu."
+   ]
+  }
+ },
+ "Hanging_Leg_Raise": {
+  "en": {
+   "cues": [
+    "Start from a still hang without swinging.",
+    "Curl your pelvis up toward your ribs, not just your legs up.",
+    "Lower slowly to keep momentum out of it."
+   ],
+   "mistakes": [
+    "Swinging to get the legs up.",
+    "Only lifting the legs to 90° without tilting the pelvis."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Zacznij z nieruchomego zwisu, bez bujania.",
+    "Podwijaj miednicę w stronę żeber, nie tylko unoś nogi.",
+    "Opuszczaj powoli, żeby nie brać rozpędu."
+   ],
+   "mistakes": [
+    "Bujanie się, żeby unieść nogi.",
+    "Unoszenie nóg do 90° bez podwinięcia miednicy."
+   ]
+  }
+ },
+ "Incline_Dumbbell_Press": {
+  "en": {
+   "cues": [
+    "Keep your shoulder blades pinned to the bench.",
+    "Lower until you feel a stretch across your chest, elbows slightly tucked.",
+    "Press up and slightly together without clanking the weights."
+   ],
+   "mistakes": [
+    "Letting the shoulders roll forward at the top.",
+    "Dropping the weights too fast into the stretch."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łopatki przyklejone do ławki.",
+    "Opuszczaj do odczucia rozciągnięcia klatki, łokcie lekko przy tułowiu.",
+    "Wypychaj w górę i lekko do środka, bez stukania ciężarami."
+   ],
+   "mistakes": [
+    "Wysuwanie barków do przodu na górze.",
+    "Zbyt szybkie opuszczanie w rozciągnięcie."
+   ]
+  }
+ },
+ "Leg_Extensions": {
+  "en": {
+   "cues": [
+    "Line up your knees with the machine's pivot.",
+    "Straighten your legs fully and pause for a moment at the top.",
+    "Lower slowly instead of letting the weight drop."
+   ],
+   "mistakes": [
+    "Kicking the weight up with momentum.",
+    "Lifting your hips off the seat."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw kolana w osi obrotu maszyny.",
+    "Wyprostuj nogi do końca i zatrzymaj się na chwilę na górze.",
+    "Opuszczaj powoli, nie pozwól ciężarowi opaść."
+   ],
+   "mistakes": [
+    "Wyrzucanie ciężaru z rozpędu.",
+    "Odrywanie bioder od siedziska."
+   ]
+  }
+ },
+ "Leg_Press": {
+  "en": {
+   "cues": [
+    "Place your feet shoulder-width, mid-platform.",
+    "Lower until your knees are around 90° or your hips start to lift, whichever comes first.",
+    "Press through your heels and midfoot."
+   ],
+   "mistakes": [
+    "Lower back rounding off the seat at the bottom.",
+    "Snapping the knees straight at the top."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Stopy na szerokość barków, na środku platformy.",
+    "Opuszczaj do około 90° w kolanach albo do momentu, gdy biodra zaczynają się odrywać, co nastąpi pierwsze.",
+    "Wypychaj piętami i środkiem stopy."
+   ],
+   "mistakes": [
+    "Odrywanie lędźwi od siedziska na dole.",
+    "Gwałtowne prostowanie kolan na górze."
+   ]
+  }
+ },
+ "Leverage_Chest_Press": {
+  "en": {
+   "cues": [
+    "Keep your shoulder blades pinned to the bench.",
+    "Lower until you feel a stretch across your chest, elbows slightly tucked.",
+    "Press up and slightly together without clanking the weights."
+   ],
+   "mistakes": [
+    "Letting the shoulders roll forward at the top.",
+    "Dropping the weights too fast into the stretch."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łopatki przyklejone do ławki.",
+    "Opuszczaj do odczucia rozciągnięcia klatki, łokcie lekko przy tułowiu.",
+    "Wypychaj w górę i lekko do środka, bez stukania ciężarami."
+   ],
+   "mistakes": [
+    "Wysuwanie barków do przodu na górze.",
+    "Zbyt szybkie opuszczanie w rozciągnięcie."
+   ]
+  }
+ },
+ "Lying_Leg_Curls": {
+  "en": {
+   "cues": [
+    "Keep your hips pressed down into the pad.",
+    "Curl your heels toward your glutes as far as you can.",
+    "Lower under control until your legs are almost straight."
+   ],
+   "mistakes": [
+    "Hips lifting to cheat the weight up.",
+    "Cutting the range short at either end."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Biodra dociśnięte do oparcia.",
+    "Przyciągaj pięty do pośladków tak daleko, jak możesz.",
+    "Opuszczaj kontrolowanie, prawie do wyprostu nóg."
+   ],
+   "mistakes": [
+    "Unoszenie bioder, żeby oszukać ruch.",
+    "Skracanie zakresu na górze albo na dole."
+   ]
+  }
+ },
+ "Lying_Triceps_Press": {
+  "en": {
+   "cues": [
+    "Keep your upper arms still and angled slightly back toward your head.",
+    "Lower the bar toward your forehead or just behind it.",
+    "Extend your elbows fully without locking hard."
+   ],
+   "mistakes": [
+    "Elbows flaring out.",
+    "Turning it into a press by moving the upper arms."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ramiona nieruchomo, lekko odchylone w stronę głowy.",
+    "Opuszczaj drążek do czoła albo tuż za głowę.",
+    "Prostuj łokcie do końca, bez gwałtownego blokowania."
+   ],
+   "mistakes": [
+    "Rozkładanie łokci na boki.",
+    "Zamienianie ruchu w wyciskanie przez ruszanie ramionami."
+   ]
+  }
+ },
+ "Machine_Shoulder_Military_Press": {
+  "en": {
+   "cues": [
+    "Keep your ribs down and your back against the pad.",
+    "Lower until your hands are around ear height.",
+    "Press straight up, forearms vertical."
+   ],
+   "mistakes": [
+    "Arching the lower back.",
+    "Cutting the range short at the bottom."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Żebra w dół, plecy przy oparciu.",
+    "Opuszczaj, aż dłonie będą mniej więcej na wysokości uszu.",
+    "Wypychaj prosto w górę, przedramiona pionowo."
+   ],
+   "mistakes": [
+    "Wyginanie odcinka lędźwiowego.",
+    "Skracanie ruchu na dole."
+   ]
+  }
+ },
+ "One-Arm_Dumbbell_Row": {
+  "en": {
+   "cues": [
+    "Keep your back flat and your hips square to the floor.",
+    "Pull the weight toward your hip, not your armpit.",
+    "Let your shoulder blade stretch forward at the bottom."
+   ],
+   "mistakes": [
+    "Twisting the torso to lift more.",
+    "Shrugging the weight up with the trap."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Plecy proste, biodra równolegle do podłogi.",
+    "Przyciągaj ciężar w stronę biodra, nie pachy.",
+    "Na dole pozwól łopatce wysunąć się do przodu."
+   ],
+   "mistakes": [
+    "Skręcanie tułowia, żeby podnieść więcej.",
+    "Podciąganie ciężaru barkiem jak przy szrugsach."
+   ]
+  }
+ },
+ "Plank": {
+  "en": {
+   "cues": [
+    "Elbows under your shoulders, forearms parallel.",
+    "Squeeze your glutes and pull your belly button in.",
+    "Breathe steadily; don't hold your breath."
+   ],
+   "mistakes": [
+    "Hips sagging toward the floor.",
+    "Hips pushed high to make it easier."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie pod barkami, przedramiona równolegle.",
+    "Napnij pośladki i wciągnij pępek.",
+    "Oddychaj spokojnie, nie wstrzymuj powietrza."
+   ],
+   "mistakes": [
+    "Biodra opadające do podłogi.",
+    "Biodra wypchnięte wysoko, żeby było łatwiej."
+   ]
+  }
+ },
+ "Pullups": {
+  "en": {
+   "cues": [
+    "Start from a dead hang with your shoulders pulled down.",
+    "Pull your chest toward the bar, elbows driving down and back.",
+    "Lower all the way down under control."
+   ],
+   "mistakes": [
+    "Kipping or swinging to get over the bar.",
+    "Half reps that stop short of straight arms."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Zacznij ze zwisu, barki ściągnięte w dół.",
+    "Przyciągaj klatkę do drążka, łokcie w dół i do tyłu.",
+    "Opuszczaj się kontrolowanie aż do końca."
+   ],
+   "mistakes": [
+    "Zamachy i bujanie, żeby przejść nad drążek.",
+    "Połówki powtórzeń bez wyprostu rąk."
+   ]
+  }
+ },
+ "Push-Up_Wide": {
+  "en": {
+   "cues": [
+    "Hold a straight line from head to heels with glutes and abs tight.",
+    "Hands under your shoulders, elbows about 45° from your body.",
+    "Touch your chest to the floor and push it away."
+   ],
+   "mistakes": [
+    "Hips sagging or piking up.",
+    "Head reaching toward the floor first."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Utrzymuj prostą linię od głowy do pięt, pośladki i brzuch napięte.",
+    "Dłonie pod barkami, łokcie około 45° od tułowia.",
+    "Dotknij klatką podłogi i odepchnij ją."
+   ],
+   "mistakes": [
+    "Opadające albo zadarte biodra.",
+    "Wysuwanie głowy do podłogi przed klatką."
+   ]
+  }
+ },
+ "Push-Ups_-_Close_Triceps_Position": {
+  "en": {
+   "cues": [
+    "Hold a straight line from head to heels with glutes and abs tight.",
+    "Hands under your shoulders, elbows about 45° from your body.",
+    "Touch your chest to the floor and push it away."
+   ],
+   "mistakes": [
+    "Hips sagging or piking up.",
+    "Head reaching toward the floor first."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Utrzymuj prostą linię od głowy do pięt, pośladki i brzuch napięte.",
+    "Dłonie pod barkami, łokcie około 45° od tułowia.",
+    "Dotknij klatką podłogi i odepchnij ją."
+   ],
+   "mistakes": [
+    "Opadające albo zadarte biodra.",
+    "Wysuwanie głowy do podłogi przed klatką."
+   ]
+  }
+ },
+ "Push-Ups_With_Feet_Elevated": {
+  "en": {
+   "cues": [
+    "Hold a straight line from head to heels with glutes and abs tight.",
+    "Hands under your shoulders, elbows about 45° from your body.",
+    "Touch your chest to the floor and push it away."
+   ],
+   "mistakes": [
+    "Hips sagging or piking up.",
+    "Head reaching toward the floor first."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Utrzymuj prostą linię od głowy do pięt, pośladki i brzuch napięte.",
+    "Dłonie pod barkami, łokcie około 45° od tułowia.",
+    "Dotknij klatką podłogi i odepchnij ją."
+   ],
+   "mistakes": [
+    "Opadające albo zadarte biodra.",
+    "Wysuwanie głowy do podłogi przed klatką."
+   ]
+  }
+ },
+ "Pushups": {
+  "en": {
+   "cues": [
+    "Hold a straight line from head to heels with glutes and abs tight.",
+    "Hands under your shoulders, elbows about 45° from your body.",
+    "Touch your chest to the floor and push it away."
+   ],
+   "mistakes": [
+    "Hips sagging or piking up.",
+    "Head reaching toward the floor first."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Utrzymuj prostą linię od głowy do pięt, pośladki i brzuch napięte.",
+    "Dłonie pod barkami, łokcie około 45° od tułowia.",
+    "Dotknij klatką podłogi i odepchnij ją."
+   ],
+   "mistakes": [
+    "Opadające albo zadarte biodra.",
+    "Wysuwanie głowy do podłogi przed klatką."
+   ]
+  }
+ },
+ "Romanian_Deadlift": {
+  "en": {
+   "cues": [
+    "Keep a soft bend in the knees and push your hips back.",
+    "Slide the weight down your thighs, staying close to your legs.",
+    "Stop when your hamstrings are fully stretched, before your back rounds.",
+    "Squeeze your glutes to stand up."
+   ],
+   "mistakes": [
+    "Rounding the back to reach lower.",
+    "Turning it into a squat by bending the knees more."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko ugięte kolana, biodra cofaj do tyłu.",
+    "Prowadź ciężar blisko nóg, po udach w dół.",
+    "Zatrzymaj się, gdy dwugłowe uda są w pełni rozciągnięte, zanim zaokrąglą się plecy.",
+    "Wstając, napnij pośladki."
+   ],
+   "mistakes": [
+    "Zaokrąglanie pleców, żeby zejść niżej.",
+    "Zamienianie ruchu w przysiad przez mocniejsze uginanie kolan."
+   ]
+  }
+ },
+ "Seated_Cable_Rows": {
+  "en": {
+   "cues": [
+    "Sit tall with a slight bend in the knees.",
+    "Pull the handle to your belly and squeeze your shoulder blades.",
+    "Let your arms extend fully and your shoulders reach forward on the way back."
+   ],
+   "mistakes": [
+    "Rocking the torso back and forth.",
+    "Shrugging your shoulders to your ears."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Siedź prosto, kolana lekko ugięte.",
+    "Przyciągaj uchwyt do brzucha i ściągaj łopatki.",
+    "Wracając, wyprostuj ręce i pozwól barkom wysunąć się do przodu."
+   ],
+   "mistakes": [
+    "Bujanie tułowiem w przód i w tył.",
+    "Unoszenie barków do uszu."
+   ]
+  }
+ },
+ "Seated_Calf_Raise": {
+  "en": {
+   "cues": [
+    "Let your heels drop for a full stretch at the bottom.",
+    "Rise as high as you can onto the ball of your foot.",
+    "Pause for a second at the top and the bottom."
+   ],
+   "mistakes": [
+    "Bouncing out of the bottom.",
+    "Bending the knees to push the weight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Na dole opuść pięty do pełnego rozciągnięcia.",
+    "Wspinaj się jak najwyżej na przodostopie.",
+    "Zatrzymaj się na sekundę na górze i na dole."
+   ],
+   "mistakes": [
+    "Odbijanie się z dołu.",
+    "Uginanie kolan, żeby pomóc sobie w ruchu."
+   ]
+  }
+ },
+ "Side_Lateral_Raise": {
+  "en": {
+   "cues": [
+    "Keep a slight bend in your elbows.",
+    "Lift out to the sides until your arms are about shoulder height.",
+    "Lead with your elbows, not your hands."
+   ],
+   "mistakes": [
+    "Swinging the weights up with your hips.",
+    "Shrugging so the traps take over."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte.",
+    "Unoś ramiona bokiem mniej więcej do wysokości barków.",
+    "Prowadź ruch łokciami, nie dłońmi."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężarów biodrami.",
+    "Unoszenie barków, przez co pracują czworoboczne."
+   ]
+  }
+ },
+ "Smith_Machine_Squat": {
+  "en": {
+   "cues": [
+    "Brace your core before each rep: big breath into the belly, then hold it.",
+    "Push your knees out in line with your toes as you sit down.",
+    "Keep the bar over the middle of your foot the whole way.",
+    "Go as deep as you can while your lower back stays neutral."
+   ],
+   "mistakes": [
+    "Knees caving in on the way up.",
+    "Heels lifting off the floor.",
+    "Chest dropping so the squat turns into a good morning."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Przed każdym powtórzeniem napnij brzuch: głęboki wdech w brzuch i zatrzymaj powietrze.",
+    "Schodząc w dół, wypychaj kolana na zewnątrz, w linii palców stóp.",
+    "Sztanga przez cały ruch nad środkiem stopy.",
+    "Schodź tak nisko, jak pozwala neutralny odcinek lędźwiowy."
+   ],
+   "mistakes": [
+    "Kolana uciekające do środka przy wstawaniu.",
+    "Odrywanie pięt od podłogi.",
+    "Opadanie klatki, przez które przysiad zamienia się w skłon."
+   ]
+  }
+ },
+ "Split_Squat_with_Dumbbells": {
+  "en": {
+   "cues": [
+    "Keep most of your weight on the front foot.",
+    "Lower straight down until the back knee nearly touches the floor.",
+    "A slight forward lean works the glutes more; upright works the quads more."
+   ],
+   "mistakes": [
+    "Pushing off the back foot.",
+    "Wobbling because your feet are in one line; keep them hip-width apart."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Większość ciężaru na przedniej nodze.",
+    "Opuszczaj się prosto w dół, aż tylne kolano prawie dotknie podłogi.",
+    "Lekki skłon do przodu mocniej angażuje pośladki, wyprostowany tułów czworogłowe."
+   ],
+   "mistakes": [
+    "Odpychanie się tylną nogą.",
+    "Chwianie się przez stopy w jednej linii; trzymaj je na szerokość bioder."
+   ]
+  }
+ },
+ "Split_Squats": {
+  "en": {
+   "cues": [
+    "Keep most of your weight on the front foot.",
+    "Lower straight down until the back knee nearly touches the floor.",
+    "A slight forward lean works the glutes more; upright works the quads more."
+   ],
+   "mistakes": [
+    "Pushing off the back foot.",
+    "Wobbling because your feet are in one line; keep them hip-width apart."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Większość ciężaru na przedniej nodze.",
+    "Opuszczaj się prosto w dół, aż tylne kolano prawie dotknie podłogi.",
+    "Lekki skłon do przodu mocniej angażuje pośladki, wyprostowany tułów czworogłowe."
+   ],
+   "mistakes": [
+    "Odpychanie się tylną nogą.",
+    "Chwianie się przez stopy w jednej linii; trzymaj je na szerokość bioder."
+   ]
+  }
+ },
+ "Standing_Calf_Raises": {
+  "en": {
+   "cues": [
+    "Let your heels drop for a full stretch at the bottom.",
+    "Rise as high as you can onto the ball of your foot.",
+    "Pause for a second at the top and the bottom."
+   ],
+   "mistakes": [
+    "Bouncing out of the bottom.",
+    "Bending the knees to push the weight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Na dole opuść pięty do pełnego rozciągnięcia.",
+    "Wspinaj się jak najwyżej na przodostopie.",
+    "Zatrzymaj się na sekundę na górze i na dole."
+   ],
+   "mistakes": [
+    "Odbijanie się z dołu.",
+    "Uginanie kolan, żeby pomóc sobie w ruchu."
+   ]
+  }
+ },
+ "Standing_Military_Press": {
+  "en": {
+   "cues": [
+    "Squeeze your glutes and brace so your lower back doesn't arch.",
+    "Start with the bar on your upper chest, forearms vertical.",
+    "Move your head back to let the bar pass, then push your head through at the top."
+   ],
+   "mistakes": [
+    "Leaning back into a standing incline press.",
+    "Pressing the bar out in front instead of straight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Napnij pośladki i brzuch, żeby nie wyginać lędźwi.",
+    "Zacznij ze sztangą na górze klatki, przedramiona pionowo.",
+    "Cofnij głowę, żeby przepuścić sztangę, a na górze wsuń ją pod sztangę."
+   ],
+   "mistakes": [
+    "Odchylanie się, przez co wychodzi wyciskanie skośne na stojąco.",
+    "Wypychanie sztangi przed siebie zamiast prosto w górę."
+   ]
+  }
+ },
+ "Stiff-Legged_Barbell_Deadlift": {
+  "en": {
+   "cues": [
+    "Keep a soft bend in the knees and push your hips back.",
+    "Slide the weight down your thighs, staying close to your legs.",
+    "Stop when your hamstrings are fully stretched, before your back rounds.",
+    "Squeeze your glutes to stand up."
+   ],
+   "mistakes": [
+    "Rounding the back to reach lower.",
+    "Turning it into a squat by bending the knees more."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko ugięte kolana, biodra cofaj do tyłu.",
+    "Prowadź ciężar blisko nóg, po udach w dół.",
+    "Zatrzymaj się, gdy dwugłowe uda są w pełni rozciągnięte, zanim zaokrąglą się plecy.",
+    "Wstając, napnij pośladki."
+   ],
+   "mistakes": [
+    "Zaokrąglanie pleców, żeby zejść niżej.",
+    "Zamienianie ruchu w przysiad przez mocniejsze uginanie kolan."
+   ]
+  }
+ },
+ "Sumo_Deadlift": {
+  "en": {
+   "cues": [
+    "Take a wide stance with your toes turned out and grip inside your knees.",
+    "Push your knees out over your toes before you pull.",
+    "Keep your chest up and your hips close to the bar."
+   ],
+   "mistakes": [
+    "Hips shooting up first so it becomes a stiff-leg pull.",
+    "Knees caving in."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Szeroki rozstaw, palce stóp na zewnątrz, chwyt wewnątrz kolan.",
+    "Przed ciągiem wypchnij kolana nad palce stóp.",
+    "Klatka w górze, biodra blisko sztangi."
+   ],
+   "mistakes": [
+    "Biodra wystrzeliwujące pierwsze, przez co ciąg robi się na prostych nogach.",
+    "Kolana uciekające do środka."
+   ]
+  }
+ },
+ "Triceps_Pushdown": {
+  "en": {
+   "cues": [
+    "Keep your elbows tucked at your sides.",
+    "Push down until your arms are straight and squeeze.",
+    "Let the handle rise only until your forearms pass parallel."
+   ],
+   "mistakes": [
+    "Elbows flaring or moving forward.",
+    "Leaning over the handle to push with body weight."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie przy tułowiu.",
+    "Wypychaj w dół do wyprostu rąk i napnij.",
+    "Pozwól uchwytowi wrócić tylko trochę ponad poziom przedramion."
+   ],
+   "mistakes": [
+    "Rozkładanie łokci albo wysuwanie ich do przodu.",
+    "Nachylanie się nad uchwytem i pchanie masą ciała."
+   ]
+  }
+ },
+ "Wide-Grip_Lat_Pulldown": {
+  "en": {
+   "cues": [
+    "Lean back slightly and keep your chest up.",
+    "Pull the bar to your upper chest by driving your elbows down.",
+    "Control the bar all the way up until your arms are straight."
+   ],
+   "mistakes": [
+    "Pulling the bar behind your neck.",
+    "Leaning far back and using body weight to move the bar."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko odchyl się do tyłu, klatka w górze.",
+    "Ściągaj drążek do górnej części klatki, prowadząc łokcie w dół.",
+    "Kontroluj drążek w górę aż do wyprostu rąk."
+   ],
+   "mistakes": [
+    "Ściąganie drążka za głowę.",
+    "Mocne odchylanie się i ciągnięcie masą ciała."
+   ]
+  }
+ },
+ "nt_b_stance_romanian_deadlift": {
+  "en": {
+   "cues": [
+    "Keep a soft bend in the knees and push your hips back.",
+    "Slide the weight down your thighs, staying close to your legs.",
+    "Stop when your hamstrings are fully stretched, before your back rounds.",
+    "Squeeze your glutes to stand up."
+   ],
+   "mistakes": [
+    "Rounding the back to reach lower.",
+    "Turning it into a squat by bending the knees more."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko ugięte kolana, biodra cofaj do tyłu.",
+    "Prowadź ciężar blisko nóg, po udach w dół.",
+    "Zatrzymaj się, gdy dwugłowe uda są w pełni rozciągnięte, zanim zaokrąglą się plecy.",
+    "Wstając, napnij pośladki."
+   ],
+   "mistakes": [
+    "Zaokrąglanie pleców, żeby zejść niżej.",
+    "Zamienianie ruchu w przysiad przez mocniejsze uginanie kolan."
+   ]
+  }
+ },
+ "nt_bayesian_cable_curl": {
+  "en": {
+   "cues": [
+    "Pin your elbows to your sides.",
+    "Curl all the way up, then lower slowly to straight arms.",
+    "Keep your wrists straight."
+   ],
+   "mistakes": [
+    "Swinging the weight with your back.",
+    "Elbows drifting forward at the top."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie przy tułowiu.",
+    "Uginaj do końca, potem powoli opuszczaj do wyprostu.",
+    "Nadgarstki proste."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężaru plecami.",
+    "Wysuwanie łokci do przodu na górze."
+   ]
+  }
+ },
+ "nt_belt_squat": {
+  "en": {
+   "cues": [
+    "Set your feet so your knees track over your toes at the bottom.",
+    "Keep your back and hips pressed into the pad.",
+    "Lower under control and don't bounce out of the bottom."
+   ],
+   "mistakes": [
+    "Locking the knees hard at the top.",
+    "Hips peeling off the pad as you go deep."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw stopy tak, żeby na dole kolana szły nad palcami.",
+    "Plecy i biodra dociśnięte do oparcia.",
+    "Opuszczaj się kontrolowanie i nie odbijaj się z dołu."
+   ],
+   "mistakes": [
+    "Gwałtowne blokowanie kolan na górze.",
+    "Odrywanie bioder od oparcia przy głębokim zejściu."
+   ]
+  }
+ },
+ "nt_bulgarian_split_squat": {
+  "en": {
+   "cues": [
+    "Keep most of your weight on the front foot.",
+    "Lower straight down until the back knee nearly touches the floor.",
+    "A slight forward lean works the glutes more; upright works the quads more."
+   ],
+   "mistakes": [
+    "Pushing off the back foot.",
+    "Wobbling because your feet are in one line; keep them hip-width apart."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Większość ciężaru na przedniej nodze.",
+    "Opuszczaj się prosto w dół, aż tylne kolano prawie dotknie podłogi.",
+    "Lekki skłon do przodu mocniej angażuje pośladki, wyprostowany tułów czworogłowe."
+   ],
+   "mistakes": [
+    "Odpychanie się tylną nogą.",
+    "Chwianie się przez stopy w jednej linii; trzymaj je na szerokość bioder."
+   ]
+  }
+ },
+ "nt_cable_y_raise": {
+  "en": {
+   "cues": [
+    "Keep a slight bend in your elbows.",
+    "Lift out to the sides until your arms are about shoulder height.",
+    "Lead with your elbows, not your hands."
+   ],
+   "mistakes": [
+    "Swinging the weights up with your hips.",
+    "Shrugging so the traps take over."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte.",
+    "Unoś ramiona bokiem mniej więcej do wysokości barków.",
+    "Prowadź ruch łokciami, nie dłońmi."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężarów biodrami.",
+    "Unoszenie barków, przez co pracują czworoboczne."
+   ]
+  }
+ },
+ "nt_chest_supported_dumbbell_row": {
+  "en": {
+   "cues": [
+    "Keep your back flat and your hips square to the floor.",
+    "Pull the weight toward your hip, not your armpit.",
+    "Let your shoulder blade stretch forward at the bottom."
+   ],
+   "mistakes": [
+    "Twisting the torso to lift more.",
+    "Shrugging the weight up with the trap."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Plecy proste, biodra równolegle do podłogi.",
+    "Przyciągaj ciężar w stronę biodra, nie pachy.",
+    "Na dole pozwól łopatce wysunąć się do przodu."
+   ],
+   "mistakes": [
+    "Skręcanie tułowia, żeby podnieść więcej.",
+    "Podciąganie ciężaru barkiem jak przy szrugsach."
+   ]
+  }
+ },
+ "nt_cross_body_cable_triceps_extension": {
+  "en": {
+   "cues": [
+    "Keep your elbows tucked at your sides.",
+    "Push down until your arms are straight and squeeze.",
+    "Let the handle rise only until your forearms pass parallel."
+   ],
+   "mistakes": [
+    "Elbows flaring or moving forward.",
+    "Leaning over the handle to push with body weight."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie przy tułowiu.",
+    "Wypychaj w dół do wyprostu rąk i napnij.",
+    "Pozwól uchwytowi wrócić tylko trochę ponad poziom przedramion."
+   ],
+   "mistakes": [
+    "Rozkładanie łokci albo wysuwanie ich do przodu.",
+    "Nachylanie się nad uchwytem i pchanie masą ciała."
+   ]
+  }
+ },
+ "nt_dumbbell_hip_thrust": {
+  "en": {
+   "cues": [
+    "Rest the bench under your shoulder blades and tuck your chin.",
+    "Set your feet so your shins are vertical at the top.",
+    "Drive through your heels and squeeze your glutes to lock out."
+   ],
+   "mistakes": [
+    "Arching the lower back instead of extending the hips.",
+    "Pushing through your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Oprzyj ławkę pod łopatkami, broda przyciągnięta.",
+    "Ustaw stopy tak, żeby na górze piszczele były pionowo.",
+    "Wypychaj piętami i napnij pośladki w zablokowaniu."
+   ],
+   "mistakes": [
+    "Wyginanie lędźwi zamiast prostowania bioder.",
+    "Wypychanie palcami stóp."
+   ]
+  }
+ },
+ "nt_hs_glute_drive": {
+  "en": {
+   "cues": [
+    "Rest the bench under your shoulder blades and tuck your chin.",
+    "Set your feet so your shins are vertical at the top.",
+    "Drive through your heels and squeeze your glutes to lock out."
+   ],
+   "mistakes": [
+    "Arching the lower back instead of extending the hips.",
+    "Pushing through your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Oprzyj ławkę pod łopatkami, broda przyciągnięta.",
+    "Ustaw stopy tak, żeby na górze piszczele były pionowo.",
+    "Wypychaj piętami i napnij pośladki w zablokowaniu."
+   ],
+   "mistakes": [
+    "Wyginanie lędźwi zamiast prostowania bioder.",
+    "Wypychanie palcami stóp."
+   ]
+  }
+ },
+ "nt_hs_iso_lateral_bench_press": {
+  "en": {
+   "cues": [
+    "Keep your shoulder blades pinned to the bench.",
+    "Lower until you feel a stretch across your chest, elbows slightly tucked.",
+    "Press up and slightly together without clanking the weights."
+   ],
+   "mistakes": [
+    "Letting the shoulders roll forward at the top.",
+    "Dropping the weights too fast into the stretch."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łopatki przyklejone do ławki.",
+    "Opuszczaj do odczucia rozciągnięcia klatki, łokcie lekko przy tułowiu.",
+    "Wypychaj w górę i lekko do środka, bez stukania ciężarami."
+   ],
+   "mistakes": [
+    "Wysuwanie barków do przodu na górze.",
+    "Zbyt szybkie opuszczanie w rozciągnięcie."
+   ]
+  }
+ },
+ "nt_hs_iso_lateral_front_lat_pulldown": {
+  "en": {
+   "cues": [
+    "Lean back slightly and keep your chest up.",
+    "Pull the bar to your upper chest by driving your elbows down.",
+    "Control the bar all the way up until your arms are straight."
+   ],
+   "mistakes": [
+    "Pulling the bar behind your neck.",
+    "Leaning far back and using body weight to move the bar."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko odchyl się do tyłu, klatka w górze.",
+    "Ściągaj drążek do górnej części klatki, prowadząc łokcie w dół.",
+    "Kontroluj drążek w górę aż do wyprostu rąk."
+   ],
+   "mistakes": [
+    "Ściąganie drążka za głowę.",
+    "Mocne odchylanie się i ciągnięcie masą ciała."
+   ]
+  }
+ },
+ "nt_hs_iso_lateral_incline_press": {
+  "en": {
+   "cues": [
+    "Keep your shoulder blades pinned to the bench.",
+    "Lower until you feel a stretch across your chest, elbows slightly tucked.",
+    "Press up and slightly together without clanking the weights."
+   ],
+   "mistakes": [
+    "Letting the shoulders roll forward at the top.",
+    "Dropping the weights too fast into the stretch."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łopatki przyklejone do ławki.",
+    "Opuszczaj do odczucia rozciągnięcia klatki, łokcie lekko przy tułowiu.",
+    "Wypychaj w górę i lekko do środka, bez stukania ciężarami."
+   ],
+   "mistakes": [
+    "Wysuwanie barków do przodu na górze.",
+    "Zbyt szybkie opuszczanie w rozciągnięcie."
+   ]
+  }
+ },
+ "nt_hs_iso_lateral_leg_extension": {
+  "en": {
+   "cues": [
+    "Line up your knees with the machine's pivot.",
+    "Straighten your legs fully and pause for a moment at the top.",
+    "Lower slowly instead of letting the weight drop."
+   ],
+   "mistakes": [
+    "Kicking the weight up with momentum.",
+    "Lifting your hips off the seat."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw kolana w osi obrotu maszyny.",
+    "Wyprostuj nogi do końca i zatrzymaj się na chwilę na górze.",
+    "Opuszczaj powoli, nie pozwól ciężarowi opaść."
+   ],
+   "mistakes": [
+    "Wyrzucanie ciężaru z rozpędu.",
+    "Odrywanie bioder od siedziska."
+   ]
+  }
+ },
+ "nt_hs_iso_lateral_shoulder_press": {
+  "en": {
+   "cues": [
+    "Keep your ribs down and your back against the pad.",
+    "Lower until your hands are around ear height.",
+    "Press straight up, forearms vertical."
+   ],
+   "mistakes": [
+    "Arching the lower back.",
+    "Cutting the range short at the bottom."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Żebra w dół, plecy przy oparciu.",
+    "Opuszczaj, aż dłonie będą mniej więcej na wysokości uszu.",
+    "Wypychaj prosto w górę, przedramiona pionowo."
+   ],
+   "mistakes": [
+    "Wyginanie odcinka lędźwiowego.",
+    "Skracanie ruchu na dole."
+   ]
+  }
+ },
+ "nt_hs_lateral_raise": {
+  "en": {
+   "cues": [
+    "Keep a slight bend in your elbows.",
+    "Lift out to the sides until your arms are about shoulder height.",
+    "Lead with your elbows, not your hands."
+   ],
+   "mistakes": [
+    "Swinging the weights up with your hips.",
+    "Shrugging so the traps take over."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte.",
+    "Unoś ramiona bokiem mniej więcej do wysokości barków.",
+    "Prowadź ruch łokciami, nie dłońmi."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężarów biodrami.",
+    "Unoszenie barków, przez co pracują czworoboczne."
+   ]
+  }
+ },
+ "nt_hs_seated_dip": {
+  "en": {
+   "cues": [
+    "Keep your shoulders down and away from your ears.",
+    "Lower until your upper arms are about parallel to the floor.",
+    "Stay upright to keep the work on the triceps."
+   ],
+   "mistakes": [
+    "Sinking so deep that your shoulders roll forward.",
+    "Flaring the elbows out wide."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Barki nisko, z dala od uszu.",
+    "Opuszczaj się, aż ramiona będą mniej więcej równoległe do podłogi.",
+    "Utrzymuj tułów pionowo, żeby pracował triceps."
+   ],
+   "mistakes": [
+    "Zbyt głębokie zejście, przy którym barki uciekają do przodu.",
+    "Szeroko rozłożone łokcie."
+   ]
+  }
+ },
+ "nt_hs_seated_leg_curl": {
+  "en": {
+   "cues": [
+    "Keep your hips pressed down into the pad.",
+    "Curl your heels toward your glutes as far as you can.",
+    "Lower under control until your legs are almost straight."
+   ],
+   "mistakes": [
+    "Hips lifting to cheat the weight up.",
+    "Cutting the range short at either end."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Biodra dociśnięte do oparcia.",
+    "Przyciągaj pięty do pośladków tak daleko, jak możesz.",
+    "Opuszczaj kontrolowanie, prawie do wyprostu nóg."
+   ],
+   "mistakes": [
+    "Unoszenie bioder, żeby oszukać ruch.",
+    "Skracanie zakresu na górze albo na dole."
+   ]
+  }
+ },
+ "nt_hs_select_assisted_dip": {
+  "en": {
+   "cues": [
+    "Keep your shoulders down and away from your ears.",
+    "Lower until your upper arms are about parallel to the floor.",
+    "Stay upright to keep the work on the triceps."
+   ],
+   "mistakes": [
+    "Sinking so deep that your shoulders roll forward.",
+    "Flaring the elbows out wide."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Barki nisko, z dala od uszu.",
+    "Opuszczaj się, aż ramiona będą mniej więcej równoległe do podłogi.",
+    "Utrzymuj tułów pionowo, żeby pracował triceps."
+   ],
+   "mistakes": [
+    "Zbyt głębokie zejście, przy którym barki uciekają do przodu.",
+    "Szeroko rozłożone łokcie."
+   ]
+  }
+ },
+ "nt_hs_select_lat_pulldown": {
+  "en": {
+   "cues": [
+    "Lean back slightly and keep your chest up.",
+    "Pull the bar to your upper chest by driving your elbows down.",
+    "Control the bar all the way up until your arms are straight."
+   ],
+   "mistakes": [
+    "Pulling the bar behind your neck.",
+    "Leaning far back and using body weight to move the bar."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Lekko odchyl się do tyłu, klatka w górze.",
+    "Ściągaj drążek do górnej części klatki, prowadząc łokcie w dół.",
+    "Kontroluj drążek w górę aż do wyprostu rąk."
+   ],
+   "mistakes": [
+    "Ściąganie drążka za głowę.",
+    "Mocne odchylanie się i ciągnięcie masą ciała."
+   ]
+  }
+ },
+ "nt_hs_select_lateral_raise": {
+  "en": {
+   "cues": [
+    "Keep a slight bend in your elbows.",
+    "Lift out to the sides until your arms are about shoulder height.",
+    "Lead with your elbows, not your hands."
+   ],
+   "mistakes": [
+    "Swinging the weights up with your hips.",
+    "Shrugging so the traps take over."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte.",
+    "Unoś ramiona bokiem mniej więcej do wysokości barków.",
+    "Prowadź ruch łokciami, nie dłońmi."
+   ],
+   "mistakes": [
+    "Zarzucanie ciężarów biodrami.",
+    "Unoszenie barków, przez co pracują czworoboczne."
+   ]
+  }
+ },
+ "nt_hs_select_leg_curl": {
+  "en": {
+   "cues": [
+    "Keep your hips pressed down into the pad.",
+    "Curl your heels toward your glutes as far as you can.",
+    "Lower under control until your legs are almost straight."
+   ],
+   "mistakes": [
+    "Hips lifting to cheat the weight up.",
+    "Cutting the range short at either end."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Biodra dociśnięte do oparcia.",
+    "Przyciągaj pięty do pośladków tak daleko, jak możesz.",
+    "Opuszczaj kontrolowanie, prawie do wyprostu nóg."
+   ],
+   "mistakes": [
+    "Unoszenie bioder, żeby oszukać ruch.",
+    "Skracanie zakresu na górze albo na dole."
+   ]
+  }
+ },
+ "nt_hs_select_leg_extension": {
+  "en": {
+   "cues": [
+    "Line up your knees with the machine's pivot.",
+    "Straighten your legs fully and pause for a moment at the top.",
+    "Lower slowly instead of letting the weight drop."
+   ],
+   "mistakes": [
+    "Kicking the weight up with momentum.",
+    "Lifting your hips off the seat."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw kolana w osi obrotu maszyny.",
+    "Wyprostuj nogi do końca i zatrzymaj się na chwilę na górze.",
+    "Opuszczaj powoli, nie pozwól ciężarowi opaść."
+   ],
+   "mistakes": [
+    "Wyrzucanie ciężaru z rozpędu.",
+    "Odrywanie bioder od siedziska."
+   ]
+  }
+ },
+ "nt_hs_select_pec_fly": {
+  "en": {
+   "cues": [
+    "Keep a fixed, slight bend in your elbows.",
+    "Open wide until you feel a stretch across your chest.",
+    "Bring your hands together in a hugging arc."
+   ],
+   "mistakes": [
+    "Bending and straightening the elbows so it becomes a press.",
+    "Going so deep the shoulders roll forward."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte i w stałym kącie.",
+    "Rozchylaj ramiona do odczucia rozciągnięcia klatki.",
+    "Łącz dłonie łukiem, jak przy obejmowaniu."
+   ],
+   "mistakes": [
+    "Uginanie i prostowanie łokci, przez co wychodzi wyciskanie.",
+    "Zbyt głębokie rozciągnięcie, przy którym barki uciekają do przodu."
+   ]
+  }
+ },
+ "nt_hs_select_seated_leg_curl": {
+  "en": {
+   "cues": [
+    "Keep your hips pressed down into the pad.",
+    "Curl your heels toward your glutes as far as you can.",
+    "Lower under control until your legs are almost straight."
+   ],
+   "mistakes": [
+    "Hips lifting to cheat the weight up.",
+    "Cutting the range short at either end."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Biodra dociśnięte do oparcia.",
+    "Przyciągaj pięty do pośladków tak daleko, jak możesz.",
+    "Opuszczaj kontrolowanie, prawie do wyprostu nóg."
+   ],
+   "mistakes": [
+    "Unoszenie bioder, żeby oszukać ruch.",
+    "Skracanie zakresu na górze albo na dole."
+   ]
+  }
+ },
+ "nt_hs_select_seated_row": {
+  "en": {
+   "cues": [
+    "Sit tall with a slight bend in the knees.",
+    "Pull the handle to your belly and squeeze your shoulder blades.",
+    "Let your arms extend fully and your shoulders reach forward on the way back."
+   ],
+   "mistakes": [
+    "Rocking the torso back and forth.",
+    "Shrugging your shoulders to your ears."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Siedź prosto, kolana lekko ugięte.",
+    "Przyciągaj uchwyt do brzucha i ściągaj łopatki.",
+    "Wracając, wyprostuj ręce i pozwól barkom wysunąć się do przodu."
+   ],
+   "mistakes": [
+    "Bujanie tułowiem w przód i w tył.",
+    "Unoszenie barków do uszu."
+   ]
+  }
+ },
+ "nt_hs_select_standing_calf": {
+  "en": {
+   "cues": [
+    "Let your heels drop for a full stretch at the bottom.",
+    "Rise as high as you can onto the ball of your foot.",
+    "Pause for a second at the top and the bottom."
+   ],
+   "mistakes": [
+    "Bouncing out of the bottom.",
+    "Bending the knees to push the weight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Na dole opuść pięty do pełnego rozciągnięcia.",
+    "Wspinaj się jak najwyżej na przodostopie.",
+    "Zatrzymaj się na sekundę na górze i na dole."
+   ],
+   "mistakes": [
+    "Odbijanie się z dołu.",
+    "Uginanie kolan, żeby pomóc sobie w ruchu."
+   ]
+  }
+ },
+ "nt_hs_super_fly": {
+  "en": {
+   "cues": [
+    "Keep a fixed, slight bend in your elbows.",
+    "Open wide until you feel a stretch across your chest.",
+    "Bring your hands together in a hugging arc."
+   ],
+   "mistakes": [
+    "Bending and straightening the elbows so it becomes a press.",
+    "Going so deep the shoulders roll forward."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Łokcie lekko ugięte i w stałym kącie.",
+    "Rozchylaj ramiona do odczucia rozciągnięcia klatki.",
+    "Łącz dłonie łukiem, jak przy obejmowaniu."
+   ],
+   "mistakes": [
+    "Uginanie i prostowanie łokci, przez co wychodzi wyciskanie.",
+    "Zbyt głębokie rozciągnięcie, przy którym barki uciekają do przodu."
+   ]
+  }
+ },
+ "nt_incline_push_up_on_bench": {
+  "en": {
+   "cues": [
+    "Hold a straight line from head to heels with glutes and abs tight.",
+    "Hands under your shoulders, elbows about 45° from your body.",
+    "Touch your chest to the floor and push it away."
+   ],
+   "mistakes": [
+    "Hips sagging or piking up.",
+    "Head reaching toward the floor first."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Utrzymuj prostą linię od głowy do pięt, pośladki i brzuch napięte.",
+    "Dłonie pod barkami, łokcie około 45° od tułowia.",
+    "Dotknij klatką podłogi i odepchnij ją."
+   ],
+   "mistakes": [
+    "Opadające albo zadarte biodra.",
+    "Wysuwanie głowy do podłogi przed klatką."
+   ]
+  }
+ },
+ "nt_pendulum_squat": {
+  "en": {
+   "cues": [
+    "Set your feet so your knees track over your toes at the bottom.",
+    "Keep your back and hips pressed into the pad.",
+    "Lower under control and don't bounce out of the bottom."
+   ],
+   "mistakes": [
+    "Locking the knees hard at the top.",
+    "Hips peeling off the pad as you go deep."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Ustaw stopy tak, żeby na dole kolana szły nad palcami.",
+    "Plecy i biodra dociśnięte do oparcia.",
+    "Opuszczaj się kontrolowanie i nie odbijaj się z dołu."
+   ],
+   "mistakes": [
+    "Gwałtowne blokowanie kolan na górze.",
+    "Odrywanie bioder od oparcia przy głębokim zejściu."
+   ]
+  }
+ },
+ "nt_seated_dumbbell_calf_raise": {
+  "en": {
+   "cues": [
+    "Let your heels drop for a full stretch at the bottom.",
+    "Rise as high as you can onto the ball of your foot.",
+    "Pause for a second at the top and the bottom."
+   ],
+   "mistakes": [
+    "Bouncing out of the bottom.",
+    "Bending the knees to push the weight up."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Na dole opuść pięty do pełnego rozciągnięcia.",
+    "Wspinaj się jak najwyżej na przodostopie.",
+    "Zatrzymaj się na sekundę na górze i na dole."
+   ],
+   "mistakes": [
+    "Odbijanie się z dołu.",
+    "Uginanie kolan, żeby pomóc sobie w ruchu."
+   ]
+  }
+ },
+ "nt_single_arm_landmine_row": {
+  "en": {
+   "cues": [
+    "Keep your back flat and your hips square to the floor.",
+    "Pull the weight toward your hip, not your armpit.",
+    "Let your shoulder blade stretch forward at the bottom."
+   ],
+   "mistakes": [
+    "Twisting the torso to lift more.",
+    "Shrugging the weight up with the trap."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Plecy proste, biodra równolegle do podłogi.",
+    "Przyciągaj ciężar w stronę biodra, nie pachy.",
+    "Na dole pozwól łopatce wysunąć się do przodu."
+   ],
+   "mistakes": [
+    "Skręcanie tułowia, żeby podnieść więcej.",
+    "Podciąganie ciężaru barkiem jak przy szrugsach."
+   ]
+  }
+ },
+ "nt_single_leg_hip_thrust": {
+  "en": {
+   "cues": [
+    "Rest the bench under your shoulder blades and tuck your chin.",
+    "Set your feet so your shins are vertical at the top.",
+    "Drive through your heels and squeeze your glutes to lock out."
+   ],
+   "mistakes": [
+    "Arching the lower back instead of extending the hips.",
+    "Pushing through your toes."
+   ]
+  },
+  "pl": {
+   "cues": [
+    "Oprzyj ławkę pod łopatkami, broda przyciągnięta.",
+    "Ustaw stopy tak, żeby na górze piszczele były pionowo.",
+    "Wypychaj piętami i napnij pośladki w zablokowaniu."
+   ],
+   "mistakes": [
+    "Wyginanie lędźwi zamiast prostowania bioder.",
+    "Wypychanie palcami stóp."
+   ]
+  }
+ }
+}

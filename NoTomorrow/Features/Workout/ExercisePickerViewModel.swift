@@ -18,6 +18,13 @@ final class ExercisePickerViewModel {
         didSet { scheduleFilter() }
     }
     var group: ExerciseLibrary.MuscleGroup = .all {
+        didSet {
+            muscle = nil
+            applyFilter()
+        }
+    }
+    /// One muscle picked on the body map; replaces the group chip until cleared.
+    var muscle: String? {
         didSet { applyFilter() }
     }
     private(set) var results: [Entry] = []
@@ -61,11 +68,16 @@ final class ExercisePickerViewModel {
 
     private func applyFilter() {
         let tokens = WorkoutStrings.fold(trimmedQuery).split(separator: " ").map(String.init)
-        let muscles = group.muscles
+        let muscles = muscle.map { Set([$0]) } ?? group.muscles
         results = all.filter { entry in
             if !muscles.isEmpty && !entry.exercise.primaryMuscles.contains(where: muscles.contains) { return false }
             return tokens.allSatisfy { entry.folded.contains($0) }
         }
+    }
+
+    /// Library exercises with `muscle` among their primary muscles, for the body-map filter.
+    func count(for muscle: String) -> Int {
+        all.reduce(0) { $0 + ($1.exercise.primaryMuscles.contains(muscle) ? 1 : 0) }
     }
 
     // MARK: Selection

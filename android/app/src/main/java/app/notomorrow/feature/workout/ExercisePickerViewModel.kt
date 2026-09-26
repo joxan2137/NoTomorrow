@@ -44,6 +44,9 @@ class ExercisePickerViewModel(
 
     private val queryInput = MutableStateFlow("")
     private val groupInput = MutableStateFlow(ExerciseLibrary.MuscleGroup.All)
+    private val muscleInput = MutableStateFlow<String?>(null)
+    /** The chip row's filter: a group, or one muscle from the body map that replaces it. */
+    private val filterInput = combine(groupInput, muscleInput) { group, muscle -> group to muscle }
     private val selectedInput = MutableStateFlow<List<String>>(emptyList())
 
     /** The `alreadyIn` of the plain `init(alreadyIn:onAdd:)`; re-set by [reset] on every presentation. */
@@ -77,23 +80,29 @@ class ExercisePickerViewModel(
     private val results: Flow<List<ExerciseEntity>> = combine(
         library,
         queryInput.debounce { if (it.isEmpty()) 0L else FILTER_DEBOUNCE_MS },
-        groupInput,
-    ) { all, query, group -> ExerciseLibrary.filter(all, query, group) }
+        filterInput,
+    ) { all, query, filter -> ExerciseLibrary.filter(all, query, filter.first, filter.second) }
+
+    /** Library exercises per primary muscle, for the body-map filter's "Show n exercises". */
+    val muscleCounts: StateFlow<Map<String, Int>> = library.map { all ->
+        all.flatMap { it.primaryMuscles.distinct() }.groupingBy { it }.eachCount()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val state: StateFlow<ExercisePickerUiState> = combine(
         results,
         lastSets,
         queryInput,
-        groupInput,
+        filterInput,
         combine(selectedInput, alreadyIn, container.db.profileDao().observeProfile()) { selected, already, profile ->
             Triple(selected, already, profile?.units ?: WeightUnit.Kg)
         },
-    ) { rows, last, query, group, context ->
+    ) { rows, last, query, filter, context ->
         val trimmed = query.trim()
         ExercisePickerUiState(
             query = query,
             trimmedQuery = trimmed,
-            group = group,
+            group = filter.first,
+            muscle = filter.second,
             results = rows.map { ExercisePickerEntry(it, last[it.id]) },
             selectedIds = context.first,
             alreadyIn = context.second,
@@ -115,6 +124,7 @@ class ExercisePickerViewModel(
     fun reset(alreadyIn: Set<String> = emptySet()) {
         queryInput.value = ""
         groupInput.value = ExerciseLibrary.MuscleGroup.All
+        muscleInput.value = null
         selectedInput.value = emptyList()
         alreadyInInput.value = alreadyIn
     }
@@ -124,7 +134,14 @@ class ExercisePickerViewModel(
     }
 
     fun setGroup(group: ExerciseLibrary.MuscleGroup) {
+        muscleInput.value = null
         groupInput.value = group
+    }
+
+    /** The body map's pick; null clears it back to the All chip. */
+    fun setMuscle(muscle: String?) {
+        if (muscle == null) groupInput.value = ExerciseLibrary.MuscleGroup.All
+        muscleInput.value = muscle
     }
 
     /** `toggle(_:)` — selection is kept in **tap order**, which is the order they are added in. */
@@ -187,6 +204,8 @@ data class ExercisePickerUiState(
     val query: String = "",
     val trimmedQuery: String = "",
     val group: ExerciseLibrary.MuscleGroup = ExerciseLibrary.MuscleGroup.All,
+    /** One muscle picked on the body map; the group chips show unselected while it is set. */
+    val muscle: String? = null,
     val results: List<ExercisePickerEntry> = emptyList(),
     /** Selected ids in tap order. */
     val selectedIds: List<String> = emptyList(),
