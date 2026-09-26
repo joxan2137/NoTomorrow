@@ -408,7 +408,7 @@ enum WorkoutImporter {
     private static func match(_ name: String, keys: inout [String: Exercise], context: ModelContext,
                               summary: inout Summary) -> Exercise {
         let candidates = WorkoutImport.matchKeys(name)
-        if let found = candidates.lazy.compactMap({ keys[$0] }).first { return found }
+        for key in candidates { if let found = keys[key] { return found } }
         let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: name, primaryMuscles: [],
                                 isCustom: true)
         context.insert(exercise)
