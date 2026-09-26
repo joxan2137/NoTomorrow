@@ -60,6 +60,7 @@ struct BodyWeightChart: View {
                     .symbol {
                         Circle().fill(NT.Colors.ember)
                             .overlay(Circle().strokeBorder(NT.Colors.surface, lineWidth: 2))
+                            .frame(width: 9, height: 9)
                     }
                     .symbolSize(56)
             }
@@ -117,12 +118,15 @@ struct E1RMChart: View {
                 let isLatest = point.id == points.last?.id
                 PointMark(x: .value("date", point.date), y: .value("e1RM", point.e1RM))
                     .symbol {
+                        // Custom symbols get no size from symbolSize; pin it so a bare Circle can't fill the chart.
                         if isLatest {
                             Circle().fill(NT.Colors.ember)
                                 .overlay(Circle().strokeBorder(NT.Colors.ground, lineWidth: 2))
+                                .frame(width: 12, height: 12)
                         } else {
                             Circle().fill(NT.Colors.ground)
                                 .overlay(Circle().strokeBorder(NT.Colors.ember, lineWidth: 2))
+                                .frame(width: 9, height: 9)
                         }
                     }
                     .symbolSize(isLatest ? 110 : 60)
