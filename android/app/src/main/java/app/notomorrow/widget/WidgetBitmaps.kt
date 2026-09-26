@@ -94,6 +94,8 @@ internal object WidgetBitmaps {
         number: String,
         numberSp: Float,
         label: String?,
+        numberColor: Color = NT.Colors.ink,
+        labelColor: Color = NT.Colors.ink2,
     ): Sized {
         val (bitmap, canvas) = canvas(sizeDp, sizeDp, scale(context))
         val inset = lineDp / 2f
@@ -111,8 +113,8 @@ internal object WidgetBitmaps {
                 ringStroke(colors[arc.macro], lineDp),
             )
         }
-        val numberPaint = textPaint(display(context), numberSp, NT.Colors.ink)
-        val labelPaint = label?.let { textPaint(Typeface.create("sans-serif", Typeface.NORMAL), 12f, NT.Colors.ink2, false) }
+        val numberPaint = textPaint(display(context), numberSp, numberColor)
+        val labelPaint = label?.let { textPaint(Typeface.create("sans-serif", Typeface.NORMAL), 12f, labelColor, false) }
         // Shrink a long number to the inner width (`ShrinkingText` in the app).
         val inner = sizeDp - 2 * lineDp - 8f
         val measured = numberPaint.measureText(number)
@@ -126,6 +128,58 @@ internal object WidgetBitmaps {
             canvas.drawText(label, sizeDp / 2f, top + numberHeight - labelPaint.fontMetrics.ascent, labelPaint)
         }
         return Sized(bitmap, sizeDp, sizeDp)
+    }
+
+    /**
+     * The small Quick log's macro column: per macro a line "96 / 180 g" (eaten in `ink`, the goal in
+     * `ink3`) over a 4 dp bar in the macro's hue on a `surface2` track, full at the goal.
+     */
+    fun macroBars(context: Context, widthDp: Float, heightDp: Float, data: QuickLogData, unit: String): Sized {
+        val (bitmap, canvas) = canvas(widthDp, heightDp, scale(context))
+        val rows = listOf(
+            Triple(data.protein, data.goals.protein, NT.Colors.protein),
+            Triple(data.carbs, data.goals.carbs, NT.Colors.carbs),
+            Triple(data.fat, data.goals.fat, NT.Colors.fat),
+        )
+        val pitch = heightDp / rows.size
+        val bar = 4f
+        val strong = textPaint(Typeface.create("sans-serif-medium", Typeface.NORMAL), 12f, NT.Colors.ink).apply {
+            textAlign = Paint.Align.LEFT
+        }
+        val weak = textPaint(Typeface.create("sans-serif", Typeface.NORMAL), 11f, NT.Colors.ink3).apply {
+            textAlign = Paint.Align.LEFT
+        }
+        val track = paint(NT.Colors.surface2)
+        val rect = RectF()
+        rows.forEachIndexed { i, (eaten, goal, color) ->
+            val top = i * pitch
+            val barTop = top + pitch - bar - 4f
+            val baseline = barTop - 4f
+            val eatenText = Math.round(eaten).toString()
+            canvas.drawText(eatenText, 0f, baseline, strong)
+            val x = strong.measureText(eatenText)
+            // "96 / 180 g", or "130 g" when the goal does not fit the column.
+            val full = " / ${Math.round(goal)} $unit"
+            canvas.drawText(if (x + weak.measureText(full) <= widthDp) full else " $unit", x, baseline, weak)
+            rect.set(0f, barTop, widthDp, barTop + bar)
+            canvas.drawRoundRect(rect, bar / 2f, bar / 2f, track)
+            val fraction = if (goal > 0) (eaten / goal).toFloat().coerceIn(0f, 1f) else 0f
+            if (fraction > 0f) {
+                rect.set(0f, barTop, (widthDp * fraction).coerceAtLeast(bar), barTop + bar)
+                canvas.drawRoundRect(rect, bar / 2f, bar / 2f, paint(color))
+            }
+        }
+        return Sized(bitmap, widthDp, heightDp)
+    }
+
+    /** A thin rounded progress bar: a `surface2` track and a [color] fill of [fraction]. */
+    fun bar(context: Context, widthDp: Float, heightDp: Float, fraction: Float, color: Color = NT.Colors.ember): Sized {
+        val (bitmap, canvas) = canvas(widthDp, heightDp, scale(context))
+        val r = heightDp / 2f
+        canvas.drawRoundRect(RectF(0f, 0f, widthDp, heightDp), r, r, paint(NT.Colors.surface2))
+        val f = fraction.coerceIn(0f, 1f)
+        if (f > 0f) canvas.drawRoundRect(RectF(0f, 0f, (widthDp * f).coerceAtLeast(heightDp), heightDp), r, r, paint(color))
+        return Sized(bitmap, widthDp, heightDp)
     }
 
     /**

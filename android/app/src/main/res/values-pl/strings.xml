@@ -604,6 +604,7 @@
     <string name="widget_fuel_empty">Dodaj posiłek, a twoje stałe produkty pojawią się tutaj.</string>
     <string name="widget_fuel_logged">Dodano</string>
     <string name="widget_fuel_name">Szybki wpis</string>
+    <string name="widget_fuel_over">za dużo</string>
     <string name="widget_history_description">Każdy dzień względem celu kalorii, z dniami treningów.</string>
     <string name="widget_history_name">Kalendarz jedzenia</string>
     <string name="widget_history_onTarget_n">%d z 30 zgodnie z celem</string>

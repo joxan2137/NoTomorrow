@@ -20,6 +20,28 @@ ExtraBold) and are tabular. Macro hues only for food, ember only for progress / 
 Buttons inside widgets are `surface2` capsules with `ink` text (`subheadlineBold`), the primary one white on
 `ground`; minimum 36 pt tall (the widget is the hit target on small sizes).
 
+**Android look (v2).** On Android the widgets go further than the iOS baseline below:
+- The surface is a `#1A1A1D` → `ground` vertical gradient with a faint ember glow in the top-right corner
+  and a 1 dp white-10 % hairline edge (`widget_background.xml`). Capsules and the Quick log circles get the
+  same hairline over a `surface3` → `surface2` gradient.
+- Eyebrows carry a 12 dp glyph in their colour: Quick log flame, Fuel calendar calendar, Gym week dumbbell,
+  Break timer clock.
+- **Quick log small**: the ring (up to 76 dp) with, beside it, protein / carbs / fat as "96 / 180 g" over a
+  4 dp bar in the macro hue, full at the goal. **Medium**: the ring fills the height (up to 116 dp) over a
+  one-line "1,240 / 2,400 kcal". Over the goal the ring shows "+250" and `widget.fuel.over` in `bad`.
+- **Fuel calendar medium**: the grid, and a 74 dp side column with days on target ("11/30") and the 7-day
+  average in the display face. **Large**: the three stats sit on rounded `surface` tiles.
+- **Gym week**: weekday letters over the strip on both sizes (today's in `ink`); on medium the strip sits on
+  a tile with a 4 dp ember progress bar over `widget.week.done`. The day under the time is "Today",
+  "Tomorrow" or the full weekday. With no gym days: the `widget.week.name` eyebrow and
+  `widget.week.noSchedule` in `subheadlineBold`, no done line.
+- **Break timer**: the idle ring is a faint ember track (ember at 22 %). For 2 min after a rest ends the
+  widget glows ember from the bottom (`widget_background_go.xml`), the ring is full, the eyebrow is ember and
+  `timer.notification.title` is `subheadlineBold` in `ink`.
+
+Check Android layouts without a device: `./gradlew :app:testDebugUnitTest --tests '*WidgetScreenshots*'
+-PwidgetShots=<dir>` renders every size and state through Glance's RemoteViews.
+
 ### Quick log
 
 - **Small.** Top-left eyebrow `fuel.kcalLeft`. The kcal ring (`MacroRing`: a `surface2` track, the eaten kcal split

@@ -604,6 +604,7 @@
     <string name="widget_fuel_empty">Log a meal and your usual foods show up here.</string>
     <string name="widget_fuel_logged">Logged</string>
     <string name="widget_fuel_name">Quick log</string>
+    <string name="widget_fuel_over">over</string>
     <string name="widget_history_description">Every day against your calorie goal, with the days you trained.</string>
     <string name="widget_history_name">Fuel calendar</string>
     <string name="widget_history_onTarget_n">%d of 30 on target</string>

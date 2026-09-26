@@ -11202,6 +11202,23 @@
         }
       }
     },
+    "widget.fuel.over": {
+      "comment": "Under the kcal eaten past the goal in the Quick log ring (\"+250\" / \"over\").",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "over"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "za dużo"
+          }
+        }
+      }
+    },
     "widget.fuel.logged": {
       "localizations": {
         "en": {

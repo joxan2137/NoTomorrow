@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Break timer, just ended: the widget surface with a strong ember glow from the bottom, the
+     "Rest is over. Go." moment. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/nt_ground" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="1.1"
+                android:gradientRadius="260dp"
+                android:startColor="@color/nt_widget_go"
+                android:endColor="@color/nt_transparent" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <stroke android:width="1dp" android:color="@color/nt_widget_go_edge" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+</layer-list>
