@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 
 /// Progress tab: last-PR eyebrow, title, Lifts / Body segmented. Lifts: a chip per lift over the selected lift's
-/// focal card (e1RM, range delta, chart, range picker), the muscles trained this week, and the e1RM list.
+/// focal card (e1RM, range delta, chart, range picker), the muscles trained this week, the e1RM list, the training
+/// calendar and the weekly stats.
 struct ProgressHomeView: View {
     private enum Tab: Hashable { case lifts, body }
 
@@ -33,6 +34,7 @@ struct ProgressHomeView: View {
                         musclesSection.padding(.top, model.hasCompletedSets ? NT.Spacing.section : 18)
                         liftsSection.padding(.top, NT.Spacing.section)
                         TrainingCalendarCard(unit: model.unit).padding(.top, NT.Spacing.section)
+                        WeeklyStatsCard(unit: model.unit).padding(.top, NT.Spacing.section)
                     case .body:
                         BodyTabView(stats: model.body, unit: model.unit) { showsLogWeight = true }
                             .padding(.top, 18)

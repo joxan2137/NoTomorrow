@@ -12577,6 +12577,38 @@
           }
         }
       }
+    },
+    "stats.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly stats"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statystyki tygodniowe"
+          }
+        }
+      }
+    },
+    "stats.workouts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi"
+          }
+        }
+      }
     }
   }
 }
