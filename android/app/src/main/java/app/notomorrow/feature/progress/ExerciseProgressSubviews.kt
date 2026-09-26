@@ -203,3 +203,95 @@ private fun RecordRow(label: String, set: RecordSet, unit: WeightUnit) {
         )
     }
 }
+
+// MARK: - Rep maxes
+
+/**
+ * `repMaxes(_:)` — Reps · best actually lifted for at least that many (with its date) · what the
+ * best e1RM predicts, then the Epley footnote.
+ */
+@Composable
+fun RepMaxSection(state: ExerciseProgressUiState, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth()) {
+        NtText(
+            text = stringResource(S.repmax_title),
+            style = NT.Fonts.headline,
+            color = NT.Colors.ink,
+            maxLines = 1,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RepMaxHeader(stringResource(S.workout_reps), Modifier.width(REPS_COLUMN), TextAlign.Start)
+            RepMaxHeader(stringResource(S.repmax_best), Modifier.weight(1f), TextAlign.Start)
+            RepMaxHeader(stringResource(S.repmax_estimated), Modifier.width(ESTIMATE_COLUMN), TextAlign.End)
+        }
+        state.repMaxes.forEachIndexed { index, row ->
+            if (index > 0) Hairline()
+            Row(
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TabularText(
+                    text = row.reps.toString(),
+                    modifier = Modifier.width(REPS_COLUMN),
+                    style = NT.Fonts.headline,
+                    color = NT.Colors.ink,
+                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val best = row.best
+                    if (best != null) {
+                        TabularText(
+                            text = Fmt.set(best.weightKg, best.reps, state.unit),
+                            style = NT.Fonts.subheadline,
+                            color = NT.Colors.ink,
+                        )
+                        NtText(
+                            text = Fmt.dayMonth(best.day),
+                            style = NT.Fonts.footnote.tabular(),
+                            color = NT.Colors.ink2,
+                            maxLines = 1,
+                        )
+                    } else {
+                        NtText(text = "\u2014", style = NT.Fonts.subheadline, color = NT.Colors.ink3, maxLines = 1)
+                    }
+                }
+                NtText(
+                    text = Fmt.weight(row.estimatedKg, state.unit),
+                    modifier = Modifier.width(ESTIMATE_COLUMN),
+                    style = NT.Fonts.subheadline.tabular(),
+                    color = NT.Colors.ink2,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                )
+            }
+        }
+        NtText(
+            text = stringResource(S.repmax_footnote),
+            modifier = Modifier.padding(top = 8.dp),
+            style = NT.Fonts.footnote,
+            color = NT.Colors.ink3,
+        )
+    }
+}
+
+@Composable
+private fun RepMaxHeader(text: String, modifier: Modifier, align: TextAlign) {
+    NtText(
+        text = text,
+        modifier = modifier,
+        style = NT.Fonts.caption,
+        color = NT.Colors.ink2,
+        maxLines = 1,
+        textAlign = align,
+    )
+}
+
+/** `.frame(width: 44)` / `.frame(width: 84)` — the Reps and Estimated columns. */
+private val REPS_COLUMN = 44.dp
+private val ESTIMATE_COLUMN = 84.dp

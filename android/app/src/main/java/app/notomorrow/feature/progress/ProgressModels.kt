@@ -265,6 +265,14 @@ data class RecordSet(
     val day: LocalDate,
 )
 
+/** One row of the rep-max table: the best set lifted for at least [reps] reps and the e1RM's estimate. */
+@Immutable
+data class RepMaxRow(
+    val reps: Int,
+    val best: RecordSet?,
+    val estimatedKg: Double,
+)
+
 /** Everything `ExerciseProgressScreen` renders, for the selected range. */
 @Immutable
 data class ExerciseProgressUiState(
@@ -285,6 +293,8 @@ data class ExerciseProgressUiState(
     val weekOverWeek: Double? = null,
     val heaviest: RecordSet? = null,
     val mostReps: RecordSet? = null,
+    /** The rep-max table ([RepMax.rows]), one row per rep count. */
+    val repMaxes: List<RepMaxRow> = emptyList(),
     /** `false` until the first store emission — see [ProgressHomeUiState.loaded]. */
     val loaded: Boolean = false,
 )
