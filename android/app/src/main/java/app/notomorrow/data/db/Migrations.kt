@@ -27,7 +27,7 @@ import androidx.room.migration.Migration
  */
 object NoTomorrowMigrations {
 
-    /** Hand-written steps, oldest first. Empty so far: 1 → 2 (the superset columns) and 2 → 3 (`body_measurement`) are `AutoMigration`s. */
+    /** Hand-written steps, oldest first. Empty so far: 1 → 2 (the superset columns) 2 → 3 (`body_measurement`) and 3 → 4 (`progress_photo`) are `AutoMigration`s. */
     val ALL: Array<Migration> = emptyArray()
 
     /** Instances of the specs the `@Database` auto-migrations name (renames and deletes). */

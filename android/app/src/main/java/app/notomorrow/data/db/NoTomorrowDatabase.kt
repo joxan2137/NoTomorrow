@@ -14,6 +14,7 @@ import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.dao.HeadsUpDao
 import app.notomorrow.data.dao.MealDao
 import app.notomorrow.data.dao.ProfileDao
+import app.notomorrow.data.dao.ProgressPhotoDao
 import app.notomorrow.data.dao.RoutineDao
 import app.notomorrow.data.dao.ScheduleDao
 import app.notomorrow.data.dao.WorkoutDao
@@ -26,15 +27,18 @@ import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.data.entity.GymScheduleEntity
 import app.notomorrow.data.entity.HeadsUpEntity
 import app.notomorrow.data.entity.MealEntryEntity
+import app.notomorrow.data.entity.ProgressPhotoEntity
 import app.notomorrow.data.entity.RoutineEntity
 import app.notomorrow.data.entity.RoutineItemEntity
 import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.UserProfileEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
+import app.notomorrow.data.files.ProgressPhotoFiles
+import java.io.File
 
 /**
- * The 15 entities of `NoTomorrowSchema.models`, in the same order.
+ * The 16 entities of `NoTomorrowSchema.models`, in the same order.
  *
  * Room turns foreign keys on (`PRAGMA foreign_keys=ON`), so a child written before its
  * parent throws: seed exercises before routines. `@Relation` reads never cascade —
@@ -54,6 +58,7 @@ import app.notomorrow.data.entity.WorkoutExerciseEntity
         MealEntryEntity::class,
         BodyWeightEntryEntity::class,
         BodyMeasurementEntity::class,
+        ProgressPhotoEntity::class,
         BroPairingEntity::class,
         AttendanceRecordEntity::class,
         HeadsUpEntity::class,
@@ -65,6 +70,8 @@ import app.notomorrow.data.entity.WorkoutExerciseEntity
         AutoMigration(from = 1, to = 2),
         // 3: the `body_measurement` table.
         AutoMigration(from = 2, to = 3),
+        // 4: the `progress_photo` table.
+        AutoMigration(from = 3, to = 4),
     ],
 )
 @TypeConverters(Converters::class)
@@ -79,12 +86,13 @@ abstract class NoTomorrowDatabase : RoomDatabase() {
     abstract fun mealDao(): MealDao
     abstract fun bodyWeightDao(): BodyWeightDao
     abstract fun bodyMeasurementDao(): BodyMeasurementDao
+    abstract fun progressPhotoDao(): ProgressPhotoDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun headsUpDao(): HeadsUpDao
     abstract fun broPairingDao(): BroPairingDao
 
     companion object {
-        const val VERSION = 3
+        const val VERSION = 4
         const val NAME = "NoTomorrow"
     }
 }
@@ -97,7 +105,8 @@ abstract class NoTomorrowDatabase : RoomDatabase() {
  * exercises are deleted and the library's "last used" stamps cleared.
  *
  * The workout session, the rest timer, the secure store, `nt.rest.autoStart` and `hasOnboarded`
- * are the caller's job (`AccountDataReset`, `SettingsViewModel.deleteAccount`).
+ * are the caller's job (`AccountDataReset`, `SettingsViewModel.deleteAccount`), and so are the
+ * progress photo files ([UserDataWipe.deleteFiles], once the rows are gone).
  */
 suspend fun NoTomorrowDatabase.wipeUserData() = withTransaction {
     for (step in UserDataWipe.steps) step.run(this)
@@ -109,6 +118,14 @@ suspend fun NoTomorrowDatabase.wipeUserData() = withTransaction {
  */
 internal object UserDataWipe {
 
+    /**
+     * The files that belong to wiped rows: every progress photo under [filesDir]. Run after the
+     * transaction commits, so a rolled-back wipe keeps its photos.
+     */
+    fun deleteFiles(filesDir: File) {
+        ProgressPhotoFiles.inFilesDir(filesDir).deleteAll()
+    }
+
     class Step(val table: String, val run: suspend (NoTomorrowDatabase) -> Unit)
 
     val steps: List<Step> = listOf(
@@ -117,6 +134,7 @@ internal object UserDataWipe {
         Step("bro_pairing") { it.broPairingDao().deleteAll() },
         Step("body_weight_entry") { it.bodyWeightDao().deleteAll() },
         Step("body_measurement") { it.bodyMeasurementDao().deleteAll() },
+        Step("progress_photo") { it.progressPhotoDao().deleteAll() },
         Step("meal_entry") { it.mealDao().deleteAll() },
         Step("food_item") { it.foodDao().deleteAll() },
         Step("set_entry") { it.workoutDao().deleteAllSets() },

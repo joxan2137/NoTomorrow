@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.notomorrow.app.AppState
 import app.notomorrow.data.db.NoTomorrowDatabase
+import app.notomorrow.data.db.UserDataWipe
 import app.notomorrow.data.db.wipeUserData
 import app.notomorrow.data.entity.BodyWeightEntryEntity
 import app.notomorrow.data.entity.GymScheduleEntity
@@ -27,12 +28,14 @@ import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.service.toDto
 import app.notomorrow.util.S
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDate
 
@@ -395,6 +398,8 @@ class SettingsViewModel(
                     prefs.removeRoutinesSeeded()
                     // Starred exercises are the user's too (custom ones among them are gone).
                     prefs.removeFavoriteExercises()
+                    // The progress photo rows are gone: their JPEGs go too.
+                    withContext(Dispatchers.IO) { UserDataWipe.deleteFiles(app.filesDir) }
                 },
             )
             if (!wiped) Log.w(TAG, "Delete account: the local wipe failed and was rolled back")

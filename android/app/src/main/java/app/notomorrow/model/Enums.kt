@@ -54,6 +54,17 @@ enum class MeasurementKind(val raw: String) {
     }
 }
 
+/** `ProgressPose` — which way the body faces in a progress photo (optional on the row). */
+enum class ProgressPose(val raw: String) {
+    Front("front"),
+    Side("side"),
+    Back("back");
+
+    companion object {
+        fun from(raw: String?): ProgressPose? = entries.firstOrNull { it.raw == raw }
+    }
+}
+
 enum class MealSlot(val raw: String) {
     Breakfast("breakfast"),
     Lunch("lunch"),

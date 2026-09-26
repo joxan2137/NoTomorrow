@@ -126,6 +126,7 @@ class DatabaseMigrationsTest {
             1 to "8c349171cad10bb34e08e456c3ab2fd3",
             2 to "12f8e524da4627d09af9b3076002ea85",
             3 to "85c5e3865c18b0026dca72367a2560d5",
+            4 to "028480b9d99061de6da8edffa0b0583d",
         )
     }
 }

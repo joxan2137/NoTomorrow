@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
 import app.notomorrow.model.MeasurementKind
+import app.notomorrow.model.ProgressPose
 import app.notomorrow.model.TrainingGoal
 
 /**
@@ -35,6 +36,14 @@ object NtKeys {
         MeasurementKind.Thigh -> S.measure_thigh
         MeasurementKind.Neck -> S.measure_neck
         MeasurementKind.BodyFat -> S.measure_bodyFat
+    }
+
+    /** `ProgressPhotos.poseKey` — `"photos.pose." + rawValue`. */
+    @StringRes
+    fun pose(pose: ProgressPose): Int = when (pose) {
+        ProgressPose.Front -> S.photos_pose_front
+        ProgressPose.Side -> S.photos_pose_side
+        ProgressPose.Back -> S.photos_pose_back
     }
 
     /** `"goal.\(rawValue)"` */
