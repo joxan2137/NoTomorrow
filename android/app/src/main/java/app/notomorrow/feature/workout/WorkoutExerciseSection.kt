@@ -65,7 +65,7 @@ import app.notomorrow.util.S
  * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu, [onNote]
  * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set,
  * [onLinkNext] / [onUnlinkSuperset] "Superset with next" / "Remove from superset" (each shown only
- * when it applies). An exercise in a superset carries the "SUPERSET A" tag over its name.
+ * when it applies), [onHistory] "History" (the exercise's past sessions). An exercise in a superset carries the "SUPERSET A" tag over its name.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -94,6 +94,7 @@ fun WorkoutExerciseSection(
     onRpe: ((Long, Double?) -> Unit)? = null,
     onLinkNext: (() -> Unit)? = null,
     onUnlinkSuperset: (() -> Unit)? = null,
+    onHistory: (() -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -121,6 +122,7 @@ fun WorkoutExerciseSection(
             onRpe = onRpe,
             onLinkNext = onLinkNext,
             onUnlinkSuperset = onUnlinkSuperset,
+            onHistory = onHistory,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -200,6 +202,7 @@ private fun Expanded(
     onRpe: ((Long, Double?) -> Unit)?,
     onLinkNext: (() -> Unit)?,
     onUnlinkSuperset: (() -> Unit)?,
+    onHistory: (() -> Unit)?,
 ) {
     // `@State private var showsNote` — "Add note" opens the field before anything is typed.
     var showsNote by remember(exercise.id) { mutableStateOf(false) }
@@ -217,6 +220,7 @@ private fun Expanded(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onAddWarmups = onAddWarmups,
+            onHistory = onHistory?.takeIf { exercise.exerciseId != null },
             onLinkNext = onLinkNext?.takeIf { exercise.canLinkNext },
             onUnlinkSuperset = onUnlinkSuperset?.takeIf { exercise.supersetGroup != null },
             onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
@@ -304,6 +308,7 @@ private fun Header(
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
     onAddWarmups: (() -> Unit)?,
+    onHistory: (() -> Unit)?,
     onLinkNext: (() -> Unit)?,
     onUnlinkSuperset: (() -> Unit)?,
     onAddNote: (() -> Unit)?,
@@ -318,6 +323,7 @@ private fun Header(
     val items = buildList {
         onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
         onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        onHistory?.let { add(NtMenuItem(title = stringResource(S.history_title), onClick = it, icon = NtIcons.Clock)) }
         onAddWarmups?.let {
             add(
                 NtMenuItem(

@@ -188,7 +188,8 @@ interface WorkoutDao {
     /** Every entry of [exerciseId] with a note, and its workout (`ActiveWorkoutModel.previousNote(for:)`). */
     @Query(
         """
-        SELECT we.notes AS notes, w.id AS workoutId, w.startedAt AS workoutStartedAt, w.endedAt AS workoutEndedAt
+        SELECT we.notes AS notes, w.id AS workoutId, w.startedAt AS workoutStartedAt, w.endedAt AS workoutEndedAt,
+               we.id AS workoutExerciseId
         FROM workout_exercise we JOIN workout w ON w.id = we.workoutId
         WHERE we.exerciseId = :exerciseId AND we.notes != ''
         """,

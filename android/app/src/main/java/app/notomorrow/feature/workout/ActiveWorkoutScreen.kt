@@ -90,6 +90,8 @@ fun ActiveWorkoutScreen(
     // `@State private var plateSet: SetEntry?` — the set the plate calculator is open for.
     var plateSetId by remember { mutableStateOf<Long?>(null) }
     val plateTarget = focusedWeightSet(state, focus.focused)
+    // `@State private var showsHistory` (per section on iOS) — the section whose history is open.
+    var historyExerciseId by remember { mutableStateOf<Long?>(null) }
 
     // History may have been edited (or the unit changed) while the workout sat in the mini bar.
     LaunchedEffect(model) { model.reloadPrevious() }
@@ -218,6 +220,7 @@ fun ActiveWorkoutScreen(
                     onRpe = model::setRpe,
                     onLinkNext = model::linkWithNext,
                     onUnlinkSuperset = model::unlinkSuperset,
+                    onHistory = { id -> historyExerciseId = id },
                 )
             }
         }
@@ -273,6 +276,22 @@ fun ActiveWorkoutScreen(
                 unit = state.unit,
                 onUse = { kg -> model.setWeight(setId, kg) },
                 onDismiss = { plateSetId = null },
+            )
+        }
+    }
+
+    historyExerciseId?.let { id ->
+        val exercise = state.exercises.firstOrNull { it.id == id }
+        val exerciseId = exercise?.exerciseId
+        if (exerciseId == null) {
+            historyExerciseId = null
+        } else {
+            ExerciseHistorySheet(
+                exerciseId = exerciseId,
+                exerciseName = exercise.name,
+                unit = state.unit,
+                excludingWorkoutId = state.workoutId,
+                onDismiss = { historyExerciseId = null },
             )
         }
     }

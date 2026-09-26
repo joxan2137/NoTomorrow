@@ -111,4 +111,6 @@ data class ExerciseNoteRow(
     val workoutId: String,
     val workoutStartedAt: Long,
     val workoutEndedAt: Long?,
+    /** The entry itself — the exercise history's note for that session. */
+    val workoutExerciseId: Long = 0,
 )

@@ -152,7 +152,7 @@ class FakeWorkoutDao : WorkoutDao {
     override suspend fun exerciseNotes(exerciseId: String): List<ExerciseNoteRow> =
         exercises.value.filter { it.exerciseId == exerciseId && it.notes.isNotEmpty() }.mapNotNull { we ->
             val w = workouts.value.firstOrNull { it.id == we.workoutId } ?: return@mapNotNull null
-            ExerciseNoteRow(we.notes, w.id, w.startedAt, w.endedAt)
+            ExerciseNoteRow(we.notes, w.id, w.startedAt, w.endedAt, we.id)
         }
 
     override suspend fun updateWorkoutExerciseNotes(id: Long, notes: String) {
