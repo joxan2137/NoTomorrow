@@ -355,6 +355,16 @@
     <string name="meal_dinner">Kolacja</string>
     <string name="meal_lunch">Obiad</string>
     <string name="meal_snack">Przekąska</string>
+    <string name="measure_arm">Ramię</string>
+    <string name="measure_bodyFat">Tkanka tłuszczowa</string>
+    <string name="measure_chest">Klatka</string>
+    <string name="measure_empty">Mierz talię, klatkę, ramiona i resztę, żeby widzieć zmiany, których waga nie pokaże.</string>
+    <string name="measure_hips">Biodra</string>
+    <string name="measure_log">Zapisz pomiary</string>
+    <string name="measure_neck">Szyja</string>
+    <string name="measure_thigh">Udo</string>
+    <string name="measure_title">Pomiary</string>
+    <string name="measure_waist">Talia</string>
     <string name="mock_food_broccoli">Brokuły</string>
     <string name="mock_food_chicken">Kurczak z grilla</string>
     <string name="mock_food_oliveOil">Oliwa z oliwek</string>

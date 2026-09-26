@@ -370,6 +370,16 @@ object S {
     val meal_dinner = R.string.meal_dinner
     val meal_lunch = R.string.meal_lunch
     val meal_snack = R.string.meal_snack
+    val measure_arm = R.string.measure_arm
+    val measure_bodyFat = R.string.measure_bodyFat
+    val measure_chest = R.string.measure_chest
+    val measure_empty = R.string.measure_empty
+    val measure_hips = R.string.measure_hips
+    val measure_log = R.string.measure_log
+    val measure_neck = R.string.measure_neck
+    val measure_thigh = R.string.measure_thigh
+    val measure_title = R.string.measure_title
+    val measure_waist = R.string.measure_waist
     val mock_food_broccoli = R.string.mock_food_broccoli
     val mock_food_chicken = R.string.mock_food_chicken
     val mock_food_oliveOil = R.string.mock_food_oliveOil

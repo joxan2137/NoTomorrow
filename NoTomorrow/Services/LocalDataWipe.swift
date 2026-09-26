@@ -59,6 +59,7 @@ enum LocalDataWipe {
         try deleteAll(MealEntry.self, in: context)
         try deleteAll(FoodItem.self, in: context)
         try deleteAll(BodyWeightEntry.self, in: context)
+        try deleteAll(BodyMeasurement.self, in: context)
         try deleteAll(HeadsUp.self, in: context)
         try deleteAll(AttendanceRecord.self, in: context)
         try deleteAll(BroPairing.self, in: context)

@@ -7,7 +7,7 @@ enum NoTomorrowSchema {
         UserProfile.self, GymSchedule.self,
         Exercise.self, Routine.self, RoutineItem.self,
         Workout.self, WorkoutExercise.self, SetEntry.self,
-        FoodItem.self, MealEntry.self, BodyWeightEntry.self,
+        FoodItem.self, MealEntry.self, BodyWeightEntry.self, BodyMeasurement.self,
         BroPairing.self, AttendanceRecord.self, HeadsUp.self,
     ]
 }
@@ -339,6 +339,30 @@ final class BodyWeightEntry {
         self.kg = kg
         self.source = source
     }
+}
+
+/// Tape measurements and body fat (Progress > Body > Measurements). One row per (day, kind); lengths in cm.
+enum MeasurementKind: String, Codable, CaseIterable {
+    case waist, chest, hips, arm, thigh, neck, bodyFat
+}
+
+@Model
+final class BodyMeasurement {
+    @Attribute(.unique) var id: UUID
+    /// Start of day (local calendar).
+    var day: Date
+    var kindRaw: String
+    /// Centimetres, or percent for body fat.
+    var value: Double
+
+    init(day: Date, kind: MeasurementKind, value: Double) {
+        self.id = UUID()
+        self.day = Calendar.current.startOfDay(for: day)
+        self.kindRaw = kind.rawValue
+        self.value = value
+    }
+
+    var kind: MeasurementKind? { MeasurementKind(rawValue: kindRaw) }
 }
 
 // MARK: - Gym bro

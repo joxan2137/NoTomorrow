@@ -355,6 +355,16 @@
     <string name="meal_dinner">Dinner</string>
     <string name="meal_lunch">Lunch</string>
     <string name="meal_snack">Snack</string>
+    <string name="measure_arm">Arm</string>
+    <string name="measure_bodyFat">Body fat</string>
+    <string name="measure_chest">Chest</string>
+    <string name="measure_empty">Track your waist, chest, arms and more to see changes the scale misses.</string>
+    <string name="measure_hips">Hips</string>
+    <string name="measure_log">Log measurements</string>
+    <string name="measure_neck">Neck</string>
+    <string name="measure_thigh">Thigh</string>
+    <string name="measure_title">Measurements</string>
+    <string name="measure_waist">Waist</string>
     <string name="mock_food_broccoli">Broccoli</string>
     <string name="mock_food_chicken">Grilled chicken</string>
     <string name="mock_food_oliveOil">Olive oil</string>
