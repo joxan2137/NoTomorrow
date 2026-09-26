@@ -41,6 +41,8 @@ class ShowcaseScreenshots {
 
     @Test
     fun bodyMaps() {
+        // The composable reads the regions off the main thread; load them first so the frame has them.
+        BodyMap.regions = BodyMap.decode(File("src/main/assets/muscle_model.json").readText())
         shoot("bodymap-bench", 411, 460) {
             NTCard {
                 BodyMapCanvas(

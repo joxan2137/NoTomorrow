@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -286,14 +285,16 @@ internal fun DrawScope.drawMotion(library: MotionLibrary.Library, pattern: Motio
     val front = pattern.front
     val j = MotionLibrary.solve(pose, front)
     val (bx, by, bw, bh) = library.box.let { if (it.size == 4) it else listOf(-30.0, -20.0, 260.0, 220.0) }
-    val scale = min(size.width / bw, size.height / bh).toFloat()
-    val dx = (size.width - bw.toFloat() * scale) / 2
-    val dy = (size.height - bh.toFloat() * scale) / 2
+    val scale = min(size.width / bw, size.height / bh)
+    val dx = ((size.width - bw * scale) / 2).toFloat()
+    val dy = ((size.height - bh * scale) / 2).toFloat()
 
-    fun o(p: MotionLibrary.Pt) = Offset(p.x.toFloat(), p.y.toFloat())
+    // Box units to pixels, done by hand rather than with a DrawScope transform so strokes and radii scale with it.
+    fun o(p: MotionLibrary.Pt) = Offset(dx + ((p.x - bx) * scale).toFloat(), dy + ((p.y - by) * scale).toFloat())
+    fun px(units: Double) = (units * scale).toFloat()
     fun capsule(a: MotionLibrary.Pt?, b: MotionLibrary.Pt?, width: Double, color: Color) {
         if (a == null || b == null) return
-        drawLine(color, o(a), o(b), strokeWidth = width.toFloat(), cap = StrokeCap.Round)
+        drawLine(color, o(a), o(b), strokeWidth = px(width), cap = StrokeCap.Round)
     }
     fun resolve(r: MotionLibrary.Ref?): MotionLibrary.Pt? = when (r) {
         is MotionLibrary.Ref.Joint -> j[r.name]
@@ -313,21 +314,21 @@ internal fun DrawScope.drawMotion(library: MotionLibrary.Library, pattern: Motio
                 "post" -> capsule(resolve(prop.from), resolve(prop.to), 5.0, PropColor)
                 "plate" -> {
                     val p = prop.at?.let { j[it] } ?: continue
-                    val c = Offset((p.x + (prop.offset?.x ?: 0.0)).toFloat(), (p.y + (prop.offset?.y ?: 0.0)).toFloat())
-                    val r = (prop.r ?: 16.0).toFloat()
+                    val c = o(MotionLibrary.Pt(p.x + (prop.offset?.x ?: 0.0), p.y + (prop.offset?.y ?: 0.0)))
+                    val r = px(prop.r ?: 16.0)
                     drawCircle(PlateFill, r, c)
-                    drawCircle(Metal, r, c, style = Stroke(3f))
-                    drawCircle(Metal, 2.5f, c)
+                    drawCircle(Metal, r, c, style = Stroke(px(3.0)))
+                    drawCircle(Metal, px(2.5), c)
                 }
                 "dumbbell" -> {
                     val p = prop.at?.let { j[it] } ?: continue
-                    drawRoundRect(Metal, Offset(p.x.toFloat() - 9, p.y.toFloat() - 5), Size(18f, 10f), CornerRadius(3f))
+                    drawRoundRect(Metal, o(MotionLibrary.Pt(p.x - 9, p.y - 5)), Size(px(18.0), px(10.0)), CornerRadius(px(3.0)))
                 }
                 "cable" -> {
                     val from = resolve(prop.from) ?: continue
                     val to = resolve(prop.to) ?: continue
                     capsule(from, to, 1.5, Metal)
-                    drawCircle(PropColor, 4f, o(to))
+                    drawCircle(PropColor, px(4.0), o(to))
                 }
                 "footplate" -> {
                     val at = prop.at ?: continue
@@ -349,7 +350,7 @@ internal fun DrawScope.drawMotion(library: MotionLibrary.Library, pattern: Motio
                 }
                 "bar" -> {
                     val p = prop.at?.let { j[it] } ?: continue
-                    drawCircle(Metal, 3.5f, o(p))
+                    drawCircle(Metal, px(3.5), o(p))
                 }
             }
         }
@@ -364,11 +365,7 @@ internal fun DrawScope.drawMotion(library: MotionLibrary.Library, pattern: Motio
         capsule(j["elbow$s"], j["wrist$s"], 9.0, color("fore", s))
     }
 
-    withTransform({
-        translate(dx, dy)
-        scale(scale, scale, pivot = Offset.Zero)
-        translate(-bx.toFloat(), -by.toFloat())
-    }) {
+    run {
         props("back")
         leg("f")
         arm("f")
@@ -386,7 +383,7 @@ internal fun DrawScope.drawMotion(library: MotionLibrary.Library, pattern: Motio
             capsule(mid, spine, 24.0, trunk)
         }
         capsule(spine, j["neck"], 9.0, Near)
-        j["head"]?.let { drawCircle(Near, MotionLibrary.HEAD.toFloat(), o(it)) }
+        j["head"]?.let { drawCircle(Near, px(MotionLibrary.HEAD), o(it)) }
         leg("n")
         arm("n")
         props("front")
