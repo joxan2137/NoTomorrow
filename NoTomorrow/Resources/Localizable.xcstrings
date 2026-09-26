@@ -12145,6 +12145,214 @@
           }
         }
       }
+    },
+    "import.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import workouts"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import treningów"
+          }
+        }
+      }
+    },
+    "import.description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring your history from Strong or Hevy: export your workouts as a CSV file from that app's settings, then choose the file here. A No Tomorrow workouts.csv works too. Workouts already here are skipped."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieś historię ze Strong lub Hevy: wyeksportuj treningi do pliku CSV w ustawieniach tamtej aplikacji, a potem wybierz plik tutaj. Plik workouts.csv z No Tomorrow też zadziała. Treningi, które już tu są, zostaną pominięte."
+          }
+        }
+      }
+    },
+    "import.choose": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose CSV file"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz plik CSV"
+          }
+        }
+      }
+    },
+    "import.chooseAnother": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose another file"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz inny plik"
+          }
+        }
+      }
+    },
+    "import.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Źródło"
+          }
+        }
+      }
+    },
+    "import.range": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dates"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okres"
+          }
+        }
+      }
+    },
+    "import.skipped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rows skipped"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pominięte wiersze"
+          }
+        }
+      }
+    },
+    "import.confirm %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import %lld workouts"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj treningi: %lld"
+          }
+        }
+      }
+    },
+    "import.done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaimportowano"
+          }
+        }
+      }
+    },
+    "import.duplicates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already here, skipped"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już były, pominięte"
+          }
+        }
+      }
+    },
+    "import.newExercises": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New custom exercises"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe własne ćwiczenia"
+          }
+        }
+      }
+    },
+    "import.newExercisesNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exercises that didn't match the library were added as custom exercises with their original names."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ćwiczenia, których nie ma w bibliotece, dodano jako własne, z oryginalnymi nazwami."
+          }
+        }
+      }
+    },
+    "import.failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That file isn't a Strong, Hevy or No Tomorrow workout export."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plik nie jest eksportem treningów ze Strong, Hevy ani No Tomorrow."
+          }
+        }
+      }
     }
   }
 }
