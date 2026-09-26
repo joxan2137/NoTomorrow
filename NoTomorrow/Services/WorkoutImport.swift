@@ -64,7 +64,7 @@ enum WorkoutImport {
 
     // MARK: Strong
 
-    private static func parseStrong(_ rows: ArraySlice<[String]>, _ c: Columns, unit: WeightUnit) -> Parsed {
+    private static func parseStrong(_ rows: [[String]], _ c: Columns, unit: WeightUnit) -> Parsed {
         var builder = Builder()
         let weightColumn = c.first(["weight (kg)", "weight (lbs)", "weight"]) ?? "weight"
         let weightUnit: WeightUnit = weightColumn.contains("lbs") ? .lb : (weightColumn.contains("kg") ? .kg : unit)
@@ -101,7 +101,7 @@ enum WorkoutImport {
 
     // MARK: Hevy
 
-    private static func parseHevy(_ rows: ArraySlice<[String]>, _ c: Columns) -> Parsed {
+    private static func parseHevy(_ rows: [[String]], _ c: Columns) -> Parsed {
         var builder = Builder()
         let usesPounds = !c.has("weight_kg") && c.has("weight_lbs")
         for row in rows {
@@ -127,7 +127,7 @@ enum WorkoutImport {
 
     // MARK: NoTomorrow (Settings > Export)
 
-    private static func parseNoTomorrow(_ rows: ArraySlice<[String]>, _ c: Columns) -> Parsed {
+    private static func parseNoTomorrow(_ rows: [[String]], _ c: Columns) -> Parsed {
         var builder = Builder()
         for row in rows {
             guard let start = Dates.parse(c.value("started_at", in: row)) else { builder.skipped += 1; continue }
