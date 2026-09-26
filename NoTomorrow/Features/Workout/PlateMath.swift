@@ -94,7 +94,7 @@ enum WarmupPlan {
         }
         for (ratio, reps) in ramp {
             let weight = (working * ratio / step + 1e-9).rounded(.down) * step
-            guard weight < working, weight > (result.last?.weight ?? 0) else { continue }
+            guard working > weight, weight > (result.last?.weight ?? 0) else { continue }
             result.append(Step(weight: weight, reps: reps))
         }
         return result
