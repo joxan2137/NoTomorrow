@@ -190,6 +190,11 @@ struct WorkoutDetailExercise: View {
                 .font(NT.Fonts.headline)
                 .foregroundStyle(NT.Colors.ink)
                 .lineLimit(1)
+            if !item.notes.isEmpty {
+                Text(item.notes)
+                    .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if completed.isEmpty {
                 Text("workout.noSetsLogged").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
             } else {
@@ -213,6 +218,10 @@ struct WorkoutDetailExercise: View {
                 .font(NT.Fonts.subheadline)
                 .foregroundStyle(NT.Colors.ink)
                 .tabular()
+            if let rpe = set.rpe {
+                Text(verbatim: "@\(RPE.label(rpe))")
+                    .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ember).tabular()
+            }
             Spacer()
             if set.isPR {
                 Badge(text: "workout.pr")

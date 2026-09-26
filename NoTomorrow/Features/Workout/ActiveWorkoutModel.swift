@@ -324,6 +324,25 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    func setRPE(_ rpe: Double?, for set: SetEntry) {
+        set.rpe = rpe
+        try? context.save()
+    }
+
+    /// The note left on this exercise the last time it was done (Hevy-style "sticky" notes: seat height, grip…),
+    /// shown as the note field's placeholder.
+    func previousNote(for exercise: WorkoutExercise) -> String? {
+        guard let ex = exercise.exercise else { return nil }
+        let myID = workout.persistentModelID
+        return ex.usages
+            .filter { usage in
+                guard let other = usage.workout, other.persistentModelID != myID, other.endedAt != nil else { return false }
+                return !usage.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            .max { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }?
+            .notes
+    }
+
     /// "Delete set" from the kind menu: removes the row and renumbers the rest. Records are re-derived on Finish.
     /// Progress (open under the mini bar) reloads, so it drops a deleted completed set.
     func removeSet(_ set: SetEntry, in exercise: WorkoutExercise) {

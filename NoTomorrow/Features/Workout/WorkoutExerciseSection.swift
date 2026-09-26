@@ -12,6 +12,7 @@ struct WorkoutExerciseSection: View {
     var onDeleteSet: (SetEntry) -> Void
 
     @Environment(\.modelContext) private var context
+    @State private var showsNote = false
 
     private var name: String { exercise.exercise?.localizedName ?? "" }
 
@@ -50,6 +51,10 @@ struct WorkoutExerciseSection: View {
     private var expanded: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
+            if showsNote || !exercise.notes.isEmpty {
+                ExerciseNoteField(exercise: exercise, previous: model.previousNote(for: exercise))
+                    .transition(.opacity)
+            }
             if let suggestion = model.suggestion(for: exercise) {
                 suggestionRow(suggestion)
                     .transition(.opacity)
@@ -86,6 +91,11 @@ struct WorkoutExerciseSection: View {
                     withAnimation(.easeInOut(duration: 0.2)) { model.addWarmups(to: exercise) }
                 }
                 .disabled(model.warmupSteps(for: exercise).isEmpty)
+                if exercise.notes.isEmpty && !showsNote {
+                    Button("note.add", systemImage: "note.text") {
+                        withAnimation(.easeInOut(duration: 0.2)) { showsNote = true }
+                    }
+                }
                 Button("workout.removeExercise", role: .destructive) { model.remove(exercise) }
             } label: {
                 Image(systemName: "ellipsis")
@@ -139,5 +149,42 @@ struct WorkoutExerciseSection: View {
         .padding(.horizontal, 12)
         .frame(height: 32)
         .background(NT.Colors.emberTint, in: RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
+    }
+}
+
+/// The exercise's note for this workout, saved as it is typed. Its placeholder is the note from last time, so a
+/// seat height or grip written once shows up again the next session.
+private struct ExerciseNoteField: View {
+    let exercise: WorkoutExercise
+    let previous: String?
+
+    @Environment(\.modelContext) private var context
+    @State private var text = ""
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "note.text")
+                .font(.system(size: 13, weight: .semibold)).foregroundStyle(NT.Colors.ink3)
+            TextField("note.add", text: $text, prompt: prompt, axis: .vertical)
+                .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink)
+                .lineLimit(1...4)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
+        .onAppear { text = exercise.notes }
+        .onChange(of: text) { _, new in
+            guard new != exercise.notes else { return }
+            exercise.notes = new
+            try? context.save()
+        }
+    }
+
+    private var prompt: Text {
+        if let previous {
+            Text("note.last \(previous)").foregroundStyle(NT.Colors.ink3)
+        } else {
+            Text("note.placeholder").foregroundStyle(NT.Colors.ink3)
+        }
     }
 }

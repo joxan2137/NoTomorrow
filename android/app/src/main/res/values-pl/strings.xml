@@ -363,6 +363,9 @@
     <string name="muscle_shoulders">Barki</string>
     <string name="n_h_n_min">%1$d h %2$d min</string>
     <string name="n_min">%d min</string>
+    <string name="note_add">Dodaj notatkę</string>
+    <string name="note_last_s">Ostatnio: %s</string>
+    <string name="note_placeholder">Notatka do ćwiczenia</string>
     <string name="onboarding_getStarted">Zaczynamy</string>
     <string name="onboarding_haveCode">Masz już kod od kolegi?</string>
     <string name="onboarding_language">Język · Language</string>
@@ -467,6 +470,8 @@
     <string name="routine_rest">Przerwa</string>
     <string name="routine_restDefault">Domyślna</string>
     <string name="routine_saveFromWorkout">Zapisz jako plan</string>
+    <string name="rpe_clear">Usuń RPE</string>
+    <string name="rpe_title">RPE</string>
     <string name="settings_account">Konto</string>
     <string name="settings_account_user">Zalogowano jako</string>
     <string name="settings_aiProvider">Szacunki AI</string>

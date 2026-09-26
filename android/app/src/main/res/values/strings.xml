@@ -363,6 +363,9 @@
     <string name="muscle_shoulders">Shoulders</string>
     <string name="n_h_n_min">%1$d h %2$d min</string>
     <string name="n_min">%d min</string>
+    <string name="note_add">Add note</string>
+    <string name="note_last_s">Last time: %s</string>
+    <string name="note_placeholder">Note for this exercise</string>
     <string name="onboarding_getStarted">Get started</string>
     <string name="onboarding_haveCode">Got a code from your bro?</string>
     <string name="onboarding_language">Language · Język</string>
@@ -467,6 +470,8 @@
     <string name="routine_rest">Rest</string>
     <string name="routine_restDefault">Default</string>
     <string name="routine_saveFromWorkout">Save as routine</string>
+    <string name="rpe_clear">Clear RPE</string>
+    <string name="rpe_title">RPE</string>
     <string name="settings_account">Account</string>
     <string name="settings_account_user">Signed in as</string>
     <string name="settings_aiProvider">AI estimates</string>

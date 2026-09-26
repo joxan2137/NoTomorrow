@@ -378,6 +378,9 @@ object S {
     val muscle_shoulders = R.string.muscle_shoulders
     val n_h_n_min = R.string.n_h_n_min  // %lld h %lld min
     val n_min = R.string.n_min  // %lld min
+    val note_add = R.string.note_add
+    val note_last_s = R.string.note_last_s  // note.last %@
+    val note_placeholder = R.string.note_placeholder
     val onboarding_getStarted = R.string.onboarding_getStarted
     val onboarding_haveCode = R.string.onboarding_haveCode
     val onboarding_language = R.string.onboarding_language
@@ -482,6 +485,8 @@ object S {
     val routine_rest = R.string.routine_rest
     val routine_restDefault = R.string.routine_restDefault
     val routine_saveFromWorkout = R.string.routine_saveFromWorkout
+    val rpe_clear = R.string.rpe_clear
+    val rpe_title = R.string.rpe_title
     val settings_account = R.string.settings_account
     val settings_account_user = R.string.settings_account_user
     val settings_aiProvider = R.string.settings_aiProvider
