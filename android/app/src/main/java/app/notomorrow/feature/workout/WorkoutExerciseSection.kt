@@ -334,8 +334,10 @@ private fun Header(
         listOfNotNull(muscle, lastLine(exercise, unit)).joinToString(SEPARATOR)
     }
     val items = buildList {
-        onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
-        onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        if (editing) {
+            onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
+            onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        }
         onHistory?.let { add(NtMenuItem(title = stringResource(S.history_title), onClick = it, icon = NtIcons.Clock)) }
         onAddWarmups?.let {
             add(
@@ -355,6 +357,29 @@ private fun Header(
                     icon = NtIcons.Timer,
                 ),
             )
+        }
+        if (!editing) {
+            // The active workout (as on iOS): after the rest, disabled at the ends instead of hidden.
+            onMoveUp?.let {
+                add(
+                    NtMenuItem(
+                        title = stringResource(S.workout_edit_moveUp),
+                        onClick = it,
+                        icon = NtIcons.ArrowUp,
+                        enabled = exercise.canMoveUp,
+                    ),
+                )
+            }
+            onMoveDown?.let {
+                add(
+                    NtMenuItem(
+                        title = stringResource(S.workout_edit_moveDown),
+                        onClick = it,
+                        icon = NtIcons.ArrowDown,
+                        enabled = exercise.canMoveDown,
+                    ),
+                )
+            }
         }
         onReplace?.let {
             add(NtMenuItem(title = stringResource(S.workout_replaceExercise), onClick = it))
@@ -675,6 +700,9 @@ data class WorkoutExerciseUi(
     val supersetLetter: String? = null,
     /** "Superset with next" applies (`canLinkWithNext(_:)`). */
     val canLinkNext: Boolean = false,
+    /** Move up / Move down have somewhere to go (`canMove(_:by:)`); the active workout disables them at the ends. */
+    val canMoveUp: Boolean = false,
+    val canMoveDown: Boolean = false,
 ) {
     /** "Replace exercise" is offered only while no set is completed (`canReplace(_:)`). */
     val canReplace: Boolean get() = sets.none { it.isCompleted }

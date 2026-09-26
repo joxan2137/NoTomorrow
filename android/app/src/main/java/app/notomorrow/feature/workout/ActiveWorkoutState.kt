@@ -360,7 +360,8 @@ internal fun supersetHop(all: List<WorkoutExerciseUi>, section: WorkoutExerciseU
 
 /**
  * The superset fields of every section, from the groups in list order: `supersetLetter(for:)`
- * ("A", "B"…) and `canLinkWithNext(_:)` (a next exercise exists and is not already linked).
+ * ("A", "B"…) and `canLinkWithNext(_:)` (a next exercise exists and is not already linked); and
+ * `canMove(_:by:)` for Move up / Move down (not the first / not the last).
  */
 internal fun List<WorkoutExerciseUi>.withSupersets(): List<WorkoutExerciseUi> {
     val groups = map { it.supersetGroup }
@@ -369,6 +370,8 @@ internal fun List<WorkoutExerciseUi>.withSupersets(): List<WorkoutExerciseUi> {
         exercise.copy(
             supersetLetter = letters[index],
             canLinkNext = index + 1 < size && !Superset.isLinkedToNext(groups, index),
+            canMoveUp = index > 0,
+            canMoveDown = index + 1 < size,
         )
     }
 }

@@ -20,7 +20,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-/** The active workout's exercise menu: Replace exercise (`ActiveWorkoutEditTests.swift`). */
+/** The active workout's exercise menu: Replace exercise, Move up / Move down (`ActiveWorkoutEditTests.swift`). */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActiveWorkoutEditTest {
 
@@ -118,5 +118,50 @@ class ActiveWorkoutEditTest {
         runCurrent()
 
         assertEquals(listOf(10, 10), harness.workouts.sets(ids[0]).map { it.reps })
+    }
+
+    // MARK: - Move
+
+    @Test
+    fun `move swaps with the neighbour and stops at the ends`() = runTest {
+        val harness = ActiveWorkoutHarness(backgroundScope)
+        val ids = harness.seed(exerciseIds = listOf("a", "b", "c"))
+        val model = harness.model()
+        runCurrent()
+        assertEquals(listOf(false, true, true), model.state.value.exercises.map { it.canMoveUp })
+        assertEquals(listOf(true, true, false), model.state.value.exercises.map { it.canMoveDown })
+
+        model.moveExercise(ids[2], -1)
+        runCurrent()
+        assertEquals(listOf("a", "c", "b"), harness.workouts.workoutExercises("w").map { it.exerciseId })
+        assertEquals(listOf(0, 1, 2), harness.workouts.workoutExercises("w").map { it.order })
+        assertEquals(listOf("a", "c", "b"), model.state.value.exercises.map { it.exerciseId })
+
+        model.moveExercise(ids[0], -1)
+        runCurrent()
+        assertEquals(listOf("a", "c", "b"), harness.workouts.workoutExercises("w").map { it.exerciseId }, "the first cannot go up")
+    }
+
+    @Test
+    fun `move normalizes supersets`() = runTest {
+        val harness = ActiveWorkoutHarness(backgroundScope)
+        val ids = harness.seed(exerciseIds = listOf("a", "b", "c"))
+        val model = harness.model()
+        runCurrent()
+        model.linkWithNext(ids[0])
+        runCurrent()
+
+        model.moveExercise(ids[0], 1)
+        runCurrent()
+        var rows = harness.workouts.workoutExercises("w")
+        assertEquals(listOf("b", "a", "c"), rows.map { it.exerciseId })
+        assertEquals(listOf(1, 1, null), rows.map { it.supersetGroup }, "swapped inside the superset: still one")
+
+        model.moveExercise(ids[0], 1)
+        runCurrent()
+        rows = harness.workouts.workoutExercises("w")
+        assertEquals(listOf("b", "c", "a"), rows.map { it.exerciseId })
+        assertEquals(listOf(null, null, null), rows.map { it.supersetGroup }, "moved apart: no longer a superset")
+        assertEquals(listOf(null, null, null), model.state.value.exercises.map { it.supersetLetter })
     }
 }

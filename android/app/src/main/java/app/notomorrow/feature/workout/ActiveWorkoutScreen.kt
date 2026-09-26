@@ -225,6 +225,7 @@ fun ActiveWorkoutScreen(
                     onUnlinkSuperset = model::unlinkSuperset,
                     onHistory = { id -> historyExerciseId = id },
                     onReplace = { id -> replacingExerciseId = id },
+                    onMove = model::moveExercise,
                 )
             }
         }

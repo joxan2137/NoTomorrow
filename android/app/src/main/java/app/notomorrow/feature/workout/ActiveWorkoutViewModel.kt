@@ -538,6 +538,31 @@ class ActiveWorkoutViewModel(
         }
     }
 
+    // MARK: - Reorder
+
+    /**
+     * `move(_:by:)` — Move up (-1) / Move down (+1): swaps with the neighbour and renumbers.
+     * Supersets are normalized afterwards, as in `RoutineDraft.moving`, so a member moved away
+     * from its partners leaves the superset. No-op at the ends.
+     */
+    fun moveExercise(exerciseUiId: Long, offset: Int) {
+        viewModelScope.launch {
+            writes.withLock {
+                val rows = workoutDao.workoutExercises(workoutId).sortedBy { it.order }
+                val from = rows.indexOfFirst { it.id == exerciseUiId }
+                val to = from + offset
+                if (from < 0 || to !in rows.indices) return@launch
+                val moved = rows.toMutableList().apply { this[from] = rows[to]; this[to] = rows[from] }
+                val groups = Superset.normalized(moved.map { it.supersetGroup })
+                moved.forEachIndexed { index, row ->
+                    if (row.order != index || row.supersetGroup != groups[index]) {
+                        workoutDao.updateWorkoutExercise(row.copy(order = index, supersetGroup = groups[index]))
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Supersets
 
     /** `linkWithNext(_:)` — "Superset with next". */

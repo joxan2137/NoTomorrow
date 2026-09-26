@@ -86,6 +86,7 @@ internal fun WorkoutTable(
     onHistory: (Long) -> Unit,
     onRest: (Long, Int) -> Unit,
     onReplace: (Long) -> Unit = {},
+    onMove: (Long, Int) -> Unit = { _, _ -> },
 ) {
     val focusManager = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
@@ -142,6 +143,8 @@ internal fun WorkoutTable(
                     onHistory = { onHistory(exercise.id) },
                     onRest = { seconds -> onRest(exercise.id, seconds) },
                     onReplace = { onReplace(exercise.id) },
+                    onMoveUp = { onMove(exercise.id, -1) },
+                    onMoveDown = { onMove(exercise.id, 1) },
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }
