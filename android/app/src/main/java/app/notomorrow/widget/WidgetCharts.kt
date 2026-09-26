@@ -116,10 +116,23 @@ internal object WidgetCharts {
         numbers: Boolean,
         dots: Boolean,
         locale: Locale,
+        labels: List<String>? = null,
     ): WidgetBitmaps.Sized {
         val dotRow = if (dots) DOT_GAP_DP + DOT_DP else 0f
-        val heightDp = circleDp + dotRow
+        val labelSp = (circleDp * 0.42f).coerceIn(9f, 11f)
+        val labelRow = if (labels != null) labelSp + LABEL_GAP_DP else 0f
+        val heightDp = labelRow + circleDp + dotRow
         val (bitmap, canvas) = WidgetBitmaps.canvas(widthDp, heightDp, WidgetBitmaps.scale(context))
+        // Weekday letters over the columns, today's in `ink`; the strip itself below them.
+        if (labels != null) {
+            val labelPaint = WidgetBitmaps.textPaint(Typeface.create("sans-serif-medium", Typeface.NORMAL), labelSp, NT.Colors.ink3, false)
+            val m = labelPaint.fontMetrics
+            days.take(7).forEachIndexed { i, day ->
+                labelPaint.color = WidgetBitmaps.paint(if (day.isToday) NT.Colors.ink else NT.Colors.ink3).color
+                canvas.drawText(labels.getOrElse(i) { "" }, widthDp / 7f * (i + 0.5f), -m.ascent * 0.92f, labelPaint)
+            }
+            canvas.translate(0f, labelRow)
+        }
         val column = widthDp / 7f
         val r = circleDp / 2f
         val numberPaint = WidgetBitmaps.textPaint(
@@ -183,6 +196,7 @@ internal object WidgetCharts {
         return WidgetBitmaps.Sized(bitmap, widthDp, heightDp)
     }
 
+    private const val LABEL_GAP_DP = 6f
     private const val DOT_DP = 5f
     private const val DOT_SPACING_DP = 3f
     private const val DOT_GAP_DP = 6f

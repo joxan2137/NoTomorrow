@@ -22,10 +22,12 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Row
 import androidx.glance.layout.RowScope
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -78,13 +80,14 @@ internal object W {
 internal fun WidgetFrame(
     onClick: Action,
     padding: Dp = W.margin,
+    background: Int = R.drawable.widget_background,
     content: @Composable () -> Unit,
 ) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(ImageProvider(R.drawable.widget_background))
+            .background(ImageProvider(background))
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
             .clickable(onClick)
             .padding(padding),
@@ -105,13 +108,18 @@ internal fun SetupContent(context: Context) {
 
 /** An eyebrow: uppercase, `ink2` unless [color] says otherwise (the next session, the countdown). */
 @Composable
-internal fun Eyebrow(text: String, color: ColorProvider = W.ink2, modifier: GlanceModifier = GlanceModifier) {
-    Text(
-        text = text.uppercase(LocaleProvider.current()),
-        style = W.eyebrow.copy(color = color),
-        maxLines = 1,
-        modifier = modifier,
-    )
+internal fun Eyebrow(text: String, color: ColorProvider = W.ink2, modifier: GlanceModifier = GlanceModifier, icon: Int? = null) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (icon != null) {
+            Glyph(icon, 12.dp, color)
+            Spacer(GlanceModifier.width(5.dp))
+        }
+        Text(
+            text = text.uppercase(LocaleProvider.current()),
+            style = W.eyebrow.copy(color = color),
+            maxLines = 1,
+        )
+    }
 }
 
 /** A `surface2` capsule button (white with `ground` content when [primary]). */
