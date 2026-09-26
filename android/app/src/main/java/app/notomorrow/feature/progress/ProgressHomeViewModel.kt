@@ -29,7 +29,6 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.WeekFields
 import java.util.Locale
 
 /**
@@ -51,10 +50,8 @@ class ProgressHomeViewModel(
     private val appState: AppState,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val locale: () -> Locale = { LocaleProvider.current() },
-    /** The region's first day of the week, which the weekly stats card's weeks start on. */
-    private val firstDayOfWeek: () -> DayOfWeek = {
-        WeekFields.of(Locale.getDefault(Locale.Category.FORMAT)).firstDayOfWeek
-    },
+    /** The weekly stats card's first day: Monday, like the rest of the app (training calendar, muscles this week). */
+    private val firstDayOfWeek: () -> DayOfWeek = { DayOfWeek.MONDAY },
 ) : ViewModel() {
 
     private val tab = MutableStateFlow(ProgressTab.Lifts)

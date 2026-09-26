@@ -17,7 +17,10 @@ struct WeeklyStatsCard: View {
             return WeeklyStats.Session(startedAt: workout.startedAt, duration: workout.duration,
                                        volumeKg: workout.totalVolumeKg, sets: sets)
         }
-        let weeks = WeeklyStats.weeks(sessions: sessions, now: .now, calendar: .current)
+        // Monday-first like the rest of the app (calendar, muscles this week).
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        let weeks = WeeklyStats.weeks(sessions: sessions, now: .now, calendar: calendar)
         let thisWeek = weeks.last
         let lastWeek = weeks.count >= 2 ? weeks[weeks.count - 2] : nil
         let ratio = WeeklyStats.change(weeks, metric: metric)

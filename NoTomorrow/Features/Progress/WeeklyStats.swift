@@ -3,7 +3,7 @@ import Foundation
 /// Pure half of the Progress "Weekly stats" card (`WeeklyStatsCard`): finished workouts bucketed into the last eight
 /// weeks, each week carrying every metric the card can switch between.
 ///
-/// Weeks start on the calendar's `firstWeekday` (the user's region), not ISO Monday. A workout counts once it is
+/// Weeks start on the calendar's `firstWeekday`; the card passes a Monday-first calendar, like the rest of the app. A workout counts once it is
 /// finished and has a completed set, as on the training calendar; its volume leaves warm-ups out
 /// (`Workout.totalVolumeKg`), its sets count every completed set (`Workout.completedSetCount`).
 enum WeeklyStats {
