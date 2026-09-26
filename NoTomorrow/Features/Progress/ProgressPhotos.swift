@@ -118,7 +118,22 @@ struct ProgressPhotoStore {
 
     func write(_ data: Data, fileName: String) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        excludeFromBackup()
         try data.write(to: url(for: fileName), options: [.atomic, .completeFileProtection])
+    }
+
+    /// Application Support goes into iCloud and computer backups; the photos are "kept only on this phone", so the
+    /// folder (and everything in it) is left out, as Android's `allowBackup="false"` leaves out `filesDir`.
+    func excludeFromBackup() {
+        var folder = directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? folder.setResourceValues(values)
+    }
+
+    /// Whether the folder is left out of backups (false when it does not exist yet).
+    var isExcludedFromBackup: Bool {
+        (try? directory.resourceValues(forKeys: [.isExcludedFromBackupKey]))?.isExcludedFromBackup == true
     }
 
     func remove(fileName: String) {

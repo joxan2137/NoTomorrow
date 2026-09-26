@@ -87,6 +87,11 @@ final class ProgressPhotosTests: XCTestCase {
         XCTAssertEqual(store.fileNames(), [])
     }
 
+    func testPhotoFolderIsLeftOutOfBackups() throws {
+        _ = try ProgressPhotos.add(jpeg: Data([1, 2, 3]), pose: nil, store: store, in: context)
+        XCTAssertTrue(store.isExcludedFromBackup, "photos are kept only on this phone, not in iCloud backups")
+    }
+
     func testPoseIsOptional() throws {
         let photo = try ProgressPhotos.add(jpeg: Data([1, 2, 3]), pose: nil, store: store, in: context)
         XCTAssertNil(photo.pose)
