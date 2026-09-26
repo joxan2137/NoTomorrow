@@ -91,7 +91,9 @@ class RoutineStore(
     /** The draft's lines as rows of [routineId], numbered from 0, minus exercises the library lost. */
     private suspend fun items(routineId: String, draft: RoutineDraft): List<RoutineItemEntity> {
         val known = exerciseDao.byIds(draft.items.map { it.exerciseId }).mapTo(mutableSetOf()) { it.id }
-        return draft.items.filter { it.exerciseId in known }.mapIndexed { order, line ->
+        val lines = draft.items.filter { it.exerciseId in known }
+        val groups = Superset.normalized(lines.map { it.supersetGroup })
+        return lines.mapIndexed { order, line ->
             RoutineItemEntity(
                 routineId = routineId,
                 exerciseId = line.exerciseId,
@@ -99,6 +101,7 @@ class RoutineStore(
                 targetSets = line.sets,
                 targetReps = line.reps,
                 restSeconds = line.restSeconds,
+                supersetGroup = groups[order],
             )
         }
     }
@@ -116,9 +119,11 @@ class RoutineStore(
                     sets = entry.item.targetSets,
                     reps = entry.item.targetReps,
                     restSeconds = entry.item.restSeconds,
+                    supersetGroup = entry.item.supersetGroup,
                 )
             },
-        )
+            // A line whose exercise was deleted may have split a superset.
+        ).normalizingSupersets()
 
         /**
          * "Save as routine" from a finished workout: completed sets that are not warm-ups, the rest
@@ -136,6 +141,7 @@ class RoutineStore(
                     workingReps = working.map { it.reps },
                     restSeconds = rest,
                     usesDefaultRest = rest == RoutineSeeder.restSeconds(exercise.id, defaultRest),
+                    supersetGroup = entry.workoutExercise.supersetGroup,
                 )
             }
             return RoutineDraft.from(from.workout.name, logged, takenNames)

@@ -47,6 +47,7 @@ internal class ActiveWorkoutHarness(private val scope: CoroutineScope) {
         endedAt: Long? = null,
         sets: Int = 2,
         notes: String = "",
+        supersetGroup: Int? = null,
     ): List<Long> {
         workouts.insertWorkout(WorkoutEntity(id = id, name = "W", startedAt = startedAt, endedAt = endedAt))
         return exerciseIds.mapIndexed { index, exerciseId ->
@@ -56,6 +57,7 @@ internal class ActiveWorkoutHarness(private val scope: CoroutineScope) {
                     exerciseId = exerciseId,
                     order = index,
                     notes = notes,
+                    supersetGroup = supersetGroup,
                 ),
                 (0 until sets).map { row ->
                     SetEntryEntity(

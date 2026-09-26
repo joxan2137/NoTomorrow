@@ -27,7 +27,7 @@ import androidx.room.migration.Migration
  */
 object NoTomorrowMigrations {
 
-    /** Hand-written steps, oldest first. Empty while the schema is still version 1. */
+    /** Hand-written steps, oldest first. Empty so far: 1 → 2 (the superset columns) is an `AutoMigration`. */
     val ALL: Array<Migration> = emptyArray()
 
     /** Instances of the specs the `@Database` auto-migrations name (renames and deletes). */

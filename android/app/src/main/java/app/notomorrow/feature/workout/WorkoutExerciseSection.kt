@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.notomorrow.designsystem.Eyebrow
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
@@ -62,7 +63,9 @@ import app.notomorrow.util.S
  * at the ends) before Remove; rows are never dimmed or locked and the Previous column is blank.
  * Weights are shown in [unit]. [onDeleteSet] adds "Delete set" to every row's kind menu.
  * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu, [onNote]
- * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set.
+ * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set,
+ * [onLinkNext] / [onUnlinkSuperset] "Superset with next" / "Remove from superset" (each shown only
+ * when it applies). An exercise in a superset carries the "SUPERSET A" tag over its name.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -89,6 +92,8 @@ fun WorkoutExerciseSection(
     onAddWarmups: (() -> Unit)? = null,
     onNote: ((String) -> Unit)? = null,
     onRpe: ((Long, Double?) -> Unit)? = null,
+    onLinkNext: (() -> Unit)? = null,
+    onUnlinkSuperset: (() -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -114,6 +119,8 @@ fun WorkoutExerciseSection(
             onAddWarmups = onAddWarmups,
             onNote = onNote,
             onRpe = onRpe,
+            onLinkNext = onLinkNext,
+            onUnlinkSuperset = onUnlinkSuperset,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -136,7 +143,7 @@ private fun Collapsed(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .heightIn(min = 60.dp)
             .ntPlainClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -144,6 +151,7 @@ private fun Collapsed(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
+            exercise.supersetLetter?.let { SupersetTag(it) }
             NtText(exercise.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
             NtText(
                 text = subtitle,
@@ -190,6 +198,8 @@ private fun Expanded(
     onAddWarmups: (() -> Unit)?,
     onNote: ((String) -> Unit)?,
     onRpe: ((Long, Double?) -> Unit)?,
+    onLinkNext: (() -> Unit)?,
+    onUnlinkSuperset: (() -> Unit)?,
 ) {
     // `@State private var showsNote` — "Add note" opens the field before anything is typed.
     var showsNote by remember(exercise.id) { mutableStateOf(false) }
@@ -207,6 +217,8 @@ private fun Expanded(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onAddWarmups = onAddWarmups,
+            onLinkNext = onLinkNext?.takeIf { exercise.canLinkNext },
+            onUnlinkSuperset = onUnlinkSuperset?.takeIf { exercise.supersetGroup != null },
             onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
                 { showsNote = true }
             } else {
@@ -292,6 +304,8 @@ private fun Header(
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
     onAddWarmups: (() -> Unit)?,
+    onLinkNext: (() -> Unit)?,
+    onUnlinkSuperset: (() -> Unit)?,
     onAddNote: (() -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -314,6 +328,10 @@ private fun Header(
                 ),
             )
         }
+        onLinkNext?.let { add(NtMenuItem(title = stringResource(S.superset_linkNext), onClick = it, icon = NtIcons.Link)) }
+        onUnlinkSuperset?.let {
+            add(NtMenuItem(title = stringResource(S.superset_unlink), onClick = it, icon = NtIcons.Link))
+        }
         onAddNote?.let { add(NtMenuItem(title = stringResource(S.note_add), onClick = it, icon = NtIcons.Pencil)) }
         add(
             NtMenuItem(
@@ -335,6 +353,7 @@ private fun Header(
             // boxes, so stacking 2 dp on top makes the block 2 dp taller than iOS.
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
+            exercise.supersetLetter?.let { SupersetTag(it) }
             NtText(exercise.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
             if (subtitle != null) {
                 NtText(
@@ -359,6 +378,18 @@ private fun Header(
                 items = items,
             )
         }
+    }
+}
+
+/** `SupersetTag` — "SUPERSET A" over the name of an exercise in a superset (the routine editor's too). */
+@Composable
+internal fun SupersetTag(letter: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NtIcon(NtIcons.Link, size = sfIconSize(9f), tint = NT.Colors.ember)
+        Eyebrow(stringResource(S.superset_tag_s, letter), color = NT.Colors.ember)
     }
 }
 
@@ -580,4 +611,10 @@ data class WorkoutExerciseUi(
     val notes: String = "",
     /** Last session's note (`previousNote(for:)`), the note field's placeholder. */
     val previousNote: String? = null,
+    /** Neighbouring exercises with the same id form a superset (`WorkoutExercise.supersetGroup`). */
+    val supersetGroup: Int? = null,
+    /** "A", "B"… for an exercise in a superset (`supersetLetter(for:)`), the header's tag. */
+    val supersetLetter: String? = null,
+    /** "Superset with next" applies (`canLinkWithNext(_:)`). */
+    val canLinkNext: Boolean = false,
 )

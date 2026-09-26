@@ -102,7 +102,7 @@ object WorkoutStarter {
     /**
      * `start(routine:in:session:)` — one `WorkoutExercise` per routine item, `targetSets` rows each,
      * prefilled from the last time the exercise was done (target reps when it never was). An item
-     * whose rest is [RoutineSeeder.INHERIT_REST] takes the user's default rest.
+     * whose rest is [RoutineSeeder.INHERIT_REST] takes the user's default rest. Supersets carry over.
      */
     suspend fun start(
         stores: Stores,
@@ -119,9 +119,11 @@ object WorkoutStarter {
         stores.workoutDao.insertWorkout(workout)
         val defaultRest = defaultRestSeconds(stores.profileDao)
 
-        var order = 0
-        for (entry in routine.sortedItems) {
-            // `guard let exercise = item.exercise` — a routine item whose exercise was deleted is skipped.
+        // `guard let exercise = item.exercise` — a routine item whose exercise was deleted is skipped,
+        // which may split a superset: the groups are normalized over the items that stay.
+        val kept = routine.sortedItems.filter { it.exercise != null }
+        val groups = Superset.normalized(kept.map { it.item.supersetGroup })
+        for ((order, entry) in kept.withIndex()) {
             val exerciseId = entry.exercise?.id ?: continue
             append(
                 workoutDao = stores.workoutDao,
@@ -133,9 +135,9 @@ object WorkoutStarter {
                 targetReps = entry.item.targetReps,
                 restSeconds = routineItemRest(entry.item.restSeconds, exerciseId, defaultRest),
                 defaultRest = defaultRest,
+                supersetGroup = groups[order],
                 now = now,
             )
-            order += 1
         }
 
         session.begin(workout.id)
@@ -194,6 +196,7 @@ object WorkoutStarter {
         targetReps: Int = 0,
         restSeconds: Int? = null,
         defaultRest: Int = RoutineSeeder.DEFAULT_REST_SECONDS,
+        supersetGroup: Int? = null,
         now: Long = System.currentTimeMillis(),
     ): Long {
         val rest = restSeconds ?: RoutineSeeder.restSeconds(exerciseId, defaultRest)
@@ -204,6 +207,7 @@ object WorkoutStarter {
                 exerciseId = exerciseId,
                 order = order,
                 restSeconds = rest,
+                supersetGroup = supersetGroup,
             ),
             prefilledSets(setCount, template, targetReps),
         )

@@ -18,6 +18,8 @@ data class RoutineItemDraft(
     val sets: Int,
     val reps: Int,
     val restSeconds: Int,
+    /** Superset id ([Superset]), `null` = on its own. */
+    val supersetGroup: Int? = null,
 ) {
     companion object {
         fun of(
@@ -27,6 +29,7 @@ data class RoutineItemDraft(
             sets: Int = RoutineDraft.DEFAULT_SETS,
             reps: Int = RoutineDraft.DEFAULT_REPS,
             restSeconds: Int = RoutineDraft.INHERIT_REST,
+            supersetGroup: Int? = null,
             id: String = UUID.randomUUID().toString(),
         ) = RoutineItemDraft(
             id = id,
@@ -36,6 +39,7 @@ data class RoutineItemDraft(
             sets = RoutineDraft.clampSets(sets),
             reps = RoutineDraft.clampReps(reps),
             restSeconds = restSeconds,
+            supersetGroup = supersetGroup,
         )
     }
 }
@@ -71,7 +75,7 @@ data class RoutineDraft(
     fun appending(item: RoutineItemDraft): RoutineDraft =
         if (items.any { it.exerciseId == item.exerciseId }) this else copy(items = items + item)
 
-    fun removing(id: String): RoutineDraft = copy(items = items.filterNot { it.id == id })
+    fun removing(id: String): RoutineDraft = copy(items = items.filterNot { it.id == id }).normalizingSupersets()
 
     /** Swaps the line with its neighbour [offset] away; a move past either end does nothing. */
     fun moving(id: String, offset: Int): RoutineDraft {
@@ -82,8 +86,34 @@ data class RoutineDraft(
         val swapped = items.toMutableList()
         swapped[from] = items[to]
         swapped[to] = items[from]
-        return copy(items = swapped)
+        return copy(items = swapped).normalizingSupersets()
     }
+
+    // MARK: - Supersets
+
+    val supersetLetters: List<String?> get() = Superset.letters(items.map { it.supersetGroup })
+
+    fun isLinkedToNext(id: String): Boolean {
+        val index = items.indexOfFirst { it.id == id }
+        return index >= 0 && Superset.isLinkedToNext(items.map { it.supersetGroup }, index)
+    }
+
+    fun linkingWithNext(id: String): RoutineDraft {
+        val index = items.indexOfFirst { it.id == id }
+        if (index < 0) return this
+        return settingSupersets(Superset.linkWithNext(items.map { it.supersetGroup }, index))
+    }
+
+    fun unlinkingSuperset(id: String): RoutineDraft {
+        val index = items.indexOfFirst { it.id == id }
+        if (index < 0) return this
+        return settingSupersets(Superset.unlink(items.map { it.supersetGroup }, index))
+    }
+
+    fun normalizingSupersets(): RoutineDraft = settingSupersets(Superset.normalized(items.map { it.supersetGroup }))
+
+    private fun settingSupersets(groups: List<Int?>): RoutineDraft =
+        copy(items = items.mapIndexed { index, item -> item.copy(supersetGroup = groups[index]) })
 
     fun steppingSets(id: String, delta: Int): RoutineDraft = updating(id) { it.copy(sets = clampSets(it.sets + delta)) }
 
@@ -107,6 +137,7 @@ data class RoutineDraft(
         val restSeconds: Int,
         /** The rest equals what a routine line with the default rest would give this exercise. */
         val usesDefaultRest: Boolean,
+        val supersetGroup: Int? = null,
     )
 
     companion object {
@@ -138,7 +169,8 @@ data class RoutineDraft(
         /**
          * "Save as routine": one line per exercise that has a completed working set, sets = how
          * many were done, reps = the first working set's reps. The rest the workout used is kept
-         * unless it is the user's default. An exercise logged twice keeps its first line.
+         * unless it is the user's default. An exercise logged twice keeps its first line. Supersets
+         * carry over, normalized over the lines that stay.
          */
         fun from(workoutName: String, exercises: List<LoggedExercise>, takenNames: List<String>): RoutineDraft {
             val lines = exercises.mapNotNull { logged ->
@@ -150,12 +182,13 @@ data class RoutineDraft(
                     sets = logged.workingReps.size,
                     reps = firstReps,
                     restSeconds = if (logged.usesDefaultRest) INHERIT_REST else logged.restSeconds,
+                    supersetGroup = logged.supersetGroup,
                 )
             }
             return RoutineDraft(
                 name = uniqueName(workoutName, takenNames),
                 items = lines.distinctBy { it.exerciseId },
-            )
+            ).normalizingSupersets()
         }
     }
 }

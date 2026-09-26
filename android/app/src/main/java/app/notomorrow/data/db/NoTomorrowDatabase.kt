@@ -1,5 +1,6 @@
 package app.notomorrow.data.db
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -56,6 +57,10 @@ import app.notomorrow.data.entity.WorkoutExerciseEntity
     ],
     version = NoTomorrowDatabase.VERSION,
     exportSchema = true,
+    autoMigrations = [
+        // 2: `workout_exercise.supersetGroup` and `routine_item.supersetGroup` (nullable).
+        AutoMigration(from = 1, to = 2),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class NoTomorrowDatabase : RoomDatabase() {
@@ -73,7 +78,7 @@ abstract class NoTomorrowDatabase : RoomDatabase() {
     abstract fun broPairingDao(): BroPairingDao
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
         const val NAME = "NoTomorrow"
     }
 }

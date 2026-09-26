@@ -107,6 +107,10 @@ class RoutineEditorViewModel(
 
     fun move(itemId: String, offset: Int) = update { it.moving(itemId, offset) }
 
+    fun linkWithNext(itemId: String) = update { it.linkingWithNext(itemId) }
+
+    fun unlinkSuperset(itemId: String) = update { it.unlinkingSuperset(itemId) }
+
     fun stepSets(itemId: String, delta: Int) = update { it.steppingSets(itemId, delta) }
 
     fun stepReps(itemId: String, delta: Int) = update { it.steppingReps(itemId, delta) }

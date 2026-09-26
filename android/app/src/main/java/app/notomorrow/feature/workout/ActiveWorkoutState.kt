@@ -309,7 +309,51 @@ internal fun WorkoutExerciseWithSets.toUi(
         warmupSteps = warmupSteps(ordered, exercise?.equipment, unit),
         notes = workoutExercise.notes,
         previousNote = previousNote,
+        supersetGroup = workoutExercise.supersetGroup,
     )
+}
+
+// MARK: - Supersets
+
+/** `supersetHop(after:in:)`'s answer: the exercise to open next, and whether to rest first. */
+internal data class SupersetHop(val exerciseUiId: Long, val rests: Boolean)
+
+/**
+ * `supersetHop(after:in:)` — where a tick of [row] in a superset goes next: a later exercise of the
+ * superset with an open set (no rest), else, after the round's last exercise, back to the first
+ * one with an open set (rest first). `null` outside a superset, once the superset is done, or when
+ * a drop set follows in the same exercise. [all] may predate the tick: [row] counts as done.
+ */
+internal fun supersetHop(all: List<WorkoutExerciseUi>, section: WorkoutExerciseUi, row: SetRowUi): SupersetHop? {
+    val group = section.supersetGroup ?: return null
+    val next = section.sets.firstOrNull { it.order > row.order && !it.isCompleted }
+    if (next?.kind == SetKind.Drop) return null
+    val i = all.indexOfFirst { it.id == section.id }
+    if (i < 0) return null
+    var start = i
+    var end = i
+    while (start > 0 && all[start - 1].supersetGroup == group) start -= 1
+    while (end + 1 < all.size && all[end + 1].supersetGroup == group) end += 1
+    if (end <= start) return null
+    val hasOpen = { exercise: WorkoutExerciseUi -> exercise.sets.any { !it.isCompleted && it.id != row.id } }
+    if (i < end) all.subList(i + 1, end + 1).firstOrNull(hasOpen)?.let { return SupersetHop(it.id, rests = false) }
+    all.subList(start, end + 1).firstOrNull(hasOpen)?.let { return SupersetHop(it.id, rests = true) }
+    return null
+}
+
+/**
+ * The superset fields of every section, from the groups in list order: `supersetLetter(for:)`
+ * ("A", "B"…) and `canLinkWithNext(_:)` (a next exercise exists and is not already linked).
+ */
+internal fun List<WorkoutExerciseUi>.withSupersets(): List<WorkoutExerciseUi> {
+    val groups = map { it.supersetGroup }
+    val letters = Superset.letters(groups)
+    return mapIndexed { index, exercise ->
+        exercise.copy(
+            supersetLetter = letters[index],
+            canLinkNext = index + 1 < size && !Superset.isLinkedToNext(groups, index),
+        )
+    }
 }
 
 // MARK: - Next target

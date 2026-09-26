@@ -124,6 +124,7 @@ class DatabaseMigrationsTest {
          */
         val PINNED_SCHEMAS: Map<Int, String> = mapOf(
             1 to "8c349171cad10bb34e08e456c3ab2fd3",
+            2 to "12f8e524da4627d09af9b3076002ea85",
         )
     }
 }

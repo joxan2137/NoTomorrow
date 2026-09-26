@@ -81,6 +81,8 @@ internal fun WorkoutTable(
     onAddWarmups: (Long) -> Unit,
     onNote: (Long, String) -> Unit,
     onRpe: (Long, Double?) -> Unit,
+    onLinkNext: (Long) -> Unit,
+    onUnlinkSuperset: (Long) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
@@ -132,6 +134,8 @@ internal fun WorkoutTable(
                     onAddWarmups = { onAddWarmups(exercise.id) },
                     onNote = { text -> onNote(exercise.id, text) },
                     onRpe = onRpe,
+                    onLinkNext = { onLinkNext(exercise.id) },
+                    onUnlinkSuperset = { onUnlinkSuperset(exercise.id) },
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }

@@ -207,12 +207,15 @@ private fun RoutineEditorSheet(
                 modifier = Modifier.animateContentSize(EDITOR_SPEC),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                val letters = draft.supersetLetters
                 draft.items.forEachIndexed { index, item ->
                     key(item.id) {
                         RoutineItemCard(
                             item = item,
                             isFirst = index == 0,
                             isLast = index == draft.items.lastIndex,
+                            isLinkedToNext = draft.isLinkedToNext(item.id),
+                            supersetLetter = letters[index],
                             model = model,
                         )
                     }
@@ -381,14 +384,17 @@ private fun RoutineNameField(name: String, autoFocus: Boolean, onName: (String) 
 // MARK: - Exercise card
 
 /**
- * `RoutineItemCard`: one exercise of the routine — name and muscle with a ⋯ menu (move up / down,
- * remove), then the Sets and Reps steppers and the Rest menu.
+ * `RoutineItemCard`: one exercise of the routine — its superset tag, name and muscle with a ⋯ menu
+ * (move up / down, superset with next / remove from superset, remove), then the Sets and Reps
+ * steppers and the Rest menu.
  */
 @Composable
 private fun RoutineItemCard(
     item: RoutineItemDraft,
     isFirst: Boolean,
     isLast: Boolean,
+    isLinkedToNext: Boolean,
+    supersetLetter: String?,
     model: RoutineEditorViewModel,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -396,9 +402,17 @@ private fun RoutineItemCard(
     val moveUp = stringResource(S.workout_edit_moveUp)
     val moveDown = stringResource(S.workout_edit_moveDown)
     val removeLabel = stringResource(S.workout_removeExercise)
+    val linkLabel = stringResource(S.superset_linkNext)
+    val unlinkLabel = stringResource(S.superset_unlink)
     val items = buildList {
         if (!isFirst) add(NtMenuItem(title = moveUp, onClick = { model.move(item.id, -1) }, icon = NtIcons.ArrowUp))
         if (!isLast) add(NtMenuItem(title = moveDown, onClick = { model.move(item.id, 1) }, icon = NtIcons.ArrowDown))
+        if (!isLast && !isLinkedToNext) {
+            add(NtMenuItem(title = linkLabel, onClick = { model.linkWithNext(item.id) }, icon = NtIcons.Link))
+        }
+        if (item.supersetGroup != null) {
+            add(NtMenuItem(title = unlinkLabel, onClick = { model.unlinkSuperset(item.id) }, icon = NtIcons.Link))
+        }
         add(NtMenuItem(title = removeLabel, onClick = { model.remove(item.id) }, destructive = true, icon = NtIcons.Trash))
     }
 
@@ -414,6 +428,7 @@ private fun RoutineItemCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                supersetLetter?.let { SupersetTag(it) }
                 NtText(item.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
                 item.primaryMuscle?.let { muscle ->
                     NtText(

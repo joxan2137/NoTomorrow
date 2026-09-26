@@ -216,6 +216,8 @@ fun ActiveWorkoutScreen(
                     onAddWarmups = model::addWarmups,
                     onNote = model::setNote,
                     onRpe = model::setRpe,
+                    onLinkNext = model::linkWithNext,
+                    onUnlinkSuperset = model::unlinkSuperset,
                 )
             }
         }

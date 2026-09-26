@@ -129,6 +129,9 @@ enum class NtIcons(
     /** SF `square.and.arrow.down` — the share glyph with the arrow turned in; "Save as routine". */
     SquareAndArrowDown(R.drawable.ic_square_and_arrow_down),
 
+    /** SF `link` — custom vector; supersets (the tag and "Superset with next"). */
+    Link(R.drawable.ic_link),
+
     /** SF `doc.on.doc`. */
     DocOnDoc(R.drawable.ic_copy),
 
