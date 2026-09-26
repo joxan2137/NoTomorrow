@@ -156,6 +156,7 @@ final class AccountWipeTests: XCTestCase {
         XCTAssertFalse(LocalDataWipe.runPending(in: context, defaults: defaults), "nothing asked for")
         XCTAssertFalse(LocalDataWipe.leftovers(in: context).isEmpty)
 
+        FavoriteExercises.toggle("Barbell_Squat", defaults: defaults)
         LocalDataWipe.markPending(defaults: defaults)
         // The app is killed before the wipe ran: the request is still there at the next launch.
         XCTAssertTrue(LocalDataWipe.isPending(defaults: UserDefaults(suiteName: suiteName)!))
@@ -163,6 +164,7 @@ final class AccountWipeTests: XCTestCase {
         XCTAssertTrue(LocalDataWipe.runPending(in: context, defaults: defaults))
         XCTAssertEqual(LocalDataWipe.leftovers(in: context), [:])
         XCTAssertFalse(LocalDataWipe.isPending(defaults: defaults), "done once")
+        XCTAssertEqual(FavoriteExercises.ids(defaults: defaults), [], "starred exercises go with the data")
 
         // A new account's data is never touched by a finished request.
         context.insert(UserProfile(name: "Tester", bodyWeightKg: 82))

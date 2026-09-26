@@ -40,6 +40,8 @@ enum LocalDataWipe {
             defaults.removeObject(forKey: pendingKey)
             // Routines were wiped: the next onboarding seeds the starter ones again.
             defaults.removeObject(forKey: RoutineSeeder.seededKey)
+            // Starred exercises are the user's too (custom ones among them are gone).
+            FavoriteExercises.clear(defaults: defaults)
             return true
         } catch {
             log.error("Local data wipe failed: \(String(describing: error), privacy: .public)")

@@ -163,6 +163,14 @@ struct ExercisePickerView: View {
     private var results: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                let sections = model.sections
+                if !sections.favorites.isEmpty {
+                    Text("exercises.favorites").eyebrow()
+                        .padding(.top, 18)
+                        .padding(.bottom, 8)
+                    ForEach(sections.favorites) { entry in card(entry) }
+                }
+
                 HStack {
                     Text(WorkoutStrings.results(model.results.count)).eyebrow()
                     Spacer()
@@ -171,26 +179,7 @@ struct ExercisePickerView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 8)
 
-                ForEach(model.results) { entry in
-                    ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
-                        if isSingleSelect { pick(entry.exercise) } else { model.toggle(entry.exercise.id) }
-                    } onDetails: {
-                        detail = entry.exercise
-                    }
-                    .padding(.bottom, 8)
-                    .contextMenu {
-                        if entry.exercise.isCustom {
-                            Button("customExercise.edit", systemImage: "pencil") { editing = entry.exercise }
-                            if entry.exercise.usages.isEmpty {
-                                Button("customExercise.delete", systemImage: "trash", role: .destructive) {
-                                    model.deselect(entry.exercise.id)
-                                    CustomExerciseEditor.delete(entry.exercise, in: modelContext)
-                                    model.load(context: modelContext)
-                                }
-                            }
-                        }
-                    }
-                }
+                ForEach(sections.others) { entry in card(entry) }
 
                 if model.showsCreateRow {
                     CreateExerciseRow(query: model.trimmedQuery) {
@@ -209,6 +198,34 @@ struct ExercisePickerView: View {
             .padding(.bottom, 12)
         }
         .scrollDismissesKeyboard(.immediately)
+    }
+
+    /// One result card; long press: favorite toggle, then Edit / Delete for a custom exercise.
+    private func card(_ entry: ExercisePickerViewModel.Entry) -> some View {
+        ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise),
+                           isFavorite: model.isFavorite(entry.id)) {
+            if isSingleSelect { pick(entry.exercise) } else { model.toggle(entry.exercise.id) }
+        } onDetails: {
+            detail = entry.exercise
+        }
+        .padding(.bottom, 8)
+        .contextMenu {
+            if model.isFavorite(entry.id) {
+                Button("exercises.unfavorite", systemImage: "star.slash") { model.toggleFavorite(entry.id) }
+            } else {
+                Button("exercises.favorite", systemImage: "star") { model.toggleFavorite(entry.id) }
+            }
+            if entry.exercise.isCustom {
+                Button("customExercise.edit", systemImage: "pencil") { editing = entry.exercise }
+                if entry.exercise.usages.isEmpty {
+                    Button("customExercise.delete", systemImage: "trash", role: .destructive) {
+                        model.deselect(entry.exercise.id)
+                        CustomExerciseEditor.delete(entry.exercise, in: modelContext)
+                        model.load(context: modelContext)
+                    }
+                }
+            }
+        }
     }
 
     private func state(for exercise: Exercise) -> ExercisePickerRow.State {

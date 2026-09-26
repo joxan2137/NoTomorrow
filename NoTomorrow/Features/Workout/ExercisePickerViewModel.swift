@@ -74,6 +74,22 @@ final class ExercisePickerViewModel {
         }
     }
 
+    // MARK: Favorites
+
+    /// Starred exercise ids (`FavoriteExercises`), read once per picker and kept in step by `toggleFavorite`.
+    private(set) var favoriteIDs: Set<String> = FavoriteExercises.ids()
+
+    func isFavorite(_ id: String) -> Bool { favoriteIDs.contains(id) }
+
+    func toggleFavorite(_ id: String) {
+        favoriteIDs = FavoriteExercises.toggle(id)
+    }
+
+    /// With no search text the favorites among the results sit in their own section on top.
+    var sections: FavoriteExercises.Sections<Entry> {
+        FavoriteExercises.sections(results, favorites: favoriteIDs, isSearching: !trimmedQuery.isEmpty, id: { $0.id })
+    }
+
     // MARK: Selection
 
     func isSelected(_ id: String) -> Bool { selectedIDs.contains(id) }
