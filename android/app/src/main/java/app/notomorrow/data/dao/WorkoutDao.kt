@@ -196,6 +196,17 @@ interface WorkoutDao {
     )
     suspend fun exerciseNotes(exerciseId: String): List<ExerciseNoteRow>
 
+    /**
+     * Exercises with at least one workout entry, finished or in progress — a custom exercise in
+     * none of them may be deleted from the picker (`exercise.usages.isEmpty`).
+     */
+    @Query("SELECT DISTINCT exerciseId FROM workout_exercise WHERE exerciseId IS NOT NULL")
+    fun observeUsedExerciseIds(): Flow<List<String>>
+
+    /** Workout entries of [exerciseId] — the delete's last check. */
+    @Query("SELECT COUNT(*) FROM workout_exercise WHERE exerciseId = :exerciseId")
+    suspend fun usageCount(exerciseId: String): Int
+
     @Query("UPDATE workout_exercise SET notes = :notes WHERE id = :id")
     suspend fun updateWorkoutExerciseNotes(id: Long, notes: String)
 

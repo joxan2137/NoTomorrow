@@ -85,8 +85,13 @@ class ExercisePickerViewModel(
         lastSets,
         queryInput,
         groupInput,
-        combine(selectedInput, alreadyIn, container.db.profileDao().observeProfile()) { selected, already, profile ->
-            Triple(selected, already, profile?.units ?: WeightUnit.Kg)
+        combine(
+            selectedInput,
+            alreadyIn,
+            container.db.profileDao().observeProfile(),
+            workoutDao.observeUsedExerciseIds(),
+        ) { selected, already, profile, used ->
+            PickerContext(selected, already, profile?.units ?: WeightUnit.Kg, used.toSet())
         },
     ) { rows, last, query, group, context ->
         val trimmed = query.trim()
@@ -95,9 +100,10 @@ class ExercisePickerViewModel(
             trimmedQuery = trimmed,
             group = group,
             results = rows.map { ExercisePickerEntry(it, last[it.id]) },
-            selectedIds = context.first,
-            alreadyIn = context.second,
-            unit = context.third,
+            selectedIds = context.selected,
+            alreadyIn = context.alreadyIn,
+            unit = context.unit,
+            usedIds = context.used,
             // `showsCreateRow` — any non-empty query offers "Create «…»".
             showsCreateRow = trimmed.isNotEmpty(),
         )
@@ -149,6 +155,15 @@ class ExercisePickerViewModel(
     }
 
     /**
+     * The long-press Delete exercise: a custom exercise no workout uses leaves the selection and
+     * the library (`model.deselect(id)` + `modelContext.delete`).
+     */
+    fun deleteCustom(exercise: ExerciseEntity) {
+        selectedInput.value = selectedInput.value - exercise.id
+        viewModelScope.launch { CustomExercises.delete(exerciseDao, workoutDao, exercise) }
+    }
+
+    /**
      * The bottom "Add n" bar. Stamps `lastUsedAt` on every chosen exercise, appends them (with
      * prefilled rows) to the target workout when there is one, and reports the ids in tap order.
      */
@@ -176,6 +191,13 @@ class ExercisePickerViewModel(
         }
     }
 
+    private data class PickerContext(
+        val selected: List<String>,
+        val alreadyIn: Set<String>,
+        val unit: WeightUnit,
+        val used: Set<String>,
+    )
+
     private companion object {
         /** `try? await Task.sleep(for: .milliseconds(200))`. */
         const val FILTER_DEBOUNCE_MS = 200L
@@ -193,6 +215,8 @@ data class ExercisePickerUiState(
     val alreadyIn: Set<String> = emptySet(),
     val unit: WeightUnit = WeightUnit.Kg,
     val showsCreateRow: Boolean = false,
+    /** Exercises in any workout (`exercise.usages`) — a custom one outside them can be deleted. */
+    val usedIds: Set<String> = emptySet(),
 ) {
     val selectedCount: Int get() = selectedIds.size
 

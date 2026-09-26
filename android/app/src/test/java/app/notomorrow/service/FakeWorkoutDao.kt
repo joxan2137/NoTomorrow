@@ -155,6 +155,11 @@ class FakeWorkoutDao : WorkoutDao {
             ExerciseNoteRow(we.notes, w.id, w.startedAt, w.endedAt, we.id)
         }
 
+    override fun observeUsedExerciseIds(): Flow<List<String>> =
+        exercises.map { rows -> rows.mapNotNull { it.exerciseId }.distinct() }
+
+    override suspend fun usageCount(exerciseId: String): Int = exercises.value.count { it.exerciseId == exerciseId }
+
     override suspend fun updateWorkoutExerciseNotes(id: Long, notes: String) {
         exercises.value = exercises.value.map { if (it.id == id) it.copy(notes = notes) else it }
     }

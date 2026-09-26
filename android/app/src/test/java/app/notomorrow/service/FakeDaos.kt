@@ -150,6 +150,10 @@ class FakeExerciseDao(initial: List<ExerciseEntity> = emptyList()) : ExerciseDao
 
     override suspend fun update(exercise: ExerciseEntity) = upsert(exercise)
 
+    override suspend fun deleteCustomById(id: String) {
+        rows.value = rows.value.filterNot { it.id == id && it.isCustom }
+    }
+
     override suspend fun deleteCustom() {
         rows.value = rows.value.filterNot { it.isCustom }
     }

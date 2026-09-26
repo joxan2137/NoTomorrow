@@ -1,6 +1,8 @@
 package app.notomorrow.feature.workout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,16 +17,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.designsystem.NT
+import app.notomorrow.designsystem.NTPressScale
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.NtMenu
+import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
@@ -57,27 +69,54 @@ fun ExerciseResultCard(
     onDetails: () -> Unit,
     modifier: Modifier = Modifier,
     unit: WeightUnit = WeightUnit.Kg,
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
     val detailsLabel = stringResource(S.exercises_details)
-    val content: @Composable () -> Unit = {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ExercisePickerRow(
-                entry = entry,
-                state = state,
-                onClick = onToggle,
-                unit = unit,
-                modifier = Modifier.weight(1f).padding(start = 14.dp),
+    val haptics = LocalHapticFeedback.current
+    var menuExpanded by remember { mutableStateOf(false) }
+    val menuItems = listOfNotNull(
+        onEdit?.let { NtMenuItem(title = stringResource(S.customExercise_edit), onClick = it, icon = NtIcons.Pencil) },
+        onDelete?.let {
+            NtMenuItem(
+                title = stringResource(S.customExercise_delete),
+                onClick = it,
+                destructive = true,
+                icon = NtIcons.Trash,
             )
-            Box(
-                modifier = Modifier
-                    .width(ExerciseDetailsWidth)
-                    .height(64.dp)
-                    .pressScale(onClick = onDetails)
-                    .semantics { contentDescription = detailsLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                NtIcon(icon = NtIcons.InfoCircle, size = sfIconSize(17f), tint = NT.Colors.ink2)
+        },
+    )
+    // `.contextMenu` on a custom exercise's card: Edit exercise and, while it is unused, Delete exercise.
+    val content: @Composable () -> Unit = {
+        Box {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ExercisePickerRow(
+                    entry = entry,
+                    state = state,
+                    onClick = onToggle,
+                    onLongClick = if (menuItems.isEmpty()) {
+                        null
+                    } else {
+                        {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            menuExpanded = true
+                        }
+                    },
+                    unit = unit,
+                    modifier = Modifier.weight(1f).padding(start = 14.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .width(ExerciseDetailsWidth)
+                        .height(64.dp)
+                        .pressScale(onClick = onDetails)
+                        .semantics { contentDescription = detailsLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NtIcon(icon = NtIcons.InfoCircle, size = sfIconSize(17f), tint = NT.Colors.ink2)
+                }
             }
+            NtMenu(expanded = menuExpanded, onDismiss = { menuExpanded = false }, items = menuItems)
         }
     }
     if (state == ExercisePickerRowState.Selected) {
@@ -103,13 +142,26 @@ fun ExercisePickerRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     unit: WeightUnit = WeightUnit.Kg,
+    /** The long press (a custom exercise's menu); it works on a row already in the workout too. */
+    onLongClick: (() -> Unit)? = null,
 ) {
     val alreadyIn = state == ExercisePickerRowState.AlreadyIn
+    val press = if (onLongClick == null) {
+        Modifier.pressScale(enabled = !alreadyIn, onClick = onClick)
+    } else {
+        Modifier.combinedClickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = NTPressScale,
+            role = Role.Button,
+            onClick = { if (!alreadyIn) onClick() },
+            onLongClick = onLongClick,
+        )
+    }
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .pressScale(enabled = !alreadyIn, onClick = onClick)
+                .then(press)
                 .height(64.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,

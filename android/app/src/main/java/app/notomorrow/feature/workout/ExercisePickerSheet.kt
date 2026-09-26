@@ -84,6 +84,9 @@ fun ExercisePickerSheet(
     val state by model.state.collectAsStateWithLifecycle()
     var detail by remember { mutableStateOf<ExerciseEntity?>(null) }
     detail?.let { ExerciseDetailSheet(it) { detail = null } }
+    // `@State private var editing: Exercise?` — the custom exercise the editor is open for.
+    var editing by remember { mutableStateOf<ExerciseEntity?>(null) }
+    editing?.let { CustomExerciseEditor(it) { editing = null } }
     val keyboard = LocalSoftwareKeyboardController.current
 
     // `@State private var model = ExercisePickerViewModel()` is rebuilt on every `.sheet`
@@ -132,6 +135,12 @@ fun ExercisePickerSheet(
                     onToggle = { model.toggle(entry.exercise.id) },
                     onDetails = { detail = entry.exercise },
                     unit = state.unit,
+                    onEdit = if (entry.exercise.isCustom) ({ editing = entry.exercise }) else null,
+                    onDelete = if (CustomExercises.canDelete(entry.exercise, state.usedIds)) {
+                        { model.deleteCustom(entry.exercise) }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
