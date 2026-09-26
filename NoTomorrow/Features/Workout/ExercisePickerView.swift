@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import MetalFxKit
 
-/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle chips, result cards, create row, "Add n".
+/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle and equipment chips, result cards, create row, "Add n".
 /// The search field has a liquid-metal edge that brightens while it has focus.
 struct ExercisePickerView: View {
     /// Ids of exercises already in the workout; shown as "In" and not selectable.
@@ -10,6 +10,8 @@ struct ExercisePickerView: View {
     var onAdd: ([Exercise]) -> Void
     /// When set, chosen exercises are appended to this workout (prefilled rows) before `onAdd` runs.
     private var targetWorkout: Workout?
+    /// Single-select ("Replace exercise"): a tap picks the exercise and closes the sheet; nothing is appended.
+    private var isSingleSelect = false
 
     init(alreadyIn: Set<String> = [], onAdd: @escaping ([Exercise]) -> Void) {
         self.alreadyIn = alreadyIn
@@ -23,10 +25,19 @@ struct ExercisePickerView: View {
         self.targetWorkout = workout
     }
 
+    /// "Replace exercise" in the active workout: one tap picks the replacement (exercises already in the workout
+    /// show as "In"). The caller swaps it in.
+    init(replacingIn workout: Workout, onPick: @escaping (Exercise) -> Void) {
+        self.alreadyIn = Set(workout.exercises.compactMap { $0.exercise?.id })
+        self.onAdd = { picked in if let first = picked.first { onPick(first) } }
+        self.isSingleSelect = true
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @State private var detail: Exercise?
+    @State private var editing: Exercise?
     @State private var model = ExercisePickerViewModel()
     @FocusState private var searchFocused: Bool
 
@@ -40,6 +51,8 @@ struct ExercisePickerView: View {
                 .padding(.top, 12)
             chips
                 .padding(.top, 12)
+            equipmentChips
+                .padding(.top, 8)
             results
         }
         .ntScreenBackground()
@@ -48,13 +61,14 @@ struct ExercisePickerView: View {
         .presentationDragIndicator(.visible)
         .onAppear { model.load(context: modelContext) }
         .sheet(item: $detail) { ExerciseDetailView(exercise: $0) }
+        .sheet(item: $editing, onDismiss: { model.load(context: modelContext) }) { CustomExerciseEditor(exercise: $0) }
     }
 
     // MARK: Header
 
     private var header: some View {
         HStack {
-            Text("exercises.add")
+            Text(isSingleSelect ? LocalizedStringKey("workout.replaceExercise") : LocalizedStringKey("exercises.add"))
                 .font(NT.Fonts.title2)
                 .foregroundStyle(NT.Colors.ink)
             Spacer()
@@ -129,11 +143,34 @@ struct ExercisePickerView: View {
         }
     }
 
+    /// Any equipment, Barbell, Dumbbell…: a second row under the muscles, combined with them and the search.
+    private var equipmentChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ExerciseLibrary.Equipment.allCases) { equipment in
+                    Chip(title: String(localized: String.LocalizationValue(equipment.titleKey)),
+                         isSelected: model.equipment == equipment) {
+                        model.equipment = equipment
+                    }
+                }
+            }
+            .padding(.horizontal, NT.Spacing.screenH)
+        }
+    }
+
     // MARK: Results
 
     private var results: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                let sections = model.sections
+                if !sections.favorites.isEmpty {
+                    Text("exercises.favorites").eyebrow()
+                        .padding(.top, 18)
+                        .padding(.bottom, 8)
+                    ForEach(sections.favorites) { entry in card(entry) }
+                }
+
                 HStack {
                     Text(WorkoutStrings.results(model.results.count)).eyebrow()
                     Spacer()
@@ -142,19 +179,13 @@ struct ExercisePickerView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 8)
 
-                ForEach(model.results) { entry in
-                    ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
-                        model.toggle(entry.exercise.id)
-                    } onDetails: {
-                        detail = entry.exercise
-                    }
-                    .padding(.bottom, 8)
-                }
+                ForEach(sections.others) { entry in card(entry) }
 
                 if model.showsCreateRow {
                     CreateExerciseRow(query: model.trimmedQuery) {
-                        model.createExercise(context: modelContext)
+                        let created = model.createExercise(context: modelContext)
                         searchFocused = false
+                        if isSingleSelect, let created { pick(created) }
                     }
                 } else if model.results.isEmpty {
                     Text("exercises.noResults")
@@ -169,16 +200,53 @@ struct ExercisePickerView: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
+    /// One result card; long press: favorite toggle, then Edit / Delete for a custom exercise.
+    private func card(_ entry: ExercisePickerViewModel.Entry) -> some View {
+        ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise),
+                           isFavorite: model.isFavorite(entry.id)) {
+            if isSingleSelect { pick(entry.exercise) } else { model.toggle(entry.exercise.id) }
+        } onDetails: {
+            detail = entry.exercise
+        }
+        .padding(.bottom, 8)
+        .contextMenu {
+            if model.isFavorite(entry.id) {
+                Button("exercises.unfavorite", systemImage: "star.slash") { model.toggleFavorite(entry.id) }
+            } else {
+                Button("exercises.favorite", systemImage: "star") { model.toggleFavorite(entry.id) }
+            }
+            if entry.exercise.isCustom {
+                Button("customExercise.edit", systemImage: "pencil") { editing = entry.exercise }
+                if entry.exercise.usages.isEmpty {
+                    Button("customExercise.delete", systemImage: "trash", role: .destructive) {
+                        model.deselect(entry.exercise.id)
+                        CustomExerciseEditor.delete(entry.exercise, in: modelContext)
+                        model.load(context: modelContext)
+                    }
+                }
+            }
+        }
+    }
+
     private func state(for exercise: Exercise) -> ExercisePickerRow.State {
         if alreadyIn.contains(exercise.id) { return .alreadyIn }
         return model.isSelected(exercise.id) ? .selected : .available
+    }
+
+    /// Single-select: hands back the tapped exercise and closes.
+    private func pick(_ exercise: Exercise) {
+        guard !alreadyIn.contains(exercise.id) else { return }
+        exercise.lastUsedAt = .now
+        try? modelContext.save()
+        onAdd([exercise])
+        dismiss()
     }
 
     // MARK: Add bar
 
     @ViewBuilder
     private var addBar: some View {
-        if model.selectedCount > 0 {
+        if model.selectedCount > 0 && !isSingleSelect {
             PrimaryButton(title: LocalizedStringKey(WorkoutStrings.add(model.selectedCount))) {
                 let exercises = model.selectedExercises()
                 let now = Date.now

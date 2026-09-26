@@ -7,7 +7,7 @@ enum NoTomorrowSchema {
         UserProfile.self, GymSchedule.self,
         Exercise.self, Routine.self, RoutineItem.self,
         Workout.self, WorkoutExercise.self, SetEntry.self,
-        FoodItem.self, MealEntry.self, BodyWeightEntry.self,
+        FoodItem.self, MealEntry.self, BodyWeightEntry.self, BodyMeasurement.self, ProgressPhoto.self,
         BroPairing.self, AttendanceRecord.self, HeadsUp.self,
     ]
 }
@@ -152,6 +152,8 @@ final class RoutineItem {
     var targetSets: Int
     var targetReps: Int
     var restSeconds: Int
+    /// Neighbouring items with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var routine: Routine?
 
     init(order: Int, exercise: Exercise, targetSets: Int = 3, targetReps: Int = 8, restSeconds: Int = 90) {
@@ -200,6 +202,8 @@ final class WorkoutExercise {
     var exercise: Exercise?
     var restSeconds: Int
     var notes: String
+    /// Neighbouring exercises with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var workout: Workout?
     @Relationship(deleteRule: .cascade, inverse: \SetEntry.workoutExercise) var sets: [SetEntry] = []
 
@@ -335,6 +339,55 @@ final class BodyWeightEntry {
         self.kg = kg
         self.source = source
     }
+}
+
+/// Tape measurements and body fat (Progress > Body > Measurements). One row per (day, kind); lengths in cm.
+enum MeasurementKind: String, Codable, CaseIterable {
+    case waist, chest, hips, arm, thigh, neck, bodyFat
+}
+
+@Model
+final class BodyMeasurement {
+    @Attribute(.unique) var id: UUID
+    /// Start of day (local calendar).
+    var day: Date
+    var kindRaw: String
+    /// Centimetres, or percent for body fat.
+    var value: Double
+
+    init(day: Date, kind: MeasurementKind, value: Double) {
+        self.id = UUID()
+        self.day = Calendar.current.startOfDay(for: day)
+        self.kindRaw = kind.rawValue
+        self.value = value
+    }
+
+    var kind: MeasurementKind? { MeasurementKind(rawValue: kindRaw) }
+}
+
+/// Which way the body faces in a progress photo; optional.
+enum ProgressPose: String, Codable, CaseIterable {
+    case front, side, back
+}
+
+/// A private progress photo (Progress > Body > Photos). The JPEG lives on this phone only, in
+/// Application Support/ProgressPhotos/`fileName` (`ProgressPhotoStore`); it is never exported or synced.
+@Model
+final class ProgressPhoto {
+    @Attribute(.unique) var id: UUID
+    var takenAt: Date
+    /// File name inside the photos directory, e.g. "3f2c….jpg".
+    var fileName: String
+    var poseRaw: String?
+
+    init(id: UUID = UUID(), takenAt: Date = .now, fileName: String, pose: ProgressPose? = nil) {
+        self.id = id
+        self.takenAt = takenAt
+        self.fileName = fileName
+        self.poseRaw = pose?.rawValue
+    }
+
+    var pose: ProgressPose? { poseRaw.flatMap(ProgressPose.init(rawValue:)) }
 }
 
 // MARK: - Gym bro

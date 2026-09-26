@@ -92,3 +92,30 @@ data class BodyWeightEntryEntity(
     val kg: Double,
     val source: BodyWeightSource = BodyWeightSource.Manual,
 )
+
+/**
+ * `BodyMeasurement` (`Models.swift:350`) — one tape reading. [day] is local midnight; [kind] the
+ * `MeasurementKind` raw value (`waist`, `bodyFat`…); [value] centimetres, or percent for body fat.
+ * Logging a kind twice on a day replaces that day's row (`Measurements.save`). Schema 3.
+ */
+@Entity(tableName = "body_measurement", indices = [Index("day")])
+data class BodyMeasurementEntity(
+    @PrimaryKey val id: String,
+    val day: Long,
+    val kind: String,
+    val value: Double,
+)
+
+/**
+ * `ProgressPhoto` (`Models.swift`) — one private progress photo. The JPEG lives only on this phone,
+ * in `filesDir/progress_photos/`[fileName] (`ProgressPhotoFiles`); it is never exported or synced.
+ * [takenAt] is epoch millis; [pose] the `ProgressPose` raw value (`front`, `side`, `back`) or null.
+ * Schema 4.
+ */
+@Entity(tableName = "progress_photo", indices = [Index("takenAt")])
+data class ProgressPhotoEntity(
+    @PrimaryKey val id: String,
+    val takenAt: Long,
+    val fileName: String,
+    val pose: String? = null,
+)

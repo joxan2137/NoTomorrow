@@ -4,10 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,6 +45,7 @@ import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSegmented
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.StatTile
+import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
@@ -54,7 +57,8 @@ import app.notomorrow.util.S
 /**
  * One lift over time — the port of `ExerciseProgressView`
  * (`Features/Progress/ExerciseProgressView.swift`): hero e1RM + delta chip, the line/area
- * chart with PR marks, three tiles, the weekly volume of every lift, and the records.
+ * chart with PR marks, three tiles, the weekly volume of every lift, the records, the rep maxes and
+ * the 1RM percentages.
  *
  * The navigation bar is hidden on iOS, so the screen draws its own back chevron in a
  * 44 dp hit target.
@@ -105,6 +109,8 @@ fun ExerciseProgressScreen(exerciseId: String, onBack: () -> Unit) {
                         modifier = Modifier.padding(top = NT.Spacing.section),
                     )
                     RecordsSection(state = state, modifier = Modifier.padding(top = 18.dp))
+                    RepMaxSection(state = state, modifier = Modifier.padding(top = NT.Spacing.section))
+                    PercentagesSection(state = state, modifier = Modifier.padding(top = NT.Spacing.section))
                 } else {
                     NtText(
                         text = stringResource(S.progress_empty),
@@ -248,13 +254,15 @@ private val CHART_HEIGHT = 172.dp
 // MARK: - Tiles
 
 /**
- * Last PR · This week · Sessions. The first and third are hand-rolled with [StatTile]'s
- * geometry because their label and value need more than one text run.
+ * Last PR · This week · Sessions. Hand-rolled with [StatTile]'s geometry because the first
+ * and third need more than one text run, and so all three share a label that may wrap to two
+ * lines ("Ostatnia życiówka", "Sessions · 3M") instead of truncating. The row takes its
+ * tallest tile's height and each value sits on the tile's bottom edge, so values stay level.
  */
 @Composable
 private fun ExerciseTiles(state: ExerciseProgressUiState, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Tile(modifier = Modifier.weight(1f), label = stringResource(S.progress_lastPR)) {
@@ -263,11 +271,19 @@ private fun ExerciseTiles(state: ExerciseProgressUiState, modifier: Modifier = M
             )
         }
 
-        StatTile(
-            label = stringResource(S.progress_thisWeek),
-            value = Fmt.volume(state.thisWeekVolume, state.unit),
-            modifier = Modifier.weight(1f),
-        )
+        Tile(modifier = Modifier.weight(1f), label = stringResource(S.progress_thisWeek)) {
+            // `StatTile`'s value: shrinks to 60 % rather than truncating.
+            TabularText(
+                Fmt.volume(state.thisWeekVolume, state.unit),
+                style = NT.Fonts.headline,
+                color = NT.Colors.ink,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = NT.Fonts.headline.fontSize * 0.6f,
+                    maxFontSize = NT.Fonts.headline.fontSize,
+                ),
+            )
+        }
 
         val sessions = stringResource(S.progress_sessions)
         val rangeTitle = stringResource(state.range.titleRes)
@@ -282,7 +298,10 @@ private fun ExerciseTiles(state: ExerciseProgressUiState, modifier: Modifier = M
     }
 }
 
-/** `StatTile` with a caller-supplied value run. */
+/**
+ * `StatTile` with a caller-supplied value run. The label wraps to two lines and only then
+ * shrinks (to ~80 %, iOS's `minimumScaleFactor(0.8)`); the value is pinned to the bottom.
+ */
 @Composable
 private fun Tile(
     label: String,
@@ -291,12 +310,22 @@ private fun Tile(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxHeight()
             .background(NT.Colors.surface, NtShapes.tile)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Eyebrow(label)
+        Eyebrow(
+            label,
+            maxLines = 2,
+            // 11 sp down to 9 sp in exact 0.25 sp steps, so a label that fits keeps full size.
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 9.sp,
+                maxFontSize = NT.Fonts.eyebrow.fontSize,
+                stepSize = 0.25.sp,
+            ),
+        )
+        Spacer(Modifier.weight(1f))
         value()
     }
 }

@@ -57,6 +57,9 @@ struct SetKindMenu: View {
     var onKind: (SetKind) -> Void
     /// When set, the menu ends with a destructive "Delete set".
     var onDelete: (() -> Void)? = nil
+    /// The set's RPE; with `onRPE` the menu offers an RPE submenu and the cell shows "@8" under the number.
+    var rpe: Double? = nil
+    var onRPE: ((Double?) -> Void)? = nil
 
     var body: some View {
         Menu {
@@ -64,26 +67,58 @@ struct SetKindMenu: View {
             Button("workout.dropset") { onKind(.drop) }
             Button("workout.failure") { onKind(.failure) }
             Button("workout.normalSet") { onKind(.normal) }
+            if let onRPE {
+                Menu {
+                    ForEach(RPE.options, id: \.self) { value in
+                        Button {
+                            onRPE(value)
+                        } label: {
+                            if value == rpe {
+                                Label(RPE.label(value), systemImage: "checkmark")
+                            } else {
+                                Text(RPE.label(value))
+                            }
+                        }
+                    }
+                    if rpe != nil {
+                        Divider()
+                        Button("rpe.clear") { onRPE(nil) }
+                    }
+                } label: {
+                    Label("rpe.title", systemImage: "gauge.with.dots.needle.67percent")
+                }
+            }
             if let onDelete {
                 Divider()
                 Button("workout.edit.deleteSet", role: .destructive, action: onDelete)
             }
         } label: {
-            Group {
-                if kind == .normal {
-                    Text("\(number)")
-                        .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
-                } else {
-                    Text(verbatim: Self.letter(for: kind))
-                        .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
-                        .frame(width: 24, height: 24)
-                        .background(NT.Colors.surface2, in: Circle())
+            VStack(spacing: 0) {
+                kindGlyph
+                if let rpe {
+                    Text(verbatim: "@\(RPE.label(rpe))")
+                        .font(.system(size: 9, weight: .semibold)).foregroundStyle(NT.Colors.ember).tabular()
+                        .lineLimit(1).fixedSize()
+                        .accessibilityLabel(RPE.accessibilityText(rpe))
                 }
             }
             .frame(width: 36, height: NT.Size.control)
             .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
+    }
+
+    @ViewBuilder
+    private var kindGlyph: some View {
+        if kind == .normal {
+            Text("\(number)")
+                .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
+        } else {
+            Text(verbatim: Self.letter(for: kind))
+                .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
+                .frame(width: 24, height: 24)
+                .background(NT.Colors.surface2, in: Circle())
+        }
     }
 
     /// W / D / F for warm-up, drop and failure sets (the same glyphs in the table and the detail sheet).
@@ -94,6 +129,21 @@ struct SetKindMenu: View {
         case .failure: "F"
         case .normal: ""
         }
+    }
+}
+
+/// Rate of perceived exertion for a set: 6 (easy, 4 left in the tank) to 10 (nothing left), in half steps.
+enum RPE {
+    static let options: [Double] = stride(from: 6.0, through: 10.0, by: 0.5).map { $0 }
+
+    /// "8" or "8,5" (locale decimal separator).
+    static func label(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)).locale(Fmt.locale))
+    }
+
+    /// "RPE 8" for VoiceOver, where the screen shows "@8".
+    static func accessibilityText(_ value: Double) -> Text {
+        Text("rpe.title") + Text(verbatim: " " + label(value))
     }
 }
 

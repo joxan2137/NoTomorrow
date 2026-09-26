@@ -3,6 +3,8 @@ package app.notomorrow.util
 import androidx.annotation.StringRes
 import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
+import app.notomorrow.model.MeasurementKind
+import app.notomorrow.model.ProgressPose
 import app.notomorrow.model.TrainingGoal
 
 /**
@@ -22,6 +24,26 @@ object NtKeys {
         MealSlot.Lunch -> S.meal_lunch
         MealSlot.Snack -> S.meal_snack
         MealSlot.Dinner -> S.meal_dinner
+    }
+
+    /** `"measure." + rawValue` — `Measurements.titleKey`. */
+    @StringRes
+    fun measure(kind: MeasurementKind): Int = when (kind) {
+        MeasurementKind.Waist -> S.measure_waist
+        MeasurementKind.Chest -> S.measure_chest
+        MeasurementKind.Hips -> S.measure_hips
+        MeasurementKind.Arm -> S.measure_arm
+        MeasurementKind.Thigh -> S.measure_thigh
+        MeasurementKind.Neck -> S.measure_neck
+        MeasurementKind.BodyFat -> S.measure_bodyFat
+    }
+
+    /** `ProgressPhotos.poseKey` — `"photos.pose." + rawValue`. */
+    @StringRes
+    fun pose(pose: ProgressPose): Int = when (pose) {
+        ProgressPose.Front -> S.photos_pose_front
+        ProgressPose.Side -> S.photos_pose_side
+        ProgressPose.Back -> S.photos_pose_back
     }
 
     /** `"goal.\(rawValue)"` */
@@ -140,6 +162,46 @@ object NtKeys {
         PluralCategory.One -> S.workout_setCount_one
         PluralCategory.Few -> S.workout_setCount_few
         PluralCategory.Many -> S.workout_setCount_many
+    }
+
+    /** `"calendar.workoutCount.\(one|few|many)"` */
+    @StringRes
+    fun workoutCount(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.calendar_workoutCount_one
+        PluralCategory.Few -> S.calendar_workoutCount_few
+        PluralCategory.Many -> S.calendar_workoutCount_many
+    }
+
+    /** `"calendar.weekStreak.\(one|few|many)"` */
+    @StringRes
+    fun weekStreak(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.calendar_weekStreak_one
+        PluralCategory.Few -> S.calendar_weekStreak_few
+        PluralCategory.Many -> S.calendar_weekStreak_many
+    }
+
+    /** `"progress.weeksSincePR.\(one|few|many)"` — `WorkoutStrings.weeksSincePR`. */
+    @StringRes
+    fun weeksSincePR(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.progress_weeksSincePR_one
+        PluralCategory.Few -> S.progress_weeksSincePR_few
+        PluralCategory.Many -> S.progress_weeksSincePR_many
+    }
+
+    /** `"program.routineCount.\(one|few|many)"` — `WorkoutStrings.routines`. */
+    @StringRes
+    fun routineCount(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.program_routineCount_one
+        PluralCategory.Few -> S.program_routineCount_few
+        PluralCategory.Many -> S.program_routineCount_many
+    }
+
+    /** `"program.add.\(one|few|many)"` — `WorkoutStrings.addRoutines`. */
+    @StringRes
+    fun addRoutines(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.program_add_one
+        PluralCategory.Few -> S.program_add_few
+        PluralCategory.Many -> S.program_add_many
     }
 
     /** `"fuel.ai.provider.\(google|anthropic)"` — `AIScanModel.Upload.providerNameKey`. */

@@ -5,12 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -94,7 +92,8 @@ fun WorkoutRecordRow(
                 tint = if (record.isPR) NT.Colors.ember else NT.Colors.ink,
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // Weighted, so a long name or detail (Polish) ellipsizes instead of pushing the tag off the row.
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             TabularText(
                 text = record.exercise?.localizedName().orEmpty() +
                     " · " + Fmt.set(record.weightKg, record.reps, unit),
@@ -107,7 +106,6 @@ fun WorkoutRecordRow(
                 color = NT.Colors.ink2,
             )
         }
-        Spacer(Modifier.weight(1f).widthIn(min = 8.dp))
         if (record.isPR) {
             Eyebrow(stringResource(S.workout_pr), color = NT.Colors.ember)
         } else {

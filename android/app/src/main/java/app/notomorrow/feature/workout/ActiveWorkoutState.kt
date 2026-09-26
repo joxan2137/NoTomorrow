@@ -1,11 +1,14 @@
 package app.notomorrow.feature.workout
 
+import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.ExerciseNoteRow
 import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.RecordService
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.service.localizedName
 import java.util.Locale
 import kotlin.math.abs
@@ -114,6 +117,20 @@ internal fun foldLatestEarlierWorkoutRows(
  * `previous(for:in:)` — the same-position set of the last session ([PreviousRows.value]), else,
  * for a working set, the most recent completed set ([last]); a warm-up past the end gets none.
  */
+/**
+ * The numbers the open rows of a replaced exercise start with: each row's Previous for the new
+ * exercise (same slot), or empty (0 × 0) when it was never done — what `replace(_:with:)` leaves
+ * after `prefillFromPrevious` on cleared rows.
+ */
+internal fun replacementSetValues(kinds: List<SetKind>, previous: PreviousRows?, last: SetValue?): List<SetValue> =
+    slots(kinds).map { slot ->
+        val value = previousValue(previous, last, slot)
+        SetValue(
+            weightKg = value?.weightKg?.takeIf { it > 0 } ?: 0.0,
+            reps = value?.reps?.takeIf { it > 0 } ?: 0,
+        )
+    }
+
 internal fun previousValue(rows: PreviousRows?, last: SetValue?, slot: SetSlot): SetValue? =
     rows?.value(slot) ?: if (slot.isWarmup) null else last
 
@@ -194,6 +211,45 @@ internal fun routineTargetReps(routines: List<RoutineWithItems>, workoutName: St
     return targets
 }
 
+// MARK: - Notes
+
+/**
+ * `previousNote(for:)` — the note left on this exercise the last time it was done (Hevy-style
+ * "sticky" notes: seat height, grip…), shown as the note field's placeholder: the newest other
+ * **finished** workout's entry whose note is not blank.
+ */
+internal fun latestPreviousNote(rows: List<ExerciseNoteRow>, excludingWorkoutId: String): String? =
+    rows.filter { it.workoutId != excludingWorkoutId && it.workoutEndedAt != null && it.notes.isNotBlank() }
+        .maxByOrNull { it.workoutStartedAt }
+        ?.notes
+
+// MARK: - Warm-ups
+
+/**
+ * `warmupTarget(for:)` — the working weight a warm-up ramp builds to: the first normal set's
+ * weight (row order), in [unit] (0 = none).
+ */
+internal fun warmupTarget(sets: List<SetEntryEntity>, unit: WeightUnit): Double {
+    val kg = sets.sortedBy { it.order }.firstOrNull { it.kind == SetKind.Normal && it.weightKg > 0 }?.weightKg ?: 0.0
+    return SetInput.display(kg, unit)
+}
+
+/** `warmupSteps(for:)` — the ramp "Add warm-up sets" would add; empty disables the menu item. */
+internal fun warmupSteps(sets: List<SetEntryEntity>, equipment: String?, unit: WeightUnit): List<WarmupPlan.Step> =
+    WarmupPlan.steps(warmupTarget(sets, unit), unit, equipment)
+
+/**
+ * `addWarmups(to:)`'s new row order: the sets that stay (every set but the open warm-ups) with the
+ * completed warm-ups first, then the [steps] (a `null` id each), then the rest, in row order.
+ * Returns the ids in their new order.
+ */
+internal fun warmupRowOrder(sets: List<SetEntryEntity>, steps: Int): List<Long?> {
+    val kept = sets.filter { it.kind != SetKind.Warmup || it.isCompleted }.sortedBy { it.order }
+    return kept.filter { it.kind == SetKind.Warmup }.map { it.id } +
+        List(steps) { null } +
+        kept.filter { it.kind != SetKind.Warmup }.map { it.id }
+}
+
 /** The sets "Use" writes to and the suggestion watches: open, not a warm-up, not a drop set. */
 internal fun SetRowUi.takesSuggestion(): Boolean = !isCompleted && kind != SetKind.Warmup && kind != SetKind.Drop
 
@@ -223,13 +279,16 @@ internal fun foldCurrentExercise(exercises: List<WorkoutExerciseUi>, expandedId:
  * One Room section folded into one [WorkoutExerciseUi] — `setNumber(for:in:)` (warm-ups do not
  * count), `currentSetID(in:)`, the per-row `previous(for:in:)` ghost by [SetSlot] and
  * `suggestion(for:)` ([suggestion] is the one the previous session allows; it is kept only while
- * an open set still has the previous top weight).
+ * an open set still has the previous top weight) and `warmupSteps(for:)` in [unit].
  */
 internal fun WorkoutExerciseWithSets.toUi(
     locale: Locale,
     previousLast: SetValue?,
     previous: (SetSlot) -> SetValue?,
     suggestion: WeightSuggestion? = null,
+    unit: WeightUnit = WeightUnit.Kg,
+    previousNote: String? = null,
+    defaultRest: Int = RoutineSeeder.DEFAULT_REST_SECONDS,
 ): WorkoutExerciseUi {
     val ordered = sortedSets
     val currentSetId = ordered.firstOrNull { !it.isCompleted }?.id
@@ -247,6 +306,7 @@ internal fun WorkoutExerciseWithSets.toUi(
             number = number,
             previous = previous(positions[index]),
             isCurrent = set.id == currentSetId,
+            rpe = set.rpe,
         )
     }
     return WorkoutExerciseUi(
@@ -255,6 +315,7 @@ internal fun WorkoutExerciseWithSets.toUi(
         name = exercise?.localizedName(locale).orEmpty(),
         primaryMuscle = exercise?.primaryMuscles?.firstOrNull(),
         restSeconds = workoutExercise.restSeconds,
+        defaultRestSeconds = workoutExercise.exerciseId?.let { RoutineSeeder.restSeconds(it, defaultRest) } ?: defaultRest,
         setCount = sets.size,
         isDone = isDone,
         last = previousLast,
@@ -262,7 +323,57 @@ internal fun WorkoutExerciseWithSets.toUi(
         suggestion = suggestion?.takeIf { s ->
             showsSuggestion(s, rows.filter { it.takesSuggestion() }.map { it.weightKg })
         },
+        warmupSteps = warmupSteps(ordered, exercise?.equipment, unit),
+        notes = workoutExercise.notes,
+        previousNote = previousNote,
+        supersetGroup = workoutExercise.supersetGroup,
     )
+}
+
+// MARK: - Supersets
+
+/** `supersetHop(after:in:)`'s answer: the exercise to open next, and whether to rest first. */
+internal data class SupersetHop(val exerciseUiId: Long, val rests: Boolean)
+
+/**
+ * `supersetHop(after:in:)` — where a tick of [row] in a superset goes next: a later exercise of the
+ * superset with an open set (no rest), else, after the round's last exercise, back to the first
+ * one with an open set (rest first). `null` outside a superset, once the superset is done, or when
+ * a drop set follows in the same exercise. [all] may predate the tick: [row] counts as done.
+ */
+internal fun supersetHop(all: List<WorkoutExerciseUi>, section: WorkoutExerciseUi, row: SetRowUi): SupersetHop? {
+    val group = section.supersetGroup ?: return null
+    val next = section.sets.firstOrNull { it.order > row.order && !it.isCompleted }
+    if (next?.kind == SetKind.Drop) return null
+    val i = all.indexOfFirst { it.id == section.id }
+    if (i < 0) return null
+    var start = i
+    var end = i
+    while (start > 0 && all[start - 1].supersetGroup == group) start -= 1
+    while (end + 1 < all.size && all[end + 1].supersetGroup == group) end += 1
+    if (end <= start) return null
+    val hasOpen = { exercise: WorkoutExerciseUi -> exercise.sets.any { !it.isCompleted && it.id != row.id } }
+    if (i < end) all.subList(i + 1, end + 1).firstOrNull(hasOpen)?.let { return SupersetHop(it.id, rests = false) }
+    all.subList(start, end + 1).firstOrNull(hasOpen)?.let { return SupersetHop(it.id, rests = true) }
+    return null
+}
+
+/**
+ * The superset fields of every section, from the groups in list order: `supersetLetter(for:)`
+ * ("A", "B"…) and `canLinkWithNext(_:)` (a next exercise exists and is not already linked); and
+ * `canMove(_:by:)` for Move up / Move down (not the first / not the last).
+ */
+internal fun List<WorkoutExerciseUi>.withSupersets(): List<WorkoutExerciseUi> {
+    val groups = map { it.supersetGroup }
+    val letters = Superset.letters(groups)
+    return mapIndexed { index, exercise ->
+        exercise.copy(
+            supersetLetter = letters[index],
+            canLinkNext = index + 1 < size && !Superset.isLinkedToNext(groups, index),
+            canMoveUp = index > 0,
+            canMoveDown = index + 1 < size,
+        )
+    }
 }
 
 // MARK: - Next target

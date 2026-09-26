@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -39,11 +40,15 @@ import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NTCard
+import app.notomorrow.designsystem.NtIcon
+import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSegmented
+import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.SectionHeader
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
+import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.di.ntViewModel
 import app.notomorrow.feature.bro.bleedHorizontally
@@ -61,10 +66,10 @@ import app.notomorrow.util.S
  * No visible top bar: the eyebrow (last PR date), the title and the Lifts / Body
  * segmented control are the screen's own header. The Lifts tab shows a chip per lift over
  * the selected lift's [FocalCard] (e1RM, range delta, chart, range picker), the muscles
- * trained this week, and the e1RM list; the Body tab replaces them with the full body view.
+ * trained this week, the e1RM list, the training calendar, the weekly stats and the milestones; the Body tab replaces them with the full body view, the measurements and the progress photos.
  */
 @Composable
-fun ProgressHomeScreen(onExercise: (String) -> Unit) {
+fun ProgressHomeScreen(onExercise: (String) -> Unit, onRecords: () -> Unit, onMilestones: () -> Unit) {
     val model = ntViewModel { container ->
         ProgressHomeViewModel(
             profileDao = container.db.profileDao(),
@@ -130,17 +135,44 @@ fun ProgressHomeScreen(onExercise: (String) -> Unit) {
                             LiftsSection(
                                 state = state,
                                 onExercise = onExercise,
+                                onRecords = onRecords,
                                 onStartWorkout = model::selectTrainTab,
+                                modifier = Modifier.padding(top = NT.Spacing.section),
+                            )
+                            state.today?.let { today ->
+                                TrainingCalendarCard(
+                                    days = state.calendarDays,
+                                    today = today,
+                                    unit = state.unit,
+                                    modifier = Modifier.padding(top = NT.Spacing.section),
+                                )
+                            }
+                            WeeklyStatsCard(
+                                weeks = state.weeklyStats,
+                                unit = state.unit,
+                                modifier = Modifier.padding(top = NT.Spacing.section),
+                            )
+                            MilestonesCard(
+                                milestones = state.milestones,
+                                unit = state.unit,
+                                onOpen = onMilestones,
                                 modifier = Modifier.padding(top = NT.Spacing.section),
                             )
                         }
 
-                        ProgressTab.Body -> BodyTab(
-                            stats = state.body,
-                            unit = state.unit,
-                            onLog = model::showLogWeight,
-                            modifier = Modifier.padding(top = 18.dp),
-                        )
+                        ProgressTab.Body -> Column(Modifier.fillMaxWidth()) {
+                            BodyTab(
+                                stats = state.body,
+                                unit = state.unit,
+                                onLog = model::showLogWeight,
+                                modifier = Modifier.padding(top = 18.dp),
+                            )
+                            MeasurementsSection(
+                                unit = state.unit,
+                                modifier = Modifier.padding(top = NT.Spacing.section),
+                            )
+                            ProgressPhotosSection(modifier = Modifier.padding(top = NT.Spacing.section))
+                        }
                     }
                 }
             }
@@ -397,6 +429,7 @@ private fun MusclesSection(muscles: MuscleWeek, modifier: Modifier = Modifier) {
 private fun LiftsSection(
     state: ProgressHomeUiState,
     onExercise: (String) -> Unit,
+    onRecords: () -> Unit,
     onStartWorkout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -429,9 +462,37 @@ private fun LiftsSection(
                     onClick = { onExercise(lift.exerciseId) },
                 )
             }
+            RecordsLink(onClick = onRecords, modifier = Modifier.padding(top = 12.dp))
         } else {
             ProgressEmptyState(onStartWorkout = onStartWorkout)
         }
+    }
+}
+
+/** "All-time records ›" under the list (`ProgressHomeView.recordsLink`): opens [RecordsScreen]. */
+@Composable
+private fun RecordsLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(NT.Colors.surface, NtShapes.tile)
+            .ntPlainClickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(18.dp), contentAlignment = Alignment.Center) {
+            NtIcon(NtIcons.Trophy, size = sfIconSize(16f), tint = NT.Colors.ember)
+        }
+        NtText(
+            text = stringResource(S.records_title),
+            modifier = Modifier.weight(1f),
+            style = NT.Fonts.subheadline,
+            color = NT.Colors.ink,
+            maxLines = 1,
+        )
+        NtIcon(NtIcons.ChevronRight, size = sfIconSize(13f), tint = NT.Colors.ink3)
     }
 }
 

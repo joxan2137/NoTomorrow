@@ -150,6 +150,10 @@ class FakeExerciseDao(initial: List<ExerciseEntity> = emptyList()) : ExerciseDao
 
     override suspend fun update(exercise: ExerciseEntity) = upsert(exercise)
 
+    override suspend fun deleteCustomById(id: String) {
+        rows.value = rows.value.filterNot { it.id == id && it.isCustom }
+    }
+
     override suspend fun deleteCustom() {
         rows.value = rows.value.filterNot { it.isCustom }
     }
@@ -220,6 +224,20 @@ class FakeRoutineDao(
 
     override suspend fun updateItem(item: RoutineItemEntity) {
         items.value = items.value.map { if (it.id == item.id) item else it }
+    }
+
+    override suspend fun updateRoutines(routines: List<RoutineEntity>) {
+        val byId = routines.associateBy { it.id }
+        this.routines.value = this.routines.value.map { byId[it.id] ?: it }
+    }
+
+    override suspend fun deleteItems(routineId: String) {
+        items.value = items.value.filterNot { it.routineId == routineId }
+    }
+
+    override suspend fun deleteRoutineById(id: String) {
+        routines.value = routines.value.filterNot { it.id == id }
+        items.value = items.value.filterNot { it.routineId == id }
     }
 
     override suspend fun deleteRoutine(routine: RoutineEntity) {

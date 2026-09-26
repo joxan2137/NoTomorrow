@@ -21,6 +21,11 @@ enum Fmt {
         return withUnit ? "\(number)\u{00A0}\(unit.rawValue)" : number
     }
 
+    /// "1,25 kg": a plate or bar weight already in `unit`, with up to two decimals (plates come in 1.25).
+    static func plate(_ value: Double, unit: WeightUnit) -> String {
+        "\(value.formatted(.number.precision(.fractionLength(0...2)).locale(locale)))\u{00A0}\(unit.rawValue)"
+    }
+
     static func kcal(_ value: Double, withUnit: Bool = true) -> String {
         let number = Int(value.rounded()).formatted(.number.grouping(.automatic).locale(locale))
         return withUnit ? "\(number)\u{00A0}kcal" : number

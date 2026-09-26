@@ -55,10 +55,18 @@ enum RoutineSeeder {
         isHeavy(exerciseId) ? min(600, defaultRest + heavyExtraRestSeconds) : defaultRest
     }
 
-    /// Idempotent: only runs when no `Routine` exists yet.
-    static func seedIfNeeded(context: ModelContext) {
+    /// Set once the starter routines exist, so deleting every routine does not bring them back.
+    /// A local data wipe clears it (`LocalDataWipe`).
+    static let seededKey = "nt.routines.seeded"
+
+    /// Idempotent: runs once, and only when no `Routine` exists yet.
+    static func seedIfNeeded(context: ModelContext, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: seededKey) else { return }
         let routineCount = (try? context.fetchCount(FetchDescriptor<Routine>())) ?? 0
-        guard routineCount == 0 else { return }
+        guard routineCount == 0 else {
+            defaults.set(true, forKey: seededKey)
+            return
+        }
 
         let ids = templates.flatMap(\.exerciseIds)
         let descriptor = FetchDescriptor<Exercise>(predicate: #Predicate { ids.contains($0.id) })
@@ -81,6 +89,7 @@ enum RoutineSeeder {
             }
         }
         try? context.save()
+        defaults.set(true, forKey: seededKey)
     }
 
     /// One-time: routine items still holding the fixed rest older builds seeded (90 s, 120 s for heavy lifts)

@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 
-/// Search + muscle filter over the exercise library. Debounces typing (200 ms) and matches every
+/// Search + muscle and equipment filters over the exercise library. Debounces typing (200 ms) and matches every
 /// query token case- and diacritic-insensitively against the English and Polish names.
 @MainActor
 @Observable
@@ -31,6 +31,11 @@ final class ExercisePickerViewModel {
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     var showsCreateRow: Bool { !trimmedQuery.isEmpty }
+
+    /// The equipment chip row; combines with the muscle chips and the search.
+    var equipment: ExerciseLibrary.Equipment = .all {
+        didSet { applyFilter() }
+    }
 
     // MARK: Loading
 
@@ -64,13 +69,34 @@ final class ExercisePickerViewModel {
         let muscles = group.muscles
         results = all.filter { entry in
             if !muscles.isEmpty && !entry.exercise.primaryMuscles.contains(where: muscles.contains) { return false }
+            if !equipment.matches(entry.exercise.equipment) { return false }
             return tokens.allSatisfy { entry.folded.contains($0) }
         }
+    }
+
+    // MARK: Favorites
+
+    /// Starred exercise ids (`FavoriteExercises`), read once per picker and kept in step by `toggleFavorite`.
+    private(set) var favoriteIDs: Set<String> = FavoriteExercises.ids()
+
+    func isFavorite(_ id: String) -> Bool { favoriteIDs.contains(id) }
+
+    func toggleFavorite(_ id: String) {
+        favoriteIDs = FavoriteExercises.toggle(id)
+    }
+
+    /// With no search text the favorites among the results sit in their own section on top.
+    var sections: FavoriteExercises.Sections<Entry> {
+        FavoriteExercises.sections(results, favorites: favoriteIDs, isSearching: !trimmedQuery.isEmpty, id: { $0.id })
     }
 
     // MARK: Selection
 
     func isSelected(_ id: String) -> Bool { selectedIDs.contains(id) }
+
+    func deselect(_ id: String) {
+        selectedIDs.removeAll { $0 == id }
+    }
 
     func toggle(_ id: String) {
         if let index = selectedIDs.firstIndex(of: id) {
@@ -99,7 +125,8 @@ final class ExercisePickerViewModel {
         let name = trimmedQuery
         guard !name.isEmpty else { return nil }
         let muscles = Self.representativeMuscle[group].map { [$0] } ?? []
-        let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: name, primaryMuscles: muscles, isCustom: true)
+        let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: name, primaryMuscles: muscles,
+                                equipment: equipment.representative, isCustom: true)
         exercise.lastUsedAt = .now
         context.insert(exercise)
         try? context.save()

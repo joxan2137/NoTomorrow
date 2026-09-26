@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Search + muscle filter over the exercise library — 1:1 port of
+ * Search + muscle and equipment filters over the exercise library — 1:1 port of
  * `NoTomorrow/Features/Workout/ExercisePickerViewModel.swift`.
  *
  * Typing is debounced by **200 ms** before the list is refiltered (the field itself updates at
@@ -48,6 +49,14 @@ class ExercisePickerViewModel(
 
     /** The `alreadyIn` of the plain `init(alreadyIn:onAdd:)`; re-set by [reset] on every presentation. */
     private val alreadyInInput = MutableStateFlow(initialAlreadyIn)
+
+    private val equipmentInput = MutableStateFlow(ExerciseEquipment.All)
+
+    /** Starred exercises (`nt.favoriteExercises`). */
+    private val favorites = FavoriteExercises.Store.prefs(container.appPrefs)
+
+    /** The equipment chip row; combines with the muscle chips and the search. */
+    val equipment: StateFlow<ExerciseEquipment> = equipmentInput.asStateFlow()
 
     /** Recently used first, then alphabetical — `load(context:)`. */
     private val library: Flow<List<ExerciseEntity>> =
@@ -80,13 +89,23 @@ class ExercisePickerViewModel(
         groupInput,
     ) { all, query, group -> ExerciseLibrary.filter(all, query, group) }
 
+    /** [results] narrowed by the equipment chip; a chip tap refilters immediately. */
+    private val filtered: Flow<List<ExerciseEntity>> =
+        combine(results, equipmentInput) { rows, equipment -> ExerciseEquipment.filter(rows, equipment) }
+
     val state: StateFlow<ExercisePickerUiState> = combine(
-        results,
+        filtered,
         lastSets,
         queryInput,
         groupInput,
-        combine(selectedInput, alreadyIn, container.db.profileDao().observeProfile()) { selected, already, profile ->
-            Triple(selected, already, profile?.units ?: WeightUnit.Kg)
+        combine(
+            selectedInput,
+            alreadyIn,
+            container.db.profileDao().observeProfile(),
+            workoutDao.observeUsedExerciseIds(),
+            favorites.ids,
+        ) { selected, already, profile, used, favoriteIds ->
+            PickerContext(selected, already, profile?.units ?: WeightUnit.Kg, used.toSet(), favoriteIds)
         },
     ) { rows, last, query, group, context ->
         val trimmed = query.trim()
@@ -95,11 +114,14 @@ class ExercisePickerViewModel(
             trimmedQuery = trimmed,
             group = group,
             results = rows.map { ExercisePickerEntry(it, last[it.id]) },
-            selectedIds = context.first,
-            alreadyIn = context.second,
-            unit = context.third,
+            selectedIds = context.selected,
+            alreadyIn = context.alreadyIn,
+            unit = context.unit,
+            usedIds = context.used,
+            favoriteIds = context.favorites,
             // `showsCreateRow` — any non-empty query offers "Create «…»".
             showsCreateRow = trimmed.isNotEmpty(),
+            loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExercisePickerUiState())
 
@@ -117,6 +139,7 @@ class ExercisePickerViewModel(
         groupInput.value = ExerciseLibrary.MuscleGroup.All
         selectedInput.value = emptyList()
         alreadyInInput.value = alreadyIn
+        equipmentInput.value = ExerciseEquipment.All
     }
 
     fun setQuery(value: String) {
@@ -133,19 +156,56 @@ class ExercisePickerViewModel(
         selectedInput.value = if (current.contains(id)) current - id else current + id
     }
 
+    /** The long-press "Add to favorites" / "Remove from favorites". */
+    fun toggleFavorite(id: String) {
+        viewModelScope.launch { FavoriteExercises.toggle(favorites, id) }
+    }
+
+    fun setEquipment(equipment: ExerciseEquipment) {
+        equipmentInput.value = equipment
+    }
+
     /**
      * `createExercise(context:)` — inserts a custom exercise named after the query, tagged with one
-     * representative muscle of the selected chip, selects it and clears the search so it sorts to
-     * the top.
+     * representative muscle of the selected chip and the equipment chip's equipment, selects it
+     * and clears the search so it sorts to the top.
      */
-    fun createExercise() {
+    fun createExercise(onCreated: ((String) -> Unit)? = null) {
         val name = queryInput.value.trim()
         if (name.isEmpty()) return
         viewModelScope.launch {
-            val exercise = container.exerciseLibrary.createCustom(name, groupInput.value) ?: return@launch
-            selectedInput.value = selectedInput.value + exercise.id
+            val exercise = container.exerciseLibrary.createCustom(
+                name,
+                groupInput.value,
+                equipment = equipmentInput.value.representative,
+            ) ?: return@launch
             queryInput.value = ""
+            if (onCreated != null) {
+                onCreated(exercise.id)
+            } else {
+                selectedInput.value = selectedInput.value + exercise.id
+            }
         }
+    }
+
+    /**
+     * Single-select ("Replace exercise"): stamps `lastUsedAt` on the tapped exercise and hands it
+     * back; nothing is appended to a workout (the caller swaps it in).
+     */
+    fun pick(id: String, onPicked: (String) -> Unit) {
+        viewModelScope.launch {
+            exerciseDao.markUsed(id, System.currentTimeMillis())
+            onPicked(id)
+        }
+    }
+
+    /**
+     * The long-press Delete exercise: a custom exercise no workout uses leaves the selection and
+     * the library (`model.deselect(id)` + `modelContext.delete`).
+     */
+    fun deleteCustom(exercise: ExerciseEntity) {
+        selectedInput.value = selectedInput.value - exercise.id
+        viewModelScope.launch { CustomExercises.delete(exerciseDao, workoutDao, exercise) }
     }
 
     /**
@@ -176,6 +236,14 @@ class ExercisePickerViewModel(
         }
     }
 
+    private data class PickerContext(
+        val selected: List<String>,
+        val alreadyIn: Set<String>,
+        val unit: WeightUnit,
+        val used: Set<String>,
+        val favorites: Set<String>,
+    )
+
     private companion object {
         /** `try? await Task.sleep(for: .milliseconds(200))`. */
         const val FILTER_DEBOUNCE_MS = 200L
@@ -193,8 +261,18 @@ data class ExercisePickerUiState(
     val alreadyIn: Set<String> = emptySet(),
     val unit: WeightUnit = WeightUnit.Kg,
     val showsCreateRow: Boolean = false,
+    /** Exercises in any workout (`exercise.usages`) — a custom one outside them can be deleted. */
+    val usedIds: Set<String> = emptySet(),
+    /** Starred exercise ids (`FavoriteExercises`). */
+    val favoriteIds: Set<String> = emptySet(),
+    /** `false` only for the placeholder before the first Room read lands. */
+    val loaded: Boolean = false,
 ) {
     val selectedCount: Int get() = selectedIds.size
+
+    /** With no search text the favorites among the results sit in their own section on top. */
+    val sections: FavoriteExercises.Sections<ExercisePickerEntry>
+        get() = FavoriteExercises.sections(results, favoriteIds, trimmedQuery.isNotEmpty()) { it.exercise.id }
 
     fun isSelected(id: String): Boolean = selectedIds.contains(id)
 

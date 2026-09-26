@@ -126,6 +126,12 @@ enum class NtIcons(
     /** SF `square.and.arrow.up` — the iOS share glyph, kept for parity. */
     SquareAndArrowUp(R.drawable.ic_share),
 
+    /** SF `square.and.arrow.down` — the share glyph with the arrow turned in; "Save as routine". */
+    SquareAndArrowDown(R.drawable.ic_square_and_arrow_down),
+
+    /** SF `link` — custom vector; supersets (the tag and "Superset with next"). */
+    Link(R.drawable.ic_link),
+
     /** SF `doc.on.doc`. */
     DocOnDoc(R.drawable.ic_copy),
 
@@ -217,6 +223,15 @@ enum class NtIcons(
 
     /** SF `trophy.fill` — custom vector, filled. */
     TrophyFill(R.drawable.ic_trophy_fill),
+
+    /** SF `star` — "Add to favorites" in the exercise picker's long-press menu. */
+    Star(R.drawable.ic_star),
+
+    /** SF `star.fill` — the small star on a favorite exercise's picker row. */
+    StarFill(R.drawable.ic_star_fill),
+
+    /** SF `star.slash` — "Remove from favorites". */
+    StarSlash(R.drawable.ic_star_slash),
 }
 
 /**

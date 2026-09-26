@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -12,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.notomorrow.model.AIProvider
+import app.notomorrow.model.WeightUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -154,6 +156,18 @@ class AppPrefs(context: Context) {
     suspend fun setRoutinesInheritRest(value: Boolean) = put(Keys.routinesInheritRest, value)
 
     /**
+     * `nt.routines.seeded` — the starter routines exist, so deleting every routine does not bring
+     * them back (`RoutineSeeder.seededKey`). The delete-account wipe removes it.
+     */
+    suspend fun routinesSeededOnce(): Boolean = data.first()[Keys.routinesSeeded] ?: false
+
+    suspend fun setRoutinesSeeded(value: Boolean) = put(Keys.routinesSeeded, value)
+
+    suspend fun removeRoutinesSeeded() {
+        store.edit { it.remove(Keys.routinesSeeded) }
+    }
+
+    /**
      * The workout screen asked once for what an on-time rest alert needs (exact alarms,
      * notifications). Android only: iOS delivers the alert on time with no permission.
      */
@@ -162,6 +176,42 @@ class AppPrefs(context: Context) {
     suspend fun restPermissionAskedOnce(): Boolean = restPermissionAsked.first()
 
     suspend fun setRestPermissionAsked(value: Boolean) = put(Keys.restPermissionAsked, value)
+
+    // MARK: - Plate calculator
+
+    /**
+     * `nt.plates.barKg` / `nt.plates.barLb` — the bar the plate calculator loads, remembered per
+     * unit (`PlateCalculatorSheet`'s `@AppStorage`); 20 kg / 45 lb when absent.
+     */
+    fun plateBar(unit: WeightUnit): Flow<Double> = data.map { prefs ->
+        if (unit == WeightUnit.Kg) prefs[Keys.plateBarKg] ?: 20.0 else prefs[Keys.plateBarLb] ?: 45.0
+    }
+
+    suspend fun setPlateBar(unit: WeightUnit, value: Double) {
+        store.edit { it[if (unit == WeightUnit.Kg) Keys.plateBarKg else Keys.plateBarLb] = value }
+    }
+
+    // MARK: - Favorite exercises
+
+    /**
+     * `nt.favoriteExercises` — starred exercise ids (`FavoriteExercises`); empty when absent. The
+     * delete-account wipe removes it.
+     */
+    val favoriteExercises: Flow<Set<String>> = data.map { it[Keys.favoriteExercises].orEmpty() }
+
+    /** Replaces the favorites with `transform(current)` in one DataStore edit; returns the result. */
+    suspend fun updateFavoriteExercises(transform: (Set<String>) -> Set<String>): Set<String> {
+        var result: Set<String> = emptySet()
+        store.edit { prefs ->
+            result = transform(prefs[Keys.favoriteExercises].orEmpty())
+            if (result.isEmpty()) prefs.remove(Keys.favoriteExercises) else prefs[Keys.favoriteExercises] = result
+        }
+        return result
+    }
+
+    suspend fun removeFavoriteExercises() {
+        store.edit { it.remove(Keys.favoriteExercises) }
+    }
 
     // MARK: - Attendance
 
@@ -216,11 +266,15 @@ class AppPrefs(context: Context) {
         val activeWorkoutId = stringPreferencesKey("nt.activeWorkoutId")
         val workoutDiscarding = stringSetPreferencesKey("nt.workout.discarding")
         val routinesInheritRest = booleanPreferencesKey("nt.routines.inheritRest")
+        val routinesSeeded = booleanPreferencesKey("nt.routines.seeded")
         val restPermissionAsked = booleanPreferencesKey("nt.rest.permissionAsked")
         val mockPaired = booleanPreferencesKey("nt.mock.paired")
         val attendanceOutbox = stringPreferencesKey("nt.attendance.outbox")
         val attendanceSweptThrough = longPreferencesKey("nt.attendance.sweptThrough")
         val exerciseLibraryVersion = intPreferencesKey("nt.exerciseLibrary.version")
+        val plateBarKg = doublePreferencesKey("nt.plates.barKg")
+        val plateBarLb = doublePreferencesKey("nt.plates.barLb")
+        val favoriteExercises = stringSetPreferencesKey("nt.favoriteExercises")
     }
 
     companion object {

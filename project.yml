@@ -43,6 +43,9 @@ targets:
       # The AI prompt/schema/table spec is shared with the backend (and Android); never copy it into the app tree.
       - path: backend/data/ai/estimate-spec.json
         buildPhase: resources
+      # The built-in training programs ("Browse programs"), shared with Android; never copied into the app tree.
+      - path: data/programs/programs.json
+        buildPhase: resources
     info:
       path: NoTomorrow/Resources/Info.plist
       properties:

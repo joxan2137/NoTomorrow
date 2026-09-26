@@ -96,17 +96,25 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
             project.findProperty("widgetShots")?.let { test.systemProperty("widgetShots", file(it.toString()).absolutePath) }
+            project.findProperty("gymShots")?.let {
+                test.systemProperty("gymShots", file(it.toString()).absolutePath)
+                // Every shot seeds a real database and keeps full-screen bitmaps: more heap than the default.
+                test.maxHeapSize = "3g"
+            }
         }
     }
 
     // The shared AI spec (`backend/data/ai`, contract §1): the app reads `estimate-spec.json` from
     // its assets, the JVM tests read the spec and `fixtures/` from the classpath. Never copied.
+    // The built-in training programs (`data/programs/programs.json`) are shared with iOS the same way.
     sourceSets {
         getByName("main") {
             assets.srcDir("../../backend/data/ai")
+            assets.srcDir("../../data/programs")
         }
         getByName("test") {
             resources.srcDir("../../backend/data/ai")
+            resources.srcDir("../../data/programs")
         }
     }
 }
@@ -197,6 +205,9 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.androidx.room.testing)
+    // Drives and renders real screens under Robolectric for the opt-in GymScreenshots.
+    testImplementation(composeBom)
+    testImplementation(libs.compose.ui.test.junit4)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.compose.ui.test.junit4)

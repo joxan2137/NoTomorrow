@@ -60,6 +60,7 @@ struct BodyWeightChart: View {
                     .symbol {
                         Circle().fill(NT.Colors.ember)
                             .overlay(Circle().strokeBorder(NT.Colors.surface, lineWidth: 2))
+                            .frame(width: 9, height: 9)
                     }
                     .symbolSize(56)
             }
@@ -102,10 +103,14 @@ struct E1RMChart: View {
         LinearGradient(colors: [NT.Colors.ember.opacity(0.22), NT.Colors.ember.opacity(0)], startPoint: .top, endPoint: .bottom)
     }
 
+    private var domain: ClosedRange<Double> { ChartScale.padded(points.map(\.e1RM), bottom: 0.08, top: 0.06) }
+
     var body: some View {
+        let floor = domain.lowerBound
         Chart {
             ForEach(points) { point in
-                AreaMark(x: .value("date", point.date), y: .value("e1RM", point.e1RM))
+                // Fill down to the axis floor, not 0: an area from 0 ran far below the plot over the page.
+                AreaMark(x: .value("date", point.date), yStart: .value("floor", floor), yEnd: .value("e1RM", point.e1RM))
                     .interpolationMethod(.linear)
                     .foregroundStyle(gradient)
                 LineMark(x: .value("date", point.date), y: .value("e1RM", point.e1RM))
@@ -117,19 +122,22 @@ struct E1RMChart: View {
                 let isLatest = point.id == points.last?.id
                 PointMark(x: .value("date", point.date), y: .value("e1RM", point.e1RM))
                     .symbol {
+                        // Custom symbols get no size from symbolSize; pin it so a bare Circle can't fill the chart.
                         if isLatest {
                             Circle().fill(NT.Colors.ember)
                                 .overlay(Circle().strokeBorder(NT.Colors.ground, lineWidth: 2))
+                                .frame(width: 12, height: 12)
                         } else {
                             Circle().fill(NT.Colors.ground)
                                 .overlay(Circle().strokeBorder(NT.Colors.ember, lineWidth: 2))
+                                .frame(width: 9, height: 9)
                         }
                     }
                     .symbolSize(isLatest ? 110 : 60)
             }
         }
         .chartLegend(.hidden)
-        .chartYScale(domain: ChartScale.padded(points.map(\.e1RM), bottom: 0.08, top: 0.06))
+        .chartYScale(domain: domain)
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 4)) { value in
                 AxisValueLabel {

@@ -16,6 +16,7 @@ import app.notomorrow.rest.RestTimerState
 import app.notomorrow.service.AttendanceReporter
 import app.notomorrow.service.AttendanceService
 import app.notomorrow.service.RecordService
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.LocaleProvider
@@ -71,6 +72,8 @@ class ActiveWorkoutViewModel(
     private val reportAttendance: AttendanceReporter = AttendanceReporter.None,
     /** The routines, read with the unit: the one named like the workout gives the target reps. */
     private val routines: suspend () -> List<RoutineWithItems> = { emptyList() },
+    /** The user's Rest length setting (`WorkoutStarter.defaultRestSeconds`), read with the unit. */
+    private val defaultRest: suspend () -> Int = { RoutineSeeder.DEFAULT_REST_SECONDS },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ActiveWorkoutUiState())
@@ -97,11 +100,15 @@ class ActiveWorkoutViewModel(
     /** Rows of the last finished session with the exercise, keyed by exercise id. */
     private val previousRows = mutableMapOf<String, PreviousRows>()
     private val previousLast = mutableMapOf<String, SetValue?>()
+    /** Last session's note per exercise id (`previousNote(for:)`). */
+    private val previousNotes = mutableMapOf<String, String?>()
 
     /** `unit` — cells, Previous, "Last:", the hint, the rest card and its notification show it. */
     private var unit = WeightUnit.Kg
     /** `targetReps` — per exercise id, from the routine this workout was started from. */
     private var targetReps: Map<String, Int> = emptyMap()
+    /** The Rest length setting: the Rest timer menu's Default. */
+    private var defaultRestSeconds = RoutineSeeder.DEFAULT_REST_SECONDS
     /** [unit] and [targetReps] are current. */
     private var unitLoaded = false
 
@@ -140,6 +147,7 @@ class ActiveWorkoutViewModel(
     fun reloadPrevious() {
         previousRows.clear()
         previousLast.clear()
+        previousNotes.clear()
         unitLoaded = false
         viewModelScope.launch {
             val current = graph ?: return@launch
@@ -151,12 +159,14 @@ class ActiveWorkoutViewModel(
     /**
      * One query per exercise fills both caches: the rows of the latest *finished* other session
      * with a completed working set ([foldLatestEarlierWorkoutRows]) and the most recent completed
-     * working set (`RecordService.lastSet(for:excluding:)`).
+     * working set (`RecordService.lastSet(for:excluding:)`); a second one reads last session's note
+     * ([latestPreviousNote]).
      */
     private suspend fun ensurePrevious(graph: WorkoutWithExercises) {
         if (!unitLoaded) {
             unit = units()
             targetReps = routineTargetReps(routines(), graph.workout.name)
+            defaultRestSeconds = defaultRest()
             unitLoaded = true
         }
         val myId = graph.workout.id
@@ -167,6 +177,7 @@ class ActiveWorkoutViewModel(
             previousRows[exerciseId] = PreviousRows.of(foldLatestEarlierWorkoutRows(rows, myId))
             previousLast[exerciseId] = RecordService.lastSet(rows, excludingWorkoutId = myId)
                 ?.let { SetValue(it.weightKg, it.reps) }
+            previousNotes[exerciseId] = latestPreviousNote(workoutDao.exerciseNotes(exerciseId), myId)
         }
     }
 
@@ -198,8 +209,11 @@ class ActiveWorkoutViewModel(
                 suggestion = exerciseId?.let { id ->
                     weightSuggestion(previousRows[id]?.normal.orEmpty(), targetReps[id], unit)
                 },
+                unit = unit,
+                previousNote = exerciseId?.let { previousNotes[it] },
+                defaultRest = defaultRestSeconds,
             )
-        }
+        }.withSupersets()
         _state.value = ActiveWorkoutUiState(
             loading = false,
             missing = false,
@@ -230,6 +244,8 @@ class ActiveWorkoutViewModel(
      * and the rest starts — unless the next set is a drop set or `nt.rest.autoStart` is off
      * (`ActiveWorkoutModel.complete`). A row that still has no reps is not logged (no "0 × 0" sets)
      * and stays open: [onResult] gets `false`, so the screen can send the user to its reps cell.
+     * In a superset the tick opens the next exercise of it instead ([supersetHop]); the rest comes
+     * only after the round's last exercise, aimed back at the first.
      */
     fun complete(setId: Long, onResult: (logged: Boolean) -> Unit = {}) {
         viewModelScope.launch {
@@ -258,7 +274,14 @@ class ActiveWorkoutViewModel(
                     hintBest = null
                 }
 
-                startRestIfNeeded(section, row, completed)
+                val hop = supersetHop(current.exercises, section, row)
+                if (hop == null) {
+                    startRestIfNeeded(section, row, completed)
+                } else {
+                    // A superset moves straight on to its next exercise; the rest comes after the round's last one.
+                    expandedExerciseId = hop.exerciseUiId
+                    if (hop.rests) startSupersetRest(section, hop, completed)
+                }
                 graph?.let(::publish)
             }
         }
@@ -286,6 +309,35 @@ class ActiveWorkoutViewModel(
                 if (entity.kind == kind) return@launch
                 workoutDao.updateSet(entity.copy(kind = kind))
             }
+        }
+    }
+
+    /** `setRPE(_:for:)` — the RPE submenu of the set's kind menu; `null` clears it. */
+    fun setRpe(setId: Long, rpe: Double?) {
+        viewModelScope.launch {
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (entity.rpe == rpe) return@launch
+                workoutDao.updateSet(entity.copy(rpe = rpe))
+            }
+        }
+    }
+
+    /** The exercise's note for this workout, saved as it is typed (`ExerciseNoteField`). */
+    fun setNote(exerciseUiId: Long, notes: String) {
+        viewModelScope.launch {
+            writes.withLock { workoutDao.updateWorkoutExerciseNotes(exerciseUiId, notes) }
+        }
+    }
+
+    /**
+     * `setRest(_:for:)` — the exercise menu's Rest timer: the length the next rest after this
+     * exercise's sets counts down. A rest already running keeps its length (the pill adjusts it).
+     */
+    fun setRest(exerciseUiId: Long, seconds: Int) {
+        if (seconds <= 0) return
+        viewModelScope.launch {
+            writes.withLock { workoutDao.updateWorkoutExerciseRest(exerciseUiId, seconds) }
         }
     }
 
@@ -345,6 +397,41 @@ class ActiveWorkoutViewModel(
         }
     }
 
+    /**
+     * `addWarmups(to:)` — "Add warm-up sets": open warm-up rows are replaced by the ramp to the
+     * working weight, placed before the first working set. Completed warm-ups stay.
+     */
+    fun addWarmups(exerciseUiId: Long) {
+        viewModelScope.launch {
+            writes.withLock {
+                val sets = workoutDao.sets(exerciseUiId)
+                val equipment = graph?.exercises?.firstOrNull { it.workoutExercise.id == exerciseUiId }?.exercise?.equipment
+                val steps = warmupSteps(sets, equipment, unit)
+                if (steps.isEmpty()) return@launch
+                sets.filter { it.kind == SetKind.Warmup && !it.isCompleted }.forEach { workoutDao.deleteSet(it) }
+                val byId = sets.associateBy { it.id }
+                var step = 0
+                warmupRowOrder(sets, steps.size).forEachIndexed { order, id ->
+                    if (id == null) {
+                        val next = steps[step++]
+                        workoutDao.insertSet(
+                            SetEntryEntity(
+                                workoutExerciseId = exerciseUiId,
+                                order = order,
+                                kind = SetKind.Warmup,
+                                weightKg = SetInput.kg(next.weight, unit),
+                                reps = next.reps,
+                            ),
+                        )
+                    } else {
+                        val set = byId.getValue(id)
+                        if (set.order != order) workoutDao.updateSet(set.copy(order = order))
+                    }
+                }
+            }
+        }
+    }
+
     /** `addSet(to:)` — duplicates the last row (a warm-up duplicates as a normal set). */
     fun addSet(exerciseUiId: Long) {
         viewModelScope.launch {
@@ -390,7 +477,7 @@ class ActiveWorkoutViewModel(
         }
     }
 
-    /** `remove(_:)` — deletes the exercise (sets cascade) and re-indexes the rest. */
+    /** `remove(_:)` — deletes the exercise (sets cascade), re-indexes the rest and mends their supersets. */
     fun removeExercise(exerciseUiId: Long) {
         viewModelScope.launch {
             writes.withLock {
@@ -398,11 +485,102 @@ class ActiveWorkoutViewModel(
                 val rows = workoutDao.workoutExercises(workoutId)
                 val target = rows.firstOrNull { it.id == exerciseUiId } ?: return@launch
                 workoutDao.deleteWorkoutExercise(target)
-                rows.filter { it.id != exerciseUiId }
-                    .sortedBy { it.order }
-                    .forEachIndexed { index, row ->
-                        if (row.order != index) workoutDao.updateWorkoutExercise(row.copy(order = index))
+                val rest = rows.filter { it.id != exerciseUiId }.sortedBy { it.order }
+                val groups = Superset.normalized(rest.map { it.supersetGroup })
+                rest.forEachIndexed { index, row ->
+                    if (row.order != index || row.supersetGroup != groups[index]) {
+                        workoutDao.updateWorkoutExercise(row.copy(order = index, supersetGroup = groups[index]))
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - Replace
+
+    /**
+     * `replace(_:with:)` — "Replace exercise": [exerciseId] takes the slot of [exerciseUiId] (same
+     * position, superset and rest). Its open rows stay (same count and kinds) but lose the old
+     * exercise's numbers and take the new one's Previous, as a fresh row would; the note goes with
+     * the old exercise. Refused once a set is completed ([WorkoutExerciseUi.canReplace]) or when
+     * it is the same exercise.
+     */
+    fun replaceExercise(exerciseUiId: Long, exerciseId: String) {
+        viewModelScope.launch {
+            writes.withLock {
+                val row = workoutDao.workoutExercises(workoutId).firstOrNull { it.id == exerciseUiId } ?: return@launch
+                val sets = workoutDao.sets(exerciseUiId).sortedBy { it.order }
+                if (sets.any { it.isCompleted } || row.exerciseId == exerciseId) return@launch
+                val completed = workoutDao.completedSetsForExercise(exerciseId)
+                val values = replacementSetValues(
+                    kinds = sets.map { it.kind },
+                    previous = PreviousRows.of(foldLatestEarlierWorkoutRows(completed, workoutId)),
+                    last = RecordService.lastSet(completed, excludingWorkoutId = workoutId)
+                        ?.let { SetValue(it.weightKg, it.reps) },
+                )
+                if (sets.any { it.id == hintSetId }) {
+                    hintSetId = null
+                    hintBest = null
+                }
+                workoutDao.updateWorkoutExercise(row.copy(exerciseId = exerciseId, notes = ""))
+                sets.forEachIndexed { index, set ->
+                    workoutDao.updateSet(
+                        set.copy(
+                            weightKg = values[index].weightKg,
+                            reps = values[index].reps,
+                            rpe = null,
+                            isPR = false,
+                            isSetRecord = false,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - Reorder
+
+    /**
+     * `move(_:by:)` — Move up (-1) / Move down (+1): swaps with the neighbour and renumbers.
+     * Supersets are normalized afterwards, as in `RoutineDraft.moving`, so a member moved away
+     * from its partners leaves the superset. No-op at the ends.
+     */
+    fun moveExercise(exerciseUiId: Long, offset: Int) {
+        viewModelScope.launch {
+            writes.withLock {
+                val rows = workoutDao.workoutExercises(workoutId).sortedBy { it.order }
+                val from = rows.indexOfFirst { it.id == exerciseUiId }
+                val to = from + offset
+                if (from < 0 || to !in rows.indices) return@launch
+                val moved = rows.toMutableList().apply { this[from] = rows[to]; this[to] = rows[from] }
+                val groups = Superset.normalized(moved.map { it.supersetGroup })
+                moved.forEachIndexed { index, row ->
+                    if (row.order != index || row.supersetGroup != groups[index]) {
+                        workoutDao.updateWorkoutExercise(row.copy(order = index, supersetGroup = groups[index]))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Supersets
+
+    /** `linkWithNext(_:)` — "Superset with next". */
+    fun linkWithNext(exerciseUiId: Long) = applySupersets(exerciseUiId, Superset::linkWithNext)
+
+    /** `unlinkSuperset(_:)` — "Remove from superset". */
+    fun unlinkSuperset(exerciseUiId: Long) = applySupersets(exerciseUiId, Superset::unlink)
+
+    private fun applySupersets(exerciseUiId: Long, change: (List<Int?>, Int) -> List<Int?>) {
+        viewModelScope.launch {
+            writes.withLock {
+                val rows = workoutDao.workoutExercises(workoutId)
+                val index = rows.indexOfFirst { it.id == exerciseUiId }
+                if (index < 0) return@launch
+                val groups = change(rows.map { it.supersetGroup }, index)
+                rows.forEachIndexed { i, row ->
+                    if (row.supersetGroup != groups[i]) workoutDao.updateWorkoutExercise(row.copy(supersetGroup = groups[i]))
+                }
             }
         }
     }
@@ -433,13 +611,31 @@ class ActiveWorkoutViewModel(
             unit = unit,
         ) ?: return
         if (target.isDrop) return
+        startRest(section, target.upNext)
+    }
+
+    /**
+     * The rest after a superset round, aimed back at the first exercise of it with an open set
+     * ([SupersetHop.exerciseUiId]); its last done set (this tick counts) is the fallback numbers.
+     */
+    private suspend fun startSupersetRest(section: WorkoutExerciseUi, hop: SupersetHop, completed: SetEntryEntity) {
+        val target = _state.value.exercises.firstOrNull { it.id == hop.exerciseUiId } ?: return
+        val next = target.sets.firstOrNull { !it.isCompleted && it.id != completed.id } ?: return
+        val fallback = target.sets.lastOrNull { it.isCompleted || it.id == completed.id }?.let {
+            if (it.id == completed.id) SetValue(completed.weightKg, completed.reps) else SetValue(it.weightKg, it.reps)
+        } ?: target.last
+        startRest(section, makeUpNext(target, next, fallback, recordService, unit))
+    }
+
+    /** `RestTimerController.start` towards [next], unless `nt.rest.autoStart` is off. */
+    private suspend fun startRest(section: WorkoutExerciseUi, next: UpNextTarget) {
         if (!appPrefs.restAutoStartOnce()) return
-        upNext = target.upNext
-        val label = strings.string(S.timer_setOf_n_n, target.upNext.setIndex, target.upNext.setCount)
+        upNext = next
+        val label = strings.string(S.timer_setOf_n_n, next.setIndex, next.setCount)
         restTimer.start(
             seconds = section.restSeconds,
-            exerciseName = target.upNext.exerciseName,
-            nextSetLabel = label + " · " + Fmt.set(target.upNext.weightKg, target.upNext.reps, unit),
+            exerciseName = next.exerciseName,
+            nextSetLabel = label + " · " + Fmt.set(next.weightKg, next.reps, unit),
             workoutName = _state.value.name,
         )
     }

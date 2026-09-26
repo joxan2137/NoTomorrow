@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Routines and their items. Items cascade with the routine, so deleting a
  * [RoutineEntity] is enough; `RoutineSeeder` writes both in one transaction and only
- * when [routineCount] is 0.
+ * when [routineCount] is 0. The routine editor (`RoutineStore`) writes through
+ * [saveRoutineWithItems] and [insertRoutineInOrder], each one transaction.
  */
 @Dao
 interface RoutineDao {
@@ -63,6 +64,15 @@ interface RoutineDao {
     @Update
     suspend fun updateItem(item: RoutineItemEntity)
 
+    @Update
+    suspend fun updateRoutines(routines: List<RoutineEntity>)
+
+    @Query("DELETE FROM routine_item WHERE routineId = :routineId")
+    suspend fun deleteItems(routineId: String)
+
+    @Query("DELETE FROM routine WHERE id = :id")
+    suspend fun deleteRoutineById(id: String)
+
     @Delete
     suspend fun deleteRoutine(routine: RoutineEntity)
 
@@ -74,6 +84,31 @@ interface RoutineDao {
     suspend fun insertRoutineWithItems(routine: RoutineEntity, items: List<RoutineItemEntity>) {
         insertRoutine(routine)
         if (items.isNotEmpty()) insertItems(items)
+    }
+
+    /**
+     * The editor's Save: the routine row written (inserted, or renamed in place, so its items do
+     * not cascade away mid-write) and its lines replaced by [items].
+     */
+    @Transaction
+    suspend fun saveRoutineWithItems(routine: RoutineEntity, items: List<RoutineItemEntity>) {
+        upsertRoutine(routine)
+        deleteItems(routine.id)
+        if (items.isNotEmpty()) insertItems(items)
+    }
+
+    /**
+     * Duplicate: the copy and its items inserted, and the other routines renumbered around it
+     * ([reordered] holds only the rows whose order changed).
+     */
+    @Transaction
+    suspend fun insertRoutineInOrder(
+        routine: RoutineEntity,
+        items: List<RoutineItemEntity>,
+        reordered: List<RoutineEntity>,
+    ) {
+        if (reordered.isNotEmpty()) updateRoutines(reordered)
+        insertRoutineWithItems(routine, items)
     }
 
     @Query("DELETE FROM routine_item")

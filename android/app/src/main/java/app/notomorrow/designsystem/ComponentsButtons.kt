@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -164,10 +166,12 @@ fun Chip(
     onClick: () -> Unit,
 ) {
     val content = if (selected) NT.Colors.onPrimary else NT.Colors.ink
+    val isSelected = selected
     Row(
         modifier = modifier
             .height(NT.Size.chip)
             .pressScale(enabled = enabled, onClick = onClick)
+            .semantics { this.selected = isSelected }
             .background(if (selected) NT.Colors.ink else NT.Colors.surface, CircleShape)
             .then(
                 if (tint != null) {
@@ -206,10 +210,12 @@ fun SheetChip(
     onClick: () -> Unit,
 ) {
     val content = if (selected) NT.Colors.onPrimary else NT.Colors.ink
+    val isSelected = selected
     Row(
         modifier = modifier
             .height(NT.Size.chip)
             .pressScale(enabled = enabled, onClick = onClick)
+            .semantics { this.selected = isSelected }
             .background(if (selected) NT.Colors.ink else NT.Colors.surface2, CircleShape)
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

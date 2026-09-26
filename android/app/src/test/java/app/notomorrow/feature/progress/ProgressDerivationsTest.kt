@@ -359,7 +359,8 @@ class ProgressDerivationsTest {
         assertEquals(ProgressPhraseRef.Res(S.progress_prToday), phrase(0))
         assertEquals(ProgressPhraseRef.Res(S.progress_prYesterday), phrase(1))
         assertEquals(S.progress_prOn_s, (phrase(3) as ProgressPhraseRef.Res).id)
-        assertEquals(ProgressPhraseRef.Res(S.progress_weeksSincePR_n, 3), phrase(21))
+        assertEquals(ProgressPhraseRef.Res(S.progress_weeksSincePR_one, 1), phrase(7))
+        assertEquals(ProgressPhraseRef.Res(S.progress_weeksSincePR_few, 3), phrase(21))
         assertEquals(ProgressPhraseRef.Res(S.progress_stalledWeeks_n, 5), phrase(35))
     }
 

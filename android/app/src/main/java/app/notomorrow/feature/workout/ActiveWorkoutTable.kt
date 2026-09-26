@@ -78,6 +78,15 @@ internal fun WorkoutTable(
     onDeleteSet: (Long) -> Unit,
     onRowAppear: (Long) -> Unit,
     onUseSuggestion: (Long) -> Unit,
+    onAddWarmups: (Long) -> Unit,
+    onNote: (Long, String) -> Unit,
+    onRpe: (Long, Double?) -> Unit,
+    onLinkNext: (Long) -> Unit,
+    onUnlinkSuperset: (Long) -> Unit,
+    onHistory: (Long) -> Unit,
+    onRest: (Long, Int) -> Unit,
+    onReplace: (Long) -> Unit = {},
+    onMove: (Long, Int) -> Unit = { _, _ -> },
 ) {
     val focusManager = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
@@ -126,6 +135,16 @@ internal fun WorkoutTable(
                     onDeleteSet = onDeleteSet,
                     onRowAppear = onRowAppear,
                     onUseSuggestion = { onUseSuggestion(exercise.id) },
+                    onAddWarmups = { onAddWarmups(exercise.id) },
+                    onNote = { text -> onNote(exercise.id, text) },
+                    onRpe = onRpe,
+                    onLinkNext = { onLinkNext(exercise.id) },
+                    onUnlinkSuperset = { onUnlinkSuperset(exercise.id) },
+                    onHistory = { onHistory(exercise.id) },
+                    onRest = { seconds -> onRest(exercise.id, seconds) },
+                    onReplace = { onReplace(exercise.id) },
+                    onMoveUp = { onMove(exercise.id, -1) },
+                    onMoveDown = { onMove(exercise.id, 1) },
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }

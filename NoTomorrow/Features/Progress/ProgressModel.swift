@@ -85,12 +85,7 @@ struct LiftSummary: Identifiable {
             .reduce(0) { $0 + $1.weightKg * Double($1.reps) }
     }
 
-    var heaviest: LiftSet? {
-        sets.max { lhs, rhs in
-            if lhs.weightKg != rhs.weightKg { return lhs.weightKg < rhs.weightKg }
-            return lhs.reps < rhs.reps
-        }
-    }
+    var heaviest: LiftSet? { LiftRecords.heaviest(in: sets) }
 
     var mostReps: LiftSet? {
         sets.max { lhs, rhs in
@@ -156,6 +151,9 @@ final class ProgressModel {
     private(set) var muscles = MuscleWeek()
     private(set) var unit: WeightUnit = .kg
     private(set) var hasCompletedSets = false
+    /// The finished workouts as `Milestones` reads them, built here with the rest of the tab's one pass so the
+    /// milestones card does not open every workout's sets on each render.
+    private(set) var milestoneSessions: [Milestones.Session] = []
 
     var lastPRDate: Date? { lifts.compactMap(\.lastPR).max() }
 
@@ -179,6 +177,7 @@ final class ProgressModel {
         hasCompletedSets = !lifts.isEmpty
         weekly = Self.buildWeekly(from: workouts)
         muscles = Self.buildMuscleWeek(from: workouts, since: Calendar.current.startOfISOWeek(for: .now))
+        milestoneSessions = Milestones.sessions(from: workouts)
         body = Self.buildBody(from: weights)
     }
 

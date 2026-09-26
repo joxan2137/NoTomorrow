@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -24,10 +25,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,10 +44,12 @@ import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
 import app.notomorrow.designsystem.NtAlertAction
 import app.notomorrow.designsystem.NtAlertRole
+import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.SectionHeader
 import app.notomorrow.designsystem.TabularText
+import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.di.ntViewModel
@@ -54,12 +59,16 @@ import app.notomorrow.util.Fmt
 import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /**
  * Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, the
- * empty-workout ghost button, and finished-workout history grouped by week — 1:1 port of
+ * New routine and empty-workout ghost buttons, and finished-workout history grouped by week — 1:1 port of
  * `NoTomorrow/Features/Workout/TrainView.swift`. A workout in progress lives in the mini bar above
  * the tab bar; Start while one runs asks first.
+ *
+ * Tapping a routine's text opens the routine editor ([RoutineEditorPresenter]); a long press on a
+ * routine (or on the Up next card) opens Edit · Duplicate · Share · Move up / down · Delete.
  *
  * The library import and routine seeding that iOS runs from `.task` here happen once in
  * `NoTomorrowApp`'s start-up coroutine (`AppContainer.seed()`), so this screen only reads.
@@ -80,6 +89,31 @@ fun TrainScreen() {
     // `@State private var selectedWorkout: Workout?` — the id survives a rotation; the sheet reads
     // the workout itself, so it follows an edit and closes on a delete.
     var selectedWorkoutId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // `@State private var routineEdit: RoutineEditRequest?` / `routineToDelete: Routine?`.
+    var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
+    var routineToDelete by remember { mutableStateOf<String?>(null) }
+    var showsPrograms by rememberSaveable { mutableStateOf(false) }
+    var showsImport by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // `routineMenu(_:)`: the moves only where there is a neighbour in the whole list.
+    fun menuFor(routineId: String): RoutineMenuActions {
+        val index = state.routineOrder.indexOf(routineId)
+        return RoutineMenuActions(
+            onEdit = { routineEdit = RoutineEditRequest.Edit(routineId) },
+            onDuplicate = { model.duplicateRoutine(routineId) },
+            onShare = {
+                scope.launch {
+                    model.shareText(routineId, routineShareLabels(context))?.let { shareRoutineText(context, it) }
+                }
+            },
+            onMoveUp = if (index > 0) ({ model.moveRoutine(routineId, -1) }) else null,
+            onMoveDown = if (index in 0 until state.routineOrder.lastIndex) ({ model.moveRoutine(routineId, 1) }) else null,
+            onDelete = { routineToDelete = routineId },
+        )
+    }
 
     // `HistoryWeek.grouped(history, date: \.startedAt, now: .now)`.
     val today = LocalDate.now()
@@ -108,6 +142,7 @@ fun TrainScreen() {
                         routine = routine,
                         inProgress = state.isWorkoutInProgress,
                         modifier = Modifier.padding(top = NT.Spacing.section),
+                        menu = menuFor(routine.id),
                         onStart = { model.start(routine.id) },
                         onResume = model::resumeActive,
                     )
@@ -118,7 +153,11 @@ fun TrainScreen() {
                 RoutinesSection(
                     routines = state.routines,
                     hasRoutines = state.hasRoutines,
+                    menuFor = ::menuFor,
                     onStart = model::start,
+                    onNewRoutine = { routineEdit = RoutineEditRequest.New },
+                    onBrowsePrograms = { showsPrograms = true },
+                    onImportRoutine = { showsImport = true },
                     onStartEmpty = { model.startEmpty(defaultWorkoutName) },
                 )
             }
@@ -156,12 +195,37 @@ fun TrainScreen() {
         onDismiss = { selectedWorkoutId = null },
     )
 
+    RoutineEditorPresenter(
+        request = routineEdit,
+        host = "train",
+        onDismiss = { routineEdit = null },
+    )
+
+    if (showsPrograms) {
+        ProgramBrowserSheet(
+            loadExercises = model::programExercises,
+            onAdd = model::addProgram,
+            onDismiss = { showsPrograms = false },
+        )
+    }
+
+    if (showsImport) {
+        RoutineImportSheet(
+            loadCatalog = model::shareCatalog,
+            onAdd = model::addShared,
+            onDismiss = { showsImport = false },
+        )
+    }
+
     // The dialog lives in the activity's overlay while this tab stays composed on every other tab:
     // leaving Train (or the workout covering it) cancels it, the way a confirmation dialog goes with
     // its view on iOS, instead of following the user to Fuel.
     val pageVisible = LocalTabPageVisible.current
     LaunchedEffect(pageVisible) {
-        if (!pageVisible) model.dismissBlockedStart()
+        if (!pageVisible) {
+            model.dismissBlockedStart()
+            routineToDelete = null
+        }
     }
     if (pageVisible) {
         blocked?.let { start ->
@@ -171,6 +235,21 @@ fun TrainScreen() {
                 // The captured start: the sheet clears `blockedStart` before it runs an action.
                 onDiscardAndStart = { model.discardActiveAndStart(start) },
                 onDismiss = model::dismissBlockedStart,
+            )
+        }
+        routineToDelete?.let { routineId ->
+            // `.alert("routine.deleteConfirm")`: Delete routine (destructive) and Cancel.
+            NtActionSheet(
+                actions = listOf(
+                    NtAlertAction(
+                        title = stringResource(S.routine_delete),
+                        role = NtAlertRole.Destructive,
+                        onClick = { model.deleteRoutine(routineId) },
+                    ),
+                ),
+                cancel = stringResource(S.common_cancel),
+                onDismiss = { routineToDelete = null },
+                title = stringResource(S.routine_deleteConfirm),
             )
         }
     }
@@ -228,16 +307,36 @@ private fun TrainHeader() {
  * routine's name, one line per exercise with its target sets × reps (hairlines between), and a
  * full-width Start. While a workout is in progress the eyebrow reads `workout.inProgress` and the
  * button is Resume, which brings that workout back full screen (as the mini bar does).
+ *
+ * A plain Edit sits beside the name while no workout is in progress, and a long press on the card
+ * above the button opens the routine menu.
  */
 @Composable
 private fun UpNextCard(
     routine: UpNextRoutine,
     inProgress: Boolean,
     modifier: Modifier,
+    menu: RoutineMenuActions,
     onStart: () -> Unit,
     onResume: () -> Unit,
 ) {
     FocalCard(modifier = modifier) {
+        RoutineMenuBox(menu = menu, tapEdits = false) {
+            UpNextSummary(routine = routine, inProgress = inProgress, onEdit = menu.onEdit)
+        }
+        PrimaryButton(
+            title = stringResource(if (inProgress) S.dashboard_resumeWorkout else S.workout_start),
+            modifier = Modifier.padding(top = 16.dp),
+            height = NT.Size.cardButton,
+            onClick = if (inProgress) onResume else onStart,
+        )
+    }
+}
+
+/** The Up next card above its button: eyebrow and count, the name (with Edit), one line per exercise. */
+@Composable
+private fun UpNextSummary(routine: UpNextRoutine, inProgress: Boolean, onEdit: () -> Unit) {
+    Column {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Eyebrow(
                 text = stringResource(if (inProgress) S.workout_inProgress else S.train_upNext),
@@ -252,25 +351,36 @@ private fun UpNextCard(
                 color = NT.Colors.ink2,
             )
         }
-        NtText(
-            text = routine.name,
-            modifier = Modifier.padding(top = 8.dp),
-            style = NT.Fonts.title1,
-            color = NT.Colors.ink,
-            maxLines = 1,
-        )
+        // `HStack(alignment: .firstTextBaseline, spacing: 8)`: the name, then Edit on its baseline.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            NtText(
+                text = routine.name,
+                modifier = Modifier.weight(1f).alignByBaseline(),
+                style = NT.Fonts.title1,
+                color = NT.Colors.ink,
+                maxLines = 1,
+            )
+            if (!inProgress) {
+                Box(
+                    modifier = Modifier
+                        .alignByBaseline()
+                        .heightIn(min = NT.Size.control)
+                        .ntPlainClickable(onClick = onEdit),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NtText(text = stringResource(S.common_edit), style = NT.Fonts.subheadline, color = NT.Colors.ink2)
+                }
+            }
+        }
         Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
             routine.items.forEachIndexed { index, item ->
                 if (index > 0) Hairline()
                 UpNextLine(item)
             }
         }
-        PrimaryButton(
-            title = stringResource(if (inProgress) S.dashboard_resumeWorkout else S.workout_start),
-            modifier = Modifier.padding(top = 16.dp),
-            height = NT.Size.cardButton,
-            onClick = if (inProgress) onResume else onStart,
-        )
     }
 }
 
@@ -300,14 +410,19 @@ private fun UpNextLine(item: UpNextItem) {
 }
 
 /**
- * `workout.routines` + one [RoutineRow] per routine but the up-next one, then the ghost "Start
- * empty workout". `workout.noRoutines` only when there are no routines at all ([hasRoutines]).
+ * `workout.routines` + one [RoutineRow] per routine but the up-next one, then the ghost "New
+ * routine", "Browse programs" ([ProgramBrowserSheet]), "Import routine" ([RoutineImportSheet]) and "Start empty workout". `workout.noRoutines` only when there are no routines at all
+ * ([hasRoutines]).
  */
 @Composable
 private fun RoutinesSection(
     routines: List<RoutineRowItem>,
     hasRoutines: Boolean,
+    menuFor: (String) -> RoutineMenuActions,
     onStart: (String) -> Unit,
+    onNewRoutine: () -> Unit,
+    onBrowsePrograms: () -> Unit,
+    onImportRoutine: () -> Unit,
     onStartEmpty: () -> Unit,
 ) {
     Column {
@@ -324,13 +439,18 @@ private fun RoutinesSection(
             )
         } else {
             routines.forEach { routine ->
-                RoutineRow(routine = routine, onStart = { onStart(routine.id) })
+                RoutineRow(routine = routine, onStart = { onStart(routine.id) }, menu = menuFor(routine.id))
                 Hairline()
             }
         }
 
         Spacer(Modifier.height(16.dp))
-        GhostButton(title = stringResource(S.workout_startEmpty), onClick = onStartEmpty)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            GhostButton(title = stringResource(S.routine_new), icon = NtIcons.Plus, onClick = onNewRoutine)
+            GhostButton(title = stringResource(S.program_browse), icon = NtIcons.Dumbbell, onClick = onBrowsePrograms)
+            GhostButton(title = stringResource(S.routine_import), icon = NtIcons.SquareAndArrowDown, onClick = onImportRoutine)
+            GhostButton(title = stringResource(S.workout_startEmpty), onClick = onStartEmpty)
+        }
     }
 }
 
