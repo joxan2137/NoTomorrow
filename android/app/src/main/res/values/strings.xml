@@ -467,6 +467,10 @@
     <string name="range_1y">1Y</string>
     <string name="range_3m">3M</string>
     <string name="range_all">All</string>
+    <string name="repmax_best">Best lifted</string>
+    <string name="repmax_estimated">Estimated</string>
+    <string name="repmax_footnote">Estimates come from your best e1RM (Epley formula); they get less reliable past 10 reps.</string>
+    <string name="repmax_title">Rep maxes</string>
     <string name="routine_delete">Delete routine</string>
     <string name="routine_deleteConfirm">Delete this routine? Past workouts stay.</string>
     <string name="routine_discardConfirm">Discard this routine\'s changes?</string>

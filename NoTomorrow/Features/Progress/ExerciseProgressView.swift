@@ -22,6 +22,7 @@ struct ExerciseProgressView: View {
                     tiles(lift).padding(.top, 14)
                     weekly.padding(.top, NT.Spacing.section)
                     records(lift).padding(.top, 18)
+                    repMaxes(lift).padding(.top, NT.Spacing.section)
                 } else {
                     Text("progress.empty")
                         .font(NT.Fonts.subheadline)
@@ -176,6 +177,51 @@ struct ExerciseProgressView: View {
             if let most = lift.mostReps {
                 recordRow(label: "progress.mostReps", set: most)
             }
+        }
+    }
+
+    // MARK: Rep maxes
+
+    /// Reps · best actually lifted for at least that many (with its date) · what the best e1RM predicts.
+    private func repMaxes(_ lift: LiftSummary) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("repmax.title").font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
+            HStack {
+                Text("workout.reps").frame(width: 44, alignment: .leading)
+                Text("repmax.best").frame(maxWidth: .infinity, alignment: .leading)
+                Text("repmax.estimated").frame(width: 84, alignment: .trailing)
+            }
+            .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
+            .padding(.top, 10).padding(.bottom, 4)
+            ForEach(Array(RepMax.rows(sets: lift.sets, e1RM: lift.current).enumerated()), id: \.offset) { index, row in
+                if index > 0 { Hairline() }
+                HStack {
+                    Text(verbatim: "\(row.reps)")
+                        .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
+                        .frame(width: 44, alignment: .leading)
+                    Group {
+                        if let best = row.best {
+                            HStack(spacing: 6) {
+                                Text(verbatim: Fmt.set(best.weightKg, best.reps, unit: model.unit))
+                                    .foregroundStyle(NT.Colors.ink)
+                                Text(Fmt.dayMonth(best.date)).font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                            }
+                        } else {
+                            Text(verbatim: "—").foregroundStyle(NT.Colors.ink3)
+                        }
+                    }
+                    .font(NT.Fonts.subheadline).tabular()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(Fmt.weight(row.estimatedKg, unit: model.unit))
+                        .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
+                        .frame(width: 84, alignment: .trailing)
+                }
+                .frame(height: 44)
+            }
+            Text("repmax.footnote")
+                .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
         }
     }
 

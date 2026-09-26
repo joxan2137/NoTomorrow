@@ -12049,6 +12049,70 @@
           }
         }
       }
+    },
+    "repmax.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rep maxes"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksy na powtórzenia"
+          }
+        }
+      }
+    },
+    "repmax.best": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best lifted"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najlepsza seria"
+          }
+        }
+      }
+    },
+    "repmax.estimated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szacunkowo"
+          }
+        }
+      }
+    },
+    "repmax.footnote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimates come from your best e1RM (Epley formula); they get less reliable past 10 reps."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szacunki wynikają z najlepszego e1RM (wzór Epleya); powyżej 10 powtórzeń są mniej dokładne."
+          }
+        }
+      }
     }
   }
 }

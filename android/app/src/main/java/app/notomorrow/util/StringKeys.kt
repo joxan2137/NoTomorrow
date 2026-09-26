@@ -482,6 +482,10 @@ object S {
     val range_1y = R.string.range_1y
     val range_3m = R.string.range_3m
     val range_all = R.string.range_all
+    val repmax_best = R.string.repmax_best
+    val repmax_estimated = R.string.repmax_estimated
+    val repmax_footnote = R.string.repmax_footnote
+    val repmax_title = R.string.repmax_title
     val routine_delete = R.string.routine_delete
     val routine_deleteConfirm = R.string.routine_deleteConfirm
     val routine_discardConfirm = R.string.routine_discardConfirm
