@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Generates `motions.json`: the animated form demos for exercises that have no free-exercise-db photos.
+"""The form demos for exercises that have no free-exercise-db photos: which movement pattern each one uses.
 
-A demo is a movement pattern ("squat", "seated_row") from `motion_patterns.json`: two key poses of an original
-mannequin plus the equipment around it. The apps loop between the poses and colour the limbs that the exercise's
-primary muscles move. `motion_engine.js` is the reference implementation of the pose maths both apps port.
+A demo is a movement pattern ("squat", "seated_row") from `motion_patterns.json`: two key poses plus the equipment
+around it. `body3d/render_demos.py` poses a 3D body from them and renders each exercise as a looping video with its
+primary muscles glowing. `motion_engine.js` is the reference implementation of the pose maths (`body3d/solver.py`
+ports it).
 
-    python3 scripts/anatomy/motions.py                 # writes both apps' motions.json
-    python3 scripts/anatomy/motions.py --preview out.html   # every pattern at both poses, for a browser
+    python3 scripts/anatomy/motions.py                      # checks the table against the library and patterns
+    python3 scripts/anatomy/motions.py --preview out.html   # every pattern at both poses as a 2D sketch, for a browser
 
-Output: {"box": [x, y, w, h], "patterns": {name: pattern}, "exercises": {exercise id: pattern name}}.
+`build()` returns {"box": [x, y, w, h], "patterns": {name: pattern}, "exercises": {exercise id: pattern name}}.
 
 Pose fields (angles in degrees; limbs 0 = hanging down, +90 = pointing forward, the figure faces +x; torso 0 = upright,
 +90 = leaning fully forward):
@@ -24,7 +25,6 @@ import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 HERE = pathlib.Path(__file__).resolve().parent
-TARGETS = [ROOT / "NoTomorrow/Resources/motions.json", ROOT / "android/app/src/main/assets/motions.json"]
 BOX = [-30, -20, 260, 220]
 
 # Exercise id -> pattern, for every bundled exercise without photos. Anything not listed shows no demo.
@@ -168,10 +168,8 @@ def main():
     if args.preview:
         preview(pathlib.Path(args.preview).resolve())
         return
-    text = json.dumps(build(), separators=(",", ":")) + "\n"
-    for target in TARGETS:
-        target.write_text(text)
-        print(f"wrote {target.relative_to(ROOT)}")
+    motions = build()
+    print(f"{len(motions['exercises'])} exercises use {len(motions['patterns'])} patterns")
 
 
 if __name__ == "__main__":

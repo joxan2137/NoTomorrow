@@ -51,8 +51,8 @@ import java.net.URL
 
 /**
  * `ExerciseDetailView`: what the exercise is (equipment, level, compound or isolation), the looping form
- * demo (the public-domain free-exercise-db photos, or the app's own mannequin for exercises without
- * them), the body map of the muscles it works, the app's
+ * demo (the public-domain free-exercise-db photos, or the app's own 3D clip for exercises without
+ * them), the 3D body with the muscles it works, the app's
  * own form cues and common mistakes where it has them, and the numbered steps.
  */
 @Composable
@@ -66,8 +66,8 @@ fun ExerciseDetailSheet(exercise: ExerciseEntity, onDismiss: () -> Unit) {
         value = withContext(Dispatchers.IO) { FormCues.cues(FormCues.all(context), exercise.id, language) }
     }
     var selected by remember(exercise.id) { mutableStateOf<String?>(null) }
-    val motions by produceState<MotionLibrary.Library?>(MotionLibrary.cached, exercise.id) {
-        value = withContext(Dispatchers.IO) { MotionLibrary.load(context) }
+    val clip by produceState(ExerciseDemos.clips?.get(exercise.id), exercise.id) {
+        value = withContext(Dispatchers.IO) { ExerciseDemos.load(context)[exercise.id] }
     }
 
     NtSheet(onDismiss = onDismiss, showsHandle = true, containerColor = NT.Colors.ground) {
@@ -77,11 +77,11 @@ fun ExerciseDetailSheet(exercise: ExerciseEntity, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(NT.Spacing.section),
         ) {
             Header(exercise)
-            val pattern = motions?.pattern(exercise.id)
+            val demo = clip
             if (images.isNotEmpty()) {
                 FormDemo(images, exercise.localizedName())
-            } else if (pattern != null) {
-                MotionDemo(motions!!, pattern, MotionLibrary.hotSegments(exercise.primaryMuscles), exercise.localizedName())
+            } else if (demo != null) {
+                ExerciseVideoDemo(demo, exercise.localizedName())
             }
             MusclesCard(exercise, selected) { muscle -> selected = if (muscle == selected) null else muscle }
             cues?.let { CuesCard(it) }
@@ -153,18 +153,19 @@ private fun MusclesCard(exercise: ExerciseEntity, selected: String?, onSelect: (
         NTCard {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    BodyMapCanvas(
-                        fill = { muscleModelColor(it, exercise.primaryMuscles, exercise.secondaryMuscles) },
-                        modifier = Modifier.heightIn(max = 340.dp).semantics {
+                    Body3DCanvas(
+                        strength = { muscleModelStrength(it, exercise.primaryMuscles, exercise.secondaryMuscles) },
+                        modifier = Modifier.heightIn(max = 360.dp).semantics {
                             contentDescription = exercise.primaryMuscles.joinToString(", ")
                         },
                         selected = selected,
-                        onTap = { onSelect(it) },
+                        onTap = { onSelect(if (it == selected) null else it) },
                     )
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 6.dp)) {
-                        NtText(stringResource(R.string.exercises_front), style = NT.Fonts.caption, color = NT.Colors.ink3)
-                        Spacer(Modifier.weight(1f))
-                        NtText(stringResource(R.string.exercises_back), style = NT.Fonts.caption, color = NT.Colors.ink3)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                        NtText(stringResource(R.string.exercises_front), modifier = Modifier.weight(1f), style = NT.Fonts.caption,
+                            color = NT.Colors.ink3, textAlign = TextAlign.Center)
+                        NtText(stringResource(R.string.exercises_back), modifier = Modifier.weight(1f), style = NT.Fonts.caption,
+                            color = NT.Colors.ink3, textAlign = TextAlign.Center)
                     }
                 }
                 val line = selected?.let { muscle ->

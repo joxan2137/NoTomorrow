@@ -162,7 +162,7 @@ struct ProgressHomeView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 16) {
                         MuscleHeatView(setsByMuscle: muscles.setsByMuscle)
-                            .frame(width: 120, height: 180)
+                            .frame(width: 150)
                         if !top.isEmpty {
                             VStack(spacing: 0) {
                                 ForEach(Array(top.enumerated()), id: \.element.muscle) { index, item in

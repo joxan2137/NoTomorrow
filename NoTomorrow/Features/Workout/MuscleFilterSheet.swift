@@ -15,13 +15,11 @@ struct MuscleFilterSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    BodyMapView(fill: { $0 == current ? NT.Colors.ember : NT.Colors.surface3 },
-                                bodyColor: NT.Colors.surface2,
-                                gap: NT.Colors.ground,
-                                onTap: { muscle in
-                                    guard let muscle else { return }
-                                    withAnimation(.easeOut(duration: 0.15)) { current = muscle }
-                                })
+                    Body3DView(strength: { $0 == current ? 1 : 0 },
+                               onTap: { muscle in
+                                   guard let muscle else { return }
+                                   withAnimation(.easeOut(duration: 0.15)) { current = muscle }
+                               })
                         .frame(maxHeight: 290)
                     Group {
                         if let current {
@@ -33,7 +31,7 @@ struct MuscleFilterSheet: View {
                     }
                     .font(NT.Fonts.subheadline)
                     BroFlowLayout(spacing: 6) {
-                        ForEach(BodyMap.muscles, id: \.self) { muscle in
+                        ForEach(Body3D.muscles, id: \.self) { muscle in
                             Button {
                                 withAnimation(.easeOut(duration: 0.15)) { current = muscle }
                             } label: {

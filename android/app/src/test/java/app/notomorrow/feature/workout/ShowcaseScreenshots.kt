@@ -30,8 +30,9 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * Renders the body map and the mannequin demos to PNG for checking them without a device. Off by
- * default; run with `./gradlew :app:testDebugUnitTest --tests '*ShowcaseScreenshots*' -PshowcaseShots=<dir>`.
+ * Renders the 3D muscle view to PNG for checking it without a device. Off by default; run with
+ * `./gradlew :app:testDebugUnitTest --tests '*ShowcaseScreenshots*' -PshowcaseShots=<dir>`. The demo
+ * clips play on a TextureView, which Robolectric cannot draw, so they are checked from their files.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -40,42 +41,23 @@ class ShowcaseScreenshots {
     private val outDir: File? = System.getProperty("showcaseShots")?.let(::File)
 
     @Test
-    fun bodyMaps() {
-        // The composable reads the regions off the main thread; load them first so the frame has them.
-        BodyMap.regions = BodyMap.decode(File("src/main/assets/muscle_model.json").readText())
-        shoot("bodymap-bench", 411, 460) {
+    fun bodies() {
+        shoot("body3d-bench", 411, 470) {
             NTCard {
-                BodyMapCanvas(
-                    fill = { muscleModelColor(it, listOf("chest"), listOf("triceps", "shoulders")) },
+                Body3DCanvas(
+                    strength = { muscleModelStrength(it, listOf("chest"), listOf("triceps", "shoulders")) },
                     modifier = Modifier.fillMaxWidth(),
                     selected = "chest",
                 )
             }
         }
-        shoot("bodymap-heat", 411, 260) {
+        shoot("body3d-heat", 411, 200) {
             NTCard {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     MuscleHeatView(
                         mapOf("chest" to 12, "triceps" to 8, "shoulders" to 5, "lats" to 3, "quadriceps" to 9, "glutes" to 2),
-                        Modifier.width(120.dp),
+                        Modifier.width(150.dp),
                     )
-                }
-            }
-        }
-    }
-
-    @Test
-    fun motions() {
-        val library = MotionLibrary.decode(File("src/main/assets/motions.json").readText())
-        for (name in library.patterns.keys) {
-            val pattern = library.patterns.getValue(name)
-            shoot("motion-$name", 411, 150) {
-                Row(Modifier.fillMaxSize().background(NT.Colors.ground).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (t in listOf(0.0, 1.0)) {
-                        androidx.compose.foundation.Canvas(Modifier.weight(1f).fillMaxSize().background(NT.Colors.surface)) {
-                            drawMotion(library, pattern, t, setOf("thigh", "upper"))
-                        }
-                    }
                 }
             }
         }
@@ -85,6 +67,8 @@ class ShowcaseScreenshots {
         val dir = outDir
         assumeTrue("pass -PshowcaseShots=<dir> to render", dir != null)
         val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+        // The composables read their files off the main thread; load them first so the frame has them.
+        Body3D.load(activity)
         val view = ComposeView(activity).apply {
             setContent { Column(Modifier.fillMaxSize().background(NT.Colors.ground).padding(8.dp)) { content() } }
         }

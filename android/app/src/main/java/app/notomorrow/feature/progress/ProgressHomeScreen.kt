@@ -350,7 +350,7 @@ private fun MusclesSection(muscles: MuscleWeek, modifier: Modifier = Modifier) {
                 ) {
                     MuscleHeatView(
                         setsByMuscle = muscles.setsByMuscle,
-                        modifier = Modifier.width(120.dp).height(180.dp),
+                        modifier = Modifier.width(150.dp),
                     )
                     if (top.isNotEmpty()) {
                         Column(Modifier.weight(1f)) {

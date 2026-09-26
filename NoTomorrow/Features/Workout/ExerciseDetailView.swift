@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// An exercise's sheet: what it is (equipment, level, compound or isolation), the looping form demo (the
-/// public-domain free-exercise-db photos, or the app's own mannequin for exercises without them), the body map of
+/// public-domain free-exercise-db photos, or the app's own 3D clip for exercises without them), the 3D body with
 /// the muscles it works, the app's own form cues and common mistakes where it has them, and the numbered steps.
 struct ExerciseDetailView: View {
     let exercise: Exercise
@@ -16,9 +16,8 @@ struct ExerciseDetailView: View {
                     let photos = ExerciseMedia.images[exercise.id] ?? []
                     if !photos.isEmpty {
                         FormDemoView(paths: photos, name: exercise.localizedName)
-                    } else if let pattern = MotionLibrary.pattern(for: exercise.id) {
-                        MotionDemoView(pattern: pattern, hot: MotionLibrary.hotSegments(for: exercise.primaryMuscles),
-                                       name: exercise.localizedName)
+                    } else if let clip = ExerciseDemos.clip(for: exercise.id) {
+                        ExerciseVideoDemoView(clip: clip, name: exercise.localizedName)
                     }
                     musclesSection
                     if let cues = FormCues.cues(for: exercise.id) {
@@ -216,8 +215,6 @@ enum FormCues {
 }
 
 enum ExerciseMedia {
-    struct Region: Decodable { let muscle: String; let view: String; let d: String }
-    static let regions: [Region] = load("muscle_model") ?? []
     static let images: [String: [String]] = {
         let records: [ExerciseLibrary.Record] = load("exercises") ?? []
         return Dictionary(records.map { ($0.id, $0.images ?? []) }, uniquingKeysWith: { a, _ in a })

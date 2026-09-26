@@ -27,8 +27,7 @@ internal fun MuscleFilterSheet(
     onPick: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val regions = rememberMuscleRegions()
-    val muscles = remember(regions) { regions.map { it.muscle }.filter { it != "outline" }.distinct() }
+    val muscles = rememberBody3D()?.meta?.muscles.orEmpty()
     var current by remember { mutableStateOf(initial) }
 
     NtSheet(onDismiss = onDismiss, showsHandle = true, containerColor = NT.Colors.ground) {
@@ -54,11 +53,9 @@ internal fun MuscleFilterSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            BodyMapCanvas(
-                fill = { if (it == current) NT.Colors.ember else NT.Colors.surface3 },
+            Body3DCanvas(
+                strength = { if (it == current) 1f else 0f },
                 modifier = Modifier.heightIn(max = 290.dp),
-                bodyColor = NT.Colors.surface2,
-                gap = NT.Colors.ground,
                 onTap = { muscle -> if (muscle != null) current = muscle },
             )
             val picked = current

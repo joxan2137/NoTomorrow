@@ -1281,34 +1281,57 @@
   "props": [
    {
     "type": "floor"
+   },
+   {
+    "type": "pad",
+    "from": [
+     192,
+     168
+    ],
+    "to": [
+     236,
+     168
+    ],
+    "width": 8
+   },
+   {
+    "type": "post",
+    "from": [
+     214,
+     172
+    ],
+    "to": [
+     214,
+     200
+    ]
    }
   ],
   "frames": [
    {
-    "anchor": "hand",
+    "anchor": "foot",
     "at": [
-     165,
-     196
+     101,
+     193
     ],
-    "torso": 74,
-    "thigh": -106,
-    "shin": -106,
+    "torso": 52,
+    "thigh": -52,
+    "shin": -52,
     "foot": -10,
-    "upper": 0,
-    "fore": 0
+    "upper": -5.3,
+    "fore": 10.2
    },
    {
-    "anchor": "hand",
+    "anchor": "foot",
     "at": [
-     165,
-     196
+     101,
+     193
     ],
-    "torso": 86,
-    "thigh": -94,
-    "shin": -94,
+    "torso": 66,
+    "thigh": -66,
+    "shin": -66,
     "foot": -10,
-    "upper": -65,
-    "fore": 14
+    "upper": -82.8,
+    "fore": 31.4
    }
   ]
  },
