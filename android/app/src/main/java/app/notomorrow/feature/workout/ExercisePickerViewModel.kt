@@ -121,6 +121,7 @@ class ExercisePickerViewModel(
             favoriteIds = context.favorites,
             // `showsCreateRow` — any non-empty query offers "Create «…»".
             showsCreateRow = trimmed.isNotEmpty(),
+            loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExercisePickerUiState())
 
@@ -264,6 +265,8 @@ data class ExercisePickerUiState(
     val usedIds: Set<String> = emptySet(),
     /** Starred exercise ids (`FavoriteExercises`). */
     val favoriteIds: Set<String> = emptySet(),
+    /** `false` only for the placeholder before the first Room read lands. */
+    val loaded: Boolean = false,
 ) {
     val selectedCount: Int get() = selectedIds.size
 

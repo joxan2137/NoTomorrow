@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -159,7 +160,12 @@ fun ExercisePickerSheet(
         }
         val sections = state.sections
 
+        val listState = rememberLazyListState()
+        // Opens on the favorites: the first real read inserts them above the results header, and
+        // the list otherwise lands on that header with the favorites scrolled out of sight.
+        LaunchedEffect(state.loaded) { if (state.loaded) listState.scrollToItem(0) }
         LazyColumn(
+            state = listState,
             // `.scrollDismissesKeyboard(.immediately)` (`ExercisePickerView.swift:152`) — the
             // keyboard goes the moment the 876-row list starts moving.
             modifier = Modifier.fillMaxWidth().weight(1f).ntDismissKeyboardOnScroll(),
@@ -169,6 +175,8 @@ fun ExercisePickerSheet(
                 bottom = 12.dp,
             ),
         ) {
+            // Nothing until the first real read, rather than a flash of "0 results".
+            if (!state.loaded) return@LazyColumn
             if (sections.favorites.isNotEmpty()) {
                 item(key = "favoritesHeader") {
                     Eyebrow(
