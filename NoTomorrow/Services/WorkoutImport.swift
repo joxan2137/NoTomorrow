@@ -170,11 +170,13 @@ enum WorkoutImport {
                 workouts.append(ImportedWorkout(name: name.isEmpty ? "Workout" : name, startedAt: start, endedAt: end,
                                                 notes: workoutNotes.trimmingCharacters(in: .whitespacesAndNewlines)))
             }
+            let notes = exerciseNotes.trimmingCharacters(in: .whitespacesAndNewlines)
             if let e = workouts[w].exercises.lastIndex(where: { $0.name == exerciseName }) {
                 workouts[w].exercises[e].sets.append(set)
+                // Strong repeats or places the note on any set row; keep the first non-empty one.
+                if workouts[w].exercises[e].notes.isEmpty { workouts[w].exercises[e].notes = notes }
             } else {
-                workouts[w].exercises.append(ImportedExercise(
-                    name: exerciseName, notes: exerciseNotes.trimmingCharacters(in: .whitespacesAndNewlines), sets: [set]))
+                workouts[w].exercises.append(ImportedExercise(name: exerciseName, notes: notes, sets: [set]))
             }
         }
     }

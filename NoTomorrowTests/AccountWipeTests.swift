@@ -77,6 +77,7 @@ final class AccountWipeTests: XCTestCase {
         context.insert(MealEntry(day: .now, slot: .lunch, customName: "Obiad", grams: 300, kcal: 600,
                                  proteinG: 30, carbsG: 60, fatG: 20))
         context.insert(BodyWeightEntry(day: .now, kg: 90))
+        context.insert(BodyMeasurement(day: .now, kind: .waist, value: 84))
         context.insert(BroPairing(partnerId: "p1", partnerName: "Bro", myCode: "ABC123"))
         context.insert(AttendanceRecord(day: .now, participant: .me, scheduledMinuteOfDay: 1080, status: .attended))
         context.insert(HeadsUp(fromMe: false, kind: .letsGo, text: "Let's go", sessionDay: .now))
