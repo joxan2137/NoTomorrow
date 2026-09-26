@@ -43,6 +43,7 @@ struct ProgressHomeView: View {
                         BodyTabView(stats: model.body, unit: model.unit) { showsLogWeight = true }
                             .padding(.top, 18)
                         MeasurementsSection(unit: model.unit).padding(.top, NT.Spacing.section)
+                        ProgressPhotosSection().padding(.top, NT.Spacing.section)
                     }
                 }
                 .padding(.horizontal, NT.Spacing.screenH)

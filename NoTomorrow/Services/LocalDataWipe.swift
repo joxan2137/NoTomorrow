@@ -33,10 +33,11 @@ enum LocalDataWipe {
     /// Runs the wipe `markPending` asked for, if any; true when one ran. The request is dropped only once the wipe
     /// is saved, so a failed one is tried again.
     @discardableResult
-    static func runPending(in context: ModelContext, defaults: UserDefaults = .standard) -> Bool {
+    static func runPending(in context: ModelContext, defaults: UserDefaults = .standard,
+                           photos: ProgressPhotoStore = .standard) -> Bool {
         guard isPending(defaults: defaults) else { return false }
         do {
-            try run(in: context)
+            try run(in: context, photos: photos)
             defaults.removeObject(forKey: pendingKey)
             // Routines were wiped: the next onboarding seeds the starter ones again.
             defaults.removeObject(forKey: RoutineSeeder.seededKey)
@@ -51,8 +52,9 @@ enum LocalDataWipe {
 
     /// Children before parents, so no cascade walks into an object already deleted, then one save.
     /// The bundled exercise library stays (it is the app's, not the user's) but forgets when each was last used;
-    /// custom exercises go. Throws when the save fails, with nothing deleted.
-    static func run(in context: ModelContext) throws {
+    /// custom exercises go. Progress photo files go once the rows are gone (`photos`, Application Support by default).
+    /// Throws when the save fails, with nothing deleted.
+    static func run(in context: ModelContext, photos: ProgressPhotoStore = .standard) throws {
         try deleteAll(SetEntry.self, in: context)
         try deleteAll(WorkoutExercise.self, in: context)
         try deleteAll(Workout.self, in: context)
@@ -62,6 +64,7 @@ enum LocalDataWipe {
         try deleteAll(FoodItem.self, in: context)
         try deleteAll(BodyWeightEntry.self, in: context)
         try deleteAll(BodyMeasurement.self, in: context)
+        try deleteAll(ProgressPhoto.self, in: context)
         try deleteAll(HeadsUp.self, in: context)
         try deleteAll(AttendanceRecord.self, in: context)
         try deleteAll(BroPairing.self, in: context)
@@ -76,6 +79,7 @@ enum LocalDataWipe {
             context.rollback()
             throw error
         }
+        photos.removeAll()
     }
 
     /// Rows still in the store per model type (by name), leaving out the bundled exercises that are meant to stay.

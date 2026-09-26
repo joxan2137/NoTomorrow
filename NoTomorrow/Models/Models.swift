@@ -7,7 +7,7 @@ enum NoTomorrowSchema {
         UserProfile.self, GymSchedule.self,
         Exercise.self, Routine.self, RoutineItem.self,
         Workout.self, WorkoutExercise.self, SetEntry.self,
-        FoodItem.self, MealEntry.self, BodyWeightEntry.self, BodyMeasurement.self,
+        FoodItem.self, MealEntry.self, BodyWeightEntry.self, BodyMeasurement.self, ProgressPhoto.self,
         BroPairing.self, AttendanceRecord.self, HeadsUp.self,
     ]
 }
@@ -363,6 +363,31 @@ final class BodyMeasurement {
     }
 
     var kind: MeasurementKind? { MeasurementKind(rawValue: kindRaw) }
+}
+
+/// Which way the body faces in a progress photo; optional.
+enum ProgressPose: String, Codable, CaseIterable {
+    case front, side, back
+}
+
+/// A private progress photo (Progress > Body > Photos). The JPEG lives on this phone only, in
+/// Application Support/ProgressPhotos/`fileName` (`ProgressPhotoStore`); it is never exported or synced.
+@Model
+final class ProgressPhoto {
+    @Attribute(.unique) var id: UUID
+    var takenAt: Date
+    /// File name inside the photos directory, e.g. "3f2c….jpg".
+    var fileName: String
+    var poseRaw: String?
+
+    init(id: UUID = UUID(), takenAt: Date = .now, fileName: String, pose: ProgressPose? = nil) {
+        self.id = id
+        self.takenAt = takenAt
+        self.fileName = fileName
+        self.poseRaw = pose?.rawValue
+    }
+
+    var pose: ProgressPose? { poseRaw.flatMap(ProgressPose.init(rawValue:)) }
 }
 
 // MARK: - Gym bro

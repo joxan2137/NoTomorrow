@@ -11,6 +11,8 @@ final class AccountWipeTests: XCTestCase {
     private var defaults: UserDefaults!
     private var suiteName = ""
     private var storeURL: URL!
+    /// Progress photo files for this test only, never the app's own folder.
+    private var photos: ProgressPhotoStore!
 
     override func setUpWithError() throws {
         // On disk, like the app's store: the batch delete this replaces behaved differently from an in-memory one.
@@ -19,12 +21,16 @@ final class AccountWipeTests: XCTestCase {
         container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: storeURL)])
         suiteName = "AccountWipeTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
+        photos = ProgressPhotoStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("wipe-photos-\(UUID().uuidString)", isDirectory: true))
     }
 
     override func tearDown() {
         defaults.removePersistentDomain(forName: suiteName)
         defaults = nil
         container = nil
+        photos.removeAll()
+        photos = nil
         for suffix in ["", "-shm", "-wal"] {
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + suffix))
         }
@@ -78,6 +84,7 @@ final class AccountWipeTests: XCTestCase {
                                  proteinG: 30, carbsG: 60, fatG: 20))
         context.insert(BodyWeightEntry(day: .now, kg: 90))
         context.insert(BodyMeasurement(day: .now, kind: .waist, value: 84))
+        try ProgressPhotos.add(jpeg: Data([0xFF, 0xD8, 0xFF, 0xD9]), pose: .front, store: photos, in: context)
         context.insert(BroPairing(partnerId: "p1", partnerName: "Bro", myCode: "ABC123"))
         context.insert(AttendanceRecord(day: .now, participant: .me, scheduledMinuteOfDay: 1080, status: .attended))
         context.insert(HeadsUp(fromMe: false, kind: .letsGo, text: "Let's go", sessionDay: .now))
@@ -95,7 +102,7 @@ final class AccountWipeTests: XCTestCase {
     func testWipeEmptiesEveryModelType() throws {
         let (_, bundled) = try seedEverything()
 
-        try LocalDataWipe.run(in: context)
+        try LocalDataWipe.run(in: context, photos: photos)
 
         XCTAssertEqual(LocalDataWipe.leftovers(in: context), [:])
         // Read back through a fresh context: the deletes were saved, not only staged.
@@ -111,9 +118,20 @@ final class AccountWipeTests: XCTestCase {
         XCTAssertTrue(library.first?.usages.isEmpty ?? false)
     }
 
+    func testWipeDeletesProgressPhotoFiles() throws {
+        try seedEverything()
+        XCTAssertEqual(photos.fileNames().count, 1, "the seeded photo's file is on disk")
+
+        try LocalDataWipe.run(in: context, photos: photos)
+
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<ProgressPhoto>()), 0)
+        XCTAssertEqual(photos.fileNames(), [])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: photos.directory.path))
+    }
+
     func testWipeSurvivesAReopenedStore() throws {
         try seedEverything()
-        try LocalDataWipe.run(in: context)
+        try LocalDataWipe.run(in: context, photos: photos)
         container = nil
 
         let schema = Schema(NoTomorrowSchema.models)
@@ -136,7 +154,7 @@ final class AccountWipeTests: XCTestCase {
         XCTAssertNotNil(defaults.stringArray(forKey: "nt.workout.discarding"))
 
         session.forgetAll()
-        try LocalDataWipe.run(in: context)
+        try LocalDataWipe.run(in: context, photos: photos)
 
         XCTAssertFalse(session.hasActiveWorkout)
         XCTAssertNil(session.model)
@@ -153,7 +171,7 @@ final class AccountWipeTests: XCTestCase {
 
     func testPendingWipeRunsOnceAndSurvivesARelaunch() throws {
         try seedEverything()
-        XCTAssertFalse(LocalDataWipe.runPending(in: context, defaults: defaults), "nothing asked for")
+        XCTAssertFalse(LocalDataWipe.runPending(in: context, defaults: defaults, photos: photos), "nothing asked for")
         XCTAssertFalse(LocalDataWipe.leftovers(in: context).isEmpty)
 
         FavoriteExercises.toggle("Barbell_Squat", defaults: defaults)
@@ -161,7 +179,7 @@ final class AccountWipeTests: XCTestCase {
         // The app is killed before the wipe ran: the request is still there at the next launch.
         XCTAssertTrue(LocalDataWipe.isPending(defaults: UserDefaults(suiteName: suiteName)!))
 
-        XCTAssertTrue(LocalDataWipe.runPending(in: context, defaults: defaults))
+        XCTAssertTrue(LocalDataWipe.runPending(in: context, defaults: defaults, photos: photos))
         XCTAssertEqual(LocalDataWipe.leftovers(in: context), [:])
         XCTAssertFalse(LocalDataWipe.isPending(defaults: defaults), "done once")
         XCTAssertEqual(FavoriteExercises.ids(defaults: defaults), [], "starred exercises go with the data")
@@ -169,7 +187,7 @@ final class AccountWipeTests: XCTestCase {
         // A new account's data is never touched by a finished request.
         context.insert(UserProfile(name: "Tester", bodyWeightKg: 82))
         try context.save()
-        XCTAssertFalse(LocalDataWipe.runPending(in: context, defaults: defaults))
+        XCTAssertFalse(LocalDataWipe.runPending(in: context, defaults: defaults, photos: photos))
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<UserProfile>()), 1)
     }
 
@@ -181,7 +199,7 @@ final class AccountWipeTests: XCTestCase {
         let deletion = session.discard(empty, context: context)
 
         session.forgetAll()
-        try LocalDataWipe.run(in: context)
+        try LocalDataWipe.run(in: context, photos: photos)
         await deletion.value
 
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Workout>()), 0)
