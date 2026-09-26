@@ -600,6 +600,9 @@ object S {
     val store_error_startFresh_message = R.string.store_error_startFresh_message
     val store_error_startFresh_title = R.string.store_error_startFresh_title
     val store_error_title = R.string.store_error_title
+    val superset_linkNext = R.string.superset_linkNext
+    val superset_tag_s = R.string.superset_tag_s  // superset.tag %@
+    val superset_unlink = R.string.superset_unlink
     val tab_bro = R.string.tab_bro
     val tab_fuel = R.string.tab_fuel
     val tab_progress = R.string.tab_progress

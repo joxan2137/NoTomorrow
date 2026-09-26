@@ -152,6 +152,8 @@ final class RoutineItem {
     var targetSets: Int
     var targetReps: Int
     var restSeconds: Int
+    /// Neighbouring items with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var routine: Routine?
 
     init(order: Int, exercise: Exercise, targetSets: Int = 3, targetReps: Int = 8, restSeconds: Int = 90) {
@@ -200,6 +202,8 @@ final class WorkoutExercise {
     var exercise: Exercise?
     var restSeconds: Int
     var notes: String
+    /// Neighbouring exercises with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var workout: Workout?
     @Relationship(deleteRule: .cascade, inverse: \SetEntry.workoutExercise) var sets: [SetEntry] = []
 

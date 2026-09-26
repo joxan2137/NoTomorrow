@@ -299,7 +299,15 @@ final class ActiveWorkoutModel {
         }
         try? context.save()
 
-        let target = nextTarget(after: set, in: exercise)
+        var target = nextTarget(after: set, in: exercise)
+        if let hop = supersetHop(after: set, in: exercise) {
+            // A superset moves straight on to its next exercise; the rest comes after the round's last one.
+            expandedExerciseID = hop.exercise.persistentModelID
+            guard hop.rests, let next = hop.exercise.sortedSets.first(where: { !$0.isCompleted }) else { return false }
+            let fallback = hop.exercise.sortedSets.last(where: \.isCompleted).map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+                ?? lastSet(for: hop.exercise)
+            target = NextTarget(upNext: makeUpNext(next, in: hop.exercise, fallback: fallback), isDrop: false)
+        }
         let autoStart = UserDefaults.standard.object(forKey: "nt.rest.autoStart") as? Bool ?? true
         if let target, !target.isDrop, autoStart {
             upNext = target.upNext
@@ -411,6 +419,8 @@ final class ActiveWorkoutModel {
         for set in Array(exercise.sets) { context.delete(set) }
         context.delete(exercise)
         for (i, we) in exercises.enumerated() { we.order = i }
+        let groups = Superset.normalized(exercises.map(\.supersetGroup))
+        for (we, group) in zip(exercises, groups) where we.supersetGroup != group { we.supersetGroup = group }
         try? context.save()
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
     }
@@ -466,6 +476,58 @@ final class ActiveWorkoutModel {
     }
 
     // MARK: Next target
+
+    // MARK: Supersets
+
+    private var supersetGroups: [Int?] { exercises.map(\.supersetGroup) }
+
+    /// "A", "B"… for an exercise in a superset (the header's tag), nil for one on its own.
+    func supersetLetter(for exercise: WorkoutExercise) -> String? {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        return Superset.letters(supersetGroups)[i]
+    }
+
+    func canLinkWithNext(_ exercise: WorkoutExercise) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return i + 1 < exercises.count && !Superset.isLinkedToNext(supersetGroups, at: i)
+    }
+
+    func linkWithNext(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.linkWithNext(supersetGroups, at: i))
+    }
+
+    func unlinkSuperset(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.unlink(supersetGroups, at: i))
+    }
+
+    private func applySupersets(_ groups: [Int?]) {
+        for (exercise, group) in zip(exercises, groups) where exercise.supersetGroup != group {
+            exercise.supersetGroup = group
+        }
+        try? context.save()
+    }
+
+    /// Where a tick in a superset goes next: a later exercise of the superset with an open set (no rest), else,
+    /// after the round's last exercise, back to the first one with an open set (rest first). Nil outside a superset,
+    /// once the superset is done, or when a drop set follows in the same exercise.
+    private func supersetHop(after set: SetEntry, in exercise: WorkoutExercise) -> (exercise: WorkoutExercise, rests: Bool)? {
+        guard let group = exercise.supersetGroup else { return nil }
+        if let next = exercise.sortedSets.first(where: { $0.order > set.order && !$0.isCompleted }), next.kind == .drop {
+            return nil
+        }
+        let list = exercises
+        guard let i = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        var start = i, end = i
+        while start > 0, list[start - 1].supersetGroup == group { start -= 1 }
+        while end + 1 < list.count, list[end + 1].supersetGroup == group { end += 1 }
+        guard end > start else { return nil }
+        let hasOpen: (WorkoutExercise) -> Bool = { $0.sets.contains { !$0.isCompleted } }
+        if i < end, let later = list[(i + 1)...end].first(where: hasOpen) { return (later, false) }
+        if let first = list[start...end].first(where: hasOpen) { return (first, true) }
+        return nil
+    }
 
     private struct NextTarget {
         var upNext: UpNextTarget

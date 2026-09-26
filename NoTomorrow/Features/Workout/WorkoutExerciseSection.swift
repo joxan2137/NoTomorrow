@@ -31,6 +31,7 @@ struct WorkoutExerciseSection: View {
         Button { model.toggleExpanded(exercise) } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
+                    if let letter = model.supersetLetter(for: exercise) { SupersetTag(letter: letter) }
                     Text(name).font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).lineLimit(1)
                     Text([WorkoutStrings.sets(exercise.sets.count), lastLine].compactMap { $0 }.joined(separator: " · "))
                         .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular().lineLimit(1)
@@ -40,7 +41,7 @@ struct WorkoutExerciseSection: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(exercise.isDone ? NT.Colors.ember : NT.Colors.ink3)
             }
-            .frame(height: 60)
+            .frame(minHeight: 60)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -79,6 +80,7 @@ struct WorkoutExerciseSection: View {
         HStack(alignment: .center) {
             Button { model.toggleExpanded(exercise) } label: {
                 VStack(alignment: .leading, spacing: 2) {
+                    if let letter = model.supersetLetter(for: exercise) { SupersetTag(letter: letter) }
                     Text(name).font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).lineLimit(1)
                     Text(subtitle).font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular().lineLimit(1)
                 }
@@ -91,6 +93,16 @@ struct WorkoutExerciseSection: View {
                     withAnimation(.easeInOut(duration: 0.2)) { model.addWarmups(to: exercise) }
                 }
                 .disabled(model.warmupSteps(for: exercise).isEmpty)
+                if model.canLinkWithNext(exercise) {
+                    Button("superset.linkNext", systemImage: "link") {
+                        withAnimation(.easeInOut(duration: 0.2)) { model.linkWithNext(exercise) }
+                    }
+                }
+                if exercise.supersetGroup != nil {
+                    Button("superset.unlink", systemImage: "link.badge.plus") {
+                        withAnimation(.easeInOut(duration: 0.2)) { model.unlinkSuperset(exercise) }
+                    }
+                }
                 if exercise.notes.isEmpty && !showsNote {
                     Button("note.add", systemImage: "note.text") {
                         withAnimation(.easeInOut(duration: 0.2)) { showsNote = true }
@@ -186,5 +198,18 @@ private struct ExerciseNoteField: View {
         } else {
             Text("note.placeholder").foregroundStyle(NT.Colors.ink3)
         }
+    }
+}
+
+/// "SUPERSET A" over the name of an exercise in a superset.
+struct SupersetTag: View {
+    let letter: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "link").font(.system(size: 9, weight: .bold))
+            Text("superset.tag \(letter)")
+        }
+        .eyebrow(NT.Colors.ember)
     }
 }

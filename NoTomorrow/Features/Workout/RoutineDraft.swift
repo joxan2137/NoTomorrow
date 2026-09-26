@@ -9,10 +9,13 @@ struct RoutineItemDraft: Identifiable, Equatable {
     var sets: Int
     var reps: Int
     var restSeconds: Int
+    /// Superset id (`Superset`), nil = on its own.
+    var supersetGroup: Int?
 
     init(id: UUID = UUID(), exerciseID: String, name: String, primaryMuscle: String? = nil,
          sets: Int = RoutineDraft.defaultSets, reps: Int = RoutineDraft.defaultReps,
-         restSeconds: Int = RoutineDraft.inheritRest) {
+         restSeconds: Int = RoutineDraft.inheritRest, supersetGroup: Int? = nil) {
+        self.supersetGroup = supersetGroup
         self.id = id
         self.exerciseID = exerciseID
         self.name = name
@@ -69,6 +72,7 @@ struct RoutineDraft: Equatable {
 
     mutating func remove(_ id: UUID) {
         items.removeAll { $0.id == id }
+        normalizeSupersets()
     }
 
     mutating func move(_ id: UUID, by offset: Int) {
@@ -76,6 +80,34 @@ struct RoutineDraft: Equatable {
         let to = from + offset
         guard items.indices.contains(to) else { return }
         items.swapAt(from, to)
+        normalizeSupersets()
+    }
+
+    // MARK: Supersets
+
+    var supersetLetters: [String?] { Superset.letters(items.map(\.supersetGroup)) }
+
+    func isLinkedToNext(_ id: UUID) -> Bool {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return false }
+        return Superset.isLinkedToNext(items.map(\.supersetGroup), at: index)
+    }
+
+    mutating func linkWithNext(_ id: UUID) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        setSupersets(Superset.linkWithNext(items.map(\.supersetGroup), at: index))
+    }
+
+    mutating func unlinkSuperset(_ id: UUID) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        setSupersets(Superset.unlink(items.map(\.supersetGroup), at: index))
+    }
+
+    mutating func normalizeSupersets() {
+        setSupersets(Superset.normalized(items.map(\.supersetGroup)))
+    }
+
+    private mutating func setSupersets(_ groups: [Int?]) {
+        for index in items.indices { items[index].supersetGroup = groups[index] }
     }
 
     mutating func stepSets(_ id: UUID, by delta: Int) {
@@ -119,6 +151,7 @@ struct RoutineDraft: Equatable {
         var restSeconds: Int
         /// The rest equals what a routine line with the default rest would give this exercise.
         var usesDefaultRest: Bool
+        var supersetGroup: Int? = nil
     }
 
     /// "Save as routine": one line per exercise that has a completed working set, sets = how many were done,
@@ -128,10 +161,13 @@ struct RoutineDraft: Equatable {
             guard let firstReps = logged.workingReps.first(where: { $0 > 0 }) else { return nil }
             let rest = logged.usesDefaultRest ? inheritRest : logged.restSeconds
             return RoutineItemDraft(exerciseID: logged.exerciseID, name: logged.name, primaryMuscle: logged.primaryMuscle,
-                                    sets: logged.workingReps.count, reps: firstReps, restSeconds: rest)
+                                    sets: logged.workingReps.count, reps: firstReps, restSeconds: rest,
+                                    supersetGroup: logged.supersetGroup)
         }
         var seen = Set<String>()
-        let unique = items.filter { seen.insert($0.exerciseID).inserted }
-        return RoutineDraft(name: uniqueName(workoutName, taken: takenNames), items: unique)
+        var draft = RoutineDraft(name: uniqueName(workoutName, taken: takenNames),
+                                 items: items.filter { seen.insert($0.exerciseID).inserted })
+        draft.normalizeSupersets()
+        return draft
     }
 }

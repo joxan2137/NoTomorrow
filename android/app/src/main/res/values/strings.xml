@@ -585,6 +585,9 @@
     <string name="store_error_startFresh_message">The data that can\'t be opened is moved to a backup folder on this phone, not deleted. The app then starts over from setup.</string>
     <string name="store_error_startFresh_title">Start with empty data?</string>
     <string name="store_error_title">Couldn\'t open your data</string>
+    <string name="superset_linkNext">Superset with next</string>
+    <string name="superset_tag_s">Superset %s</string>
+    <string name="superset_unlink">Remove from superset</string>
     <string name="tab_bro">Bro</string>
     <string name="tab_fuel">Fuel</string>
     <string name="tab_progress">Progress</string>

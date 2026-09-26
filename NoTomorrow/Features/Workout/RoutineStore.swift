@@ -11,9 +11,12 @@ enum RoutineStore {
             guard let exercise = item.exercise else { return nil }
             return RoutineItemDraft(exerciseID: exercise.id, name: exercise.localizedName,
                                     primaryMuscle: exercise.primaryMuscles.first,
-                                    sets: item.targetSets, reps: item.targetReps, restSeconds: item.restSeconds)
+                                    sets: item.targetSets, reps: item.targetReps, restSeconds: item.restSeconds,
+                                    supersetGroup: item.supersetGroup)
         }
-        return RoutineDraft(name: routine.name, items: items)
+        var draft = RoutineDraft(name: routine.name, items: items)
+        draft.normalizeSupersets()   // a line whose exercise was deleted may have split a superset
+        return draft
     }
 
     /// "Save as routine" from a finished workout.
@@ -26,7 +29,7 @@ enum RoutineStore {
             return .init(exerciseID: exercise.id, name: exercise.localizedName,
                          primaryMuscle: exercise.primaryMuscles.first,
                          workingReps: working.map(\.reps), restSeconds: item.restSeconds,
-                         usesDefaultRest: item.restSeconds == defaultForExercise)
+                         usesDefaultRest: item.restSeconds == defaultForExercise, supersetGroup: item.supersetGroup)
         }
         return RoutineDraft.from(workoutName: workout.name, exercises: logged, takenNames: names(in: context))
     }
@@ -59,6 +62,7 @@ enum RoutineStore {
             guard let exercise = byID[line.exerciseID] else { continue }
             let item = RoutineItem(order: order, exercise: exercise, targetSets: line.sets, targetReps: line.reps,
                                    restSeconds: line.restSeconds)
+            item.supersetGroup = line.supersetGroup
             context.insert(item)
             item.routine = target
             order += 1

@@ -62,9 +62,10 @@ struct RoutineEditorSheet: View {
                             .padding(.vertical, 12)
                     }
                     VStack(spacing: 10) {
+                        let letters = draft.supersetLetters
                         ForEach(Array(draft.items.enumerated()), id: \.element.id) { index, item in
                             RoutineItemCard(item: item, isFirst: index == 0, isLast: index == draft.items.count - 1,
-                                            draft: $draft)
+                                            supersetLetter: letters[index], draft: $draft)
                         }
                     }
                     GhostButton(title: "workout.addExercise", systemImage: "plus") {
@@ -173,12 +174,14 @@ private struct RoutineItemCard: View {
     let item: RoutineItemDraft
     let isFirst: Bool
     let isLast: Bool
+    let supersetLetter: String?
     @Binding var draft: RoutineDraft
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
+                    if let supersetLetter { SupersetTag(letter: supersetLetter) }
                     Text(item.name).font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).lineLimit(1)
                     if let muscle = item.primaryMuscle {
                         Text(WorkoutStrings.muscle(muscle))
@@ -189,6 +192,12 @@ private struct RoutineItemCard: View {
                 Menu {
                     if !isFirst { Button("workout.edit.moveUp") { draft.move(item.id, by: -1) } }
                     if !isLast { Button("workout.edit.moveDown") { draft.move(item.id, by: 1) } }
+                    if !isLast && !draft.isLinkedToNext(item.id) {
+                        Button("superset.linkNext", systemImage: "link") { draft.linkWithNext(item.id) }
+                    }
+                    if item.supersetGroup != nil {
+                        Button("superset.unlink", systemImage: "link.badge.plus") { draft.unlinkSuperset(item.id) }
+                    }
                     Button("workout.removeExercise", role: .destructive) { draft.remove(item.id) }
                 } label: {
                     Image(systemName: "ellipsis")

@@ -585,6 +585,9 @@
     <string name="store_error_startFresh_message">Dane, których nie da się otworzyć, trafią do folderu kopii zapasowej na tym telefonie. Nic nie zostanie usunięte. Aplikacja zacznie od nowa, od konfiguracji.</string>
     <string name="store_error_startFresh_title">Zacząć od pustych danych?</string>
     <string name="store_error_title">Nie udało się otworzyć danych</string>
+    <string name="superset_linkNext">Superseria z następnym</string>
+    <string name="superset_tag_s">Superseria %s</string>
+    <string name="superset_unlink">Usuń z superserii</string>
     <string name="tab_bro">Kolega</string>
     <string name="tab_fuel">Kalorie</string>
     <string name="tab_progress">Postępy</string>
