@@ -12721,6 +12721,22 @@
           }
         }
       }
+    },
+    "equipment.all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any equipment"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dowolny sprzęt"
+          }
+        }
+      }
     }
   }
 }

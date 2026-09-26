@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 
-/// Search + muscle filter over the exercise library. Debounces typing (200 ms) and matches every
+/// Search + muscle and equipment filters over the exercise library. Debounces typing (200 ms) and matches every
 /// query token case- and diacritic-insensitively against the English and Polish names.
 @MainActor
 @Observable
@@ -31,6 +31,11 @@ final class ExercisePickerViewModel {
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
     var showsCreateRow: Bool { !trimmedQuery.isEmpty }
+
+    /// The equipment chip row; combines with the muscle chips and the search.
+    var equipment: ExerciseLibrary.Equipment = .all {
+        didSet { applyFilter() }
+    }
 
     // MARK: Loading
 
@@ -64,6 +69,7 @@ final class ExercisePickerViewModel {
         let muscles = group.muscles
         results = all.filter { entry in
             if !muscles.isEmpty && !entry.exercise.primaryMuscles.contains(where: muscles.contains) { return false }
+            if !equipment.matches(entry.exercise.equipment) { return false }
             return tokens.allSatisfy { entry.folded.contains($0) }
         }
     }
@@ -103,7 +109,8 @@ final class ExercisePickerViewModel {
         let name = trimmedQuery
         guard !name.isEmpty else { return nil }
         let muscles = Self.representativeMuscle[group].map { [$0] } ?? []
-        let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: name, primaryMuscles: muscles, isCustom: true)
+        let exercise = Exercise(id: "custom-\(UUID().uuidString.lowercased())", name: name, primaryMuscles: muscles,
+                                equipment: equipment.representative, isCustom: true)
         exercise.lastUsedAt = .now
         context.insert(exercise)
         try? context.save()

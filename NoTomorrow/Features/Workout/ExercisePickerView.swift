@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import MetalFxKit
 
-/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle chips, result cards, create row, "Add n".
+/// Multi-select exercise picker sheet (design/Exercises.dc.html): search, muscle and equipment chips, result cards, create row, "Add n".
 /// The search field has a liquid-metal edge that brightens while it has focus.
 struct ExercisePickerView: View {
     /// Ids of exercises already in the workout; shown as "In" and not selectable.
@@ -41,6 +41,8 @@ struct ExercisePickerView: View {
                 .padding(.top, 12)
             chips
                 .padding(.top, 12)
+            equipmentChips
+                .padding(.top, 8)
             results
         }
         .ntScreenBackground()
@@ -124,6 +126,21 @@ struct ExercisePickerView: View {
                     Chip(title: String(localized: String.LocalizationValue(group.titleKey)),
                          isSelected: model.group == group) {
                         model.group = group
+                    }
+                }
+            }
+            .padding(.horizontal, NT.Spacing.screenH)
+        }
+    }
+
+    /// Any equipment, Barbell, Dumbbell…: a second row under the muscles, combined with them and the search.
+    private var equipmentChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(ExerciseLibrary.Equipment.allCases) { equipment in
+                    Chip(title: String(localized: String.LocalizationValue(equipment.titleKey)),
+                         isSelected: model.equipment == equipment) {
+                        model.equipment = equipment
                     }
                 }
             }
