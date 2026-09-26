@@ -32,6 +32,7 @@ struct ProgressHomeView: View {
                         }
                         musclesSection.padding(.top, model.hasCompletedSets ? NT.Spacing.section : 18)
                         liftsSection.padding(.top, NT.Spacing.section)
+                        TrainingCalendarCard(unit: model.unit).padding(.top, NT.Spacing.section)
                     case .body:
                         BodyTabView(stats: model.body, unit: model.unit) { showsLogWeight = true }
                             .padding(.top, 18)

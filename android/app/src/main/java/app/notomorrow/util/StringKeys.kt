@@ -72,6 +72,16 @@ object S {
     val bro_unpaired_title = R.string.bro_unpaired_title
     val bro_you = R.string.bro_you
     val bro_youMissed = R.string.bro_youMissed
+    val calendar_next = R.string.calendar_next
+    val calendar_previous = R.string.calendar_previous
+    val calendar_rest = R.string.calendar_rest
+    val calendar_title = R.string.calendar_title
+    val calendar_weekStreak_few = R.string.calendar_weekStreak_few
+    val calendar_weekStreak_many = R.string.calendar_weekStreak_many
+    val calendar_weekStreak_one = R.string.calendar_weekStreak_one
+    val calendar_workoutCount_few = R.string.calendar_workoutCount_few
+    val calendar_workoutCount_many = R.string.calendar_workoutCount_many
+    val calendar_workoutCount_one = R.string.calendar_workoutCount_one
     val cant_makeUp = R.string.cant_makeUp
     val cant_neverMind = R.string.cant_neverMind
     val cant_note = R.string.cant_note

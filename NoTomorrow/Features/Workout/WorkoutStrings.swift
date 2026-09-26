@@ -26,6 +26,12 @@ enum WorkoutStrings {
     /// "3 sets" / "3 serie"
     static func sets(_ n: Int) -> String { counted("workout.setCount", n) }
 
+    /// "12 workouts" / "12 treningów"
+    static func workouts(_ n: Int) -> String { counted("calendar.workoutCount", n) }
+
+    /// "3-week streak" / "3 tygodnie z rzędu"
+    static func weekStreak(_ n: Int) -> String { counted("calendar.weekStreak", n) }
+
     /// "2 PRs" — existing dashboard key, Polish keeps "PR" invariant.
     static func prs(_ n: Int) -> String {
         String(format: String(localized: "dashboard.prs"), locale: .current, n)

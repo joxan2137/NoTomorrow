@@ -57,6 +57,16 @@
     <string name="bro_unpaired_title">Training solo</string>
     <string name="bro_you">You</string>
     <string name="bro_youMissed">you missed</string>
+    <string name="calendar_next">Next month</string>
+    <string name="calendar_previous">Previous month</string>
+    <string name="calendar_rest">No workout</string>
+    <string name="calendar_title">Training calendar</string>
+    <string name="calendar_weekStreak_few">%d-week streak</string>
+    <string name="calendar_weekStreak_many">%d-week streak</string>
+    <string name="calendar_weekStreak_one">1-week streak</string>
+    <string name="calendar_workoutCount_few">%d workouts</string>
+    <string name="calendar_workoutCount_many">%d workouts</string>
+    <string name="calendar_workoutCount_one">1 workout</string>
     <string name="cant_makeUp">Propose a make-up</string>
     <string name="cant_neverMind">Never mind, I\'m going</string>
     <string name="cant_note">Add a note (optional)</string>
