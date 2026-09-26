@@ -155,6 +155,8 @@
     <string name="exercises_create">Create \"%s\" as a new exercise</string>
     <string name="exercises_demonstration">Movement photos</string>
     <string name="exercises_details">Details</string>
+    <string name="exercises_favorite">Add to favorites</string>
+    <string name="exercises_favorites">Favorites</string>
     <string name="exercises_front">Front</string>
     <string name="exercises_inWorkout">In</string>
     <string name="exercises_instructions">How to perform</string>
@@ -168,6 +170,8 @@
     <string name="exercises_results">%d results</string>
     <string name="exercises_search">Search exercises</string>
     <string name="exercises_secondary">Secondary muscles</string>
+    <string name="exercises_starred">Favorite</string>
+    <string name="exercises_unfavorite">Remove from favorites</string>
     <string name="fuel_addTo">Add to %s</string>
     <string name="fuel_addedToToday">Added to today</string>
     <string name="fuel_aiPhoto">AI photo</string>

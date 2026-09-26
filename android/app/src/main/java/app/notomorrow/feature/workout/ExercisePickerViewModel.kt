@@ -52,6 +52,9 @@ class ExercisePickerViewModel(
 
     private val equipmentInput = MutableStateFlow(ExerciseEquipment.All)
 
+    /** Starred exercises (`nt.favoriteExercises`). */
+    private val favorites = FavoriteExercises.Store.prefs(container.appPrefs)
+
     /** The equipment chip row; combines with the muscle chips and the search. */
     val equipment: StateFlow<ExerciseEquipment> = equipmentInput.asStateFlow()
 
@@ -100,8 +103,9 @@ class ExercisePickerViewModel(
             alreadyIn,
             container.db.profileDao().observeProfile(),
             workoutDao.observeUsedExerciseIds(),
-        ) { selected, already, profile, used ->
-            PickerContext(selected, already, profile?.units ?: WeightUnit.Kg, used.toSet())
+            favorites.ids,
+        ) { selected, already, profile, used, favoriteIds ->
+            PickerContext(selected, already, profile?.units ?: WeightUnit.Kg, used.toSet(), favoriteIds)
         },
     ) { rows, last, query, group, context ->
         val trimmed = query.trim()
@@ -114,6 +118,7 @@ class ExercisePickerViewModel(
             alreadyIn = context.alreadyIn,
             unit = context.unit,
             usedIds = context.used,
+            favoriteIds = context.favorites,
             // `showsCreateRow` — any non-empty query offers "Create «…»".
             showsCreateRow = trimmed.isNotEmpty(),
         )
@@ -148,6 +153,11 @@ class ExercisePickerViewModel(
     fun toggle(id: String) {
         val current = selectedInput.value
         selectedInput.value = if (current.contains(id)) current - id else current + id
+    }
+
+    /** The long-press "Add to favorites" / "Remove from favorites". */
+    fun toggleFavorite(id: String) {
+        viewModelScope.launch { FavoriteExercises.toggle(favorites, id) }
     }
 
     fun setEquipment(equipment: ExerciseEquipment) {
@@ -230,6 +240,7 @@ class ExercisePickerViewModel(
         val alreadyIn: Set<String>,
         val unit: WeightUnit,
         val used: Set<String>,
+        val favorites: Set<String>,
     )
 
     private companion object {
@@ -251,8 +262,14 @@ data class ExercisePickerUiState(
     val showsCreateRow: Boolean = false,
     /** Exercises in any workout (`exercise.usages`) — a custom one outside them can be deleted. */
     val usedIds: Set<String> = emptySet(),
+    /** Starred exercise ids (`FavoriteExercises`). */
+    val favoriteIds: Set<String> = emptySet(),
 ) {
     val selectedCount: Int get() = selectedIds.size
+
+    /** With no search text the favorites among the results sit in their own section on top. */
+    val sections: FavoriteExercises.Sections<ExercisePickerEntry>
+        get() = FavoriteExercises.sections(results, favoriteIds, trimmedQuery.isNotEmpty()) { it.exercise.id }
 
     fun isSelected(id: String): Boolean = selectedIds.contains(id)
 

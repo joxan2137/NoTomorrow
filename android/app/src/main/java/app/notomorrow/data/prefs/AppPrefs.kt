@@ -191,6 +191,28 @@ class AppPrefs(context: Context) {
         store.edit { it[if (unit == WeightUnit.Kg) Keys.plateBarKg else Keys.plateBarLb] = value }
     }
 
+    // MARK: - Favorite exercises
+
+    /**
+     * `nt.favoriteExercises` — starred exercise ids (`FavoriteExercises`); empty when absent. The
+     * delete-account wipe removes it.
+     */
+    val favoriteExercises: Flow<Set<String>> = data.map { it[Keys.favoriteExercises].orEmpty() }
+
+    /** Replaces the favorites with `transform(current)` in one DataStore edit; returns the result. */
+    suspend fun updateFavoriteExercises(transform: (Set<String>) -> Set<String>): Set<String> {
+        var result: Set<String> = emptySet()
+        store.edit { prefs ->
+            result = transform(prefs[Keys.favoriteExercises].orEmpty())
+            if (result.isEmpty()) prefs.remove(Keys.favoriteExercises) else prefs[Keys.favoriteExercises] = result
+        }
+        return result
+    }
+
+    suspend fun removeFavoriteExercises() {
+        store.edit { it.remove(Keys.favoriteExercises) }
+    }
+
     // MARK: - Attendance
 
     /**
@@ -252,6 +274,7 @@ class AppPrefs(context: Context) {
         val exerciseLibraryVersion = intPreferencesKey("nt.exerciseLibrary.version")
         val plateBarKg = doublePreferencesKey("nt.plates.barKg")
         val plateBarLb = doublePreferencesKey("nt.plates.barLb")
+        val favoriteExercises = stringSetPreferencesKey("nt.favoriteExercises")
     }
 
     companion object {

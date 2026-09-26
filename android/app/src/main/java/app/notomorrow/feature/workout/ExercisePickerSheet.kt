@@ -129,6 +129,36 @@ fun ExercisePickerSheet(
             modifier = Modifier.padding(top = 8.dp),
         )
 
+        // One result card; long press: favorite toggle, then Edit / Delete for a custom exercise.
+        val card: @Composable (ExercisePickerEntry) -> Unit = { entry ->
+            ExerciseResultCard(
+                entry = entry,
+                state = state.rowState(entry.exercise.id),
+                onToggle = {
+                    if (onPick == null) {
+                        model.toggle(entry.exercise.id)
+                    } else if (!state.alreadyIn.contains(entry.exercise.id)) {
+                        model.pick(entry.exercise.id) { id ->
+                            onPick(id)
+                            onDismiss()
+                        }
+                    }
+                },
+                onDetails = { detail = entry.exercise },
+                unit = state.unit,
+                isFavorite = entry.exercise.id in state.favoriteIds,
+                onToggleFavorite = { model.toggleFavorite(entry.exercise.id) },
+                onEdit = if (entry.exercise.isCustom) ({ editing = entry.exercise }) else null,
+                onDelete = if (CustomExercises.canDelete(entry.exercise, state.usedIds)) {
+                    { model.deleteCustom(entry.exercise) }
+                } else {
+                    null
+                },
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+        val sections = state.sections
+
         LazyColumn(
             // `.scrollDismissesKeyboard(.immediately)` (`ExercisePickerView.swift:152`) — the
             // keyboard goes the moment the 876-row list starts moving.
@@ -139,33 +169,19 @@ fun ExercisePickerSheet(
                 bottom = 12.dp,
             ),
         ) {
+            if (sections.favorites.isNotEmpty()) {
+                item(key = "favoritesHeader") {
+                    Eyebrow(
+                        text = stringResource(S.exercises_favorites),
+                        modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
+                    )
+                }
+                items(sections.favorites, key = { it.exercise.id }) { card(it) }
+            }
+
             item(key = "header") { PickerResultsHeader(count = state.results.size) }
 
-            items(state.results, key = { it.exercise.id }) { entry ->
-                ExerciseResultCard(
-                    entry = entry,
-                    state = state.rowState(entry.exercise.id),
-                    onToggle = {
-                        if (onPick == null) {
-                            model.toggle(entry.exercise.id)
-                        } else if (!state.alreadyIn.contains(entry.exercise.id)) {
-                            model.pick(entry.exercise.id) { id ->
-                                onPick(id)
-                                onDismiss()
-                            }
-                        }
-                    },
-                    onDetails = { detail = entry.exercise },
-                    unit = state.unit,
-                    onEdit = if (entry.exercise.isCustom) ({ editing = entry.exercise }) else null,
-                    onDelete = if (CustomExercises.canDelete(entry.exercise, state.usedIds)) {
-                        { model.deleteCustom(entry.exercise) }
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
+            items(sections.others, key = { it.exercise.id }) { card(it) }
 
             if (state.showsCreateRow) {
                 item(key = "create") {

@@ -223,6 +223,15 @@ enum class NtIcons(
 
     /** SF `trophy.fill` — custom vector, filled. */
     TrophyFill(R.drawable.ic_trophy_fill),
+
+    /** SF `star` — "Add to favorites" in the exercise picker's long-press menu. */
+    Star(R.drawable.ic_star),
+
+    /** SF `star.fill` — the small star on a favorite exercise's picker row. */
+    StarFill(R.drawable.ic_star_fill),
+
+    /** SF `star.slash` — "Remove from favorites". */
+    StarSlash(R.drawable.ic_star_slash),
 }
 
 /**

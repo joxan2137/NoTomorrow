@@ -170,6 +170,8 @@ object S {
     val exercises_create = R.string.exercises_create
     val exercises_demonstration = R.string.exercises_demonstration
     val exercises_details = R.string.exercises_details
+    val exercises_favorite = R.string.exercises_favorite
+    val exercises_favorites = R.string.exercises_favorites
     val exercises_front = R.string.exercises_front
     val exercises_inWorkout = R.string.exercises_inWorkout
     val exercises_instructions = R.string.exercises_instructions
@@ -183,6 +185,8 @@ object S {
     val exercises_results = R.string.exercises_results
     val exercises_search = R.string.exercises_search
     val exercises_secondary = R.string.exercises_secondary
+    val exercises_starred = R.string.exercises_starred
+    val exercises_unfavorite = R.string.exercises_unfavorite
     val fuel_addTo = R.string.fuel_addTo
     val fuel_addedToToday = R.string.fuel_addedToToday
     val fuel_aiPhoto = R.string.fuel_aiPhoto

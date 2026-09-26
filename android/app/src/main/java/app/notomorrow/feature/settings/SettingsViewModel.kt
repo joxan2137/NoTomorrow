@@ -391,7 +391,11 @@ class SettingsViewModel(
                 session = workoutSession,
                 wipe = { db.wipeUserData() },
                 // Routines were wiped: the next onboarding seeds the starter ones again.
-                afterWipe = { prefs.removeRoutinesSeeded() },
+                afterWipe = {
+                    prefs.removeRoutinesSeeded()
+                    // Starred exercises are the user's too (custom ones among them are gone).
+                    prefs.removeFavoriteExercises()
+                },
             )
             if (!wiped) Log.w(TAG, "Delete account: the local wipe failed and was rolled back")
             // Exported CSVs (and a shared copy of a broken store) are the old account's data too.

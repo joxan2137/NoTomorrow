@@ -69,6 +69,10 @@ fun ExerciseResultCard(
     onDetails: () -> Unit,
     modifier: Modifier = Modifier,
     unit: WeightUnit = WeightUnit.Kg,
+    /** Starred from the long-press menu: a small star after the name. */
+    isFavorite: Boolean = false,
+    /** The long-press "Add to favorites" / "Remove from favorites"; `null` leaves it out. */
+    onToggleFavorite: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
@@ -76,6 +80,13 @@ fun ExerciseResultCard(
     val haptics = LocalHapticFeedback.current
     var menuExpanded by remember { mutableStateOf(false) }
     val menuItems = listOfNotNull(
+        onToggleFavorite?.let {
+            if (isFavorite) {
+                NtMenuItem(title = stringResource(S.exercises_unfavorite), onClick = it, icon = NtIcons.StarSlash)
+            } else {
+                NtMenuItem(title = stringResource(S.exercises_favorite), onClick = it, icon = NtIcons.Star)
+            }
+        },
         onEdit?.let { NtMenuItem(title = stringResource(S.customExercise_edit), onClick = it, icon = NtIcons.Pencil) },
         onDelete?.let {
             NtMenuItem(
@@ -86,7 +97,8 @@ fun ExerciseResultCard(
             )
         },
     )
-    // `.contextMenu` on a custom exercise's card: Edit exercise and, while it is unused, Delete exercise.
+    // `.contextMenu`: the favorite toggle, then on a custom exercise's card Edit exercise and, while it is
+    // unused, Delete exercise.
     val content: @Composable () -> Unit = {
         Box {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -103,6 +115,7 @@ fun ExerciseResultCard(
                         }
                     },
                     unit = unit,
+                    isFavorite = isFavorite,
                     modifier = Modifier.weight(1f).padding(start = 14.dp),
                 )
                 Box(
@@ -142,8 +155,9 @@ fun ExercisePickerRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     unit: WeightUnit = WeightUnit.Kg,
-    /** The long press (a custom exercise's menu); it works on a row already in the workout too. */
+    /** The long press (the row's menu); it works on a row already in the workout too. */
     onLongClick: (() -> Unit)? = null,
+    isFavorite: Boolean = false,
 ) {
     val alreadyIn = state == ExercisePickerRowState.AlreadyIn
     val press = if (onLongClick == null) {
@@ -167,12 +181,26 @@ fun ExercisePickerRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                NtText(
-                    text = entry.exercise.localizedName(),
-                    style = NT.Fonts.headline,
-                    color = if (alreadyIn) NT.Colors.ink2 else NT.Colors.ink,
-                    maxLines = 1,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    NtText(
+                        text = entry.exercise.localizedName(),
+                        modifier = Modifier.weight(1f, fill = false),
+                        style = NT.Fonts.headline,
+                        color = if (alreadyIn) NT.Colors.ink2 else NT.Colors.ink,
+                        maxLines = 1,
+                    )
+                    if (isFavorite) {
+                        NtIcon(
+                            icon = NtIcons.StarFill,
+                            size = sfIconSize(10f),
+                            tint = NT.Colors.ember,
+                            contentDescription = stringResource(S.exercises_starred),
+                        )
+                    }
+                }
                 NtText(
                     text = exerciseSubtitle(entry.exercise),
                     style = NT.Fonts.footnote,

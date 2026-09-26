@@ -155,6 +155,8 @@
     <string name="exercises_create">Utwórz nowe ćwiczenie „%s”</string>
     <string name="exercises_demonstration">Zdjęcia ruchu</string>
     <string name="exercises_details">Szczegóły</string>
+    <string name="exercises_favorite">Dodaj do ulubionych</string>
+    <string name="exercises_favorites">Ulubione</string>
     <string name="exercises_front">Przód</string>
     <string name="exercises_inWorkout">Jest</string>
     <string name="exercises_instructions">Jak wykonać</string>
@@ -168,6 +170,8 @@
     <string name="exercises_results">Wyniki: %d</string>
     <string name="exercises_search">Szukaj ćwiczenia</string>
     <string name="exercises_secondary">Mięśnie pomocnicze</string>
+    <string name="exercises_starred">Ulubione</string>
+    <string name="exercises_unfavorite">Usuń z ulubionych</string>
     <string name="fuel_addTo">Dodaj do: %s</string>
     <string name="fuel_addedToToday">Dodano do dziś</string>
     <string name="fuel_aiPhoto">Zdjęcie AI</string>
