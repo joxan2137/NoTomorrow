@@ -50,6 +50,30 @@ class RoutineStore(
         return routine.id
     }
 
+    /**
+     * "Add N routines" in the program browser (`RoutineStore.add` on iOS): one new routine per
+     * program routine, appended in the program's order through [save], named uniquely ("Full Body A
+     * 2" when that name is taken). [localize] turns a routine's catalog key into its name. A routine
+     * none of whose exercises is in the library is skipped. Returns the new routines' ids.
+     */
+    suspend fun addProgram(
+        program: TrainingProgram,
+        localize: (String) -> String,
+        locale: Locale,
+        now: Long = System.currentTimeMillis(),
+    ): List<String> {
+        val byId = exerciseDao.byIds(program.exerciseIds.toList()).associateBy { it.id }
+        val drafts = ProgramLibrary.drafts(
+            program = program,
+            taken = names(),
+            exercise = { id ->
+                byId[id]?.let { ProgramLibrary.ExerciseInfo(it.localizedName(locale), it.primaryMuscles.firstOrNull()) }
+            },
+            localize = localize,
+        )
+        return drafts.filter { it.items.isNotEmpty() }.mapNotNull { save(it, routineId = null, now = now) }
+    }
+
     suspend fun delete(routineId: String) {
         routineDao.deleteRoutineById(routineId)
     }

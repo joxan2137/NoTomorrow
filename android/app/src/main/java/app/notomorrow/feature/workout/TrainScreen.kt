@@ -90,6 +90,7 @@ fun TrainScreen() {
     // `@State private var routineEdit: RoutineEditRequest?` / `routineToDelete: Routine?`.
     var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
     var routineToDelete by remember { mutableStateOf<String?>(null) }
+    var showsPrograms by rememberSaveable { mutableStateOf(false) }
 
     // `routineMenu(_:)`: the moves only where there is a neighbour in the whole list.
     fun menuFor(routineId: String): RoutineMenuActions {
@@ -144,6 +145,7 @@ fun TrainScreen() {
                     menuFor = ::menuFor,
                     onStart = model::start,
                     onNewRoutine = { routineEdit = RoutineEditRequest.New },
+                    onBrowsePrograms = { showsPrograms = true },
                     onStartEmpty = { model.startEmpty(defaultWorkoutName) },
                 )
             }
@@ -186,6 +188,14 @@ fun TrainScreen() {
         host = "train",
         onDismiss = { routineEdit = null },
     )
+
+    if (showsPrograms) {
+        ProgramBrowserSheet(
+            loadExercises = model::programExercises,
+            onAdd = model::addProgram,
+            onDismiss = { showsPrograms = false },
+        )
+    }
 
     // The dialog lives in the activity's overlay while this tab stays composed on every other tab:
     // leaving Train (or the workout covering it) cancels it, the way a confirmation dialog goes with
@@ -381,7 +391,7 @@ private fun UpNextLine(item: UpNextItem) {
 
 /**
  * `workout.routines` + one [RoutineRow] per routine but the up-next one, then the ghost "New
- * routine" over "Start empty workout". `workout.noRoutines` only when there are no routines at all
+ * routine", "Browse programs" ([ProgramBrowserSheet]) and "Start empty workout". `workout.noRoutines` only when there are no routines at all
  * ([hasRoutines]).
  */
 @Composable
@@ -391,6 +401,7 @@ private fun RoutinesSection(
     menuFor: (String) -> RoutineMenuActions,
     onStart: (String) -> Unit,
     onNewRoutine: () -> Unit,
+    onBrowsePrograms: () -> Unit,
     onStartEmpty: () -> Unit,
 ) {
     Column {
@@ -415,6 +426,7 @@ private fun RoutinesSection(
         Spacer(Modifier.height(16.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             GhostButton(title = stringResource(S.routine_new), icon = NtIcons.Plus, onClick = onNewRoutine)
+            GhostButton(title = stringResource(S.program_browse), icon = NtIcons.Dumbbell, onClick = onBrowsePrograms)
             GhostButton(title = stringResource(S.workout_startEmpty), onClick = onStartEmpty)
         }
     }

@@ -171,6 +171,22 @@ object NtKeys {
         PluralCategory.Many -> S.calendar_weekStreak_many
     }
 
+    /** `"program.routineCount.\(one|few|many)"` — `WorkoutStrings.routines`. */
+    @StringRes
+    fun routineCount(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.program_routineCount_one
+        PluralCategory.Few -> S.program_routineCount_few
+        PluralCategory.Many -> S.program_routineCount_many
+    }
+
+    /** `"program.add.\(one|few|many)"` — `WorkoutStrings.addRoutines`. */
+    @StringRes
+    fun addRoutines(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.program_add_one
+        PluralCategory.Few -> S.program_add_few
+        PluralCategory.Many -> S.program_add_many
+    }
+
     /** `"fuel.ai.provider.\(google|anthropic)"` — `AIScanModel.Upload.providerNameKey`. */
     @StringRes
     fun aiProviderName(anthropic: Boolean): Int =

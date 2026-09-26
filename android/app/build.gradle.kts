@@ -101,12 +101,15 @@ android {
 
     // The shared AI spec (`backend/data/ai`, contract §1): the app reads `estimate-spec.json` from
     // its assets, the JVM tests read the spec and `fixtures/` from the classpath. Never copied.
+    // The built-in training programs (`data/programs/programs.json`) are shared with iOS the same way.
     sourceSets {
         getByName("main") {
             assets.srcDir("../../backend/data/ai")
+            assets.srcDir("../../data/programs")
         }
         getByName("test") {
             resources.srcDir("../../backend/data/ai")
+            resources.srcDir("../../data/programs")
         }
     }
 }

@@ -175,6 +175,20 @@ class TrainViewModel internal constructor(
         viewModelScope.launch { runCatching { routineStore.delete(routineId) } }
     }
 
+    // MARK: - Programs
+
+    /**
+     * "Add N routines" in the program browser. [localize] turns a routine's catalog key into its
+     * name — the screen's resources, so the view model never touches them.
+     */
+    fun addProgram(program: TrainingProgram, localize: (String) -> String) {
+        viewModelScope.launch { runCatching { routineStore.addProgram(program, localize, LocaleProvider.current()) } }
+    }
+
+    /** Library id → exercise, for the program browser's lines. */
+    suspend fun programExercises(ids: Collection<String>): Map<String, ExerciseEntity> =
+        runCatching { stores.exerciseDao.byIds(ids.toList()).associateBy { it.id } }.getOrElse { emptyMap() }
+
     private companion object {
         /**
          * `RoutineRow.subtitle` inputs: only items whose exercise still exists are counted, and the
