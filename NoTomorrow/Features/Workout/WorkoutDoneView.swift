@@ -15,6 +15,7 @@ struct WorkoutDoneView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var pairings: [BroPairing]
     @State private var previousVolume: Double?
+    @State private var shareImage: Image?
 
     private var volume: Double { workout.totalVolumeKg }
     /// `endedAt` is stamped on Finish, before this screen shows.
@@ -58,7 +59,10 @@ struct WorkoutDoneView: View {
             .padding(.bottom, 8)
         }
         .ntScreenBackground()
-        .onAppear(perform: loadPrevious)
+        .onAppear {
+            loadPrevious()
+            renderShareImage()
+        }
     }
 
     // MARK: Header
@@ -69,13 +73,33 @@ struct WorkoutDoneView: View {
                 .eyebrow(NT.Colors.ember)
                 .lineLimit(1)
             Spacer(minLength: 12)
-            ShareLink(item: shareText) {
-                Text("common.share").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
-                    .frame(height: NT.Size.control)
-                    .contentShape(Rectangle())
+            Group {
+                if let shareImage {
+                    ShareLink(item: shareImage, message: Text(verbatim: shareText),
+                              preview: SharePreview(Text(verbatim: workout.name), image: shareImage)) { shareLabel }
+                } else {
+                    ShareLink(item: shareText) { shareLabel }
+                }
             }
         }
         .frame(height: NT.Size.control)
+    }
+
+    private var shareLabel: some View {
+        Text("common.share").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
+            .frame(height: NT.Size.control)
+            .contentShape(Rectangle())
+    }
+
+    /// The workout card picture (`WorkoutShareCard`), rendered once the screen is up.
+    private func renderShareImage() {
+        let card = WorkoutShareCard(
+            title: workout.name,
+            subtitle: "\(Fmt.longDay(workout.startedAt)) · \(Fmt.time(workout.startedAt))",
+            volume: Fmt.volume(volume, unit: unit), time: Fmt.duration(duration),
+            sets: "\(workout.completedSetCount)", prs: records.filter(\.isPR).count,
+            lines: WorkoutShareCard.lines(for: workout, unit: unit))
+        shareImage = WorkoutShareCard.render(card)
     }
 
     private var shareText: String {
