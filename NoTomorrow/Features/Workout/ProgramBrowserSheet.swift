@@ -6,6 +6,8 @@ import SwiftData
 /// `RoutineStore.add` (unique names, appended to the routine list).
 struct ProgramBrowserSheet: View {
     var programs: [TrainingProgram] = ProgramLibrary.all
+    /// Opens on this program's detail instead of the list (screenshot tests).
+    var initialProgramID: String? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
@@ -35,7 +37,10 @@ struct ProgramBrowserSheet: View {
         .ntScreenBackground()
         .presentationBackground(NT.Colors.ground)
         .presentationDragIndicator(.visible)
-        .onAppear(perform: loadNames)
+        .onAppear {
+            loadNames()
+            if selected == nil, let initialProgramID { selected = programs.first { $0.id == initialProgramID } }
+        }
     }
 
     // MARK: Header

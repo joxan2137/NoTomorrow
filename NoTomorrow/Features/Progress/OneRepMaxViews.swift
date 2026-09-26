@@ -47,6 +47,8 @@ struct OneRepMaxCalculatorSheet: View {
     let unit: WeightUnit
     /// Prefilled weight in `unit` (the plate calculator's target), if any.
     var initialWeight: Double?
+    /// Prefilled reps, if any (screenshot tests).
+    var initialReps: Int? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var weightText = ""
@@ -89,6 +91,7 @@ struct OneRepMaxCalculatorSheet: View {
                 weightText = initialWeight.formatted(.number.precision(.fractionLength(0...2)).grouping(.never)
                     .locale(Fmt.locale))
             }
+            if let initialReps, initialReps > 0, repsText.isEmpty { repsText = String(initialReps) }
             focusedField = weightText.isEmpty ? .weight : .reps
         }
     }

@@ -7,6 +7,9 @@ import UIKit
 /// which writes it through `RoutineStore.addShared` with a unique name. The clipboard is read only when Paste is
 /// tapped, so the system paste banner never shows on its own.
 struct RoutineImportSheet: View {
+    /// Text already in the field when the sheet opens (screenshot tests); normally empty until Paste.
+    var initialText: String = ""
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var text = ""
@@ -59,7 +62,10 @@ struct RoutineImportSheet: View {
         .ntScreenBackground()
         .presentationBackground(NT.Colors.ground)
         .presentationDragIndicator(.visible)
-        .onAppear { catalog = RoutineStore.shareCatalog(in: context) }
+        .onAppear {
+            catalog = RoutineStore.shareCatalog(in: context)
+            if text.isEmpty, !initialText.isEmpty { text = initialText }
+        }
     }
 
     // MARK: Header

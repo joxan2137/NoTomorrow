@@ -3,6 +3,10 @@ name: Tests
 # Unit tests for both apps on every pull request that touches them (and by hand).
 #   iOS      - NoTomorrowTests on an iPhone simulator (the release build never runs them).
 #   Android  - :app:testDebugUnitTest (JVM + Robolectric).
+#
+# Run by hand with "snapshots" ticked, the iOS job instead renders the gym screens (NoTomorrowTests/GymSnapshotTests,
+# English, then a Polish subset) and prints each image into the job log as an NTSHOT block; the Android job is
+# skipped. Save the log and run `scripts/extract_shots.py <log> <dir>` to get the images back.
 
 on:
   pull_request:
@@ -17,6 +21,11 @@ on:
       - "backend/data/ai/**"
       - ".github/workflows/tests.yml"
   workflow_dispatch:
+    inputs:
+      snapshots:
+        description: "Render the iOS gym screens into the job log (NTSHOT blocks) instead of running the tests"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,6 +56,7 @@ jobs:
         run: xcodegen generate --spec project.yml
 
       - name: Test
+        if: ${{ !inputs.snapshots }}
         run: |
           set -euo pipefail
           xcodebuild -version
@@ -62,8 +72,65 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
+      # Snapshot mode (workflow_dispatch with snapshots ticked). xcodebuild hands TEST_RUNNER_<NAME> to the test
+      # process as <NAME>; the simulator writes the images straight into build/shots on the runner, and they are
+      # printed from there (the test's own stdout copy is the fallback when that folder stays empty).
+      - name: Render gym screens
+        if: ${{ inputs.snapshots }}
+        run: |
+          set +e -uo pipefail
+          udid="$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("^iPhone"))] | last | .udid')"
+          echo "Simulator: $udid"
+          common=(-project NoTomorrow.xcodeproj -scheme NoTomorrow -destination "id=$udid"
+                  -derivedDataPath build/ci/DerivedData CODE_SIGNING_ALLOWED=NO)
+          xcodebuild build-for-testing "${common[@]}" | xcbeautify --renderer github-actions
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then echo "::error::build-for-testing failed"; exit 1; fi
+
+          status=0
+          shots="$PWD/build/shots"
+          for lang in en pl; do
+            mkdir -p "$shots/$lang"
+            log="build/snapshots-$lang.log"
+            rc=0
+            if [ "$lang" = pl ]; then
+              TEST_RUNNER_NT_SNAPSHOTS=pl TEST_RUNNER_NT_SNAPSHOTS_DIR="$shots/pl" \
+                xcodebuild test-without-building "${common[@]}" -only-testing:NoTomorrowTests/GymSnapshotTests \
+                -parallel-testing-enabled NO -testLanguage pl -testRegion PL > "$log" 2>&1 || rc=1
+            else
+              TEST_RUNNER_NT_SNAPSHOTS=1 TEST_RUNNER_NT_SNAPSHOTS_DIR="$shots/en" \
+                xcodebuild test-without-building "${common[@]}" -only-testing:NoTomorrowTests/GymSnapshotTests \
+                -parallel-testing-enabled NO > "$log" 2>&1 || rc=1
+            fi
+            echo "::group::Snapshot run ($lang)"
+            grep -E "NTSHOT-(SKIP|DONE)|Test Case|error:|\*\* TEST" "$log" || true
+            echo "::endgroup::"
+            files="$(find "$shots/$lang" -type f \( -name '*.png' -o -name '*.jpg' \) | sort)"
+            if [ -n "$files" ]; then
+              while IFS= read -r f; do
+                name="$(basename "$f")"
+                echo "NTSHOT-BEGIN $name"
+                base64 < "$f" | tr -d '\n' | fold -w 76 | sed 's/^/NTSHOT:/'
+                echo
+                echo "NTSHOT-END $name"
+              done <<< "$files"
+            else
+              echo "No image files in $shots/$lang; printing the test's own NTSHOT output."
+              grep -E "NTSHOT" "$log" | grep -vE "NTSHOT-(SKIP|DONE)" || true
+            fi
+            if [ "$rc" -ne 0 ]; then
+              status=1
+              echo "::error::snapshot run ($lang) failed"
+              echo "::group::xcodebuild tail ($lang)"
+              tail -n 120 "$log"
+              echo "::endgroup::"
+            fi
+          done
+          exit "$status"
+
   android:
     name: Android unit tests
+    if: ${{ !inputs.snapshots }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:

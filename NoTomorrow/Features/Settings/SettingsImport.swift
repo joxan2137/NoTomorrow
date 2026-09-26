@@ -4,6 +4,10 @@ import UniformTypeIdentifiers
 
 /// Settings > Import workouts: pick a CSV exported from Strong, Hevy or NoTomorrow, see what it holds, import it.
 struct ImportView: View {
+    /// A file already read when the screen opens (screenshot tests); normally nil until one is picked.
+    var initialPreview: WorkoutImport.Parsed? = nil
+    var initialFileName: String = ""
+
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
 
@@ -67,6 +71,12 @@ struct ImportView: View {
         }
         .fileImporter(isPresented: $showsPicker, allowedContentTypes: [.commaSeparatedText, .plainText, .text]) { result in
             load(result)
+        }
+        .onAppear {
+            if parsed == nil, summary == nil, let initialPreview {
+                parsed = initialPreview
+                fileName = initialFileName
+            }
         }
     }
 
