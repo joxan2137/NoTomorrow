@@ -349,6 +349,40 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    /// The working weight a warm-up ramp builds to: the first normal set's weight in the user's unit (0 = none).
+    func warmupTarget(for exercise: WorkoutExercise) -> Double {
+        let kg = exercise.sortedSets.first { $0.kind == .normal && $0.weightKg > 0 }?.weightKg ?? 0
+        return SetInput.display(kg, unit: unit)
+    }
+
+    func warmupSteps(for exercise: WorkoutExercise) -> [WarmupPlan.Step] {
+        WarmupPlan.steps(working: warmupTarget(for: exercise), unit: unit, equipment: exercise.exercise?.equipment)
+    }
+
+    /// "Add warm-up sets": open warm-up rows are replaced by the ramp to the working weight, placed before the
+    /// first working set. Completed warm-ups stay.
+    func addWarmups(to exercise: WorkoutExercise) {
+        let steps = warmupSteps(for: exercise)
+        guard !steps.isEmpty else { return }
+        for set in exercise.sets where set.kind == .warmup && !set.isCompleted {
+            exercise.sets.removeAll { $0.persistentModelID == set.persistentModelID }
+            context.delete(set)
+        }
+        let kept = exercise.sortedSets
+        let doneWarmups = kept.filter { $0.kind == .warmup }
+        let rest = kept.filter { $0.kind != .warmup }
+        var ordered = doneWarmups
+        for step in steps {
+            let set = SetEntry(order: 0, kind: .warmup, weightKg: SetInput.kg(fromDisplay: step.weight, unit: unit),
+                               reps: step.reps)
+            exercise.sets.append(set)
+            ordered.append(set)
+        }
+        ordered += rest
+        for (i, set) in ordered.enumerated() { set.order = i }
+        try? context.save()
+    }
+
     /// Removes an exercise and its sets. Progress reloads, as after `removeSet`.
     func remove(_ exercise: WorkoutExercise) {
         if expandedExerciseID == exercise.persistentModelID { expandedExerciseID = nil }

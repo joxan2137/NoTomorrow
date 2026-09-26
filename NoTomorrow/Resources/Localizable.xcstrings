@@ -11745,6 +11745,22 @@
           }
         }
       }
+    },
+    "warmup.add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add warm-up sets"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj serie rozgrzewkowe"
+          }
+        }
+      }
     }
   }
 }

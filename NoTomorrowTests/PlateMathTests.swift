@@ -35,4 +35,25 @@ final class PlateMathTests: XCTestCase {
         XCTAssertFalse(light.isExact)
         XCTAssertEqual(light.total, 20)
     }
+
+    // MARK: Warm-up ramp
+
+    func testBarbellRampStartsWithTheBar() {
+        let steps = WarmupPlan.steps(working: 100, unit: .kg, equipment: "barbell")
+        XCTAssertEqual(steps, [.init(weight: 20, reps: 10), .init(weight: 50, reps: 5),
+                               .init(weight: 70, reps: 3), .init(weight: 85, reps: 1)])
+    }
+
+    func testLightBarbellDropsStepsBelowTheBar() {
+        let steps = WarmupPlan.steps(working: 40, unit: .kg, equipment: "barbell")
+        XCTAssertEqual(steps.map(\.weight), [20, 27.5, 32.5])
+        XCTAssertTrue(WarmupPlan.steps(working: 22.5, unit: .kg, equipment: "barbell").isEmpty)
+    }
+
+    func testDumbbellRampAndPounds() {
+        XCTAssertEqual(WarmupPlan.steps(working: 30, unit: .kg, equipment: "dumbbell"),
+                       [.init(weight: 15, reps: 8), .init(weight: 22.5, reps: 4)])
+        XCTAssertEqual(WarmupPlan.steps(working: 225, unit: .lb, equipment: "barbell").map(\.weight), [45, 110, 155, 190])
+        XCTAssertTrue(WarmupPlan.steps(working: 0, unit: .kg, equipment: "body only").isEmpty)
+    }
 }

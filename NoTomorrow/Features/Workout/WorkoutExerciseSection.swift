@@ -82,6 +82,10 @@ struct WorkoutExerciseSection: View {
             .buttonStyle(.plain)
             Spacer(minLength: 8)
             Menu {
+                Button("warmup.add", systemImage: "flame") {
+                    withAnimation(.easeInOut(duration: 0.2)) { model.addWarmups(to: exercise) }
+                }
+                .disabled(model.warmupSteps(for: exercise).isEmpty)
                 Button("workout.removeExercise", role: .destructive) { model.remove(exercise) }
             } label: {
                 Image(systemName: "ellipsis")

@@ -606,6 +606,7 @@
     <string name="unit_kcal">kcal</string>
     <string name="unit_kg">kg</string>
     <string name="unit_lb">lb</string>
+    <string name="warmup_add">Add warm-up sets</string>
     <string name="weekday_fri">F</string>
     <string name="weekday_fri_short">Fri</string>
     <string name="weekday_mon">M</string>

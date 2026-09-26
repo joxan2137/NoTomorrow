@@ -606,6 +606,7 @@
     <string name="unit_kcal">kcal</string>
     <string name="unit_kg">kg</string>
     <string name="unit_lb">lb</string>
+    <string name="warmup_add">Dodaj serie rozgrzewkowe</string>
     <string name="weekday_fri">PT</string>
     <string name="weekday_fri_short">pt.</string>
     <string name="weekday_mon">PN</string>

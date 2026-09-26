@@ -621,6 +621,7 @@ object S {
     val unit_kcal = R.string.unit_kcal
     val unit_kg = R.string.unit_kg
     val unit_lb = R.string.unit_lb
+    val warmup_add = R.string.warmup_add
     val weekday_fri = R.string.weekday_fri
     val weekday_fri_short = R.string.weekday_fri_short
     val weekday_mon = R.string.weekday_mon

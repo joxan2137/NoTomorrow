@@ -62,3 +62,41 @@ enum PlateMath {
                     isBelowBar: targetUnits < barUnits)
     }
 }
+
+/// Warm-up ramp for an exercise's working weight (the exercise menu's "Add warm-up sets"), in the user's unit.
+/// Barbell lifts start with the empty bar; everything else ramps from half the working weight.
+/// Weights round down to what plates can make (2.5 kg / 5 lb); steps that land on the same weight are dropped.
+enum WarmupPlan {
+    struct Step: Equatable {
+        var weight: Double
+        var reps: Int
+    }
+
+    static func increment(for unit: WeightUnit) -> Double { unit == .kg ? 2.5 : 5 }
+
+    static func isBarbell(_ equipment: String?) -> Bool {
+        guard let equipment = equipment?.lowercased() else { return false }
+        return equipment == "barbell" || equipment.contains("curl bar")
+    }
+
+    static func steps(working: Double, unit: WeightUnit, equipment: String?) -> [Step] {
+        let step = increment(for: unit)
+        guard working >= step * 4 else { return [] }
+        let ramp: [(ratio: Double, reps: Int)]
+        var result: [Step] = []
+        if isBarbell(equipment) {
+            let bar = PlateMath.bars(for: unit)[0]
+            guard working > bar + step else { return [] }
+            result.append(Step(weight: bar, reps: 10))
+            ramp = [(0.5, 5), (0.7, 3), (0.85, 1)]
+        } else {
+            ramp = [(0.5, 8), (0.75, 4)]
+        }
+        for (ratio, reps) in ramp {
+            let weight = (working * ratio / step + 1e-9).rounded(.down) * step
+            guard weight < working, weight > (result.last?.weight ?? 0) else { continue }
+            result.append(Step(weight: weight, reps: reps))
+        }
+        return result
+    }
+}
