@@ -46,6 +46,7 @@ import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.di.ntViewModel
+import app.notomorrow.feature.progress.Milestones
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
@@ -57,7 +58,7 @@ import kotlinx.coroutines.launch
 
 /**
  * "DONE." summary after finishing: volume hero, delta vs the last workout with the same name,
- * Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets — 1:1 port of
+ * a "New milestone" chip per milestone it crossed, Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets — 1:1 port of
  * `NoTomorrow/Features/Workout/WorkoutDoneView.swift`.
  *
  * `ActiveWorkoutScreen` swaps this in **in place** (not a new destination), so the screen owns no
@@ -249,6 +250,28 @@ private fun WorkoutDoneHero(state: WorkoutDoneUiState) {
         if (previous != null && previous != state.volumeKg) {
             DeltaChip(delta = state.volumeKg - previous, workoutName = state.name, unit = state.unit)
         }
+        state.newMilestones.forEach { MilestoneChip(it, state.unit) }
+    }
+}
+
+/** "New milestone: 50 workouts" under the volume. */
+@Composable
+private fun MilestoneChip(milestone: Milestones.Milestone, unit: WeightUnit) {
+    val strings = rememberNtStrings()
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .background(NT.Colors.emberTint, CircleShape)
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NtIcon(icon = NtIcons.Trophy, size = sfIconSize(12f), tint = NT.Colors.ember)
+        TabularText(
+            text = stringResource(S.milestone_new_s, Milestones.title(milestone, unit, strings)),
+            style = NT.Fonts.footnoteBold,
+            color = NT.Colors.ember,
+        )
     }
 }
 

@@ -12,7 +12,7 @@ import app.notomorrow.model.AppTab
  *    can be addressed and logged, but `OnboardingFlow` renders them with one `AnimatedContent`
  *    over `model.step` (the order is mutable — `startWithPair()` puts [OnboardingPair] first).
  *  - [Main] is the tab shell; its own `NavHost` owns the five tab roots plus
- *    [ExerciseProgress] and [ProgressRecords].
+ *    [ExerciseProgress], [ProgressRecords] and [ProgressMilestones].
  *  - [Settings] is modal, hosted by `SettingsSheet`'s own `NavHost`.
  *
  * [FuelCamera] is hosted by the **root** host, not by a tab, mirroring iOS mounting the
@@ -49,6 +49,9 @@ sealed class NtRoute(val route: String) {
 
     /** `progress/records` — every lift's all-time records, pushed from Progress. */
     data object ProgressRecords : NtRoute("progress/records")
+
+    /** `progress/milestones` — every lifetime milestone, pushed from Progress. */
+    data object ProgressMilestones : NtRoute("progress/milestones")
 
     // MARK: - Full-screen destinations (root-hosted)
 

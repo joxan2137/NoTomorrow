@@ -72,6 +72,7 @@ class ProgressHomeViewModel(
     ) { profile, sets, exercises, weights ->
         Store(
             unit = profile?.units ?: WeightUnit.Kg,
+            profileBodyWeightKg = profile?.bodyWeightKg,
             sets = sets,
             exercises = exercises,
             body = weights.map { BodyEntry(Days.date(it.day, zone), it.kg, it.source) },
@@ -191,6 +192,10 @@ class ProgressHomeViewModel(
             body = ProgressDerivations.buildBody(data.body, today),
             calendarDays = TrainingCalendar.days(data.sets, zone),
             weeklyStats = WeeklyStats.weeks(WeeklyStats.sessions(data.sets), today, firstDayOfWeek(), zone),
+            milestones = Milestones.evaluate(
+                Milestones.sessions(data.sets, zone),
+                Milestones.bodyWeight(data.body.lastOrNull()?.kg, data.profileBodyWeightKg),
+            ),
             today = today,
             loaded = true,
         )
@@ -223,6 +228,7 @@ class ProgressHomeViewModel(
 
     private data class Store(
         val unit: WeightUnit,
+        val profileBodyWeightKg: Double?,
         val sets: List<CompletedSetRow>,
         val exercises: List<ExerciseEntity>,
         val body: List<BodyEntry>,

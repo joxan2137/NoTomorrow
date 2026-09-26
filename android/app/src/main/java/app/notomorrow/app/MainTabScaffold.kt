@@ -58,6 +58,7 @@ import app.notomorrow.feature.bro.BroScreen
 import app.notomorrow.feature.dashboard.DashboardScreen
 import app.notomorrow.feature.fuel.FuelHomeScreen
 import app.notomorrow.feature.progress.ExerciseProgressScreen
+import app.notomorrow.feature.progress.MilestonesScreen
 import app.notomorrow.feature.progress.ProgressHomeScreen
 import app.notomorrow.feature.progress.RecordsScreen
 import app.notomorrow.feature.settings.SettingsSheetHost
@@ -89,7 +90,7 @@ import app.notomorrow.util.NtStrings
  *
  * The roots are warmed one per frame after the shell's first frame, so start-up shows the selected
  * tab immediately and the rest are ready within a few frames. Progress is the one tab with a
- * stack (`progress` → `progress/records` / `progress/exercise/{id}`), so it carries its own small `NavHost`; back
+ * stack (`progress` → `progress/records` / `progress/milestones` / `progress/exercise/{id}`), so it carries its own small `NavHost`; back
  * presses reach it only while it is the visible tab ([TabPage]).
  *
  * The bar itself is [NtTabBar]: content scrolls **under** it, so screens add [LocalTabBarHeight] as
@@ -435,7 +436,11 @@ private fun ProgressTab(navController: NavHostController) {
             ProgressHomeScreen(
                 onExercise = { id -> navController.navigate(NtRoute.ExerciseProgress.of(id)) },
                 onRecords = { navController.navigate(NtRoute.ProgressRecords.route) },
+                onMilestones = { navController.navigate(NtRoute.ProgressMilestones.route) },
             )
+        }
+        composable(NtRoute.ProgressMilestones.route) {
+            MilestonesScreen(onBack = { navController.popBackStack() })
         }
         composable(NtRoute.ProgressRecords.route) {
             RecordsScreen(

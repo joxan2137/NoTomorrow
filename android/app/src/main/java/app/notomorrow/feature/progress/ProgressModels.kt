@@ -246,6 +246,8 @@ data class ProgressHomeUiState(
     val calendarDays: Map<LocalDate, TrainingCalendar.Day> = emptyMap(),
     /** The weekly stats card's last eight weeks, oldest first ([WeeklyStats.weeks]). */
     val weeklyStats: List<WeeklyStats.Week> = emptyList(),
+    /** Every lifetime milestone ([Milestones.evaluate]), for the milestones card. */
+    val milestones: List<Milestones.Milestone> = emptyList(),
     /** The day the calendar (and every relative phrase) is measured against; `null` before the first load. */
     val today: LocalDate? = null,
     val tab: ProgressTab = ProgressTab.Lifts,

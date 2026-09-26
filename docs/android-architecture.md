@@ -296,6 +296,7 @@ main graph  "main"                  MainTabScaffold (NtTabBar + a NavHost per ta
   "progress"                        ProgressHomeScreen
   "progress/exercise/{exerciseId}"  ExerciseProgressScreen
   "progress/records"                RecordsScreen
+  "progress/milestones"             MilestonesScreen
   "bro"                             BroScreen
 
 full-screen destinations, hosted by the ROOT NavHost (not a tab), so they open from any tab

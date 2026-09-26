@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.di.AppContainer
+import app.notomorrow.feature.progress.Milestones
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.RecordService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
+import java.time.ZoneId
 
 /**
  * Everything the done screen renders. `previousVolumeKg` is `loadPrevious()`: the last **finished**
@@ -37,6 +39,8 @@ data class WorkoutDoneUiState(
     val unit: WeightUnit = WeightUnit.Kg,
     /** The share card's exercises (`WorkoutShareCard.lines(for:unit:)`). */
     val shareLines: List<WorkoutShareLine> = emptyList(),
+    /** Milestones this workout crossed ([Milestones.crossed]) — a "New milestone" chip each. */
+    val newMilestones: List<Milestones.Milestone> = emptyList(),
     val loaded: Boolean = false,
 )
 
@@ -71,14 +75,15 @@ class WorkoutDoneViewModel(
         workoutDao.observeWorkoutWithExercises(workoutId),
         container.db.broPairingDao().observePairing(),
         container.db.profileDao().observeProfile(),
-    ) { workout, pairing, profile -> Triple(workout, pairing?.partnerName, profile?.units ?: WeightUnit.Kg) }
-        .mapLatest { (workout, partner, unit) -> build(workout, partner, unit) }
+    ) { workout, pairing, profile -> Input(workout, pairing?.partnerName, profile?.units ?: WeightUnit.Kg, profile?.bodyWeightKg) }
+        .mapLatest { build(it.workout, it.partnerName, it.unit, it.profileBodyWeightKg) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDoneUiState())
 
     private suspend fun build(
         workout: WorkoutWithExercises?,
         partnerName: String?,
         unit: WeightUnit,
+        profileBodyWeightKg: Double?,
     ): WorkoutDoneUiState {
         if (workout == null) return WorkoutDoneUiState(partnerName = partnerName, unit = unit)
         val row = workout.workout
@@ -117,7 +122,22 @@ class WorkoutDoneViewModel(
             partnerName = partnerName,
             unit = unit,
             shareLines = workoutShareLines(workout, unit),
+            newMilestones = newMilestones(row.id, profileBodyWeightKg),
             loaded = true,
         )
     }
+
+    /** `Milestones.crossed` over every finished workout, this one included (Finish stamped `endedAt`). */
+    private suspend fun newMilestones(workoutId: String, profileBodyWeightKg: Double?): List<Milestones.Milestone> {
+        val bodyWeight = Milestones.bodyWeight(container.db.bodyWeightDao().latest()?.kg, profileBodyWeightKg)
+        val sessions = Milestones.sessions(workoutDao.completedSets(), ZoneId.systemDefault())
+        return Milestones.crossed(workoutId, Milestones.evaluate(sessions, bodyWeight))
+    }
+
+    private data class Input(
+        val workout: WorkoutWithExercises?,
+        val partnerName: String?,
+        val unit: WeightUnit,
+        val profileBodyWeightKg: Double?,
+    )
 }
