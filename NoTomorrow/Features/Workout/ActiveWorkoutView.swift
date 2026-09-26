@@ -146,7 +146,7 @@ struct ActiveWorkoutView: View {
             .accessibilityLabel(Text("workout.minimize"))
             .padding(.leading, -(NT.Size.control - 36) / 2)
             VStack(alignment: .leading, spacing: 2) {
-                Text(workout.name).font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink).lineLimit(1)
+                Text(WorkoutStrings.displayName(workout.name)).font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink).lineLimit(1)
                 HStack(spacing: 6) {
                     Circle().fill(NT.Colors.ember).frame(width: 6, height: 6)
                     TimelineView(.periodic(from: .now, by: 1)) { ctx in

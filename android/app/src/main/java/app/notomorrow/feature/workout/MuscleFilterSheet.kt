@@ -52,11 +52,11 @@ internal fun MuscleFilterSheet(
             Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
                 .padding(horizontal = NT.Spacing.screenH, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             BodyMapCanvas(
                 fill = { if (it == current) NT.Colors.ember else NT.Colors.surface3 },
-                modifier = Modifier.heightIn(max = 360.dp),
+                modifier = Modifier.heightIn(max = 290.dp),
                 bodyColor = NT.Colors.surface2,
                 gap = NT.Colors.ground,
                 onTap = { muscle -> if (muscle != null) current = muscle },
@@ -72,10 +72,10 @@ internal fun MuscleFilterSheet(
                 muscles.forEach { muscle ->
                     val on = muscle == current
                     Box(
-                        Modifier.height(32.dp).clip(CircleShape)
+                        Modifier.height(30.dp).clip(CircleShape)
                             .background(if (on) NT.Colors.ink else NT.Colors.surface)
                             .ntClickable { current = muscle }
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         NtText(

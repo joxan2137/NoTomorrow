@@ -44,7 +44,7 @@ struct WorkoutDetailSheet: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 16) {
-                Text(workout.name)
+                Text(WorkoutStrings.displayName(workout.name))
                     .font(NT.Fonts.title2)
                     .foregroundStyle(NT.Colors.ink)
                     .lineLimit(1)

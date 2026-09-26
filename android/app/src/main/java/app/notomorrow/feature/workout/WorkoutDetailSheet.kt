@@ -231,7 +231,7 @@ private fun WorkoutDetailHeader(workout: WorkoutWithExercises, onEdit: () -> Uni
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             NtText(
-                text = workout.workout.name,
+                text = workoutDisplayName(workout.workout.name),
                 modifier = Modifier.weight(1f).alignByBaseline(),
                 style = NT.Fonts.title2,
                 color = NT.Colors.ink,

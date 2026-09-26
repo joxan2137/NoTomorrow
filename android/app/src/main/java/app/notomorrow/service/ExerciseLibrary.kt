@@ -279,6 +279,12 @@ class ExerciseLibrary(
             }
         }
 
+        /** True when an exercise is already named [query] in English or Polish (folded), so "Create «…»" would duplicate it. */
+        fun hasName(exercises: List<ExerciseEntity>, query: String): Boolean {
+            val name = fold(query.trim())
+            return name.isNotEmpty() && exercises.any { fold(it.name) == name || fold(it.namePL ?: "") == name }
+        }
+
         private val DIACRITICS = "\\p{Mn}+".toRegex()
     }
 }

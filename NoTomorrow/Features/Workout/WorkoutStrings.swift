@@ -83,6 +83,15 @@ enum WorkoutStrings {
 
     /// Case- and diacritic-insensitive search key. Foundation strips the marks from ą ę ó ś ż ź ć ń but keeps ł
     /// (it has no decomposition), so ł is flattened by hand: "lawka" finds "Ławka". Locale-independent, like Android.
+    /// An empty workout stores `workout.defaultName` in the language of the moment it started, so one started before
+    /// switching language would keep showing "Workout" in Polish. Every language's default name shows as the current
+    /// one; any other name is the user's and stays as typed. Android: `WorkoutNames`.
+    static let defaultNames: Set<String> = ["Workout", "Trening"]
+
+    static func displayName(_ name: String) -> String {
+        defaultNames.contains(name) ? String(localized: "workout.defaultName") : name
+    }
+
     static func fold(_ text: String) -> String {
         text.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
             .replacingOccurrences(of: "ł", with: "l")

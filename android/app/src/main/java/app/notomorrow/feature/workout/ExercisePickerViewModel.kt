@@ -93,8 +93,8 @@ class ExercisePickerViewModel(
         lastSets,
         queryInput,
         filterInput,
-        combine(selectedInput, alreadyIn, container.db.profileDao().observeProfile()) { selected, already, profile ->
-            Triple(selected, already, profile?.units ?: WeightUnit.Kg)
+        combine(selectedInput, alreadyIn, container.db.profileDao().observeProfile(), library) { selected, already, profile, all ->
+            PickerContext(selected, already, profile?.units ?: WeightUnit.Kg, all)
         },
     ) { rows, last, query, filter, context ->
         val trimmed = query.trim()
@@ -104,11 +104,11 @@ class ExercisePickerViewModel(
             group = filter.first,
             muscle = filter.second,
             results = rows.map { ExercisePickerEntry(it, last[it.id]) },
-            selectedIds = context.first,
-            alreadyIn = context.second,
-            unit = context.third,
-            // `showsCreateRow` — any non-empty query offers "Create «…»".
-            showsCreateRow = trimmed.isNotEmpty(),
+            selectedIds = context.selected,
+            alreadyIn = context.alreadyIn,
+            unit = context.unit,
+            // `showsCreateRow` — a non-empty query offers "Create «…»" unless the library already has that name.
+            showsCreateRow = trimmed.isNotEmpty() && !ExerciseLibrary.hasName(context.library, trimmed),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExercisePickerUiState())
 
@@ -130,6 +130,8 @@ class ExercisePickerViewModel(
     }
 
     fun setQuery(value: String) {
+        // Starting a search drops the body-map muscle, so a name typed in full isn't hidden by it.
+        if (queryInput.value.isBlank() && value.isNotBlank()) muscleInput.value = null
         queryInput.value = value
     }
 
@@ -192,6 +194,13 @@ class ExercisePickerViewModel(
             onCommitted(ids)
         }
     }
+
+    private data class PickerContext(
+        val selected: List<String>,
+        val alreadyIn: Set<String>,
+        val unit: WeightUnit,
+        val library: List<ExerciseEntity>,
+    )
 
     private companion object {
         /** `try? await Task.sleep(for: .milliseconds(200))`. */

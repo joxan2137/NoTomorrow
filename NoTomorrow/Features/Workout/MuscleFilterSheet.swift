@@ -14,7 +14,7 @@ struct MuscleFilterSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 14) {
                     BodyMapView(fill: { $0 == current ? NT.Colors.ember : NT.Colors.surface3 },
                                 bodyColor: NT.Colors.surface2,
                                 gap: NT.Colors.ground,
@@ -22,7 +22,7 @@ struct MuscleFilterSheet: View {
                                     guard let muscle else { return }
                                     withAnimation(.easeOut(duration: 0.15)) { current = muscle }
                                 })
-                        .frame(maxHeight: 360)
+                        .frame(maxHeight: 290)
                     Group {
                         if let current {
                             Text(verbatim: WorkoutStrings.muscle(current) + " · " + WorkoutStrings.exercises(count(current)))
@@ -40,8 +40,8 @@ struct MuscleFilterSheet: View {
                                 Text(WorkoutStrings.muscle(muscle))
                                     .font(current == muscle ? NT.Fonts.subheadlineBold : NT.Fonts.subheadline)
                                     .foregroundStyle(current == muscle ? NT.Colors.onPrimary : NT.Colors.ink)
-                                    .padding(.horizontal, 12)
-                                    .frame(height: 32)
+                                    .padding(.horizontal, 10)
+                                    .frame(height: 30)
                                     .background(current == muscle ? NT.Colors.ink : NT.Colors.surface, in: Capsule())
                             }
                             .buttonStyle(PressScale())

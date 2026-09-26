@@ -15,7 +15,13 @@ final class ExercisePickerViewModel {
     }
 
     var query = "" {
-        didSet { scheduleFilter() }
+        didSet {
+            // Starting a search drops the body-map muscle, so a name typed in full isn't hidden by it.
+            if oldValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !trimmedQuery.isEmpty && muscle != nil {
+                muscle = nil
+            }
+            scheduleFilter()
+        }
     }
     var group: ExerciseLibrary.MuscleGroup = .all {
         didSet {
@@ -37,7 +43,12 @@ final class ExercisePickerViewModel {
     private var filterTask: Task<Void, Never>?
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
-    var showsCreateRow: Bool { !trimmedQuery.isEmpty }
+    /// Offers "Create «…»" unless the library already has an exercise by that name, filtered out or not.
+    var showsCreateRow: Bool {
+        let name = WorkoutStrings.fold(trimmedQuery)
+        guard !name.isEmpty else { return false }
+        return !all.contains { WorkoutStrings.fold($0.exercise.name) == name || WorkoutStrings.fold($0.exercise.namePL ?? "") == name }
+    }
 
     // MARK: Loading
 
