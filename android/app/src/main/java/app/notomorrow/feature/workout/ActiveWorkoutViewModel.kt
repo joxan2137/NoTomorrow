@@ -97,6 +97,8 @@ class ActiveWorkoutViewModel(
     /** Rows of the last finished session with the exercise, keyed by exercise id. */
     private val previousRows = mutableMapOf<String, PreviousRows>()
     private val previousLast = mutableMapOf<String, SetValue?>()
+    /** Last session's note per exercise id (`previousNote(for:)`). */
+    private val previousNotes = mutableMapOf<String, String?>()
 
     /** `unit` — cells, Previous, "Last:", the hint, the rest card and its notification show it. */
     private var unit = WeightUnit.Kg
@@ -140,6 +142,7 @@ class ActiveWorkoutViewModel(
     fun reloadPrevious() {
         previousRows.clear()
         previousLast.clear()
+        previousNotes.clear()
         unitLoaded = false
         viewModelScope.launch {
             val current = graph ?: return@launch
@@ -151,7 +154,8 @@ class ActiveWorkoutViewModel(
     /**
      * One query per exercise fills both caches: the rows of the latest *finished* other session
      * with a completed working set ([foldLatestEarlierWorkoutRows]) and the most recent completed
-     * working set (`RecordService.lastSet(for:excluding:)`).
+     * working set (`RecordService.lastSet(for:excluding:)`); a second one reads last session's note
+     * ([latestPreviousNote]).
      */
     private suspend fun ensurePrevious(graph: WorkoutWithExercises) {
         if (!unitLoaded) {
@@ -167,6 +171,7 @@ class ActiveWorkoutViewModel(
             previousRows[exerciseId] = PreviousRows.of(foldLatestEarlierWorkoutRows(rows, myId))
             previousLast[exerciseId] = RecordService.lastSet(rows, excludingWorkoutId = myId)
                 ?.let { SetValue(it.weightKg, it.reps) }
+            previousNotes[exerciseId] = latestPreviousNote(workoutDao.exerciseNotes(exerciseId), myId)
         }
     }
 
@@ -199,6 +204,7 @@ class ActiveWorkoutViewModel(
                     weightSuggestion(previousRows[id]?.normal.orEmpty(), targetReps[id], unit)
                 },
                 unit = unit,
+                previousNote = exerciseId?.let { previousNotes[it] },
             )
         }
         _state.value = ActiveWorkoutUiState(
@@ -287,6 +293,24 @@ class ActiveWorkoutViewModel(
                 if (entity.kind == kind) return@launch
                 workoutDao.updateSet(entity.copy(kind = kind))
             }
+        }
+    }
+
+    /** `setRPE(_:for:)` — the RPE submenu of the set's kind menu; `null` clears it. */
+    fun setRpe(setId: Long, rpe: Double?) {
+        viewModelScope.launch {
+            writes.withLock {
+                val entity = workoutDao.set(setId) ?: return@launch
+                if (entity.rpe == rpe) return@launch
+                workoutDao.updateSet(entity.copy(rpe = rpe))
+            }
+        }
+    }
+
+    /** The exercise's note for this workout, saved as it is typed (`ExerciseNoteField`). */
+    fun setNote(exerciseUiId: Long, notes: String) {
+        viewModelScope.launch {
+            writes.withLock { workoutDao.updateWorkoutExerciseNotes(exerciseUiId, notes) }
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,7 +61,8 @@ import app.notomorrow.util.S
  * header shows the muscle only and its menu offers [onMoveUp] / [onMoveDown] (hidden when null,
  * at the ends) before Remove; rows are never dimmed or locked and the Previous column is blank.
  * Weights are shown in [unit]. [onDeleteSet] adds "Delete set" to every row's kind menu.
- * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu.
+ * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu, [onNote]
+ * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -84,6 +87,8 @@ fun WorkoutExerciseSection(
     onRowAppear: (Long) -> Unit = {},
     onUseSuggestion: () -> Unit = {},
     onAddWarmups: (() -> Unit)? = null,
+    onNote: ((String) -> Unit)? = null,
+    onRpe: ((Long, Double?) -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -107,6 +112,8 @@ fun WorkoutExerciseSection(
             onRowAppear = onRowAppear,
             onUseSuggestion = onUseSuggestion,
             onAddWarmups = onAddWarmups,
+            onNote = onNote,
+            onRpe = onRpe,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -181,7 +188,11 @@ private fun Expanded(
     onRowAppear: (Long) -> Unit,
     onUseSuggestion: () -> Unit,
     onAddWarmups: (() -> Unit)?,
+    onNote: ((String) -> Unit)?,
+    onRpe: ((Long, Double?) -> Unit)?,
 ) {
+    // `@State private var showsNote` — "Add note" opens the field before anything is typed.
+    var showsNote by remember(exercise.id) { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -196,7 +207,25 @@ private fun Expanded(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onAddWarmups = onAddWarmups,
+            onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
+                { showsNote = true }
+            } else {
+                null
+            },
         )
+        if (onNote != null) {
+            AnimatedVisibility(
+                visible = showsNote || exercise.notes.isNotEmpty(),
+                enter = fadeIn(SUGGESTION_FADE),
+                exit = fadeOut(SUGGESTION_FADE),
+            ) {
+                // Typing keeps the field up, so clearing a note does not pull it away mid-edit.
+                ExerciseNoteField(exercise = exercise, onNote = { text ->
+                    showsNote = true
+                    onNote(text)
+                })
+            }
+        }
         if (!editing) {
             // `.transition(.opacity)`: Use fades the line out; latch the last suggestion so the
             // exit has something to fade, as SwiftUI keeps the removed view alive.
@@ -225,6 +254,7 @@ private fun Expanded(
                     onReps = { value -> onReps(row.id, value) },
                     onToggle = { onToggleSet(row) },
                     onDelete = onDeleteSet?.let { delete -> { delete(row.id) } },
+                    onRpe = onRpe?.let { rpe -> { value -> rpe(row.id, value) } },
                     onAppear = { onRowAppear(row.id) },
                 )
                 val visible = hintSetId == row.id && hintBest != null
@@ -262,6 +292,7 @@ private fun Header(
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
     onAddWarmups: (() -> Unit)?,
+    onAddNote: (() -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val muscle = exercise.primaryMuscle?.let { workoutMuscleName(it) }
@@ -283,6 +314,7 @@ private fun Header(
                 ),
             )
         }
+        onAddNote?.let { add(NtMenuItem(title = stringResource(S.note_add), onClick = it, icon = NtIcons.Pencil)) }
         add(
             NtMenuItem(
                 title = stringResource(S.workout_removeExercise),
@@ -327,6 +359,47 @@ private fun Header(
                 items = items,
             )
         }
+    }
+}
+
+/**
+ * `ExerciseNoteField` — the exercise's note for this workout, saved as it is typed. Its placeholder
+ * is the note from last time, so a seat height or grip written once shows up again next session.
+ * The text is the field's own from the first frame (`.onAppear { text = exercise.notes }`).
+ */
+@Composable
+private fun ExerciseNoteField(exercise: WorkoutExerciseUi, onNote: (String) -> Unit) {
+    var text by remember(exercise.id) { mutableStateOf(exercise.notes) }
+    val placeholder = exercise.previousNote?.let { stringResource(S.note_last_s, it) }
+        ?: stringResource(S.note_placeholder)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NT.Colors.surface, NtShapes.cell)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        NtIcon(NtIcons.Pencil, modifier = Modifier.padding(top = 2.dp), size = sfIconSize(13f), tint = NT.Colors.ink3)
+        BasicTextField(
+            value = text,
+            onValueChange = { new ->
+                text = new
+                if (new != exercise.notes) onNote(new)
+            },
+            modifier = Modifier.weight(1f),
+            textStyle = NT.Fonts.subheadline.copy(color = NT.Colors.ink),
+            cursorBrush = SolidColor(NT.Colors.ink),
+            maxLines = 4,
+            decorationBox = { inner ->
+                Box {
+                    if (text.isEmpty()) {
+                        NtText(placeholder, style = NT.Fonts.subheadline, color = NT.Colors.ink3, maxLines = 4)
+                    }
+                    inner()
+                }
+            },
+        )
     }
 }
 
@@ -503,4 +576,8 @@ data class WorkoutExerciseUi(
     val suggestion: WeightSuggestion? = null,
     /** The ramp "Add warm-up sets" would add (`warmupSteps(for:)`); empty disables it. Never in the editor. */
     val warmupSteps: List<WarmupPlan.Step> = emptyList(),
+    /** This workout's note on the exercise. */
+    val notes: String = "",
+    /** Last session's note (`previousNote(for:)`), the note field's placeholder. */
+    val previousNote: String? = null,
 )

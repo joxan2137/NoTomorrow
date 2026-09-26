@@ -214,6 +214,8 @@ fun ActiveWorkoutScreen(
                     onRowAppear = model::prefillFromPrevious,
                     onUseSuggestion = model::useSuggestion,
                     onAddWarmups = model::addWarmups,
+                    onNote = model::setNote,
+                    onRpe = model::setRpe,
                 )
             }
         }

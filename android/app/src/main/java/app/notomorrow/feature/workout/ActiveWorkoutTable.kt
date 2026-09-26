@@ -79,6 +79,8 @@ internal fun WorkoutTable(
     onRowAppear: (Long) -> Unit,
     onUseSuggestion: (Long) -> Unit,
     onAddWarmups: (Long) -> Unit,
+    onNote: (Long, String) -> Unit,
+    onRpe: (Long, Double?) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
@@ -128,6 +130,8 @@ internal fun WorkoutTable(
                     onRowAppear = onRowAppear,
                     onUseSuggestion = { onUseSuggestion(exercise.id) },
                     onAddWarmups = { onAddWarmups(exercise.id) },
+                    onNote = { text -> onNote(exercise.id, text) },
+                    onRpe = onRpe,
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }

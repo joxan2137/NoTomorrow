@@ -383,7 +383,7 @@ private fun WorkoutDetailTiles(workout: WorkoutWithExercises, unit: WeightUnit) 
     }
 }
 
-/** Exercise name + one line per completed set with PR / set-record badges. */
+/** Exercise name, its note, then one line per completed set with its RPE and PR / set-record badges. */
 @Composable
 private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUnit) {
     val ordered = item.sortedSets
@@ -399,6 +399,9 @@ private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUni
             color = NT.Colors.ink,
             maxLines = 1,
         )
+        if (item.workoutExercise.notes.isNotEmpty()) {
+            NtText(text = item.workoutExercise.notes, style = NT.Fonts.footnote, color = NT.Colors.ink2)
+        }
         if (completed.isEmpty()) {
             NtText(
                 text = stringResource(S.workout_noSetsLogged),
@@ -411,7 +414,7 @@ private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUni
     }
 }
 
-/** 32 pt line: the numbered chip, "85 × 7", and the record badge. */
+/** 32 pt line: the numbered chip, "85 × 7", "@8" when rated, and the record badge. */
 @Composable
 private fun WorkoutDetailSetLine(set: SetEntryEntity, label: String, unit: WeightUnit) {
     Row(
@@ -434,6 +437,9 @@ private fun WorkoutDetailSetLine(set: SetEntryEntity, label: String, unit: Weigh
             style = NT.Fonts.subheadline,
             color = NT.Colors.ink,
         )
+        set.rpe?.let { rpe ->
+            TabularText(text = "@" + Rpe.label(rpe), style = NT.Fonts.caption, color = NT.Colors.ember)
+        }
         Spacer(Modifier.weight(1f))
         when {
             set.isPR -> Badge(text = stringResource(S.workout_pr))

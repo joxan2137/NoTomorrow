@@ -101,3 +101,14 @@ data class CompletedSetRow(
             else -> weightKg * (1 + reps / 30.0)
         }
 }
+
+/**
+ * One exercise entry's note with its workout, for "last time's note" (`previousNote(for:)`):
+ * every entry of an exercise with a non-empty note, finished or not — the fold decides.
+ */
+data class ExerciseNoteRow(
+    val notes: String,
+    val workoutId: String,
+    val workoutStartedAt: Long,
+    val workoutEndedAt: Long?,
+)

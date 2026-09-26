@@ -10,6 +10,7 @@ import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.ExerciseNoteRow
 import app.notomorrow.data.relation.WorkoutWithExercises
 import kotlinx.coroutines.flow.Flow
 
@@ -183,6 +184,19 @@ interface WorkoutDao {
 
     @Query(COMPLETED_SETS_SELECT + " AND we.exerciseId = :exerciseId")
     fun observeCompletedSetsForExercise(exerciseId: String): Flow<List<CompletedSetRow>>
+
+    /** Every entry of [exerciseId] with a note, and its workout (`ActiveWorkoutModel.previousNote(for:)`). */
+    @Query(
+        """
+        SELECT we.notes AS notes, w.id AS workoutId, w.startedAt AS workoutStartedAt, w.endedAt AS workoutEndedAt
+        FROM workout_exercise we JOIN workout w ON w.id = we.workoutId
+        WHERE we.exerciseId = :exerciseId AND we.notes != ''
+        """,
+    )
+    suspend fun exerciseNotes(exerciseId: String): List<ExerciseNoteRow>
+
+    @Query("UPDATE workout_exercise SET notes = :notes WHERE id = :id")
+    suspend fun updateWorkoutExerciseNotes(id: Long, notes: String)
 
     // MARK: - Writes
 

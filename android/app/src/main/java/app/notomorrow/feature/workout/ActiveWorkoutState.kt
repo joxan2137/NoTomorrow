@@ -2,6 +2,7 @@ package app.notomorrow.feature.workout
 
 import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.ExerciseNoteRow
 import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.model.SetKind
@@ -195,6 +196,18 @@ internal fun routineTargetReps(routines: List<RoutineWithItems>, workoutName: St
     return targets
 }
 
+// MARK: - Notes
+
+/**
+ * `previousNote(for:)` — the note left on this exercise the last time it was done (Hevy-style
+ * "sticky" notes: seat height, grip…), shown as the note field's placeholder: the newest other
+ * **finished** workout's entry whose note is not blank.
+ */
+internal fun latestPreviousNote(rows: List<ExerciseNoteRow>, excludingWorkoutId: String): String? =
+    rows.filter { it.workoutId != excludingWorkoutId && it.workoutEndedAt != null && it.notes.isNotBlank() }
+        .maxByOrNull { it.workoutStartedAt }
+        ?.notes
+
 // MARK: - Warm-ups
 
 /**
@@ -259,6 +272,7 @@ internal fun WorkoutExerciseWithSets.toUi(
     previous: (SetSlot) -> SetValue?,
     suggestion: WeightSuggestion? = null,
     unit: WeightUnit = WeightUnit.Kg,
+    previousNote: String? = null,
 ): WorkoutExerciseUi {
     val ordered = sortedSets
     val currentSetId = ordered.firstOrNull { !it.isCompleted }?.id
@@ -276,6 +290,7 @@ internal fun WorkoutExerciseWithSets.toUi(
             number = number,
             previous = previous(positions[index]),
             isCurrent = set.id == currentSetId,
+            rpe = set.rpe,
         )
     }
     return WorkoutExerciseUi(
@@ -292,6 +307,8 @@ internal fun WorkoutExerciseWithSets.toUi(
             showsSuggestion(s, rows.filter { it.takesSuggestion() }.map { it.weightKg })
         },
         warmupSteps = warmupSteps(ordered, exercise?.equipment, unit),
+        notes = workoutExercise.notes,
+        previousNote = previousNote,
     )
 }
 
