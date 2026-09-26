@@ -92,6 +92,8 @@ fun ActiveWorkoutScreen(
     val plateTarget = focusedWeightSet(state, focus.focused)
     // `@State private var showsHistory` (per section on iOS) — the section whose history is open.
     var historyExerciseId by remember { mutableStateOf<Long?>(null) }
+    // "Replace exercise": the section the single-select picker is open for.
+    var replacingExerciseId by remember { mutableStateOf<Long?>(null) }
 
     // History may have been edited (or the unit changed) while the workout sat in the mini bar.
     LaunchedEffect(model) { model.reloadPrevious() }
@@ -222,6 +224,7 @@ fun ActiveWorkoutScreen(
                     onLinkNext = model::linkWithNext,
                     onUnlinkSuperset = model::unlinkSuperset,
                     onHistory = { id -> historyExerciseId = id },
+                    onReplace = { id -> replacingExerciseId = id },
                 )
             }
         }
@@ -295,6 +298,17 @@ fun ActiveWorkoutScreen(
                 onDismiss = { historyExerciseId = null },
             )
         }
+    }
+
+    replacingExerciseId?.let { id ->
+        ExercisePickerSheet(
+            onDismiss = {
+                replacingExerciseId = null
+                model.reloadPrevious()
+            },
+            workoutId = state.workoutId,
+            onPick = { exerciseId -> model.replaceExercise(id, exerciseId) },
+        )
     }
 
     if (showsFinishDialog) {

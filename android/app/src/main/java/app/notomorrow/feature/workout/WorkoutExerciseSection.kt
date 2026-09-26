@@ -98,6 +98,7 @@ fun WorkoutExerciseSection(
     onUnlinkSuperset: (() -> Unit)? = null,
     onHistory: (() -> Unit)? = null,
     onRest: ((Int) -> Unit)? = null,
+    onReplace: (() -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -127,6 +128,7 @@ fun WorkoutExerciseSection(
             onUnlinkSuperset = onUnlinkSuperset,
             onHistory = onHistory,
             onRest = onRest,
+            onReplace = onReplace,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -208,6 +210,7 @@ private fun Expanded(
     onUnlinkSuperset: (() -> Unit)?,
     onHistory: (() -> Unit)?,
     onRest: ((Int) -> Unit)?,
+    onReplace: (() -> Unit)?,
 ) {
     // `@State private var showsNote` — "Add note" opens the field before anything is typed.
     var showsNote by remember(exercise.id) { mutableStateOf(false) }
@@ -227,6 +230,7 @@ private fun Expanded(
             onAddWarmups = onAddWarmups,
             onHistory = onHistory?.takeIf { exercise.exerciseId != null },
             onRest = onRest,
+            onReplace = onReplace?.takeIf { exercise.canReplace },
             onLinkNext = onLinkNext?.takeIf { exercise.canLinkNext },
             onUnlinkSuperset = onUnlinkSuperset?.takeIf { exercise.supersetGroup != null },
             onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
@@ -319,6 +323,7 @@ private fun Header(
     onUnlinkSuperset: (() -> Unit)?,
     onAddNote: (() -> Unit)?,
     onRest: ((Int) -> Unit)?,
+    onReplace: (() -> Unit)? = null,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var restExpanded by remember { mutableStateOf(false) }
@@ -350,6 +355,9 @@ private fun Header(
                     icon = NtIcons.Timer,
                 ),
             )
+        }
+        onReplace?.let {
+            add(NtMenuItem(title = stringResource(S.workout_replaceExercise), onClick = it))
         }
         onLinkNext?.let { add(NtMenuItem(title = stringResource(S.superset_linkNext), onClick = it, icon = NtIcons.Link)) }
         onUnlinkSuperset?.let {
@@ -667,4 +675,7 @@ data class WorkoutExerciseUi(
     val supersetLetter: String? = null,
     /** "Superset with next" applies (`canLinkWithNext(_:)`). */
     val canLinkNext: Boolean = false,
-)
+) {
+    /** "Replace exercise" is offered only while no set is completed (`canReplace(_:)`). */
+    val canReplace: Boolean get() = sets.none { it.isCompleted }
+}

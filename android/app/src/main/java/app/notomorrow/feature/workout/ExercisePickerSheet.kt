@@ -69,6 +69,8 @@ import app.notomorrow.util.S
  *   rows) before [onAdd] runs, and everything already in it renders as "In".
  * @param alreadyIn used only when [workoutId] is null — the plain `init(alreadyIn:onAdd:)`.
  * @param onAdd the chosen exercise ids, in tap order.
+ * @param onPick single-select ("Replace exercise"): a tap on a row picks that exercise and closes
+ *   the sheet; nothing is appended and there is no "Add n" bar.
  */
 @Composable
 fun ExercisePickerSheet(
@@ -77,6 +79,7 @@ fun ExercisePickerSheet(
     workoutId: String? = null,
     alreadyIn: Set<String> = emptySet(),
     onAdd: (List<String>) -> Unit = {},
+    onPick: ((String) -> Unit)? = null,
 ) {
     val model = ntViewModel(key = workoutId?.let { "picker/$it" } ?: "picker") { container ->
         ExercisePickerViewModel(container, workoutId, alreadyIn)
@@ -100,7 +103,10 @@ fun ExercisePickerSheet(
         showsHandle = true,
         containerColor = NT.Colors.ground,
     ) {
-        PickerHeader(onCancel = onDismiss)
+        PickerHeader(
+            title = stringResource(if (onPick != null) S.workout_replaceExercise else S.exercises_add),
+            onCancel = onDismiss,
+        )
 
         PickerSearchField(
             query = state.query,
@@ -139,7 +145,16 @@ fun ExercisePickerSheet(
                 ExerciseResultCard(
                     entry = entry,
                     state = state.rowState(entry.exercise.id),
-                    onToggle = { model.toggle(entry.exercise.id) },
+                    onToggle = {
+                        if (onPick == null) {
+                            model.toggle(entry.exercise.id)
+                        } else if (!state.alreadyIn.contains(entry.exercise.id)) {
+                            model.pick(entry.exercise.id) { id ->
+                                onPick(id)
+                                onDismiss()
+                            }
+                        }
+                    },
                     onDetails = { detail = entry.exercise },
                     unit = state.unit,
                     onEdit = if (entry.exercise.isCustom) ({ editing = entry.exercise }) else null,
@@ -157,7 +172,14 @@ fun ExercisePickerSheet(
                     CreateExerciseRow(
                         query = state.trimmedQuery,
                         onClick = {
-                            model.createExercise()
+                            if (onPick == null) {
+                                model.createExercise()
+                            } else {
+                                model.createExercise { id ->
+                                    onPick(id)
+                                    onDismiss()
+                                }
+                            }
                             keyboard?.hide()
                         },
                     )
@@ -176,7 +198,7 @@ fun ExercisePickerSheet(
 
         // `.safeAreaInset(edge: .bottom)` — the bar appears only once something is selected.
         AnimatedVisibility(
-            visible = state.selectedCount > 0,
+            visible = state.selectedCount > 0 && onPick == null,
             enter = slideInVertically(tween(200, easing = NT.Ease.out)) { it } + fadeIn(NT.Anim.easeOut20),
             exit = slideOutVertically(tween(200, easing = NT.Ease.out)) { it } + fadeOut(NT.Anim.easeOut20),
         ) {
@@ -203,7 +225,7 @@ fun ExercisePickerSheet(
 
 /** "Add exercise" + a plain Cancel. */
 @Composable
-private fun PickerHeader(onCancel: () -> Unit) {
+private fun PickerHeader(title: String, onCancel: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -213,7 +235,7 @@ private fun PickerHeader(onCancel: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NtText(
-            text = stringResource(S.exercises_add),
+            text = title,
             style = NT.Fonts.title2,
             color = NT.Colors.ink,
             maxLines = 1,

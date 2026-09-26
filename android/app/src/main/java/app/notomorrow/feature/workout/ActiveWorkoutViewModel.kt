@@ -496,6 +496,48 @@ class ActiveWorkoutViewModel(
         }
     }
 
+    // MARK: - Replace
+
+    /**
+     * `replace(_:with:)` — "Replace exercise": [exerciseId] takes the slot of [exerciseUiId] (same
+     * position, superset and rest). Its open rows stay (same count and kinds) but lose the old
+     * exercise's numbers and take the new one's Previous, as a fresh row would; the note goes with
+     * the old exercise. Refused once a set is completed ([WorkoutExerciseUi.canReplace]) or when
+     * it is the same exercise.
+     */
+    fun replaceExercise(exerciseUiId: Long, exerciseId: String) {
+        viewModelScope.launch {
+            writes.withLock {
+                val row = workoutDao.workoutExercises(workoutId).firstOrNull { it.id == exerciseUiId } ?: return@launch
+                val sets = workoutDao.sets(exerciseUiId).sortedBy { it.order }
+                if (sets.any { it.isCompleted } || row.exerciseId == exerciseId) return@launch
+                val completed = workoutDao.completedSetsForExercise(exerciseId)
+                val values = replacementSetValues(
+                    kinds = sets.map { it.kind },
+                    previous = PreviousRows.of(foldLatestEarlierWorkoutRows(completed, workoutId)),
+                    last = RecordService.lastSet(completed, excludingWorkoutId = workoutId)
+                        ?.let { SetValue(it.weightKg, it.reps) },
+                )
+                if (sets.any { it.id == hintSetId }) {
+                    hintSetId = null
+                    hintBest = null
+                }
+                workoutDao.updateWorkoutExercise(row.copy(exerciseId = exerciseId, notes = ""))
+                sets.forEachIndexed { index, set ->
+                    workoutDao.updateSet(
+                        set.copy(
+                            weightKg = values[index].weightKg,
+                            reps = values[index].reps,
+                            rpe = null,
+                            isPR = false,
+                            isSetRecord = false,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     // MARK: - Supersets
 
     /** `linkWithNext(_:)` — "Superset with next". */

@@ -159,7 +159,7 @@ class ExercisePickerViewModel(
      * representative muscle of the selected chip and the equipment chip's equipment, selects it
      * and clears the search so it sorts to the top.
      */
-    fun createExercise() {
+    fun createExercise(onCreated: ((String) -> Unit)? = null) {
         val name = queryInput.value.trim()
         if (name.isEmpty()) return
         viewModelScope.launch {
@@ -168,8 +168,23 @@ class ExercisePickerViewModel(
                 groupInput.value,
                 equipment = equipmentInput.value.representative,
             ) ?: return@launch
-            selectedInput.value = selectedInput.value + exercise.id
             queryInput.value = ""
+            if (onCreated != null) {
+                onCreated(exercise.id)
+            } else {
+                selectedInput.value = selectedInput.value + exercise.id
+            }
+        }
+    }
+
+    /**
+     * Single-select ("Replace exercise"): stamps `lastUsedAt` on the tapped exercise and hands it
+     * back; nothing is appended to a workout (the caller swaps it in).
+     */
+    fun pick(id: String, onPicked: (String) -> Unit) {
+        viewModelScope.launch {
+            exerciseDao.markUsed(id, System.currentTimeMillis())
+            onPicked(id)
         }
     }
 

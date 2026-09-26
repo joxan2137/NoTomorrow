@@ -117,6 +117,20 @@ internal fun foldLatestEarlierWorkoutRows(
  * `previous(for:in:)` — the same-position set of the last session ([PreviousRows.value]), else,
  * for a working set, the most recent completed set ([last]); a warm-up past the end gets none.
  */
+/**
+ * The numbers the open rows of a replaced exercise start with: each row's Previous for the new
+ * exercise (same slot), or empty (0 × 0) when it was never done — what `replace(_:with:)` leaves
+ * after `prefillFromPrevious` on cleared rows.
+ */
+internal fun replacementSetValues(kinds: List<SetKind>, previous: PreviousRows?, last: SetValue?): List<SetValue> =
+    slots(kinds).map { slot ->
+        val value = previousValue(previous, last, slot)
+        SetValue(
+            weightKg = value?.weightKg?.takeIf { it > 0 } ?: 0.0,
+            reps = value?.reps?.takeIf { it > 0 } ?: 0,
+        )
+    }
+
 internal fun previousValue(rows: PreviousRows?, last: SetValue?, slot: SetSlot): SetValue? =
     rows?.value(slot) ?: if (slot.isWarmup) null else last
 
