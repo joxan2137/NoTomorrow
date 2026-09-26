@@ -126,7 +126,9 @@ final class ActiveWorkoutFlowTests: XCTestCase {
         XCTAssertEqual(AppState.Route(url: RestTimerAttributes.deepLink), .restTimer)
         XCTAssertEqual(AppState.Route(url: URL(string: "NoTomorrow://Bro")!), .bro)
         XCTAssertEqual(AppState.Route(url: URL(string: "notomorrow://settings/")!), .settings)
-        XCTAssertNil(AppState.Route(url: URL(string: "notomorrow://fuel")!))
+        XCTAssertEqual(AppState.Route(url: URL(string: "notomorrow://fuel")!), .fuel)
+        XCTAssertEqual(AppState.Route(url: URL(string: "notomorrow://today")!), .today)
+        XCTAssertNil(AppState.Route(url: URL(string: "notomorrow://fuel/search")!))
         XCTAssertNil(AppState.Route(url: URL(string: "https://notomorrow.app/workout")!))
     }
 

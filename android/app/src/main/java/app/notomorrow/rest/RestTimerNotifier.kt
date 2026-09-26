@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
-import android.media.RingtoneManager
 import android.os.Build
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
@@ -14,6 +13,7 @@ import app.notomorrow.NtChannels
 import app.notomorrow.R
 import app.notomorrow.app.AppState
 import app.notomorrow.designsystem.NT
+import app.notomorrow.restChimeUri
 import app.notomorrow.push.NtPushIntents
 import java.util.Locale
 
@@ -110,12 +110,10 @@ class RestTimerNotifier(context: Context) {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setColor(NT.Colors.ember.toArgb())
             .setAutoCancel(true)
-            // STREAM_NOTIFICATION (USAGE_NOTIFICATION) rather than the alarm or media
-            // stream, so playing music ducks instead of pausing.
-            .setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                AudioManager.STREAM_NOTIFICATION,
-            )
+            // The rest chime, on STREAM_NOTIFICATION (USAGE_NOTIFICATION) rather than the alarm
+            // or media stream, so playing music ducks instead of pausing. API 26+ takes the
+            // sound from the channel (`NtChannels.REST_DONE`), which plays the same file.
+            .setSound(restChimeUri(appContext), AudioManager.STREAM_NOTIFICATION)
             .setDefaults(NotificationCompat.DEFAULT_VIBRATE)
         post(ID_DONE, builder)
     }

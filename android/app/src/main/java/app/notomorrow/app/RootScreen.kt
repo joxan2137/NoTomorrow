@@ -151,6 +151,11 @@ private fun PendingRouteConsumer(pendingRoute: AppState.Route?) {
 
             AppState.Route.Bro -> appState.select(AppTab.Bro)
 
+            // The widgets (`docs/widgets.md`): Fuel always opens on today.
+            AppState.Route.Fuel -> appState.openFuelToday()
+
+            AppState.Route.Today -> appState.select(AppTab.Today)
+
             // Settings is a sheet, not a destination; `feature/settings` observes the flag.
             AppState.Route.Settings -> {
                 appState.select(AppTab.Today)

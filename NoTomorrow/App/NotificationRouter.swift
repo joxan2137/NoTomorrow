@@ -55,7 +55,10 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let identifier = notification.request.identifier
         Task { @MainActor in
-            completionHandler(Self.presentation(forNotification: identifier, workoutOnScreen: self.isWorkoutOnScreen()))
+            let workoutOnScreen = self.isWorkoutOnScreen()
+            // Over the full workout the banner (and its sound) is suppressed, so the chime is played here instead.
+            if identifier == RestTimerController.notificationID, workoutOnScreen { RestChime.play() }
+            completionHandler(Self.presentation(forNotification: identifier, workoutOnScreen: workoutOnScreen))
         }
     }
 

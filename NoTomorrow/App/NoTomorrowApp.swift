@@ -5,7 +5,7 @@ import SwiftData
 struct NoTomorrowApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appState = AppState()
-    @State private var restTimer = RestTimerController()
+    @State private var restTimer = RestTimerController.shared
     @State private var session = WorkoutSessionController()
 
     /// The SwiftData store. When it cannot be opened the app shows `StoreErrorView` instead of silently running on

@@ -21,7 +21,7 @@ android {
         // The release workflow stamps these from the release tag and run number
         // (-PappVersionName / -PappVersionCode); local builds keep the defaults.
         versionCode = (project.findProperty("appVersionCode") as String?)?.toInt() ?: 1
-        versionName = (project.findProperty("appVersionName") as String?) ?: "0.4.1"
+        versionName = (project.findProperty("appVersionName") as String?) ?: "0.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -92,6 +92,11 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Glance's RemoteViews layouts for the widget screenshots (WidgetScreenshots).
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            project.findProperty("widgetShots")?.let { test.systemProperty("widgetShots", file(it.toString()).absolutePath) }
+        }
     }
 
     // The shared AI spec (`backend/data/ai`, contract §1): the app reads `estimate-spec.json` from
@@ -141,6 +146,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.prefs)
     implementation(libs.androidx.work.ktx)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.profileinstaller)
 
