@@ -17,10 +17,7 @@ struct WeeklyStatsCard: View {
             return WeeklyStats.Session(startedAt: workout.startedAt, duration: workout.duration,
                                        volumeKg: workout.totalVolumeKg, sets: sets)
         }
-        // Monday-first like the rest of the app (calendar, muscles this week).
-        var calendar = Calendar.current
-        calendar.firstWeekday = 2
-        let weeks = WeeklyStats.weeks(sessions: sessions, now: .now, calendar: calendar)
+        let weeks = WeeklyStats.weeks(sessions: sessions, now: .now, calendar: Self.mondayFirst)
         let thisWeek = weeks.last
         let lastWeek = weeks.count >= 2 ? weeks[weeks.count - 2] : nil
         let ratio = WeeklyStats.change(weeks, metric: metric)
@@ -66,6 +63,13 @@ struct WeeklyStatsCard: View {
                 }
             }
         }
+    }
+
+    /// Monday-first like the rest of the app (training calendar, muscles this week).
+    private static var mondayFirst: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        return calendar
     }
 
     static func title(_ metric: WeeklyStats.Metric) -> LocalizedStringKey {
