@@ -469,6 +469,13 @@
     <string name="onboarding_you_subtitle">Tyle, żeby ustawić kalorie. Wszystko zmienisz później w ustawieniach.</string>
     <string name="onboarding_you_suggested">Użyj sugestii</string>
     <string name="onboarding_you_title">Kto dziś dźwiga?</string>
+    <string name="onerm_calculator">Kalkulator 1RM</string>
+    <string name="onerm_estimated">Szacowany 1RM</string>
+    <string name="onerm_footnote">Procenty najlepszego szacowanego 1RM, zaokrąglone do 2,5 kg / 5 lb. Powtórzenia to tyle, ile ten 1RM przewiduje przy danym ciężarze.</string>
+    <string name="onerm_hint">Wpisz ciężar i liczbę powtórzeń serii, a oszacujemy Twój maks na jedno powtórzenie.</string>
+    <string name="onerm_percent">Z 1RM</string>
+    <string name="onerm_percentages">Procenty 1RM</string>
+    <string name="onerm_weight">Ciężar</string>
     <string name="plates_bar">Gryf</string>
     <string name="plates_belowBar">To mniej niż sam gryf.</string>
     <string name="plates_emptyBar">Sam gryf.</string>

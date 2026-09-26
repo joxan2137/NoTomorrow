@@ -54,7 +54,8 @@ import app.notomorrow.util.S
 /**
  * One lift over time — the port of `ExerciseProgressView`
  * (`Features/Progress/ExerciseProgressView.swift`): hero e1RM + delta chip, the line/area
- * chart with PR marks, three tiles, the weekly volume of every lift, the records and the rep maxes.
+ * chart with PR marks, three tiles, the weekly volume of every lift, the records, the rep maxes and
+ * the 1RM percentages.
  *
  * The navigation bar is hidden on iOS, so the screen draws its own back chevron in a
  * 44 dp hit target.
@@ -106,6 +107,7 @@ fun ExerciseProgressScreen(exerciseId: String, onBack: () -> Unit) {
                     )
                     RecordsSection(state = state, modifier = Modifier.padding(top = 18.dp))
                     RepMaxSection(state = state, modifier = Modifier.padding(top = NT.Spacing.section))
+                    PercentagesSection(state = state, modifier = Modifier.padding(top = NT.Spacing.section))
                 } else {
                     NtText(
                         text = stringResource(S.progress_empty),

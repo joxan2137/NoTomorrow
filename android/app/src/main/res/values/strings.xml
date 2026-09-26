@@ -469,6 +469,13 @@
     <string name="onboarding_you_subtitle">Just enough to set your calories. Everything can be changed later in Settings.</string>
     <string name="onboarding_you_suggested">Use the suggestion</string>
     <string name="onboarding_you_title">Who\'s lifting?</string>
+    <string name="onerm_calculator">1RM calculator</string>
+    <string name="onerm_estimated">Estimated 1RM</string>
+    <string name="onerm_footnote">Percentages of your best estimated 1RM, rounded to 2.5 kg / 5 lb. Reps are what that 1RM predicts at each weight.</string>
+    <string name="onerm_hint">Enter the weight and reps of a set to estimate your one-rep max.</string>
+    <string name="onerm_percent">Of 1RM</string>
+    <string name="onerm_percentages">Percentages</string>
+    <string name="onerm_weight">Weight</string>
     <string name="plates_bar">Bar</string>
     <string name="plates_belowBar">That\'s lighter than the bar.</string>
     <string name="plates_emptyBar">Just the bar.</string>

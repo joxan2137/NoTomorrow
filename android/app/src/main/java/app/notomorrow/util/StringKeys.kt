@@ -484,6 +484,13 @@ object S {
     val onboarding_you_subtitle = R.string.onboarding_you_subtitle
     val onboarding_you_suggested = R.string.onboarding_you_suggested
     val onboarding_you_title = R.string.onboarding_you_title
+    val onerm_calculator = R.string.onerm_calculator
+    val onerm_estimated = R.string.onerm_estimated
+    val onerm_footnote = R.string.onerm_footnote
+    val onerm_hint = R.string.onerm_hint
+    val onerm_percent = R.string.onerm_percent
+    val onerm_percentages = R.string.onerm_percentages
+    val onerm_weight = R.string.onerm_weight
     val plates_bar = R.string.plates_bar
     val plates_belowBar = R.string.plates_belowBar
     val plates_emptyBar = R.string.plates_emptyBar

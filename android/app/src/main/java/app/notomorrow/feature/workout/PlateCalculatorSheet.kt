@@ -18,6 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -33,6 +36,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Chip
 import app.notomorrow.designsystem.Eyebrow
+import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtSheet
@@ -43,6 +47,7 @@ import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntMediumDetent
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.di.LocalAppContainer
+import app.notomorrow.feature.progress.OneRepMaxCalculatorSheet
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
@@ -72,6 +77,7 @@ fun PlateCalculatorSheet(
     val bar by remember(unit) { prefs.plateBar(unit) }.collectAsState(initial = defaultBar)
     val target = SetInput.display(weightKg, unit)
     val load = PlateMath.load(target, bar, PlateMath.plates(unit))
+    var showsOneRepMax by rememberSaveable { mutableStateOf(false) }
 
     NtSheet(
         onDismiss = onDismiss,
@@ -119,7 +125,15 @@ fun PlateCalculatorSheet(
                     },
                 )
             }
+            GhostButton(
+                title = stringResource(S.onerm_calculator),
+                modifier = Modifier.padding(top = NT.Spacing.section),
+                onClick = { showsOneRepMax = true },
+            )
         }
+    }
+    if (showsOneRepMax) {
+        OneRepMaxCalculatorSheet(unit = unit, onDismiss = { showsOneRepMax = false }, initialWeight = target)
     }
 }
 
