@@ -80,6 +80,7 @@ fun WorkoutDoneScreen(
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = rememberNtStrings()
+    val displayName = workoutDisplayName(state.name)
 
     val duration = remember(state.startedAt, state.endedAt) {
         workoutDuration(state.startedAt, state.endedAt)
@@ -97,7 +98,7 @@ fun WorkoutDoneScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing),
         ) {
             WorkoutDoneHeader(
-                title = state.name + " · " + Fmt.relativeDay(
+                title = displayName + " · " + Fmt.relativeDay(
                     Instant.ofEpochMilli(state.startedAt).atZone(ZoneId.systemDefault()).toLocalDate(),
                     strings,
                     today = LocalDate.now(),
@@ -107,7 +108,7 @@ fun WorkoutDoneScreen(
                         context,
                         strings.string(
                             S.workout_done_shareText,
-                            state.name,
+                            displayName,
                             Fmt.duration(duration, strings),
                             Fmt.volume(state.volumeKg, state.unit),
                         ),
@@ -222,7 +223,7 @@ private fun WorkoutDoneHero(state: WorkoutDoneUiState) {
         }
         val previous = state.previousVolumeKg
         if (previous != null && previous != state.volumeKg) {
-            DeltaChip(delta = state.volumeKg - previous, workoutName = state.name, unit = state.unit)
+            DeltaChip(delta = state.volumeKg - previous, workoutName = workoutDisplayName(state.name), unit = state.unit)
         }
     }
 }

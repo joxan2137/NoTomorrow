@@ -56,7 +56,7 @@ fun WorkoutHistoryRow(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             NtText(
-                text = row.name,
+                text = workoutDisplayName(row.name),
                 style = NT.Fonts.headline,
                 color = NT.Colors.ink,
                 maxLines = 1,

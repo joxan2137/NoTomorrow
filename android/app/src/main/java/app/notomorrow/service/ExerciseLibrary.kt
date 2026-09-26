@@ -267,14 +267,22 @@ class ExerciseLibrary(
             exercises: List<ExerciseEntity>,
             query: String,
             group: MuscleGroup = MuscleGroup.All,
+            /** One muscle picked on the body map; replaces [group] when set. */
+            muscle: String? = null,
         ): List<ExerciseEntity> {
             val tokens = fold(query.trim()).split(' ').filter { it.isNotEmpty() }
-            val muscles = group.muscles
+            val muscles = muscle?.let { setOf(it) } ?: group.muscles
             return exercises.filter { exercise ->
                 if (muscles.isNotEmpty() && exercise.primaryMuscles.none { it in muscles }) return@filter false
                 val folded = fold(exercise.name + " " + (exercise.namePL ?: ""))
                 tokens.all { folded.contains(it) }
             }
+        }
+
+        /** True when an exercise is already named [query] in English or Polish (folded), so "Create «…»" would duplicate it. */
+        fun hasName(exercises: List<ExerciseEntity>, query: String): Boolean {
+            val name = fold(query.trim())
+            return name.isNotEmpty() && exercises.any { fold(it.name) == name || fold(it.namePL ?: "") == name }
         }
 
         private val DIACRITICS = "\\p{Mn}+".toRegex()

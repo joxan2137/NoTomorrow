@@ -65,7 +65,7 @@ struct WorkoutDoneView: View {
 
     private var header: some View {
         HStack {
-            Text("\(workout.name) · \(Fmt.relativeDay(workout.startedAt)) \(Fmt.time(workout.startedAt))")
+            Text("\(WorkoutStrings.displayName(workout.name)) · \(Fmt.relativeDay(workout.startedAt)) \(Fmt.time(workout.startedAt))")
                 .eyebrow(NT.Colors.ember)
                 .lineLimit(1)
             Spacer(minLength: 12)
@@ -79,7 +79,7 @@ struct WorkoutDoneView: View {
     }
 
     private var shareText: String {
-        String(localized: "workout.done.shareText \(workout.name) \(Fmt.duration(duration)) \(Fmt.volume(volume, unit: unit))")
+        String(localized: "workout.done.shareText \(WorkoutStrings.displayName(workout.name)) \(Fmt.duration(duration)) \(Fmt.volume(volume, unit: unit))")
     }
 
     // MARK: Hero
@@ -104,9 +104,9 @@ struct WorkoutDoneView: View {
         return HStack(spacing: 6) {
             Image(systemName: up ? "arrow.up" : "arrow.down").font(.system(size: 12, weight: .bold))
             if up {
-                Text("workout.done.moreThanLast \(Fmt.volume(delta, unit: unit)) \(workout.name)")
+                Text("workout.done.moreThanLast \(Fmt.volume(delta, unit: unit)) \(WorkoutStrings.displayName(workout.name))")
             } else {
-                Text("workout.done.lessThanLast \(Fmt.volume(-delta, unit: unit)) \(workout.name)")
+                Text("workout.done.lessThanLast \(Fmt.volume(-delta, unit: unit)) \(WorkoutStrings.displayName(workout.name))")
             }
         }
         .font(NT.Fonts.footnoteBold).tabular()

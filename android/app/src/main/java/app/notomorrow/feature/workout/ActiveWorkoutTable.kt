@@ -165,7 +165,7 @@ private fun Header(
             // Compose, so an explicit 2 dp pushes the meta row ~3 dp below where iOS puts it.
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            NtText(state.name, style = NT.Fonts.title2, color = NT.Colors.ink, maxLines = 1)
+            NtText(workoutDisplayName(state.name), style = NT.Fonts.title2, color = NT.Colors.ink, maxLines = 1)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,

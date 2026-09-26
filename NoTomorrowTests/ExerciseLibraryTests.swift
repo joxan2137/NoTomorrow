@@ -53,6 +53,31 @@ final class ExerciseLibraryTests: XCTestCase {
         XCTAssertEqual(search("WYCISKANIE ławce"), ["bench"])
     }
 
+    func testSearchingDropsTheBodyMapMuscleAndDoesNotOfferADuplicate() {
+        context.insert(Exercise(id: "belt", name: "Belt Squat", namePL: "Przysiad z pasem", primaryMuscles: ["quadriceps"]))
+        context.insert(Exercise(id: "pull", name: "Pullups", primaryMuscles: ["lats"]))
+        try? context.save()
+        let model = ExercisePickerViewModel()
+        model.load(context: context)
+        model.muscle = "lats"
+        XCTAssertEqual(model.results.map(\.id), ["pull"])
+
+        model.query = "belt squat"
+        XCTAssertNil(model.muscle, "typing a search clears the body-map muscle")
+        XCTAssertFalse(model.showsCreateRow, "the library already has it")
+        model.query = "przysiad z pasem"
+        XCTAssertFalse(model.showsCreateRow)
+        model.query = "belt squat 2"
+        XCTAssertTrue(model.showsCreateRow)
+    }
+
+    func testDefaultWorkoutNameFollowsTheCurrentLanguage() {
+        let current = String(localized: "workout.defaultName")
+        XCTAssertEqual(WorkoutStrings.displayName("Workout"), current)
+        XCTAssertEqual(WorkoutStrings.displayName("Trening"), current)
+        XCTAssertEqual(WorkoutStrings.displayName("Push A"), "Push A")
+    }
+
     // MARK: Library import (reliability-perf-4, ios-correctness-3)
 
     private final class LoadCounter: @unchecked Sendable {

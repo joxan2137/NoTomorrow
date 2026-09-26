@@ -32,7 +32,7 @@ struct LastSessionRow: View {
     }
 
     private func summary(for workout: Workout) -> some View {
-        var text = Text(verbatim: "\(dayLabel(workout)) · \(workout.name) · \(Fmt.duration(workout.duration))")
+        var text = Text(verbatim: "\(dayLabel(workout)) · \(WorkoutStrings.displayName(workout.name)) · \(Fmt.duration(workout.duration))")
         if workout.prCount > 0 {
             text = text + Text(verbatim: " · ")
                 + Text(verbatim: String(format: String(localized: "dashboard.prs"), workout.prCount))

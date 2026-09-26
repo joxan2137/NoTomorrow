@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No Tomorrow icon set. Hand-authored 24dp vectors (Material-Symbols-style
+     geometry). Never traced from SF Symbols. Tinted by NtIcon(). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Head. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2.2 C13.33,2.2 14.4,3.27 14.4,4.6 C14.4,5.93 13.33,7 12,7 C10.67,7 9.6,5.93 9.6,4.6 C9.6,3.27 10.67,2.2 12,2.2 Z" />
+    <!-- Body with the arms held out and down, legs apart. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M5.3,7.9 L18.7,7.9 C19.3,7.9 19.7,8.5 19.4,9.05 C19.25,9.33 18.96,9.5 18.64,9.5 L14.8,9.9 L14.6,14.2 L15.9,20.9 C16.02,21.52 15.55,22.1 14.92,22.1 C14.44,22.1 14.03,21.76 13.94,21.29 L12.6,15.2 L11.4,15.2 L10.06,21.29 C9.97,21.76 9.56,22.1 9.08,22.1 C8.45,22.1 7.98,21.52 8.1,20.9 L9.4,14.2 L9.2,9.9 L5.36,9.5 C5.04,9.5 4.75,9.33 4.6,9.05 C4.3,8.5 4.7,7.9 5.3,7.9 Z" />
+</vector>

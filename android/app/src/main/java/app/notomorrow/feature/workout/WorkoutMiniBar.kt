@@ -173,7 +173,7 @@ fun WorkoutMiniBar(
         ) {
             Leading(state)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                NtText(text = name, style = NT.Fonts.subheadlineBold, color = NT.Colors.ink, maxLines = 1)
+                NtText(text = workoutDisplayName(name), style = NT.Fonts.subheadlineBold, color = NT.Colors.ink, maxLines = 1)
                 Detail(state, restLabel)
             }
             if (!state.isResting) {

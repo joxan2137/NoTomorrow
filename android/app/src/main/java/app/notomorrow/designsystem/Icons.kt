@@ -174,6 +174,12 @@ enum class NtIcons(
     /** SF `play.fill` — a routine's start button on the Train tab. */
     PlayFill(R.drawable.ic_play_fill),
 
+    /** SF `pause.fill` — pauses an exercise's form demo. */
+    PauseFill(R.drawable.ic_pause_fill),
+
+    /** SF `figure.arms.open` — the exercise picker's body-map filter. */
+    FigureArmsOpen(R.drawable.ic_figure),
+
     /** SF `medal`. */
     Medal(R.drawable.ic_medal),
 

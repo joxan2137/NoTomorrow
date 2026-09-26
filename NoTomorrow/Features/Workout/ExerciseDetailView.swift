@@ -1,122 +1,222 @@
 import SwiftUI
 
-/// Offline front/back muscle model plus the original public-domain demonstration frames.
+/// An exercise's sheet: what it is (equipment, level, compound or isolation), the looping form demo (the
+/// public-domain free-exercise-db photos, or the app's own mannequin for exercises without them), the body map of
+/// the muscles it works, the app's own form cues and common mistakes where it has them, and the numbered steps.
 struct ExerciseDetailView: View {
     let exercise: Exercise
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedMuscle: String?
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(exercise.localizedName).font(NT.Fonts.title2)
-                    MuscleModelView(primary: exercise.primaryMuscles, secondary: exercise.secondaryMuscles)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(String(localized: "exercises.primary") + ": " + exercise.primaryMuscles.map(WorkoutStrings.muscle).joined(separator: ", "), systemImage: "circle.fill")
-                            .foregroundStyle(Color.orange)
-                        Label(String(localized: "exercises.secondary") + ": " + exercise.secondaryMuscles.map(WorkoutStrings.muscle).joined(separator: ", "), systemImage: "circle.fill")
-                            .foregroundStyle(Color.cyan)
-                        Text("exercises.muscleNote").foregroundStyle(NT.Colors.ink2)
-                    }.font(NT.Fonts.footnote)
+                VStack(alignment: .leading, spacing: NT.Spacing.section) {
+                    header
                     let photos = ExerciseMedia.images[exercise.id] ?? []
                     if !photos.isEmpty {
-                        Text("exercises.demonstration").font(NT.Fonts.headline)
-                        ForEach(photos, id: \.self) { path in
-                            AsyncImage(url: ExerciseMedia.url(path)) { phase in
-                                switch phase {
-                                case .success(let image): image.resizable().scaledToFit()
-                                case .failure: Label("exercises.photoUnavailable", systemImage: "photo")
-                                default: ProgressView().frame(maxWidth: .infinity, minHeight: 150)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
+                        FormDemoView(paths: photos, name: exercise.localizedName)
+                    } else if let pattern = MotionLibrary.pattern(for: exercise.id) {
+                        MotionDemoView(pattern: pattern, hot: MotionLibrary.hotSegments(for: exercise.primaryMuscles),
+                                       name: exercise.localizedName)
                     }
-                    Text("exercises.instructions").font(NT.Fonts.headline)
-                    ForEach(Array(exercise.instructions.enumerated()), id: \.offset) { index, instruction in
-                        Text("\(index + 1). \(instruction)").font(NT.Fonts.body)
+                    musclesSection
+                    if let cues = FormCues.cues(for: exercise.id) {
+                        cuesSection(cues)
+                    }
+                    if !exercise.instructions.isEmpty {
+                        stepsSection
                     }
                     if !photos.isEmpty {
                         Link("free-exercise-db · Public domain", destination: URL(string: "https://github.com/yuhonas/free-exercise-db")!)
                             .font(NT.Fonts.footnote)
+                            .foregroundStyle(NT.Colors.ink3)
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, NT.Spacing.screenH)
+                .padding(.bottom, 32)
                 .foregroundStyle(NT.Colors.ink)
             }
             .ntScreenBackground()
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("common.done") { dismiss() } } }
         }
     }
-}
 
-struct MuscleModelView: View {
-    let primary: [String]
-    let secondary: [String]
-    var body: some View {
-        VStack(spacing: 4) {
-            HStack { Text("exercises.front"); Spacer(); Text("exercises.back") }
-                .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).padding(.horizontal, 36)
-            Canvas { context, size in
-                for region in ExerciseMedia.regions {
-                    var path = Path()
-                    for (i, point) in region.points.enumerated() where point.count == 2 {
-                        let p = CGPoint(x: point[0] / 200 * size.width, y: point[1] / 300 * size.height)
-                        if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+    // MARK: Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(exercise.localizedName)
+                .font(NT.Fonts.title2)
+                .fixedSize(horizontal: false, vertical: true)
+            let facts = ExerciseFacts.labels(equipment: exercise.equipment, level: exercise.level,
+                                             mechanic: exercise.mechanic, force: exercise.force)
+            if !facts.isEmpty {
+                BroFlowLayout(spacing: 6) {
+                    ForEach(facts, id: \.self) { fact in
+                        Text(fact)
+                            .font(NT.Fonts.caption)
+                            .foregroundStyle(NT.Colors.ink2)
+                            .padding(.horizontal, 10)
+                            .frame(height: 26)
+                            .background(NT.Colors.surface, in: Capsule())
                     }
-                    path.closeSubpath()
-                    let color: Color = primary.contains(region.muscle) ? .orange : secondary.contains(region.muscle) ? .cyan : region.muscle == "outline" ? NT.Colors.surface3 : NT.Colors.ink3.opacity(0.4)
-                    context.fill(path, with: .color(color))
-                    context.stroke(path, with: .color(NT.Colors.ground), lineWidth: 1)
                 }
             }
-            .aspectRatio(2.0 / 3.0, contentMode: .fit)
-            .frame(maxHeight: 360)
-            .accessibilityLabel(Text("exercises.muscleNote"))
+        }
+    }
+
+    // MARK: Muscles
+
+    private var musclesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "exercises.musclesWorked")
+            NTCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    MuscleModelView(primary: exercise.primaryMuscles, secondary: exercise.secondaryMuscles,
+                                    selected: $selectedMuscle)
+                    Group {
+                        if let selectedMuscle {
+                            Text(verbatim: selectedLine(selectedMuscle))
+                                .foregroundStyle(NT.Colors.ink)
+                        } else {
+                            Text("exercises.tapMuscle").foregroundStyle(NT.Colors.ink3)
+                        }
+                    }
+                    .font(NT.Fonts.footnote)
+                    .frame(maxWidth: .infinity)
+                    Hairline()
+                    muscleLegend(title: "exercises.primary", muscles: exercise.primaryMuscles, color: NT.Colors.ember)
+                    if !exercise.secondaryMuscles.isEmpty {
+                        muscleLegend(title: "exercises.secondary", muscles: exercise.secondaryMuscles, color: NT.Colors.heat[2])
+                    }
+                    Text("exercises.muscleNote")
+                        .font(NT.Fonts.footnote)
+                        .foregroundStyle(NT.Colors.ink3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func selectedLine(_ muscle: String) -> String {
+        let name = WorkoutStrings.muscle(muscle)
+        if exercise.primaryMuscles.contains(muscle) { return name + " · " + String(localized: "exercises.role.primary") }
+        if exercise.secondaryMuscles.contains(muscle) { return name + " · " + String(localized: "exercises.role.secondary") }
+        return name + " · " + String(localized: "exercises.role.notUsed")
+    }
+
+    private func muscleLegend(title: LocalizedStringKey, muscles: [String], color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).eyebrow()
+            BroFlowLayout(spacing: 6) {
+                ForEach(muscles, id: \.self) { muscle in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.15)) { selectedMuscle = selectedMuscle == muscle ? nil : muscle }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle().fill(color).frame(width: 8, height: 8)
+                            Text(WorkoutStrings.muscle(muscle)).font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: 32)
+                        .background(selectedMuscle == muscle ? NT.Colors.surface3 : NT.Colors.surface2, in: Capsule())
+                    }
+                    .buttonStyle(PressScale())
+                }
+            }
+        }
+    }
+
+    // MARK: Form cues
+
+    private func cuesSection(_ cues: FormCues.Entry) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "exercises.formCues")
+            NTCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(cues.cues, id: \.self) { cue in
+                        cueRow(cue, systemImage: "checkmark.circle.fill", color: NT.Colors.good)
+                    }
+                    if !cues.mistakes.isEmpty {
+                        Hairline()
+                        Text("exercises.mistakes").eyebrow()
+                        ForEach(cues.mistakes, id: \.self) { mistake in
+                            cueRow(mistake, systemImage: "xmark.circle.fill", color: NT.Colors.bad)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func cueRow(_ text: String, systemImage: String, color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: systemImage).foregroundStyle(color).font(.system(size: 15, weight: .semibold))
+            Text(text).font(NT.Fonts.subheadline).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // MARK: Steps
+
+    private var stepsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "exercises.instructions")
+            NTCard {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(Array(exercise.instructions.enumerated()), id: \.offset) { index, instruction in
+                        HStack(alignment: .top, spacing: 12) {
+                            Text(verbatim: "\(index + 1)")
+                                .font(NT.Fonts.footnoteBold)
+                                .foregroundStyle(NT.Colors.ember)
+                                .frame(width: 24, height: 24)
+                                .background(NT.Colors.emberTint, in: Circle())
+                            Text(instruction)
+                                .font(NT.Fonts.subheadline)
+                                .foregroundStyle(NT.Colors.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-/// The same front/back regions as `MuscleModelView`, each muscle filled with the `NT.Colors.heat` step for its sets:
-/// Progress → "Muscles this week". No labels; the card lists the numbers beside it.
-struct MuscleHeatView: View {
-    let setsByMuscle: [String: Int]
-
-    /// Step of `NT.Colors.heat` for a set count: 0 for none, then 1–3, 4–6, 7–9 and 10+.
-    static func level(sets: Int) -> Int {
-        switch sets {
-        case ...0: return 0
-        case 1...3: return 1
-        case 4...6: return 2
-        case 7...9: return 3
-        default: return 4
+/// The small facts under the exercise's name, localized: equipment, level, compound/isolation, push/pull/hold.
+enum ExerciseFacts {
+    static func labels(equipment: String?, level: String?, mechanic: String?, force: String?) -> [String] {
+        var labels: [String] = []
+        if let equipment, !equipment.isEmpty { labels.append(WorkoutStrings.equipment(equipment)) }
+        for (prefix, raw) in [("exercises.level", level), ("exercises.mechanic", mechanic), ("exercises.force", force)] {
+            guard let raw, !raw.isEmpty else { continue }
+            let key = "\(prefix).\(raw == "advanced" ? "expert" : raw)"
+            let value = String(localized: String.LocalizationValue(key))
+            if value != key { labels.append(value) }
         }
+        return labels
+    }
+}
+
+/// The app's own form cues and common mistakes (`form_cues.json`, written for NoTomorrow) for the most common lifts,
+/// in English and Polish.
+enum FormCues {
+    struct Entry: Decodable, Equatable {
+        let cues: [String]
+        let mistakes: [String]
     }
 
-    var body: some View {
-        Canvas { context, size in
-            for region in ExerciseMedia.regions {
-                var path = Path()
-                for (i, point) in region.points.enumerated() where point.count == 2 {
-                    let p = CGPoint(x: point[0] / 200 * size.width, y: point[1] / 300 * size.height)
-                    if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
-                }
-                path.closeSubpath()
-                let color: Color = region.muscle == "outline"
-                    ? NT.Colors.surface3
-                    : NT.Colors.heat[Self.level(sets: setsByMuscle[region.muscle] ?? 0)]
-                context.fill(path, with: .color(color))
-                context.stroke(path, with: .color(NT.Colors.ground), lineWidth: 1)
-            }
-        }
-        .aspectRatio(2.0 / 3.0, contentMode: .fit)
-        .accessibilityHidden(true)
+    static let all: [String: [String: Entry]] = ExerciseMedia.load("form_cues") ?? [:]
+
+    /// `language` defaults to the catalog's language, the one `String(localized:)` uses.
+    static func cues(for id: String, language: String = Bundle.main.preferredLocalizations.first ?? "en") -> Entry? {
+        guard let byLanguage = all[id] else { return nil }
+        return byLanguage[language] ?? byLanguage["en"]
     }
 }
 
 enum ExerciseMedia {
-    struct Region: Decodable { let muscle: String; let points: [[Double]] }
+    struct Region: Decodable { let muscle: String; let view: String; let d: String }
     static let regions: [Region] = load("muscle_model") ?? []
     static let images: [String: [String]] = {
         let records: [ExerciseLibrary.Record] = load("exercises") ?? []
@@ -126,7 +226,7 @@ enum ExerciseMedia {
         guard !path.contains(".."), !path.contains(":") else { return nil }
         return URL(string: "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/")?.appendingPathComponent(path)
     }
-    private static func load<T: Decodable>(_ name: String) -> T? {
+    static func load<T: Decodable>(_ name: String) -> T? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "json"), let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONDecoder().decode(T.self, from: data)
     }
