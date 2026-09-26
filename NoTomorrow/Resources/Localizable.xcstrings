@@ -12737,6 +12737,22 @@
           }
         }
       }
+    },
+    "workout.replaceExercise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace exercise"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamień ćwiczenie"
+          }
+        }
+      }
     }
   }
 }

@@ -10,6 +10,8 @@ struct ExercisePickerView: View {
     var onAdd: ([Exercise]) -> Void
     /// When set, chosen exercises are appended to this workout (prefilled rows) before `onAdd` runs.
     private var targetWorkout: Workout?
+    /// Single-select ("Replace exercise"): a tap picks the exercise and closes the sheet; nothing is appended.
+    private var isSingleSelect = false
 
     init(alreadyIn: Set<String> = [], onAdd: @escaping ([Exercise]) -> Void) {
         self.alreadyIn = alreadyIn
@@ -21,6 +23,14 @@ struct ExercisePickerView: View {
         self.alreadyIn = Set(workout.exercises.compactMap { $0.exercise?.id })
         self.onAdd = onAdd
         self.targetWorkout = workout
+    }
+
+    /// "Replace exercise" in the active workout: one tap picks the replacement (exercises already in the workout
+    /// show as "In"). The caller swaps it in.
+    init(replacingIn workout: Workout, onPick: @escaping (Exercise) -> Void) {
+        self.alreadyIn = Set(workout.exercises.compactMap { $0.exercise?.id })
+        self.onAdd = { picked in if let first = picked.first { onPick(first) } }
+        self.isSingleSelect = true
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -58,7 +68,7 @@ struct ExercisePickerView: View {
 
     private var header: some View {
         HStack {
-            Text("exercises.add")
+            Text(isSingleSelect ? LocalizedStringKey("workout.replaceExercise") : LocalizedStringKey("exercises.add"))
                 .font(NT.Fonts.title2)
                 .foregroundStyle(NT.Colors.ink)
             Spacer()
@@ -163,7 +173,7 @@ struct ExercisePickerView: View {
 
                 ForEach(model.results) { entry in
                     ExerciseResultCard(exercise: entry.exercise, unit: unit, state: state(for: entry.exercise)) {
-                        model.toggle(entry.exercise.id)
+                        if isSingleSelect { pick(entry.exercise) } else { model.toggle(entry.exercise.id) }
                     } onDetails: {
                         detail = entry.exercise
                     }
@@ -185,8 +195,9 @@ struct ExercisePickerView: View {
 
                 if model.showsCreateRow {
                     CreateExerciseRow(query: model.trimmedQuery) {
-                        model.createExercise(context: modelContext)
+                        let created = model.createExercise(context: modelContext)
                         searchFocused = false
+                        if isSingleSelect, let created { pick(created) }
                     }
                 } else if model.results.isEmpty {
                     Text("exercises.noResults")
@@ -206,11 +217,20 @@ struct ExercisePickerView: View {
         return model.isSelected(exercise.id) ? .selected : .available
     }
 
+    /// Single-select: hands back the tapped exercise and closes.
+    private func pick(_ exercise: Exercise) {
+        guard !alreadyIn.contains(exercise.id) else { return }
+        exercise.lastUsedAt = .now
+        try? modelContext.save()
+        onAdd([exercise])
+        dismiss()
+    }
+
     // MARK: Add bar
 
     @ViewBuilder
     private var addBar: some View {
-        if model.selectedCount > 0 {
+        if model.selectedCount > 0 && !isSingleSelect {
             PrimaryButton(title: LocalizedStringKey(WorkoutStrings.add(model.selectedCount))) {
                 let exercises = model.selectedExercises()
                 let now = Date.now

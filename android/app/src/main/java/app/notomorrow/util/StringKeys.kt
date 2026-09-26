@@ -784,6 +784,7 @@ object S {
     val workout_pr = R.string.workout_pr
     val workout_previous = R.string.workout_previous
     val workout_removeExercise = R.string.workout_removeExercise
+    val workout_replaceExercise = R.string.workout_replaceExercise
     val workout_reps = R.string.workout_reps
     val workout_restDefault = R.string.workout_restDefault
     val workout_restTimer = R.string.workout_restTimer

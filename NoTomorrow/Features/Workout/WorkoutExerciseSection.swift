@@ -14,6 +14,7 @@ struct WorkoutExerciseSection: View {
     @Environment(\.modelContext) private var context
     @State private var showsNote = false
     @State private var showsHistory = false
+    @State private var showsReplace = false
 
     private var name: String { exercise.exercise?.localizedName ?? "" }
 
@@ -96,6 +97,9 @@ struct WorkoutExerciseSection: View {
                 }
                 .disabled(model.warmupSteps(for: exercise).isEmpty)
                 restMenu
+                if model.canReplace(exercise) {
+                    Button("workout.replaceExercise", systemImage: "arrow.triangle.2.circlepath") { showsReplace = true }
+                }
                 if model.canLinkWithNext(exercise) {
                     Button("superset.linkNext", systemImage: "link") {
                         withAnimation(.easeInOut(duration: 0.2)) { model.linkWithNext(exercise) }
@@ -120,6 +124,11 @@ struct WorkoutExerciseSection: View {
                     .contentShape(Rectangle())
             }
             .menuIndicator(.hidden)
+            .sheet(isPresented: $showsReplace) {
+                ExercisePickerView(replacingIn: model.workout) { replacement in
+                    withAnimation(.easeInOut(duration: 0.2)) { _ = model.replace(exercise, with: replacement) }
+                }
+            }
         }
         .sheet(isPresented: $showsHistory) {
             if let ex = exercise.exercise {

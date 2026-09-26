@@ -769,6 +769,7 @@
     <string name="workout_pr">PR</string>
     <string name="workout_previous">Poprzednio</string>
     <string name="workout_removeExercise">Usuń ćwiczenie</string>
+    <string name="workout_replaceExercise">Zamień ćwiczenie</string>
     <string name="workout_reps">Powt.</string>
     <string name="workout_restDefault">Domyślna (%s)</string>
     <string name="workout_restTimer">Minutnik przerwy</string>

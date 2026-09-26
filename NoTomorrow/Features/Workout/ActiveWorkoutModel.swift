@@ -442,6 +442,39 @@ final class ActiveWorkoutModel {
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
     }
 
+    // MARK: Replace
+
+    /// "Replace exercise" is offered only while none of the exercise's sets is completed (as in Hevy): logged sets
+    /// belong to the exercise they were done on.
+    func canReplace(_ exercise: WorkoutExercise) -> Bool {
+        !exercise.sets.contains(where: \.isCompleted)
+    }
+
+    /// Puts `replacement` in the slot of `exercise`: same position, superset and rest; its open rows stay (same
+    /// count and kinds) but lose the old exercise's numbers and take the new one's Previous, as a fresh row would.
+    /// The note goes with the old exercise. Refused when a set is completed or the exercise is the same one.
+    @discardableResult
+    func replace(_ exercise: WorkoutExercise, with replacement: Exercise) -> Bool {
+        guard canReplace(exercise), exercise.exercise?.id != replacement.id else { return false }
+        exercise.exercise = replacement
+        exercise.notes = ""
+        replacement.lastUsedAt = .now
+        let ids = Set(exercise.sets.map(\.persistentModelID))
+        if let hint = hintSetID, ids.contains(hint) { hintSetID = nil }
+        for set in exercise.sets {
+            set.weightKg = 0
+            set.reps = 0
+            set.rpe = nil
+            set.isPR = false
+            set.isSetRecord = false
+        }
+        reloadPrevious()
+        for set in exercise.sortedSets { prefillFromPrevious(set, in: exercise) }
+        try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+        return true
+    }
+
     func toggleExpanded(_ exercise: WorkoutExercise) {
         expandedExerciseID = expandedExerciseID == exercise.persistentModelID ? nil : exercise.persistentModelID
     }
