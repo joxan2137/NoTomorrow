@@ -133,6 +133,7 @@ fun Eyebrow(
     modifier: Modifier = Modifier,
     color: Color = NT.Colors.ink2,
     maxLines: Int = 1,
+    autoSize: TextAutoSize? = null,
 ) {
     NtText(
         text = text.uppercase(appLocale()),
@@ -140,6 +141,7 @@ fun Eyebrow(
         style = NT.Fonts.eyebrow,
         color = color,
         maxLines = maxLines,
+        autoSize = autoSize,
     )
 }
 

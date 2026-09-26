@@ -110,36 +110,46 @@ struct ExerciseProgressView: View {
 
     // MARK: Tiles
 
+    /// Last PR · This week · Sessions. Labels wrap to two lines before shrinking ("Ostatnia życiówka",
+    /// "Sessions · 3M") instead of truncating; the row takes its tallest tile's height and each value sits on
+    /// the tile's bottom edge so the three values stay level.
     private func tiles(_ lift: LiftSummary) -> some View {
         HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("progress.lastPR").eyebrow()
+            tile(Text("progress.lastPR")) {
                 Group {
                     if let date = lift.lastPR { Text(ProgressPhrase.ago(date)) } else { Text("progress.noPRYet") }
                 }
                 .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1).minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
 
-            StatTile(label: "progress.thisWeek", value: Fmt.volume(lift.thisWeekVolume, unit: model.unit))
+            // `StatTile`'s value: shrinks rather than truncates.
+            tile(Text("progress.thisWeek")) {
+                Text(Fmt.volume(lift.thisWeekVolume, unit: model.unit))
+                    .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1)
+                    .minimumScaleFactor(0.6).allowsTightening(true)
+            }
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 0) {
-                    Text("progress.sessions")
-                    Text(" · ")
-                    Text(range.titleKey)
-                }
-                .eyebrow()
-                .lineLimit(1)
+            tile(Text("progress.sessions") + Text(verbatim: " · ") + Text(range.titleKey)) {
                 Text(lift.sessions(in: range).formatted())
                     .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
         }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// `StatTile` geometry with a two-line label and a caller-supplied value pinned to the bottom.
+    private func tile<Value: View>(_ label: Text, @ViewBuilder value: () -> Value) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            label
+                .eyebrow()
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+            value()
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
     }
 
     // MARK: Weekly volume (all lifts)
