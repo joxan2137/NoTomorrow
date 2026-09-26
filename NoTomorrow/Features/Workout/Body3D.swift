@@ -55,18 +55,18 @@ enum Body3D {
         let bytes: [UInt8]
 
         init?(_ image: CGImage) {
-            width = image.width; height = image.height
-            var buffer = [UInt8](repeating: 0, count: width * height)
+            let w = image.width, h = image.height
+            var buffer = [UInt8](repeating: 0, count: w * h)
             let drawn = buffer.withUnsafeMutableBytes { raw -> Bool in
-                guard let context = CGContext(data: raw.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                                              bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                guard let context = CGContext(data: raw.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                              bytesPerRow: w, space: CGColorSpaceCreateDeviceGray(),
                                               bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
                 context.interpolationQuality = .none
-                context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+                context.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
                 return true
             }
             guard drawn else { return nil }
-            bytes = buffer
+            self.init(width: w, height: h, bytes: buffer)
         }
 
         init(width: Int, height: Int, bytes: [UInt8]) {
