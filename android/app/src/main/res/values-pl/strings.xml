@@ -579,7 +579,9 @@
     <string name="progress_todaysWeight">Dzisiejsza waga</string>
     <string name="progress_vsLastWeek">vs zeszły tydzień</string>
     <string name="progress_weeklyVolume">Wszystkie boje · tygodniowo</string>
-    <string name="progress_weeksSincePR_n">%d tyg. od PR</string>
+    <string name="progress_weeksSincePR_few">%d tygodnie od PR</string>
+    <string name="progress_weeksSincePR_many">%d tygodni od PR</string>
+    <string name="progress_weeksSincePR_one">1 tydzień od PR</string>
     <string name="progress_yesterday">Wczoraj</string>
     <string name="range_1m">1M</string>
     <string name="range_1y">1R</string>

@@ -579,7 +579,9 @@
     <string name="progress_todaysWeight">Today\'s weight</string>
     <string name="progress_vsLastWeek">vs last week</string>
     <string name="progress_weeklyVolume">All lifts · weekly</string>
-    <string name="progress_weeksSincePR_n">%d weeks since PR</string>
+    <string name="progress_weeksSincePR_few">%d weeks since PR</string>
+    <string name="progress_weeksSincePR_many">%d weeks since PR</string>
+    <string name="progress_weeksSincePR_one">1 week since PR</string>
     <string name="progress_yesterday">Yesterday</string>
     <string name="range_1m">1M</string>
     <string name="range_1y">1Y</string>

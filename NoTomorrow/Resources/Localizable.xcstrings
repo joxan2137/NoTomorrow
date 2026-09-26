@@ -5460,22 +5460,6 @@
         }
       }
     },
-    "progress.weeksSincePR %lld": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld weeks since PR"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld tyg. od PR"
-          }
-        }
-      }
-    },
     "progress.stalledWeeks %lld": {
       "localizations": {
         "en": {
@@ -14366,6 +14350,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępniony plan"
+          }
+        }
+      }
+    },
+    "progress.weeksSincePR.one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 week since PR"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 tydzień od PR"
+          }
+        }
+      }
+    },
+    "progress.weeksSincePR.few": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld weeks since PR"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tygodnie od PR"
+          }
+        }
+      }
+    },
+    "progress.weeksSincePR.many": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld weeks since PR"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tygodni od PR"
           }
         }
       }

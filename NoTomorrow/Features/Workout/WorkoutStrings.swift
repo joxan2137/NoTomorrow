@@ -38,6 +38,9 @@ enum WorkoutStrings {
     /// "3-week streak" / "3 tygodnie z rzędu"
     static func weekStreak(_ n: Int) -> String { counted("calendar.weekStreak", n) }
 
+    /// "1 week since PR" / "5 tygodni od PR" (Progress lift rows)
+    static func weeksSincePR(_ n: Int) -> String { counted("progress.weeksSincePR", n) }
+
     /// "2 PRs" — existing dashboard key, Polish keeps "PR" invariant.
     static func prs(_ n: Int) -> String {
         String(format: String(localized: "dashboard.prs"), locale: .current, n)

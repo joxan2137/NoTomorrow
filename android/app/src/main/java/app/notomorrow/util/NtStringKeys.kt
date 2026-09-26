@@ -180,6 +180,14 @@ object NtKeys {
         PluralCategory.Many -> S.calendar_weekStreak_many
     }
 
+    /** `"progress.weeksSincePR.\(one|few|many)"` — `WorkoutStrings.weeksSincePR`. */
+    @StringRes
+    fun weeksSincePR(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.progress_weeksSincePR_one
+        PluralCategory.Few -> S.progress_weeksSincePR_few
+        PluralCategory.Many -> S.progress_weeksSincePR_many
+    }
+
     /** `"program.routineCount.\(one|few|many)"` — `WorkoutStrings.routines`. */
     @StringRes
     fun routineCount(n: Int): Int = when (pluralCategory(n)) {

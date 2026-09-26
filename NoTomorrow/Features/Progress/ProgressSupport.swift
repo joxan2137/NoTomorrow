@@ -122,7 +122,7 @@ enum ProgressPhrase {
         case 0: return "progress.prToday"
         case 1: return "progress.prYesterday"
         case 2...6: return "progress.prOn \(weekday(date))"
-        case 7..<30: return "progress.weeksSincePR \(days / 7)"
+        case 7..<30: return "\(WorkoutStrings.weeksSincePR(days / 7))"
         default: return "progress.stalledWeeks \(days / 7)"
         }
     }

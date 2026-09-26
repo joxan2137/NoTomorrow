@@ -10,6 +10,7 @@ import app.notomorrow.designsystem.WeekVolumeBar
 import app.notomorrow.model.BodyWeightSource
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import java.time.Instant
 import java.time.LocalDate
@@ -361,7 +362,7 @@ object ProgressPhrase {
             days == 0 -> ProgressPhraseRef.Res(S.progress_prToday)
             days == 1 -> ProgressPhraseRef.Res(S.progress_prYesterday)
             days in 2..6 -> ProgressPhraseRef.Res(S.progress_prOn_s, weekday(date, zone, locale))
-            days in 7..29 -> ProgressPhraseRef.Res(S.progress_weeksSincePR_n, days / 7)
+            days in 7..29 -> ProgressPhraseRef.Res(NtKeys.weeksSincePR(days / 7), days / 7)
             else -> ProgressPhraseRef.Res(S.progress_stalledWeeks_n, days / 7)
         }
     }

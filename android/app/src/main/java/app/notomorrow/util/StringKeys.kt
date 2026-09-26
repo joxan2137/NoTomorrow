@@ -594,7 +594,9 @@ object S {
     val progress_todaysWeight = R.string.progress_todaysWeight
     val progress_vsLastWeek = R.string.progress_vsLastWeek
     val progress_weeklyVolume = R.string.progress_weeklyVolume
-    val progress_weeksSincePR_n = R.string.progress_weeksSincePR_n  // progress.weeksSincePR %lld
+    val progress_weeksSincePR_few = R.string.progress_weeksSincePR_few
+    val progress_weeksSincePR_many = R.string.progress_weeksSincePR_many
+    val progress_weeksSincePR_one = R.string.progress_weeksSincePR_one
     val progress_yesterday = R.string.progress_yesterday
     val range_1m = R.string.range_1m
     val range_1y = R.string.range_1y
