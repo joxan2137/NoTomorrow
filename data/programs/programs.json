@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "programs": [
+    {
+      "id": "fullBody",
+      "name": "program.fullBody.name",
+      "summary": "program.fullBody.summary",
+      "level": "beginner",
+      "daysPerWeek": 3,
+      "routines": [
+        {
+          "id": "a",
+          "name": "program.fullBody.a",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 3,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Barbell_Bench_Press_-_Medium_Grip",
+              "sets": 3,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Bent_Over_Barbell_Row",
+              "sets": 3,
+              "reps": 8,
+              "rest": 90
+            },
+            {
+              "exercise": "Side_Lateral_Raise",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Crunches",
+              "sets": 3,
+              "reps": 15,
+              "rest": 45
+            }
+          ]
+        },
+        {
+          "id": "b",
+          "name": "program.fullBody.b",
+          "items": [
+            {
+              "exercise": "Romanian_Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "rest": 120
+            },
+            {
+              "exercise": "Standing_Military_Press",
+              "sets": 3,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Wide-Grip_Lat_Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Dumbbell_Lunges",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Barbell_Curl",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "c",
+          "name": "program.fullBody.c",
+          "items": [
+            {
+              "exercise": "Leg_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 120
+            },
+            {
+              "exercise": "Incline_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Seated_Cable_Rows",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Lying_Leg_Curls",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Triceps_Pushdown",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fiveByFive",
+      "name": "program.fiveByFive.name",
+      "summary": "program.fiveByFive.summary",
+      "level": "beginner",
+      "daysPerWeek": 3,
+      "routines": [
+        {
+          "id": "a",
+          "name": "program.fiveByFive.a",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 5,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Barbell_Bench_Press_-_Medium_Grip",
+              "sets": 5,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Bent_Over_Barbell_Row",
+              "sets": 5,
+              "reps": 5,
+              "rest": 180
+            }
+          ]
+        },
+        {
+          "id": "b",
+          "name": "program.fiveByFive.b",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 5,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Standing_Military_Press",
+              "sets": 5,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Barbell_Deadlift",
+              "sets": 1,
+              "reps": 5,
+              "rest": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ppl",
+      "name": "program.ppl.name",
+      "summary": "program.ppl.summary",
+      "level": "intermediate",
+      "daysPerWeek": 6,
+      "routines": [
+        {
+          "id": "push",
+          "name": "program.ppl.push",
+          "items": [
+            {
+              "exercise": "Barbell_Bench_Press_-_Medium_Grip",
+              "sets": 4,
+              "reps": 6,
+              "rest": 150
+            },
+            {
+              "exercise": "Seated_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Incline_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Side_Lateral_Raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "exercise": "Triceps_Pushdown_-_Rope_Attachment",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "pull",
+          "name": "program.ppl.pull",
+          "items": [
+            {
+              "exercise": "Barbell_Deadlift",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Pullups",
+              "sets": 3,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Seated_Cable_Rows",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Face_Pull",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "exercise": "Barbell_Curl",
+              "sets": 3,
+              "reps": 10,
+              "rest": 60
+            },
+            {
+              "exercise": "Hammer_Curls",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "legs",
+          "name": "program.ppl.legs",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 4,
+              "reps": 6,
+              "rest": 180
+            },
+            {
+              "exercise": "Romanian_Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "rest": 120
+            },
+            {
+              "exercise": "Leg_Press",
+              "sets": 3,
+              "reps": 12,
+              "rest": 120
+            },
+            {
+              "exercise": "Lying_Leg_Curls",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Standing_Calf_Raises",
+              "sets": 4,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upperLower",
+      "name": "program.upperLower.name",
+      "summary": "program.upperLower.summary",
+      "level": "intermediate",
+      "daysPerWeek": 4,
+      "routines": [
+        {
+          "id": "upperA",
+          "name": "program.upperLower.upperA",
+          "items": [
+            {
+              "exercise": "Barbell_Bench_Press_-_Medium_Grip",
+              "sets": 4,
+              "reps": 6,
+              "rest": 150
+            },
+            {
+              "exercise": "Bent_Over_Barbell_Row",
+              "sets": 4,
+              "reps": 6,
+              "rest": 150
+            },
+            {
+              "exercise": "Seated_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Wide-Grip_Lat_Pulldown",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Barbell_Curl",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Triceps_Pushdown",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "lowerA",
+          "name": "program.upperLower.lowerA",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 4,
+              "reps": 6,
+              "rest": 180
+            },
+            {
+              "exercise": "Romanian_Deadlift",
+              "sets": 3,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Leg_Extensions",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Lying_Leg_Curls",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Standing_Calf_Raises",
+              "sets": 4,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "upperB",
+          "name": "program.upperLower.upperB",
+          "items": [
+            {
+              "exercise": "Standing_Military_Press",
+              "sets": 4,
+              "reps": 6,
+              "rest": 150
+            },
+            {
+              "exercise": "Pullups",
+              "sets": 4,
+              "reps": 8,
+              "rest": 120
+            },
+            {
+              "exercise": "Incline_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "One-Arm_Dumbbell_Row",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Side_Lateral_Raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "exercise": "Hammer_Curls",
+              "sets": 2,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "lowerB",
+          "name": "program.upperLower.lowerB",
+          "items": [
+            {
+              "exercise": "Barbell_Deadlift",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Front_Barbell_Squat",
+              "sets": 3,
+              "reps": 8,
+              "rest": 150
+            },
+            {
+              "exercise": "Dumbbell_Lunges",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Seated_Leg_Curl",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Seated_Calf_Raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "exercise": "Hanging_Leg_Raise",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fiveThreeOne",
+      "name": "program.fiveThreeOne.name",
+      "summary": "program.fiveThreeOne.summary",
+      "level": "intermediate",
+      "daysPerWeek": 4,
+      "routines": [
+        {
+          "id": "press",
+          "name": "program.fiveThreeOne.press",
+          "items": [
+            {
+              "exercise": "Standing_Military_Press",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Seated_Dumbbell_Press",
+              "sets": 5,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Chin-Up",
+              "sets": 5,
+              "reps": 8,
+              "rest": 90
+            },
+            {
+              "exercise": "Face_Pull",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "deadlift",
+          "name": "program.fiveThreeOne.deadlift",
+          "items": [
+            {
+              "exercise": "Barbell_Deadlift",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Romanian_Deadlift",
+              "sets": 5,
+              "reps": 10,
+              "rest": 120
+            },
+            {
+              "exercise": "Hanging_Leg_Raise",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Hyperextensions_Back_Extensions",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "bench",
+          "name": "program.fiveThreeOne.bench",
+          "items": [
+            {
+              "exercise": "Barbell_Bench_Press_-_Medium_Grip",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Dumbbell_Bench_Press",
+              "sets": 5,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "One-Arm_Dumbbell_Row",
+              "sets": 5,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Triceps_Pushdown",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "squat",
+          "name": "program.fiveThreeOne.squat",
+          "items": [
+            {
+              "exercise": "Barbell_Squat",
+              "sets": 3,
+              "reps": 5,
+              "rest": 180
+            },
+            {
+              "exercise": "Leg_Press",
+              "sets": 5,
+              "reps": 10,
+              "rest": 120
+            },
+            {
+              "exercise": "Lying_Leg_Curls",
+              "sets": 5,
+              "reps": 10,
+              "rest": 60
+            },
+            {
+              "exercise": "Hanging_Leg_Raise",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dumbbellHome",
+      "name": "program.dumbbellHome.name",
+      "summary": "program.dumbbellHome.summary",
+      "level": "beginner",
+      "daysPerWeek": 3,
+      "routines": [
+        {
+          "id": "a",
+          "name": "program.dumbbellHome.a",
+          "items": [
+            {
+              "exercise": "Dumbbell_Squat",
+              "sets": 3,
+              "reps": 12,
+              "rest": 90
+            },
+            {
+              "exercise": "Dumbbell_Floor_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "One-Arm_Dumbbell_Row",
+              "sets": 3,
+              "reps": 10,
+              "rest": 60
+            },
+            {
+              "exercise": "Standing_Dumbbell_Press",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Dumbbell_Bicep_Curl",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "id": "b",
+          "name": "program.dumbbellHome.b",
+          "items": [
+            {
+              "exercise": "nt_bulgarian_split_squat",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Stiff-Legged_Dumbbell_Deadlift",
+              "sets": 3,
+              "reps": 10,
+              "rest": 90
+            },
+            {
+              "exercise": "Pushups",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "exercise": "Bent_Over_Two-Dumbbell_Row",
+              "sets": 3,
+              "reps": 10,
+              "rest": 60
+            },
+            {
+              "exercise": "Side_Lateral_Raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 45
+            },
+            {
+              "exercise": "Standing_Dumbbell_Triceps_Extension",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -12753,6 +12753,678 @@
           }
         }
       }
+    },
+    "program.browse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse programs"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądaj programy"
+          }
+        }
+      }
+    },
+    "program.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programs"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programy"
+          }
+        }
+      }
+    },
+    "program.intro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proven training programs. Adding one creates its routines, which you can change any time."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzone programy treningowe. Dodanie programu tworzy jego plany, które możesz potem dowolnie zmieniać."
+          }
+        }
+      }
+    },
+    "program.perWeek": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld× a week"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld× w tygodniu"
+          }
+        }
+      }
+    },
+    "program.level.beginner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beginner"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dla początkujących"
+          }
+        }
+      }
+    },
+    "program.level.intermediate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intermediate"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Średniozaawansowany"
+          }
+        }
+      }
+    },
+    "program.routineCount.one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 plan"
+          }
+        }
+      }
+    },
+    "program.routineCount.few": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld routines"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld plany"
+          }
+        }
+      }
+    },
+    "program.routineCount.many": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld routines"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld planów"
+          }
+        }
+      }
+    },
+    "program.add.one": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add 1 routine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj 1 plan"
+          }
+        }
+      }
+    },
+    "program.add.few": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld routines"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %lld plany"
+          }
+        }
+      }
+    },
+    "program.add.many": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld routines"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %lld planów"
+          }
+        }
+      }
+    },
+    "program.fullBody.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full body 3× a week"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Całe ciało 3× w tygodniu"
+          }
+        }
+      }
+    },
+    "program.fullBody.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three whole-body sessions that cover every muscle. The classic place to start."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trzy treningi całego ciała, które obejmują wszystkie mięśnie. Klasyczny start."
+          }
+        }
+      }
+    },
+    "program.fullBody.a": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full Body A"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Całe ciało A"
+          }
+        }
+      }
+    },
+    "program.fullBody.b": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full Body B"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Całe ciało B"
+          }
+        }
+      }
+    },
+    "program.fullBody.c": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full Body C"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Całe ciało C"
+          }
+        }
+      }
+    },
+    "program.fiveByFive.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 strength"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siła 5×5"
+          }
+        }
+      }
+    },
+    "program.fiveByFive.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two alternating barbell workouts, five sets of five. Add weight every session."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dwa naprzemienne treningi ze sztangą, pięć serii po pięć. Co trening dokładaj ciężaru."
+          }
+        }
+      }
+    },
+    "program.fiveByFive.a": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 A"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 A"
+          }
+        }
+      }
+    },
+    "program.fiveByFive.b": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 B"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 B"
+          }
+        }
+      }
+    },
+    "program.ppl.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Push / Pull / Legs"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Push / Pull / Nogi"
+          }
+        }
+      }
+    },
+    "program.ppl.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pressing, pulling and leg days, run twice a week for high volume."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dni wypychania, przyciągania i nóg, powtarzane dwa razy w tygodniu dla dużej objętości."
+          }
+        }
+      }
+    },
+    "program.ppl.push": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Push"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Push"
+          }
+        }
+      }
+    },
+    "program.ppl.pull": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Pull"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Pull"
+          }
+        }
+      }
+    },
+    "program.ppl.legs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Legs"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPL Nogi"
+          }
+        }
+      }
+    },
+    "program.upperLower.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upper / Lower"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Góra / Dół"
+          }
+        }
+      }
+    },
+    "program.upperLower.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Four days split between upper and lower body, a heavy and a lighter version of each."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cztery dni podzielone na górę i dół ciała, każdy w cięższej i lżejszej wersji."
+          }
+        }
+      }
+    },
+    "program.upperLower.upperA": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upper A"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Góra A"
+          }
+        }
+      }
+    },
+    "program.upperLower.lowerA": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lower A"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dół A"
+          }
+        }
+      }
+    },
+    "program.upperLower.upperB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upper B"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Góra B"
+          }
+        }
+      }
+    },
+    "program.upperLower.lowerB": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lower B"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dół B"
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 main lifts"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 – główne boje"
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One main lift a day followed by accessories. Simplified: plain sets and reps, no percentages."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden główny bój dziennie i ćwiczenia pomocnicze. Wersja uproszczona: zwykłe serie i powtórzenia, bez procentów."
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.press": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Press"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Wyciskanie nad głowę"
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.deadlift": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Deadlift"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Martwy ciąg"
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.bench": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Bench"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Wyciskanie leżąc"
+          }
+        }
+      }
+    },
+    "program.fiveThreeOne.squat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Squat"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5/3/1 Przysiad"
+          }
+        }
+      }
+    },
+    "program.dumbbellHome.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dumbbells at home"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hantle w domu"
+          }
+        }
+      }
+    },
+    "program.dumbbellHome.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two full-body workouts that need only a pair of dumbbells and the floor."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dwa treningi całego ciała, do których wystarczy para hantli i podłoga."
+          }
+        }
+      }
+    },
+    "program.dumbbellHome.a": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home A"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dom A"
+          }
+        }
+      }
+    },
+    "program.dumbbellHome.b": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home B"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dom B"
+          }
+        }
+      }
     }
   }
 }
