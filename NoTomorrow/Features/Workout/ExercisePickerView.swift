@@ -27,6 +27,7 @@ struct ExercisePickerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @State private var detail: Exercise?
+    @State private var editing: Exercise?
     @State private var model = ExercisePickerViewModel()
     @FocusState private var searchFocused: Bool
 
@@ -48,6 +49,7 @@ struct ExercisePickerView: View {
         .presentationDragIndicator(.visible)
         .onAppear { model.load(context: modelContext) }
         .sheet(item: $detail) { ExerciseDetailView(exercise: $0) }
+        .sheet(item: $editing, onDismiss: { model.load(context: modelContext) }) { CustomExerciseEditor(exercise: $0) }
     }
 
     // MARK: Header
@@ -149,6 +151,19 @@ struct ExercisePickerView: View {
                         detail = entry.exercise
                     }
                     .padding(.bottom, 8)
+                    .contextMenu {
+                        if entry.exercise.isCustom {
+                            Button("customExercise.edit", systemImage: "pencil") { editing = entry.exercise }
+                            if entry.exercise.usages.isEmpty {
+                                Button("customExercise.delete", systemImage: "trash", role: .destructive) {
+                                    model.deselect(entry.exercise.id)
+                                    modelContext.delete(entry.exercise)
+                                    try? modelContext.save()
+                                    model.load(context: modelContext)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if model.showsCreateRow {

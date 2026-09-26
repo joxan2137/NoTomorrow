@@ -99,6 +99,10 @@
     <string name="common_share">Share</string>
     <string name="common_skip">Skip</string>
     <string name="common_undo">Undo</string>
+    <string name="customExercise_delete">Delete exercise</string>
+    <string name="customExercise_edit">Edit exercise</string>
+    <string name="customExercise_equipment">Equipment</string>
+    <string name="customExercise_muscle">Main muscle</string>
     <string name="dashboard_bothIn">Both in</string>
     <string name="dashboard_broIsIn">%s\'s in. You?</string>
     <string name="dashboard_broNotYet">%s hasn\'t said yet</string>

@@ -99,6 +99,10 @@
     <string name="common_share">Udostępnij</string>
     <string name="common_skip">Pomiń</string>
     <string name="common_undo">Cofnij</string>
+    <string name="customExercise_delete">Usuń ćwiczenie</string>
+    <string name="customExercise_edit">Edytuj ćwiczenie</string>
+    <string name="customExercise_equipment">Sprzęt</string>
+    <string name="customExercise_muscle">Główny mięsień</string>
     <string name="dashboard_bothIn">Obaj wpadacie</string>
     <string name="dashboard_broIsIn">%s wpada. A ty?</string>
     <string name="dashboard_broNotYet">%s jeszcze nie odpisał</string>

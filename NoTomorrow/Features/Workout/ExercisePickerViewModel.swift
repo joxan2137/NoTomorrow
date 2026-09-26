@@ -72,6 +72,10 @@ final class ExercisePickerViewModel {
 
     func isSelected(_ id: String) -> Bool { selectedIDs.contains(id) }
 
+    func deselect(_ id: String) {
+        selectedIDs.removeAll { $0 == id }
+    }
+
     func toggle(_ id: String) {
         if let index = selectedIDs.firstIndex(of: id) {
             selectedIDs.remove(at: index)

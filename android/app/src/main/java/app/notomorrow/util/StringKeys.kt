@@ -114,6 +114,10 @@ object S {
     val common_share = R.string.common_share
     val common_skip = R.string.common_skip
     val common_undo = R.string.common_undo
+    val customExercise_delete = R.string.customExercise_delete
+    val customExercise_edit = R.string.customExercise_edit
+    val customExercise_equipment = R.string.customExercise_equipment
+    val customExercise_muscle = R.string.customExercise_muscle
     val dashboard_bothIn = R.string.dashboard_bothIn
     val dashboard_broIsIn = R.string.dashboard_broIsIn
     val dashboard_broNotYet = R.string.dashboard_broNotYet
