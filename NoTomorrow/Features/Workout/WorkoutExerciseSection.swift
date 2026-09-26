@@ -97,6 +97,14 @@ struct WorkoutExerciseSection: View {
                 }
                 .disabled(model.warmupSteps(for: exercise).isEmpty)
                 restMenu
+                Button("workout.edit.moveUp", systemImage: "arrow.up") {
+                    withAnimation(.easeInOut(duration: 0.2)) { model.move(exercise, by: -1) }
+                }
+                .disabled(!model.canMove(exercise, by: -1))
+                Button("workout.edit.moveDown", systemImage: "arrow.down") {
+                    withAnimation(.easeInOut(duration: 0.2)) { model.move(exercise, by: 1) }
+                }
+                .disabled(!model.canMove(exercise, by: 1))
                 if model.canReplace(exercise) {
                     Button("workout.replaceExercise", systemImage: "arrow.triangle.2.circlepath") { showsReplace = true }
                 }

@@ -442,7 +442,7 @@ final class ActiveWorkoutModel {
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
     }
 
-    // MARK: Replace
+    // MARK: Replace / reorder
 
     /// "Replace exercise" is offered only while none of the exercise's sets is completed (as in Hevy): logged sets
     /// belong to the exercise they were done on.
@@ -473,6 +473,26 @@ final class ActiveWorkoutModel {
         try? context.save()
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         return true
+    }
+
+    /// Whether Move up (-1) / Move down (+1) has somewhere to go.
+    func canMove(_ exercise: WorkoutExercise, by offset: Int) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return exercises.indices.contains(i + offset)
+    }
+
+    /// Move up (-1) / down (+1): swaps with the neighbour and renumbers. Supersets are normalized afterwards, as in
+    /// `RoutineDraft.move`, so a member moved away from its partners leaves the superset.
+    func move(_ exercise: WorkoutExercise, by offset: Int) {
+        var list = exercises
+        guard let from = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        let to = from + offset
+        guard list.indices.contains(to) else { return }
+        list.swapAt(from, to)
+        for (i, we) in list.enumerated() where we.order != i { we.order = i }
+        let groups = Superset.normalized(list.map(\.supersetGroup))
+        for (we, group) in zip(list, groups) where we.supersetGroup != group { we.supersetGroup = group }
+        try? context.save()
     }
 
     func toggleExpanded(_ exercise: WorkoutExercise) {

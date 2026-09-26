@@ -119,4 +119,36 @@ final class ActiveWorkoutEditTests: XCTestCase {
         XCTAssertFalse(model.replace(entries[0], with: bench))
         XCTAssertEqual(entries[0].sortedSets.map(\.reps), [10, 10])
     }
+
+    // MARK: Move
+
+    func testMoveSwapsWithTheNeighbourAndStopsAtTheEnds() {
+        let (workout, entries) = makeWorkout(["a", "b", "c"])
+        let model = ActiveWorkoutModel(workout: workout, context: context)
+
+        XCTAssertFalse(model.canMove(entries[0], by: -1))
+        XCTAssertFalse(model.canMove(entries[2], by: 1))
+        XCTAssertTrue(model.canMove(entries[1], by: -1))
+
+        model.move(entries[2], by: -1)
+        XCTAssertEqual(model.exercises.map { $0.exercise?.id }, ["a", "c", "b"])
+        XCTAssertEqual(model.exercises.map(\.order), [0, 1, 2])
+
+        model.move(entries[0], by: -1)
+        XCTAssertEqual(model.exercises.map { $0.exercise?.id }, ["a", "c", "b"], "the first cannot go up")
+    }
+
+    func testMoveNormalizesSupersets() {
+        let (workout, entries) = makeWorkout(["a", "b", "c"], groups: [1, 1, nil])
+        let model = ActiveWorkoutModel(workout: workout, context: context)
+
+        model.move(entries[0], by: 1)
+        XCTAssertEqual(model.exercises.map { $0.exercise?.id }, ["b", "a", "c"])
+        XCTAssertEqual(model.exercises.map(\.supersetGroup), [1, 1, nil], "swapped inside the superset: still one")
+
+        model.move(entries[0], by: 1)
+        XCTAssertEqual(model.exercises.map { $0.exercise?.id }, ["b", "c", "a"])
+        XCTAssertEqual(model.exercises.map(\.supersetGroup), [nil, nil, nil], "moved apart: no longer a superset")
+        XCTAssertNil(model.supersetLetter(for: entries[1]))
+    }
 }
