@@ -84,6 +84,7 @@ internal fun WorkoutTable(
     onLinkNext: (Long) -> Unit,
     onUnlinkSuperset: (Long) -> Unit,
     onHistory: (Long) -> Unit,
+    onRest: (Long, Int) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     Column(Modifier.fillMaxSize()) {
@@ -138,6 +139,7 @@ internal fun WorkoutTable(
                     onLinkNext = { onLinkNext(exercise.id) },
                     onUnlinkSuperset = { onUnlinkSuperset(exercise.id) },
                     onHistory = { onHistory(exercise.id) },
+                    onRest = { seconds -> onRest(exercise.id, seconds) },
                 )
                 Hairline(Modifier.padding(top = if (expanded) 8.dp else 0.dp))
             }

@@ -164,6 +164,10 @@ class FakeWorkoutDao : WorkoutDao {
         exercises.value = exercises.value.map { if (it.id == id) it.copy(notes = notes) else it }
     }
 
+    override suspend fun updateWorkoutExerciseRest(id: Long, seconds: Int) {
+        exercises.value = exercises.value.map { if (it.id == id) it.copy(restSeconds = seconds) else it }
+    }
+
     // MARK: - Writes
 
     override suspend fun insertWorkout(workout: WorkoutEntity) {

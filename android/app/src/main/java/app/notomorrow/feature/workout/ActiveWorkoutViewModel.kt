@@ -16,6 +16,7 @@ import app.notomorrow.rest.RestTimerState
 import app.notomorrow.service.AttendanceReporter
 import app.notomorrow.service.AttendanceService
 import app.notomorrow.service.RecordService
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.LocaleProvider
@@ -71,6 +72,8 @@ class ActiveWorkoutViewModel(
     private val reportAttendance: AttendanceReporter = AttendanceReporter.None,
     /** The routines, read with the unit: the one named like the workout gives the target reps. */
     private val routines: suspend () -> List<RoutineWithItems> = { emptyList() },
+    /** The user's Rest length setting (`WorkoutStarter.defaultRestSeconds`), read with the unit. */
+    private val defaultRest: suspend () -> Int = { RoutineSeeder.DEFAULT_REST_SECONDS },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ActiveWorkoutUiState())
@@ -104,6 +107,8 @@ class ActiveWorkoutViewModel(
     private var unit = WeightUnit.Kg
     /** `targetReps` — per exercise id, from the routine this workout was started from. */
     private var targetReps: Map<String, Int> = emptyMap()
+    /** The Rest length setting: the Rest timer menu's Default. */
+    private var defaultRestSeconds = RoutineSeeder.DEFAULT_REST_SECONDS
     /** [unit] and [targetReps] are current. */
     private var unitLoaded = false
 
@@ -161,6 +166,7 @@ class ActiveWorkoutViewModel(
         if (!unitLoaded) {
             unit = units()
             targetReps = routineTargetReps(routines(), graph.workout.name)
+            defaultRestSeconds = defaultRest()
             unitLoaded = true
         }
         val myId = graph.workout.id
@@ -205,6 +211,7 @@ class ActiveWorkoutViewModel(
                 },
                 unit = unit,
                 previousNote = exerciseId?.let { previousNotes[it] },
+                defaultRest = defaultRestSeconds,
             )
         }.withSupersets()
         _state.value = ActiveWorkoutUiState(
@@ -320,6 +327,17 @@ class ActiveWorkoutViewModel(
     fun setNote(exerciseUiId: Long, notes: String) {
         viewModelScope.launch {
             writes.withLock { workoutDao.updateWorkoutExerciseNotes(exerciseUiId, notes) }
+        }
+    }
+
+    /**
+     * `setRest(_:for:)` — the exercise menu's Rest timer: the length the next rest after this
+     * exercise's sets counts down. A rest already running keeps its length (the pill adjusts it).
+     */
+    fun setRest(exerciseUiId: Long, seconds: Int) {
+        if (seconds <= 0) return
+        viewModelScope.launch {
+            writes.withLock { workoutDao.updateWorkoutExerciseRest(exerciseUiId, seconds) }
         }
     }
 

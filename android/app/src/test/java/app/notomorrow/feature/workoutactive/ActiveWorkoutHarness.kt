@@ -72,7 +72,7 @@ internal class ActiveWorkoutHarness(private val scope: CoroutineScope) {
         }
     }
 
-    fun model(workoutId: String = "w", unit: WeightUnit = WeightUnit.Kg): ActiveWorkoutViewModel {
+    fun model(workoutId: String = "w", unit: WeightUnit = WeightUnit.Kg, defaultRest: Int = 90): ActiveWorkoutViewModel {
         val zone = ZoneOffset.UTC
         return ActiveWorkoutViewModel(
             workoutId = workoutId,
@@ -100,6 +100,7 @@ internal class ActiveWorkoutHarness(private val scope: CoroutineScope) {
             zone = zone,
             clock = { 1_000_000L },
             units = { unit },
+            defaultRest = { defaultRest },
         )
     }
 }

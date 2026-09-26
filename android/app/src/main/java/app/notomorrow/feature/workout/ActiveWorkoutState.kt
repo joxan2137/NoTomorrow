@@ -8,6 +8,7 @@ import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.RecordService
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.service.localizedName
 import java.util.Locale
 import kotlin.math.abs
@@ -273,6 +274,7 @@ internal fun WorkoutExerciseWithSets.toUi(
     suggestion: WeightSuggestion? = null,
     unit: WeightUnit = WeightUnit.Kg,
     previousNote: String? = null,
+    defaultRest: Int = RoutineSeeder.DEFAULT_REST_SECONDS,
 ): WorkoutExerciseUi {
     val ordered = sortedSets
     val currentSetId = ordered.firstOrNull { !it.isCompleted }?.id
@@ -299,6 +301,7 @@ internal fun WorkoutExerciseWithSets.toUi(
         name = exercise?.localizedName(locale).orEmpty(),
         primaryMuscle = exercise?.primaryMuscles?.firstOrNull(),
         restSeconds = workoutExercise.restSeconds,
+        defaultRestSeconds = workoutExercise.exerciseId?.let { RoutineSeeder.restSeconds(it, defaultRest) } ?: defaultRest,
         setCount = sets.size,
         isDone = isDone,
         last = previousLast,

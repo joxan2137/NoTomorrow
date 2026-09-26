@@ -49,6 +49,7 @@ import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
@@ -65,7 +66,8 @@ import app.notomorrow.util.S
  * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu, [onNote]
  * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set,
  * [onLinkNext] / [onUnlinkSuperset] "Superset with next" / "Remove from superset" (each shown only
- * when it applies), [onHistory] "History" (the exercise's past sessions). An exercise in a superset carries the "SUPERSET A" tag over its name.
+ * when it applies), [onHistory] "History" (the exercise's past sessions), [onRest] "Rest timer"
+ * (Default and 30 s to 5 min, opened in place of the menu like the RPE list). An exercise in a superset carries the "SUPERSET A" tag over its name.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -95,6 +97,7 @@ fun WorkoutExerciseSection(
     onLinkNext: (() -> Unit)? = null,
     onUnlinkSuperset: (() -> Unit)? = null,
     onHistory: (() -> Unit)? = null,
+    onRest: ((Int) -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -123,6 +126,7 @@ fun WorkoutExerciseSection(
             onLinkNext = onLinkNext,
             onUnlinkSuperset = onUnlinkSuperset,
             onHistory = onHistory,
+            onRest = onRest,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -203,6 +207,7 @@ private fun Expanded(
     onLinkNext: (() -> Unit)?,
     onUnlinkSuperset: (() -> Unit)?,
     onHistory: (() -> Unit)?,
+    onRest: ((Int) -> Unit)?,
 ) {
     // `@State private var showsNote` — "Add note" opens the field before anything is typed.
     var showsNote by remember(exercise.id) { mutableStateOf(false) }
@@ -221,6 +226,7 @@ private fun Expanded(
             onMoveDown = onMoveDown,
             onAddWarmups = onAddWarmups,
             onHistory = onHistory?.takeIf { exercise.exerciseId != null },
+            onRest = onRest,
             onLinkNext = onLinkNext?.takeIf { exercise.canLinkNext },
             onUnlinkSuperset = onUnlinkSuperset?.takeIf { exercise.supersetGroup != null },
             onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
@@ -312,8 +318,10 @@ private fun Header(
     onLinkNext: (() -> Unit)?,
     onUnlinkSuperset: (() -> Unit)?,
     onAddNote: (() -> Unit)?,
+    onRest: ((Int) -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var restExpanded by remember { mutableStateOf(false) }
     val muscle = exercise.primaryMuscle?.let { workoutMuscleName(it) }
     val subtitle = if (editing) {
         muscle
@@ -331,6 +339,15 @@ private fun Header(
                     onClick = it,
                     icon = NtIcons.Flame,
                     enabled = exercise.warmupSteps.isNotEmpty(),
+                ),
+            )
+        }
+        if (onRest != null) {
+            add(
+                NtMenuItem(
+                    title = stringResource(S.workout_restTimer) + SEPARATOR + Fmt.clock(exercise.restSeconds),
+                    onClick = { restExpanded = true },
+                    icon = NtIcons.Timer,
                 ),
             )
         }
@@ -383,7 +400,32 @@ private fun Header(
                 onDismiss = { menuExpanded = false },
                 items = items,
             )
+            if (onRest != null) {
+                NtMenu(
+                    expanded = restExpanded,
+                    onDismiss = { restExpanded = false },
+                    items = restItems(exercise, onRest),
+                )
+            }
         }
+    }
+}
+
+/**
+ * The Rest timer list (`WorkoutRest`): "Default (1:30)" and 30 s to 5 min, a check on the current
+ * length. NtMenu has no submenus, so it opens in place of the exercise menu (iOS nests a `Menu`).
+ */
+@Composable
+private fun restItems(exercise: WorkoutExerciseUi, onRest: (Int) -> Unit): List<NtMenuItem> {
+    val current = exercise.restSeconds
+    val defaultSeconds = exercise.defaultRestSeconds
+    val defaultLabel = stringResource(S.workout_restDefault, Fmt.clock(defaultSeconds))
+    return WorkoutRest.options(current, defaultSeconds).map { option ->
+        NtMenuItem(
+            title = if (option.isDefault) defaultLabel else Fmt.clock(option.seconds),
+            onClick = { onRest(option.seconds) },
+            icon = if (WorkoutRest.isChecked(option, current, defaultSeconds)) NtIcons.Checkmark else null,
+        )
     }
 }
 
@@ -604,6 +646,8 @@ data class WorkoutExerciseUi(
     /** Raw free-exercise-db value; localized by the view through `WorkoutStrings.muscle`. */
     val primaryMuscle: String?,
     val restSeconds: Int,
+    /** The rest this exercise gets from the Rest length setting (heavy lifts 30 s more): the menu's Default. */
+    val defaultRestSeconds: Int = RoutineSeeder.DEFAULT_REST_SECONDS,
     val setCount: Int,
     val isDone: Boolean,
     /** "Last: 80 kg × 8". */

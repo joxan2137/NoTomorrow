@@ -210,6 +210,10 @@ interface WorkoutDao {
     @Query("UPDATE workout_exercise SET notes = :notes WHERE id = :id")
     suspend fun updateWorkoutExerciseNotes(id: Long, notes: String)
 
+    /** The exercise menu's Rest timer: the rest after this workout exercise's sets. */
+    @Query("UPDATE workout_exercise SET restSeconds = :seconds WHERE id = :id")
+    suspend fun updateWorkoutExerciseRest(id: Long, seconds: Int)
+
     // MARK: - Writes
 
     @Insert

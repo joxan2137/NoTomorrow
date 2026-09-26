@@ -67,6 +67,7 @@ import app.notomorrow.feature.workout.RestExpiryWatcher
 import app.notomorrow.feature.workout.TrainScreen
 import app.notomorrow.feature.workout.WorkoutMiniBar
 import app.notomorrow.feature.workout.WorkoutMiniBarTokens
+import app.notomorrow.feature.workout.WorkoutStarter
 import app.notomorrow.model.AppTab
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.nav.NtRoute
@@ -307,6 +308,7 @@ private fun activeWorkoutModel(workoutId: String): ActiveWorkoutViewModel =
             units = { c.db.profileDao().profile()?.units ?: WeightUnit.Kg },
             reportAttendance = c.attendanceReporter,
             routines = { c.db.routineDao().routinesWithItems() },
+            defaultRest = { WorkoutStarter.defaultRestSeconds(c.db.profileDao()) },
         )
     }
 

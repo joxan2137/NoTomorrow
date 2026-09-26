@@ -217,6 +217,7 @@ fun ActiveWorkoutScreen(
                     onUseSuggestion = model::useSuggestion,
                     onAddWarmups = model::addWarmups,
                     onNote = model::setNote,
+                    onRest = model::setRest,
                     onRpe = model::setRpe,
                     onLinkNext = model::linkWithNext,
                     onUnlinkSuperset = model::unlinkSuperset,
