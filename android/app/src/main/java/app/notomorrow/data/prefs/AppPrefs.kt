@@ -154,6 +154,18 @@ class AppPrefs(context: Context) {
     suspend fun setRoutinesInheritRest(value: Boolean) = put(Keys.routinesInheritRest, value)
 
     /**
+     * `nt.routines.seeded` — the starter routines exist, so deleting every routine does not bring
+     * them back (`RoutineSeeder.seededKey`). The delete-account wipe removes it.
+     */
+    suspend fun routinesSeededOnce(): Boolean = data.first()[Keys.routinesSeeded] ?: false
+
+    suspend fun setRoutinesSeeded(value: Boolean) = put(Keys.routinesSeeded, value)
+
+    suspend fun removeRoutinesSeeded() {
+        store.edit { it.remove(Keys.routinesSeeded) }
+    }
+
+    /**
      * The workout screen asked once for what an on-time rest alert needs (exact alarms,
      * notifications). Android only: iOS delivers the alert on time with no permission.
      */
@@ -216,6 +228,7 @@ class AppPrefs(context: Context) {
         val activeWorkoutId = stringPreferencesKey("nt.activeWorkoutId")
         val workoutDiscarding = stringSetPreferencesKey("nt.workout.discarding")
         val routinesInheritRest = booleanPreferencesKey("nt.routines.inheritRest")
+        val routinesSeeded = booleanPreferencesKey("nt.routines.seeded")
         val restPermissionAsked = booleanPreferencesKey("nt.rest.permissionAsked")
         val mockPaired = booleanPreferencesKey("nt.mock.paired")
         val attendanceOutbox = stringPreferencesKey("nt.attendance.outbox")

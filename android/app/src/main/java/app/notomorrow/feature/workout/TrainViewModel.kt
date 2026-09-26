@@ -10,6 +10,7 @@ import app.notomorrow.feature.dashboard.DashboardViewModel
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.LocaleProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,9 @@ import java.time.LocalDate
  * ([blockedStart]), because only one workout runs at a time. The "Up next" card leads the tab with
  * the routine the Today card suggests (`DashboardViewModel.suggestedRoutine`), and turns into
  * Resume while a workout is in progress; the routine list below holds the others.
+ *
+ * The routine menu's Duplicate, Move up / down and Delete write through [RoutineStore]; the
+ * editor itself has its own model ([RoutineEditorViewModel]).
  */
 class TrainViewModel internal constructor(
     private val stores: WorkoutStarter.Stores,
@@ -48,6 +52,7 @@ class TrainViewModel internal constructor(
     private val workoutDao = stores.workoutDao
     private val routineDao = stores.routineDao
     private val profileDao = stores.profileDao
+    private val routineStore = RoutineStore(stores.routineDao, stores.exerciseDao)
 
     val state: StateFlow<TrainUiState> = combine(
         routineDao.observeRoutinesWithItems(),
@@ -65,6 +70,7 @@ class TrainViewModel internal constructor(
             upNext = routines.firstOrNull { it.routine.id == upNextId }?.let(::upNextItem),
             routines = routines.filter { it.routine.id != upNextId }.map(::rowItem),
             hasRoutines = routines.isNotEmpty(),
+            routineOrder = routines.map { it.routine.id },
             history = history,
             unit = profile?.units ?: WeightUnit.Kg,
             isWorkoutInProgress = inProgress,
@@ -152,6 +158,23 @@ class TrainViewModel internal constructor(
         _blockedStart.value = null
     }
 
+    // MARK: - Routine menu
+
+    /** Duplicate: a copy right after the original, named "Push A 2". */
+    fun duplicateRoutine(routineId: String) {
+        viewModelScope.launch { runCatching { routineStore.duplicate(routineId, LocaleProvider.current()) } }
+    }
+
+    /** Move up (-1) / Move down (+1) in the list. */
+    fun moveRoutine(routineId: String, offset: Int) {
+        viewModelScope.launch { runCatching { routineStore.move(routineId, offset) } }
+    }
+
+    /** Delete, once confirmed. */
+    fun deleteRoutine(routineId: String) {
+        viewModelScope.launch { runCatching { routineStore.delete(routineId) } }
+    }
+
     private companion object {
         /**
          * `RoutineRow.subtitle` inputs: only items whose exercise still exists are counted, and the
@@ -191,6 +214,8 @@ data class TrainUiState(
     val routines: List<RoutineRowItem> = emptyList(),
     /** Any routine at all, the up-next one included (`workout.noRoutines` otherwise). */
     val hasRoutines: Boolean = false,
+    /** Every routine id in list order, the up-next one included: the menu's Move up / down bounds. */
+    val routineOrder: List<String> = emptyList(),
     /** Finished workouts, newest first, with the graph the detail sheet and the row totals need. */
     val history: List<WorkoutWithExercises> = emptyList(),
     val unit: WeightUnit = WeightUnit.Kg,

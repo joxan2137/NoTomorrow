@@ -126,6 +126,9 @@ enum class NtIcons(
     /** SF `square.and.arrow.up` — the iOS share glyph, kept for parity. */
     SquareAndArrowUp(R.drawable.ic_share),
 
+    /** SF `square.and.arrow.down` — the share glyph with the arrow turned in; "Save as routine". */
+    SquareAndArrowDown(R.drawable.ic_square_and_arrow_down),
+
     /** SF `doc.on.doc`. */
     DocOnDoc(R.drawable.ic_copy),
 

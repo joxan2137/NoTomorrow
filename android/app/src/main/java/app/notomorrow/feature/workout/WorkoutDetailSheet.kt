@@ -38,6 +38,7 @@ import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.designsystem.Badge
 import app.notomorrow.designsystem.Eyebrow
+import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
@@ -88,6 +89,7 @@ fun WorkoutDetailPresenter(
     WorkoutDetailSheet(
         workout = workout,
         unit = unit,
+        host = host,
         edit = edit?.takeIf { it.workoutId == workout.workout.id },
         model = model,
         onDismiss = {
@@ -113,17 +115,22 @@ fun WorkoutDetailPresenter(
  * `.presentationBackground(NT.Colors.ground)` + `.presentationDragIndicator(.visible)`. While the
  * draft has unsaved changes a swipe, a scrim tap or back does not close it: it asks
  * "Discard changes?", as Cancel does.
+ *
+ * A workout with completed sets offers "Save as routine" under its exercises: the routine editor
+ * opens over this sheet, prefilled from the workout ([RoutineEditRequest.FromWorkout]).
  */
 @Composable
 private fun WorkoutDetailSheet(
     workout: WorkoutWithExercises,
     unit: WeightUnit,
+    host: String,
     edit: WorkoutEditState?,
     model: WorkoutEditViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var showsDiscard by remember { mutableStateOf(false) }
+    var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
     val focus = remember { SetFieldFocus() }
     // The sheet is its own window with its own focus owner: the manager read out here (the
     // activity's) cannot clear a field focused inside it, so the one the content reads is kept.
@@ -186,10 +193,22 @@ private fun WorkoutDetailSheet(
                         onEdit = model::beginEditing,
                         onDone = onDismiss,
                     )
-                    WorkoutDetailBody(workout = workout, unit = unit, modifier = Modifier.fillMaxWidth().weight(1f))
+                    WorkoutDetailBody(
+                        workout = workout,
+                        unit = unit,
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        onSaveAsRoutine = { routineEdit = RoutineEditRequest.FromWorkout(workout.workout.id) },
+                    )
                 }
             }
         }
+
+        // Composed inside this sheet, so the editor stacks above it (see the prompt below).
+        RoutineEditorPresenter(
+            request = routineEdit,
+            host = "workoutDetail/$host",
+            onDismiss = { routineEdit = null },
+        )
 
         if (showsDiscard) {
             // `.confirmationDialog("workout.edit.discardConfirm")`: Discard (destructive), Keep
@@ -261,9 +280,14 @@ private fun HeaderButton(text: String, modifier: Modifier, onClick: () -> Unit) 
     }
 }
 
-/** Tiles, the PR line, the notes, then every exercise. */
+/** Tiles, the PR line, the notes, then every exercise, and "Save as routine" once a set is done. */
 @Composable
-private fun WorkoutDetailBody(workout: WorkoutWithExercises, unit: WeightUnit, modifier: Modifier) {
+private fun WorkoutDetailBody(
+    workout: WorkoutWithExercises,
+    unit: WeightUnit,
+    modifier: Modifier,
+    onSaveAsRoutine: () -> Unit,
+) {
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -317,6 +341,14 @@ private fun WorkoutDetailBody(workout: WorkoutWithExercises, unit: WeightUnit, m
             workout.sortedExercises.forEach { item ->
                 WorkoutDetailExercise(item = item, unit = unit)
                 Hairline()
+            }
+            if (workout.completedSetCount > 0) {
+                GhostButton(
+                    title = stringResource(S.routine_saveFromWorkout),
+                    modifier = Modifier.padding(top = 18.dp),
+                    icon = NtIcons.SquareAndArrowDown,
+                    onClick = onSaveAsRoutine,
+                )
             }
         }
     }

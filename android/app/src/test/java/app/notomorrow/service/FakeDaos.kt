@@ -222,6 +222,20 @@ class FakeRoutineDao(
         items.value = items.value.map { if (it.id == item.id) item else it }
     }
 
+    override suspend fun updateRoutines(routines: List<RoutineEntity>) {
+        val byId = routines.associateBy { it.id }
+        this.routines.value = this.routines.value.map { byId[it.id] ?: it }
+    }
+
+    override suspend fun deleteItems(routineId: String) {
+        items.value = items.value.filterNot { it.routineId == routineId }
+    }
+
+    override suspend fun deleteRoutineById(id: String) {
+        routines.value = routines.value.filterNot { it.id == id }
+        items.value = items.value.filterNot { it.routineId == id }
+    }
+
     override suspend fun deleteRoutine(routine: RoutineEntity) {
         routines.value = routines.value.filterNot { it.id == routine.id }
         items.value = items.value.filterNot { it.routineId == routine.id }
