@@ -57,4 +57,30 @@ final class ExerciseNotesTests: XCTestCase {
         XCTAssertEqual(RPE.options.last, 10)
         XCTAssertEqual(RPE.options.count, 9)
     }
+
+    func testHistoryListsFinishedSessionsNewestFirst() {
+        let bench = Exercise(id: "bench", name: "Bench", primaryMuscles: ["chest"])
+        context.insert(bench)
+        let (older, olderItem) = workout(bench, note: "Seat 4", daysAgo: 7)
+        let (_, newerItem) = workout(bench, note: "", daysAgo: 2)
+        let (current, _) = workout(bench, note: "", daysAgo: nil)
+        for (item, weight) in [(olderItem, 80.0), (newerItem, 85.0)] {
+            let set = SetEntry(order: 0, weightKg: weight, reps: 5)
+            set.completedAt = .now
+            context.insert(set)
+            set.workoutExercise = item
+        }
+        let empty = Workout(name: "Nothing done", startedAt: .now.addingTimeInterval(-86_400))
+        context.insert(empty)
+        empty.endedAt = .now
+        let emptyItem = WorkoutExercise(order: 0, exercise: bench)
+        context.insert(emptyItem)
+        emptyItem.workout = empty
+        try? context.save()
+
+        let sessions = ExerciseHistorySheet.sessions(of: bench, excluding: current)
+        XCTAssertEqual(sessions.map { $0.sets.first?.weightKg }, [85, 80])
+        XCTAssertEqual(sessions.last?.note, "Seat 4")
+        XCTAssertEqual(sessions.last?.date, older.startedAt)
+    }
 }

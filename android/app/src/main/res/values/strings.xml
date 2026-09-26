@@ -329,6 +329,8 @@
     <string name="health_error_notAuthorized">Allow No Tomorrow in Health to sync.</string>
     <string name="health_error_saveFailed">Couldn\'t save to Health.</string>
     <string name="health_error_unavailable">Health isn\'t available on this device.</string>
+    <string name="history_empty">No finished sessions with this exercise yet.</string>
+    <string name="history_title">History</string>
     <string name="in_n_d_n_h">in %1$d d %2$d h</string>
     <string name="in_n_h_n_min">in %1$d h %2$d min</string>
     <string name="in_n_min">in %d min</string>

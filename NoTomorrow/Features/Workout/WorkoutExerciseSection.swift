@@ -13,6 +13,7 @@ struct WorkoutExerciseSection: View {
 
     @Environment(\.modelContext) private var context
     @State private var showsNote = false
+    @State private var showsHistory = false
 
     private var name: String { exercise.exercise?.localizedName ?? "" }
 
@@ -89,6 +90,7 @@ struct WorkoutExerciseSection: View {
             .buttonStyle(.plain)
             Spacer(minLength: 8)
             Menu {
+                Button("history.title", systemImage: "clock.arrow.circlepath") { showsHistory = true }
                 Button("warmup.add", systemImage: "flame") {
                     withAnimation(.easeInOut(duration: 0.2)) { model.addWarmups(to: exercise) }
                 }
@@ -117,6 +119,11 @@ struct WorkoutExerciseSection: View {
                     .contentShape(Rectangle())
             }
             .menuIndicator(.hidden)
+        }
+        .sheet(isPresented: $showsHistory) {
+            if let ex = exercise.exercise {
+                ExerciseHistorySheet(exercise: ex, unit: model.unit, excluding: model.workout)
+            }
         }
     }
 

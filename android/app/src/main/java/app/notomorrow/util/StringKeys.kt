@@ -344,6 +344,8 @@ object S {
     val health_error_notAuthorized = R.string.health_error_notAuthorized
     val health_error_saveFailed = R.string.health_error_saveFailed
     val health_error_unavailable = R.string.health_error_unavailable
+    val history_empty = R.string.history_empty
+    val history_title = R.string.history_title
     val in_n_d_n_h = R.string.in_n_d_n_h  // in %lld d %lld h
     val in_n_h_n_min = R.string.in_n_h_n_min  // in %lld h %lld min
     val in_n_min = R.string.in_n_min  // in %lld min

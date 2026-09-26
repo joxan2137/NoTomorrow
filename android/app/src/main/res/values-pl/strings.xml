@@ -329,6 +329,8 @@
     <string name="health_error_notAuthorized">Zezwól No Tomorrow w aplikacji Zdrowie, aby synchronizować.</string>
     <string name="health_error_saveFailed">Nie udało się zapisać w aplikacji Zdrowie.</string>
     <string name="health_error_unavailable">Aplikacja Zdrowie nie jest dostępna na tym urządzeniu.</string>
+    <string name="history_empty">Nie ma jeszcze zakończonych treningów z tym ćwiczeniem.</string>
+    <string name="history_title">Historia</string>
     <string name="in_n_d_n_h">za %1$d dn. %2$d h</string>
     <string name="in_n_h_n_min">za %1$d h %2$d min</string>
     <string name="in_n_min">za %d min</string>
