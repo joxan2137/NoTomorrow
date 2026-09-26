@@ -88,6 +88,7 @@ private struct RecordsRow: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(NT.Colors.ink3)
+                        .accessibilityHidden(true)
                 }
                 HStack(alignment: .top, spacing: 10) {
                     cell("records.bestE1RM", value: Fmt.weight(records.bestE1RMKg, unit: unit),

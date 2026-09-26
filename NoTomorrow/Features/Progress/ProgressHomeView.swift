@@ -245,14 +245,16 @@ struct ProgressHomeView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(NT.Colors.ember)
                     .frame(width: 18)
+                    .accessibilityHidden(true)
                 Text("records.title").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(NT.Colors.ink3)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)
-            .frame(height: 48)
+            .frame(minHeight: 48)
             .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
             .contentShape(Rectangle())
         }

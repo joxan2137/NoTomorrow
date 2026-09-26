@@ -155,12 +155,14 @@ struct RoutineEditorSheet: View {
         STGroup {
             HStack(spacing: 12) {
                 Text("workout.edit.name").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                    .accessibilityHidden(true)
                 TextField("", text: $draft.name,
                           prompt: Text("routine.namePlaceholder").foregroundStyle(NT.Colors.ink3))
                     .font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
                     .multilineTextAlignment(.trailing)
                     .submitLabel(.done)
                     .focused($nameFocused)
+                    .accessibilityLabel(Text("workout.edit.name"))
             }
             .frame(minHeight: NT.Size.control)
         }
@@ -208,6 +210,7 @@ private struct RoutineItemCard: View {
                         .contentShape(Rectangle())
                 }
                 .menuIndicator(.hidden)
+                .accessibilityLabel(Text("common.moreOptions"))
             }
             HStack(spacing: 8) {
                 RoutineStepper(label: "workout.sets", value: item.sets,
@@ -295,7 +298,8 @@ private struct RoutineStepper: View {
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(isEnabled ? NT.Colors.ink : NT.Colors.ink3)
                 .frame(width: 30, height: 30)
-                .contentShape(Rectangle())
+                // A 44 pt hit area around the 30 pt glyph box, without changing the layout.
+                .contentShape(Rectangle().inset(by: -7))
         }
         .buttonStyle(PressScale())
         .disabled(!isEnabled)

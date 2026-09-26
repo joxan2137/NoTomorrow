@@ -50,6 +50,7 @@ struct ProgramBrowserSheet: View {
                     Button { selected = nil } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left").font(.system(size: 15, weight: .semibold))
+                                .accessibilityHidden(true)
                             Text("common.back").font(NT.Fonts.body)
                         }
                         .foregroundStyle(NT.Colors.ink2)
@@ -93,6 +94,7 @@ struct ProgramBrowserSheet: View {
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(NT.Colors.ink3)
+                        .accessibilityHidden(true)
                 }
                 Text(TrainingProgram.text(program.summary))
                     .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
@@ -160,6 +162,7 @@ struct ProgramBrowserSheet: View {
                 .frame(minWidth: 34, alignment: .trailing)
         }
         .padding(.vertical, 10)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Add

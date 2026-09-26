@@ -51,6 +51,7 @@ struct MilestonesCard: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(NT.Colors.ink3)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -75,6 +76,7 @@ struct MilestoneAchievedRow: View {
                     .foregroundStyle(NT.Colors.ember)
             }
             .frame(width: 36, height: 36)
+            .accessibilityHidden(true)
             Text(verbatim: MilestoneText.title(milestone, unit: unit))
                 .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
                 .lineLimit(2)
@@ -114,7 +116,9 @@ struct MilestoneProgressRow: View {
             }
             .frame(height: 4)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: MilestoneText.title(milestone, unit: unit)))
+        .accessibilityValue(Text(verbatim: MilestoneText.accessibilityProgress(milestone, unit: unit)))
     }
 }
 
@@ -139,13 +143,26 @@ enum MilestoneText {
 
     /// "32 / 50", "7 450 / 10 000 kg", "95 / 100 kg".
     static func progress(_ milestone: Milestones.Milestone, unit: WeightUnit) -> String {
+        let parts = progressParts(milestone, unit: unit)
+        return parts.current + " / " + parts.target
+    }
+
+    /// VoiceOver's value for a progress bar: "32 of 50, 64%".
+    static func accessibilityProgress(_ milestone: Milestones.Milestone, unit: WeightUnit) -> String {
+        let parts = progressParts(milestone, unit: unit)
+        let outOf = String(format: Fmt.localized("milestones.progressOf"), locale: Fmt.locale, parts.current, parts.target)
+        let percent = min(max(milestone.progress, 0), 1).formatted(.percent.precision(.fractionLength(0)).locale(Fmt.locale))
+        return outOf + ", " + percent
+    }
+
+    private static func progressParts(_ milestone: Milestones.Milestone, unit: WeightUnit) -> (current: String, target: String) {
         switch milestone.kind {
         case .workouts, .weekStreak:
-            return "\(Int(milestone.current)) / \(Int(milestone.target))"
+            return ("\(Int(milestone.current))", "\(Int(milestone.target))")
         case .volume:
-            return Fmt.volume(milestone.current, unit: unit, withUnit: false) + " / " + Fmt.volume(milestone.target, unit: unit)
+            return (Fmt.volume(milestone.current, unit: unit, withUnit: false), Fmt.volume(milestone.target, unit: unit))
         case .bench, .squat, .deadlift:
-            return Fmt.weight(milestone.current, unit: unit, withUnit: false) + " / " + Fmt.weight(milestone.target, unit: unit)
+            return (Fmt.weight(milestone.current, unit: unit, withUnit: false), Fmt.weight(milestone.target, unit: unit))
         }
     }
 

@@ -196,6 +196,8 @@ struct ExerciseProgressView: View {
             }
             .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
             .padding(.top, 10).padding(.bottom, 4)
+            // Each row below names its own columns for VoiceOver.
+            .accessibilityHidden(true)
             ForEach(Array(RepMax.rows(sets: lift.sets, e1RM: lift.current).enumerated()), id: \.offset) { index, row in
                 if index > 0 { Hairline() }
                 HStack {
@@ -219,13 +221,26 @@ struct ExerciseProgressView: View {
                         .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
                         .frame(width: 84, alignment: .trailing)
                 }
-                .frame(height: 44)
+                .frame(minHeight: 44)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("workout.reps") + Text(verbatim: " \(row.reps)"))
+                .accessibilityValue(repMaxValue(row))
             }
             Text("repmax.footnote")
                 .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
         }
+    }
+
+    /// "Best lifted 100 kg × 5, 4 Sep, Estimated 102 kg" for one rep-max row.
+    private func repMaxValue(_ row: RepMax.Row) -> Text {
+        let best: Text = row.best.map { set in
+            Text("repmax.best") + Text(verbatim: " " + Fmt.set(set.weightKg, set.reps, unit: model.unit)
+                + ", " + Fmt.dayMonth(set.date))
+        } ?? (Text("repmax.best") + Text(verbatim: " —"))
+        return best + Text(verbatim: ", ") + Text("repmax.estimated")
+            + Text(verbatim: " " + Fmt.weight(row.estimatedKg, unit: model.unit))
     }
 
     // MARK: Percentages

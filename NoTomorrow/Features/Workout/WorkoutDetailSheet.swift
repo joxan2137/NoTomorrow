@@ -221,6 +221,7 @@ struct WorkoutDetailExercise: View {
             if let rpe = set.rpe {
                 Text(verbatim: "@\(RPE.label(rpe))")
                     .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ember).tabular()
+                    .accessibilityLabel(RPE.accessibilityText(rpe))
             }
             Spacer()
             if set.isPR {

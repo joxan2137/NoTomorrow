@@ -61,7 +61,7 @@ struct WeeklyStatsCard: View {
                     .frame(height: 86)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text(Self.title(metric)))
-                    .accessibilityValue(Text(verbatim: weeks.map { format($0) }.joined(separator: ", ")))
+                    .accessibilityValue(Text(verbatim: weeks.map { weekLabel($0) }.joined(separator: ", ")))
                 }
             }
         }
@@ -81,6 +81,11 @@ struct WeeklyStatsCard: View {
         case .duration: "workout.time"
         case .sets: "workout.sets"
         }
+    }
+
+    /// "Week of 8 Sep: 3 workouts", one per bar for VoiceOver.
+    private func weekLabel(_ week: WeeklyStats.Week) -> String {
+        String(format: Fmt.localized("stats.weekOf"), locale: Fmt.locale, Fmt.dayMonth(week.weekStart), format(week))
     }
 
     private func format(_ week: WeeklyStats.Week?) -> String {

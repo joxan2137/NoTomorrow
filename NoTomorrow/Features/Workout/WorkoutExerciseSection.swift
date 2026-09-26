@@ -132,6 +132,7 @@ struct WorkoutExerciseSection: View {
                     .contentShape(Rectangle())
             }
             .menuIndicator(.hidden)
+            .accessibilityLabel(Text("common.moreOptions"))
             .sheet(isPresented: $showsReplace) {
                 ExercisePickerView(replacingIn: model.workout) { replacement in
                     withAnimation(.easeInOut(duration: 0.2)) { _ = model.replace(exercise, with: replacement) }
@@ -224,6 +225,7 @@ private struct ExerciseNoteField: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: "note.text")
                 .font(.system(size: 13, weight: .semibold)).foregroundStyle(NT.Colors.ink3)
+                .accessibilityHidden(true)
             TextField("note.add", text: $text, prompt: prompt, axis: .vertical)
                 .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink)
                 .lineLimit(1...4)
@@ -257,6 +259,7 @@ struct SupersetTag: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "link").font(.system(size: 9, weight: .bold))
+                .accessibilityHidden(true)
             Text("superset.tag \(letter)")
         }
         .eyebrow(NT.Colors.ember)

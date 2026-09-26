@@ -117,6 +117,7 @@ struct ProgressPhotosSection: View {
                 Button { showsCompare = true } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "rectangle.split.2x1").font(.system(size: 14, weight: .semibold))
+                            .accessibilityHidden(true)
                         Text("photos.compare").font(NT.Fonts.subheadlineBold)
                     }
                     .foregroundStyle(NT.Colors.ember)
@@ -135,6 +136,7 @@ struct ProgressPhotosSection: View {
                     ProgressView().tint(NT.Colors.ink)
                 } else {
                     Image(systemName: "plus").font(.system(size: 20, weight: .semibold))
+                        .accessibilityHidden(true)
                 }
                 Text("photos.add")
                     .font(NT.Fonts.caption)
@@ -167,6 +169,7 @@ struct ProgressPhotosSection: View {
                 }
         }
         .buttonStyle(PressScale())
+        .accessibilityLabel(Text(verbatim: ProgressPhotos.accessibilityLabel(takenAt: photo.takenAt, pose: photo.pose)))
     }
 
     private func save(pose: ProgressPose?) {
@@ -239,6 +242,10 @@ struct ProgressPhotoViewer: View {
                 ForEach(list) { photo in
                     ProgressPhotoImage(url: store.url(for: photo.fileName), maxPixel: 2048, fill: false)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(verbatim: ProgressPhotos.accessibilityLabel(takenAt: photo.takenAt,
+                                                                                             pose: photo.pose)))
+                        .accessibilityAddTraits(.isImage)
                         .tag(Optional(photo.id))
                 }
             }
@@ -343,6 +350,10 @@ struct ProgressPhotoCompareView: View {
                     ProgressPhotoImage(url: store.url(for: photo.fileName), maxPixel: 1200)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(title) + Text(verbatim: ": "
+                    + ProgressPhotos.accessibilityLabel(takenAt: photo.takenAt, pose: photo.pose)))
+                .accessibilityAddTraits(.isImage)
             Menu {
                 ForEach(options) { option in
                     Button {
@@ -360,6 +371,7 @@ struct ProgressPhotoCompareView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                         Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold))
+                            .accessibilityHidden(true)
                     }
                     .foregroundStyle(NT.Colors.ink)
                 }

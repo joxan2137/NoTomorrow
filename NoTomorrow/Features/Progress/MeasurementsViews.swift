@@ -122,6 +122,7 @@ struct MeasurementsSection: View {
                 .frame(minWidth: 84, alignment: .trailing)
         }
         .frame(minHeight: 52)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -196,6 +197,7 @@ struct LogMeasurementsSheet: View {
         } ?? "—"
         return HStack(spacing: 12) {
             Text(Measurements.titleKey(kind)).font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                .accessibilityHidden(true)
             Spacer(minLength: 8)
             TextField("", text: Binding(get: { texts[kind] ?? "" }, set: { texts[kind] = $0 }),
                       prompt: Text(verbatim: placeholder).foregroundStyle(NT.Colors.ink3))
@@ -203,9 +205,13 @@ struct LogMeasurementsSheet: View {
                 .multilineTextAlignment(.trailing)
                 .font(NT.Fonts.body).foregroundStyle(NT.Colors.ink).tabular()
                 .frame(width: 90)
+                .accessibilityLabel(Text(Measurements.titleKey(kind))
+                    + Text(verbatim: ", " + Measurements.unitLabel(kind, unit: unit)))
             Text(verbatim: Measurements.unitLabel(kind, unit: unit))
                 .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
-                .frame(width: 24, alignment: .leading)
+                .fixedSize()
+                .frame(minWidth: 24, alignment: .leading)
+                .accessibilityHidden(true)
         }
         .frame(minHeight: NT.Size.control)
     }

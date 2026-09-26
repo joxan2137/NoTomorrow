@@ -43,8 +43,10 @@ struct CustomExerciseEditor: View {
                     STGroup {
                         HStack(spacing: 12) {
                             Text("workout.edit.name").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                                .accessibilityHidden(true)
                             TextField("", text: $name)
                                 .font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                                .accessibilityLabel(Text("workout.edit.name"))
                                 .multilineTextAlignment(.trailing)
                                 .submitLabel(.done)
                         }

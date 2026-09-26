@@ -99,6 +99,7 @@ struct SetKindMenu: View {
                     Text(verbatim: "@\(RPE.label(rpe))")
                         .font(.system(size: 9, weight: .semibold)).foregroundStyle(NT.Colors.ember).tabular()
                         .lineLimit(1).fixedSize()
+                        .accessibilityLabel(RPE.accessibilityText(rpe))
                 }
             }
             .frame(width: 36, height: NT.Size.control)
@@ -138,6 +139,11 @@ enum RPE {
     /// "8" or "8,5" (locale decimal separator).
     static func label(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(0...1)).locale(Fmt.locale))
+    }
+
+    /// "RPE 8" for VoiceOver, where the screen shows "@8".
+    static func accessibilityText(_ value: Double) -> Text {
+        Text("rpe.title") + Text(verbatim: " " + label(value))
     }
 }
 

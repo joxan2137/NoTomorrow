@@ -94,9 +94,11 @@ struct ExerciseHistorySheet: View {
                         .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
                     if let rpe = set.rpe {
                         Text(verbatim: "@\(RPE.label(rpe))").font(NT.Fonts.caption).foregroundStyle(NT.Colors.ember)
+                            .accessibilityLabel(RPE.accessibilityText(rpe))
                     }
                     if set.isPR { Badge(text: "workout.pr") }
                 }
+                .accessibilityElement(children: .combine)
             }
             if !session.note.isEmpty {
                 Text(session.note)

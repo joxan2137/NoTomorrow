@@ -133,12 +133,13 @@ struct WorkoutDoneView: View {
     private func milestoneChip(_ milestone: Milestones.Milestone) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "trophy").font(.system(size: 12, weight: .bold))
+                .accessibilityHidden(true)
             Text("milestone.new \(MilestoneText.title(milestone, unit: unit))").lineLimit(1)
         }
         .font(NT.Fonts.footnoteBold).tabular()
         .foregroundStyle(NT.Colors.ember)
         .padding(.horizontal, 12)
-        .frame(height: 30)
+        .frame(minHeight: 30)
         .background(NT.Colors.emberTint, in: Capsule())
     }
 

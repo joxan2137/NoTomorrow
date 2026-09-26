@@ -15,6 +15,8 @@ struct PercentageTable: View {
             }
             .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
             .padding(.bottom, 4)
+            // Each row below names its own columns for VoiceOver.
+            .accessibilityHidden(true)
             ForEach(Array(OneRepMax.rows(e1RM: e1RM, step: WarmupPlan.increment(for: unit)).enumerated()),
                     id: \.offset) { index, row in
                 if index > 0 { Hairline() }
@@ -29,7 +31,11 @@ struct PercentageTable: View {
                         .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
                         .frame(width: 64, alignment: .trailing)
                 }
-                .frame(height: 44)
+                .frame(minHeight: 44)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: (Double(row.percent) / 100).formatted(.percent.locale(Fmt.locale))
+                    + ", " + Fmt.plate(row.weight, unit: unit)))
+                .accessibilityValue(Text("workout.reps") + Text(verbatim: " \(row.reps)"))
             }
         }
     }
@@ -61,6 +67,7 @@ struct OneRepMaxCalculatorSheet: View {
                     HStack(spacing: 10) {
                         field("onerm.weight", text: $weightText, suffix: unit.rawValue, keyboard: .decimalPad, focus: .weight)
                         Text(verbatim: "×").font(NT.Fonts.title2).foregroundStyle(NT.Colors.ink2)
+                            .accessibilityHidden(true)
                         field("workout.reps", text: $repsText, suffix: nil, keyboard: .numberPad, focus: .reps)
                     }
                     result.padding(.top, 20)
@@ -104,6 +111,7 @@ struct OneRepMaxCalculatorSheet: View {
                        keyboard: UIKeyboardType, focus: Field) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label).eyebrow()
+                .accessibilityHidden(true)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 TextField("", text: text, prompt: Text(verbatim: "0").foregroundStyle(NT.Colors.ink3))
                     .keyboardType(keyboard)
@@ -111,6 +119,7 @@ struct OneRepMaxCalculatorSheet: View {
                     .foregroundStyle(NT.Colors.ink)
                     .tabular()
                     .focused($focusedField, equals: focus)
+                    .accessibilityLabel(Text(label))
                 if let suffix {
                     Text(verbatim: suffix).font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
                 }

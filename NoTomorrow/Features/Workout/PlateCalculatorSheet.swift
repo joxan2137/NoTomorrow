@@ -88,6 +88,7 @@ struct PlateCalculatorSheet: View {
                         if index > 0 { Hairline() }
                         HStack {
                             Circle().fill(PlateStyle.color(group.plate, unit: unit)).frame(width: 10, height: 10)
+                                .accessibilityHidden(true)
                             Text(Fmt.plate(group.plate, unit: unit))
                                 .font(NT.Fonts.body).foregroundStyle(NT.Colors.ink).tabular()
                             Spacer()
@@ -95,6 +96,7 @@ struct PlateCalculatorSheet: View {
                                 .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
                         }
                         .frame(minHeight: NT.Size.control)
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 .padding(.horizontal, 16)

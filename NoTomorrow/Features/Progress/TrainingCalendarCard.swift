@@ -77,7 +77,8 @@ struct TrainingCalendarCard: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(isEnabled ? NT.Colors.ink : NT.Colors.ink3)
                 .frame(width: 36, height: 36)
-                .contentShape(Rectangle())
+                // 44 pt hit area around the 36 pt box, without changing the layout.
+                .contentShape(Rectangle().inset(by: -4))
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -100,6 +101,8 @@ struct TrainingCalendarCard: View {
                 Text(symbol).font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink3).frame(maxWidth: .infinity)
             }
         }
+        // Single letters; each day cell reads its own date.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -128,9 +131,10 @@ struct TrainingCalendarCard: View {
             .buttonStyle(.plain)
             .disabled(dayWorkouts.isEmpty)
             .accessibilityLabel(Text(verbatim: Fmt.dayMonth(day)))
-            .accessibilityValue(dayWorkouts.isEmpty ? Text("calendar.rest") : Text(verbatim: WorkoutStrings.sets(sets)))
+            .accessibilityValue(dayWorkouts.isEmpty ? Text("calendar.rest")
+                                : Text(verbatim: WorkoutStrings.workouts(dayWorkouts.count) + ", " + WorkoutStrings.sets(sets)))
         } else {
-            Color.clear.frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
+            Color.clear.frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
         }
     }
 }

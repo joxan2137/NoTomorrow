@@ -61,6 +61,14 @@ enum ProgressPhotos {
         date.formatted(.dateTime.day().month(.wide).year().locale(Fmt.locale))
     }
 
+    /// VoiceOver's name for a photo: "Progress photo, front, 26 September 2026".
+    static func accessibilityLabel(takenAt: Date, pose: ProgressPose?) -> String {
+        let date = dateLabel(takenAt)
+        guard let pose else { return String(format: Fmt.localized("photos.a11y"), locale: Fmt.locale, date) }
+        return String(format: Fmt.localized("photos.a11y.pose"), locale: Fmt.locale,
+                      poseText(pose).lowercased(with: Fmt.locale), date)
+    }
+
     /// "4 Sep 2026 · Front", for the compare menus.
     static func optionLabel(takenAt: Date, pose: ProgressPose?) -> String {
         let date = takenAt.formatted(.dateTime.day().month(.abbreviated).year().locale(Fmt.locale))
