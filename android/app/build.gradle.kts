@@ -96,6 +96,11 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
             project.findProperty("widgetShots")?.let { test.systemProperty("widgetShots", file(it.toString()).absolutePath) }
+            project.findProperty("gymShots")?.let {
+                test.systemProperty("gymShots", file(it.toString()).absolutePath)
+                // Every shot seeds a real database and keeps full-screen bitmaps: more heap than the default.
+                test.maxHeapSize = "3g"
+            }
         }
     }
 
@@ -200,6 +205,9 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.androidx.room.testing)
+    // Drives and renders real screens under Robolectric for the opt-in GymScreenshots.
+    testImplementation(composeBom)
+    testImplementation(libs.compose.ui.test.junit4)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.compose.ui.test.junit4)
