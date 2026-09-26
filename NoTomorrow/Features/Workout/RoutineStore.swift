@@ -71,6 +71,21 @@ enum RoutineStore {
         return target
     }
 
+    /// "Add N routines" in the program browser: one new routine per program routine, appended in the program's
+    /// order through `save`, named uniquely ("Full Body A 2" when that name is taken). A routine none of whose
+    /// exercises is in the library is skipped.
+    @discardableResult
+    static func add(_ program: TrainingProgram, in context: ModelContext) -> [Routine] {
+        let ids = Array(program.exerciseIDs)
+        let found = (try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { ids.contains($0.id) }))) ?? []
+        let byID = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let drafts = ProgramLibrary.drafts(for: program, taken: names(in: context), exercise: { id in
+            guard let exercise = byID[id] else { return nil }
+            return ProgramLibrary.ExerciseInfo(name: exercise.localizedName, primaryMuscle: exercise.primaryMuscles.first)
+        })
+        return drafts.filter { !$0.items.isEmpty }.map { save($0, into: nil, in: context) }
+    }
+
     static func delete(_ routine: Routine, in context: ModelContext) {
         context.delete(routine)
         try? context.save()

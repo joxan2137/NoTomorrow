@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, the empty-workout ghost
-/// button, and finished-workout history grouped by week.
+/// Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, New routine, Browse
+/// programs (`ProgramBrowserSheet`), the empty-workout ghost button, and finished-workout history grouped by week.
 /// A workout in progress lives in the mini bar above the tab bar; Start while one runs asks first (in the tab shell).
 struct TrainView: View {
     @Environment(WorkoutSessionController.self) private var session
@@ -16,6 +16,7 @@ struct TrainView: View {
     @State private var selectedWorkout: Workout?
     @State private var routineEdit: RoutineEditRequest?
     @State private var routineToDelete: Routine?
+    @State private var showsPrograms = false
 
     private var unit: WeightUnit { profiles.first?.units ?? .kg }
 
@@ -43,6 +44,7 @@ struct TrainView: View {
         .ntScreenBackground()
         .workoutDetailSheet($selectedWorkout, unit: unit)
         .sheet(item: $routineEdit) { RoutineEditorSheet(request: $0) }
+        .sheet(isPresented: $showsPrograms) { ProgramBrowserSheet() }
         .alert("routine.deleteConfirm", isPresented: Binding(get: { routineToDelete != nil },
                                                              set: { if !$0 { routineToDelete = nil } })) {
             Button("routine.delete", role: .destructive) {
@@ -162,6 +164,7 @@ struct TrainView: View {
             }
             VStack(spacing: 10) {
                 GhostButton(title: "routine.new", systemImage: "plus") { routineEdit = .new() }
+                GhostButton(title: "program.browse", systemImage: "dumbbell") { showsPrograms = true }
                 GhostButton(title: "workout.startEmpty") { requestStart(.empty) }
             }
             .padding(.top, 16)
