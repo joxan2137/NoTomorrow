@@ -35,6 +35,8 @@ data class WorkoutDoneUiState(
     val partnerName: String? = null,
     /** The user's unit for the hero, the delta, the share text and the records (volumes are kg). */
     val unit: WeightUnit = WeightUnit.Kg,
+    /** The share card's exercises (`WorkoutShareCard.lines(for:unit:)`). */
+    val shareLines: List<WorkoutShareLine> = emptyList(),
     val loaded: Boolean = false,
 )
 
@@ -114,6 +116,7 @@ class WorkoutDoneViewModel(
             records = records,
             partnerName = partnerName,
             unit = unit,
+            shareLines = workoutShareLines(workout, unit),
             loaded = true,
         )
     }

@@ -1,7 +1,5 @@
 package app.notomorrow.feature.workout
 
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
@@ -23,8 +22,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,6 +53,7 @@ import app.notomorrow.util.rememberNtStrings
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.coroutines.launch
 
 /**
  * "DONE." summary after finishing: volume hero, delta vs the last workout with the same name,
@@ -80,6 +85,8 @@ fun WorkoutDoneScreen(
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = rememberNtStrings()
+    val scope = rememberCoroutineScope()
+    val cardLayer = rememberGraphicsLayer()
 
     val duration = remember(state.startedAt, state.endedAt) {
         workoutDuration(state.startedAt, state.endedAt)
@@ -91,6 +98,23 @@ fun WorkoutDoneScreen(
     }
 
     Box(modifier.fillMaxSize().background(NT.Colors.ground)) {
+        // The share card, laid out off-screen and only recorded, never drawn: Share turns the
+        // recording into the picture (`ImageRenderer` on iOS).
+        Box(Modifier.size(0.dp).clearAndSetSemantics {}) {
+            val started = Instant.ofEpochMilli(state.startedAt)
+            WorkoutShareCard(
+                title = state.name,
+                subtitle = Fmt.longDay(started) + " · " + Fmt.time(started),
+                volume = Fmt.volume(state.volumeKg, state.unit),
+                time = Fmt.duration(duration, strings),
+                sets = state.completedSetCount.toString(),
+                prs = state.records.count { it.isPR },
+                lines = state.shareLines,
+                modifier = Modifier
+                    .wrapContentSize(Alignment.TopStart, unbounded = true)
+                    .drawWithContent { cardLayer.record { this@drawWithContent.drawContent() } },
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,15 +127,16 @@ fun WorkoutDoneScreen(
                     today = LocalDate.now(),
                 ) + " " + Fmt.time(Instant.ofEpochMilli(state.startedAt)),
                 onShare = {
-                    share(
-                        context,
-                        strings.string(
-                            S.workout_done_shareText,
-                            state.name,
-                            Fmt.duration(duration, strings),
-                            Fmt.volume(state.volumeKg, state.unit),
-                        ),
+                    val text = strings.string(
+                        S.workout_done_shareText,
+                        state.name,
+                        Fmt.duration(duration, strings),
+                        Fmt.volume(state.volumeKg, state.unit),
                     )
+                    scope.launch {
+                        val bitmap = runCatching { cardLayer.toImageBitmap().asAndroidBitmap() }.getOrNull()
+                        shareWorkoutImage(context, bitmap, text)
+                    }
                 },
             )
 
@@ -314,13 +339,4 @@ private fun BroCard(partner: String) {
             Box(Modifier.size(8.dp).background(NT.Colors.good, CircleShape))
         }
     }
-}
-
-/** SwiftUI `ShareLink(item:)` — the plain-text half of the platform table (research §6). */
-private fun share(context: Context, text: String) {
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, text)
-    }
-    context.startActivity(Intent.createChooser(intent, null))
 }
