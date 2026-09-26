@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -12,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.notomorrow.model.AIProvider
+import app.notomorrow.model.WeightUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -175,6 +177,20 @@ class AppPrefs(context: Context) {
 
     suspend fun setRestPermissionAsked(value: Boolean) = put(Keys.restPermissionAsked, value)
 
+    // MARK: - Plate calculator
+
+    /**
+     * `nt.plates.barKg` / `nt.plates.barLb` — the bar the plate calculator loads, remembered per
+     * unit (`PlateCalculatorSheet`'s `@AppStorage`); 20 kg / 45 lb when absent.
+     */
+    fun plateBar(unit: WeightUnit): Flow<Double> = data.map { prefs ->
+        if (unit == WeightUnit.Kg) prefs[Keys.plateBarKg] ?: 20.0 else prefs[Keys.plateBarLb] ?: 45.0
+    }
+
+    suspend fun setPlateBar(unit: WeightUnit, value: Double) {
+        store.edit { it[if (unit == WeightUnit.Kg) Keys.plateBarKg else Keys.plateBarLb] = value }
+    }
+
     // MARK: - Attendance
 
     /**
@@ -234,6 +250,8 @@ class AppPrefs(context: Context) {
         val attendanceOutbox = stringPreferencesKey("nt.attendance.outbox")
         val attendanceSweptThrough = longPreferencesKey("nt.attendance.sweptThrough")
         val exerciseLibraryVersion = intPreferencesKey("nt.exerciseLibrary.version")
+        val plateBarKg = doublePreferencesKey("nt.plates.barKg")
+        val plateBarLb = doublePreferencesKey("nt.plates.barLb")
     }
 
     companion object {

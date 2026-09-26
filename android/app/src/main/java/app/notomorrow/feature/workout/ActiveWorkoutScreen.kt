@@ -15,7 +15,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +43,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
 import app.notomorrow.designsystem.NT
+import app.notomorrow.designsystem.NtIcon
+import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.pressScale
+import app.notomorrow.designsystem.sfIconSize
+import app.notomorrow.util.S
 import app.notomorrow.designsystem.rememberSecondTicker
 import app.notomorrow.di.LocalAppContainer
 import kotlinx.coroutines.CancellationException
@@ -76,6 +87,9 @@ fun ActiveWorkoutScreen(
     var showsFinishDialog by remember { mutableStateOf(false) }
     var showsPicker by remember { mutableStateOf(false) }
     var showsRestSheet by remember { mutableStateOf(false) }
+    // `@State private var plateSet: SetEntry?` — the set the plate calculator is open for.
+    var plateSetId by remember { mutableStateOf<Long?>(null) }
+    val plateTarget = focusedWeightSet(state, focus.focused)
 
     // History may have been edited (or the unit changed) while the workout sat in the mini bar.
     LaunchedEffect(model) { model.reloadPrevious() }
@@ -214,10 +228,46 @@ fun ActiveWorkoutScreen(
                 state = rest,
                 modifier = Modifier
                     .padding(horizontal = NT.Spacing.screenH)
-                    .padding(bottom = 14.dp),
+                    // Sits above the Plates accessory while a weight cell has the keyboard.
+                    .padding(bottom = if (plateTarget != null) 14.dp + NT.Size.control + 8.dp else 14.dp),
                 onTap = { showsRestSheet = true },
                 onPlus15 = { model.adjustRest(15) },
                 onSkip = model::skipRest,
+            )
+        }
+
+        // `ToolbarItemGroup(placement: .keyboard)`'s Plates: Compose has no keyboard toolbar, so it
+        // floats just above the keyboard (the layer's safe-drawing inset includes the IME) while a
+        // weight cell with a weight has the focus.
+        AnimatedVisibility(
+            visible = plateTarget != null && !state.showsDone,
+            modifier = Modifier.align(Alignment.BottomStart),
+            enter = fadeIn(tween(150)),
+            exit = fadeOut(tween(150)),
+        ) {
+            PlatesAccessory(
+                modifier = Modifier
+                    .padding(horizontal = NT.Spacing.screenH)
+                    .padding(bottom = 14.dp),
+                onClick = {
+                    val id = plateTarget ?: return@PlatesAccessory
+                    focusManager.clearFocus()
+                    plateSetId = id
+                },
+            )
+        }
+    }
+
+    plateSetId?.let { setId ->
+        val row = state.exercises.firstNotNullOfOrNull { ex -> ex.sets.firstOrNull { it.id == setId } }
+        if (row == null) {
+            plateSetId = null
+        } else {
+            PlateCalculatorSheet(
+                weightKg = row.weightKg,
+                unit = state.unit,
+                onUse = { kg -> model.setWeight(setId, kg) },
+                onDismiss = { plateSetId = null },
             )
         }
     }
@@ -263,6 +313,38 @@ fun ActiveWorkoutScreen(
             },
             onElapsed = model::finishRestIfElapsed,
             onDismiss = { showsRestSheet = false },
+        )
+    }
+}
+
+/**
+ * `focusedWeightSet(in:)` — the set whose weight cell has the keyboard, when it has a weight to
+ * load (the Plates accessory); `null` otherwise.
+ */
+internal fun focusedWeightSet(state: ActiveWorkoutUiState, focused: SetField?): Long? {
+    if (focused == null || focused.isReps) return null
+    val row = state.exercises.firstNotNullOfOrNull { ex -> ex.sets.firstOrNull { it.id == focused.setId } }
+    return row?.takeIf { it.weightKg > 0 }?.id
+}
+
+/** The "Plates" capsule over the keyboard (`Button("plates.title", systemImage: "circle.grid.2x1")`). */
+@Composable
+private fun PlatesAccessory(modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier = modifier
+            .height(NT.Size.control)
+            .pressScale(onClick = onClick)
+            .background(NT.Colors.surface2, CircleShape)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NtIcon(NtIcons.Dumbbell, size = sfIconSize(14f), tint = NT.Colors.ink)
+        NtText(
+            text = stringResource(S.plates_title),
+            style = NT.Fonts.subheadlineBold,
+            color = NT.Colors.ink,
+            maxLines = 1,
         )
     }
 }

@@ -69,6 +69,15 @@ object Fmt {
         return if (withUnit) number + NBSP + unit.raw else number
     }
 
+    /** "1,25 kg": a plate or bar weight already in [unit], with up to two decimals (plates come in 1.25). */
+    fun plate(value: Double, unit: WeightUnit, locale: Locale = LocaleProvider.current()): String {
+        val number = (NumberFormat.getNumberInstance(locale) as DecimalFormat).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 2
+        }.format(value)
+        return number + NBSP + unit.raw
+    }
+
     /** "2 750 kcal" — rounded to a whole number, grouped. */
     fun kcal(value: Double, withUnit: Boolean = true, locale: Locale = LocaleProvider.current()): String {
         val number = integer(locale).format(roundHalfAwayFromZero(value))
