@@ -84,12 +84,14 @@ fun RoutineRow(
 }
 
 /**
- * The long-press actions on a routine (`TrainView.routineMenu`): Edit, Duplicate, Move up / down,
- * Delete. A `null` move means the routine is already at that end of the list.
+ * The long-press actions on a routine (`TrainView.routineMenu`): Edit, Duplicate, Share (as text,
+ * [RoutineShare]), Move up / down, Delete. A `null` move means the routine is already at that end
+ * of the list.
  */
 class RoutineMenuActions(
     val onEdit: () -> Unit,
     val onDuplicate: () -> Unit,
+    val onShare: () -> Unit,
     val onMoveUp: (() -> Unit)?,
     val onMoveDown: (() -> Unit)?,
     val onDelete: () -> Unit,
@@ -112,12 +114,14 @@ fun RoutineMenuBox(
     val haptics = LocalHapticFeedback.current
     val editLabel = stringResource(S.routine_edit)
     val duplicateLabel = stringResource(S.routine_duplicate)
+    val shareLabel = stringResource(S.routine_share)
     val moveUpLabel = stringResource(S.workout_edit_moveUp)
     val moveDownLabel = stringResource(S.workout_edit_moveDown)
     val deleteLabel = stringResource(S.routine_delete)
     val items = listOfNotNull(
         NtMenuItem(title = editLabel, onClick = menu.onEdit, icon = NtIcons.Pencil),
         NtMenuItem(title = duplicateLabel, onClick = menu.onDuplicate, icon = NtIcons.PlusSquareOnSquare),
+        NtMenuItem(title = shareLabel, onClick = menu.onShare, icon = NtIcons.SquareAndArrowUp),
         menu.onMoveUp?.let { NtMenuItem(title = moveUpLabel, onClick = it, icon = NtIcons.ArrowUp) },
         menu.onMoveDown?.let { NtMenuItem(title = moveDownLabel, onClick = it, icon = NtIcons.ArrowDown) },
         NtMenuItem(title = deleteLabel, onClick = menu.onDelete, destructive = true, icon = NtIcons.Trash),
@@ -149,6 +153,7 @@ fun RoutineMenuBox(
                     customActions = listOfNotNull(
                         if (tapEdits) null else CustomAccessibilityAction(editLabel) { menu.onEdit(); true },
                         CustomAccessibilityAction(duplicateLabel) { menu.onDuplicate(); true },
+                        CustomAccessibilityAction(shareLabel) { menu.onShare(); true },
                         menu.onMoveUp?.let { action -> CustomAccessibilityAction(moveUpLabel) { action(); true } },
                         menu.onMoveDown?.let { action -> CustomAccessibilityAction(moveDownLabel) { action(); true } },
                         CustomAccessibilityAction(deleteLabel) { menu.onDelete(); true },

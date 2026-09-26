@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -109,9 +110,10 @@ fun RoutineEditorPresenter(
 
 /**
  * Create or edit a routine (Cancel · New routine / Edit routine · Save): its name, then one card
- * per exercise with sets × reps steppers and a rest menu, Add exercise, and Delete routine at the
- * bottom for an existing one — `NoTomorrow/Features/Workout/RoutineEditorSheet.swift`. Everything
- * edits the model's draft; Save writes it ([RoutineStore]).
+ * per exercise with sets × reps steppers and a rest menu, Add exercise, Share routine (the draft
+ * as text, [RoutineShare]), and Delete routine at the bottom for an existing one —
+ * `NoTomorrow/Features/Workout/RoutineEditorSheet.swift`. Everything edits the model's draft; Save
+ * writes it ([RoutineStore]).
  *
  * While the draft has unsaved changes a swipe, a scrim tap or back does not close the sheet: it
  * asks "Discard this routine?", as Cancel does (`.interactiveDismissDisabled(isDirty)`).
@@ -232,6 +234,22 @@ private fun RoutineEditorSheet(
                     showsPicker = true
                 },
             )
+
+            if (draft.items.isNotEmpty()) {
+                // `ShareLink(item: RoutineShare.text(draft, …))`: the draft as it stands, unsaved edits included.
+                val context = LocalContext.current
+                StGroup(modifier = Modifier.padding(top = 28.dp)) {
+                    row {
+                        StActionRow(
+                            label = stringResource(S.routine_share),
+                            onClick = {
+                                focusManager.clearFocus()
+                                shareRoutineText(context, RoutineShare.text(draft, routineShareLabels(context)))
+                            },
+                        )
+                    }
+                }
+            }
 
             if (edit.routineId != null) {
                 // A red row in its own card, like Settings' destructive rows.

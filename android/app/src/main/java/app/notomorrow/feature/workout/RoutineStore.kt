@@ -2,6 +2,7 @@ package app.notomorrow.feature.workout
 
 import app.notomorrow.data.dao.ExerciseDao
 import app.notomorrow.data.dao.RoutineDao
+import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.RoutineEntity
 import app.notomorrow.data.entity.RoutineItemEntity
 import app.notomorrow.data.relation.RoutineWithItems
@@ -72,6 +73,65 @@ class RoutineStore(
             localize = localize,
         )
         return drafts.filter { it.items.isNotEmpty() }.mapNotNull { save(it, routineId = null, now = now) }
+    }
+
+    // MARK: - Sharing
+
+    /** "Share routine": the text a friend pastes into Import routine ([RoutineShare]); `null` when the routine is gone. */
+    suspend fun shareText(routineId: String, labels: RoutineShare.Labels, locale: Locale): String? {
+        val routine = routineDao.routineWithItems(routineId) ?: return null
+        return RoutineShare.text(draft(of = routine, locale = locale), labels)
+    }
+
+    /**
+     * The user's exercises for matching a shared routine: by id, and by English and Polish name.
+     * Library exercises win a name over custom ones.
+     */
+    suspend fun shareCatalog(locale: Locale): RoutineShare.Catalog {
+        val catalog = RoutineShare.Catalog()
+        exerciseDao.allByName()
+            .sortedWith(compareBy<ExerciseEntity>({ it.isCustom }, { it.id }))
+            .forEach { exercise ->
+                catalog.add(
+                    RoutineShare.Catalog.Entry(exercise.id, exercise.localizedName(locale), exercise.primaryMuscles.firstOrNull()),
+                    names = listOfNotNull(exercise.name, exercise.namePL),
+                )
+            }
+        return catalog
+    }
+
+    /**
+     * "Add routine" in the import sheet (`RoutineStore.addShared` on iOS): lines the library did
+     * not match become custom exercises (as the workout import does), then one new routine at the
+     * end of the list, named uniquely ("Push A 2" when taken). Returns its id.
+     */
+    suspend fun addShared(
+        name: String,
+        items: List<RoutineShare.Planned>,
+        fallbackName: String,
+        now: Long = System.currentTimeMillis(),
+    ): String? {
+        if (items.isEmpty()) return null
+        val lines = items.map { item ->
+            val exerciseId = item.exerciseId ?: ExerciseEntity(
+                id = "custom-" + UUID.randomUUID().toString().lowercase(Locale.ROOT),
+                name = item.name,
+                primaryMuscles = emptyList(),
+                isCustom = true,
+            ).also { exerciseDao.upsert(it) }.id
+            RoutineItemDraft.of(
+                exerciseId = exerciseId,
+                name = item.name,
+                primaryMuscle = item.primaryMuscle,
+                sets = item.sets,
+                reps = item.reps,
+                restSeconds = item.restSeconds,
+                supersetGroup = item.supersetGroup,
+            )
+        }
+        val base = name.trim().ifEmpty { fallbackName }
+        val draft = RoutineDraft(name = RoutineDraft.uniqueName(base, names()), items = lines).normalizingSupersets()
+        return save(draft, routineId = null, now = now)
     }
 
     suspend fun delete(routineId: String) {

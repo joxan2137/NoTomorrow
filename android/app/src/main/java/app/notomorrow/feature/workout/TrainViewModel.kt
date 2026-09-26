@@ -185,6 +185,21 @@ class TrainViewModel internal constructor(
         viewModelScope.launch { runCatching { routineStore.addProgram(program, localize, LocaleProvider.current()) } }
     }
 
+    // MARK: - Sharing
+
+    /** "Share routine": the routine as text ([RoutineShare]); `null` when it is gone. */
+    suspend fun shareText(routineId: String, labels: RoutineShare.Labels): String? =
+        runCatching { routineStore.shareText(routineId, labels, LocaleProvider.current()) }.getOrNull()
+
+    /** The user's exercises for matching an imported routine. */
+    suspend fun shareCatalog(): RoutineShare.Catalog =
+        runCatching { routineStore.shareCatalog(LocaleProvider.current()) }.getOrElse { RoutineShare.Catalog() }
+
+    /** "Add routine" in the import sheet. */
+    fun addShared(name: String, items: List<RoutineShare.Planned>, fallbackName: String) {
+        viewModelScope.launch { runCatching { routineStore.addShared(name, items, fallbackName) } }
+    }
+
     /** Library id → exercise, for the program browser's lines. */
     suspend fun programExercises(ids: Collection<String>): Map<String, ExerciseEntity> =
         runCatching { stores.exerciseDao.byIds(ids.toList()).associateBy { it.id } }.getOrElse { emptyMap() }

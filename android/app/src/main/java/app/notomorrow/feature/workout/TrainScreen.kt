@@ -25,10 +25,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +59,7 @@ import app.notomorrow.util.Fmt
 import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import java.time.LocalDate
+import kotlinx.coroutines.launch
 
 /**
  * Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, the
@@ -65,7 +68,7 @@ import java.time.LocalDate
  * the tab bar; Start while one runs asks first.
  *
  * Tapping a routine's text opens the routine editor ([RoutineEditorPresenter]); a long press on a
- * routine (or on the Up next card) opens Edit · Duplicate · Move up / down · Delete.
+ * routine (or on the Up next card) opens Edit · Duplicate · Share · Move up / down · Delete.
  *
  * The library import and routine seeding that iOS runs from `.task` here happen once in
  * `NoTomorrowApp`'s start-up coroutine (`AppContainer.seed()`), so this screen only reads.
@@ -91,6 +94,9 @@ fun TrainScreen() {
     var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
     var routineToDelete by remember { mutableStateOf<String?>(null) }
     var showsPrograms by rememberSaveable { mutableStateOf(false) }
+    var showsImport by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     // `routineMenu(_:)`: the moves only where there is a neighbour in the whole list.
     fun menuFor(routineId: String): RoutineMenuActions {
@@ -98,6 +104,11 @@ fun TrainScreen() {
         return RoutineMenuActions(
             onEdit = { routineEdit = RoutineEditRequest.Edit(routineId) },
             onDuplicate = { model.duplicateRoutine(routineId) },
+            onShare = {
+                scope.launch {
+                    model.shareText(routineId, routineShareLabels(context))?.let { shareRoutineText(context, it) }
+                }
+            },
             onMoveUp = if (index > 0) ({ model.moveRoutine(routineId, -1) }) else null,
             onMoveDown = if (index in 0 until state.routineOrder.lastIndex) ({ model.moveRoutine(routineId, 1) }) else null,
             onDelete = { routineToDelete = routineId },
@@ -146,6 +157,7 @@ fun TrainScreen() {
                     onStart = model::start,
                     onNewRoutine = { routineEdit = RoutineEditRequest.New },
                     onBrowsePrograms = { showsPrograms = true },
+                    onImportRoutine = { showsImport = true },
                     onStartEmpty = { model.startEmpty(defaultWorkoutName) },
                 )
             }
@@ -194,6 +206,14 @@ fun TrainScreen() {
             loadExercises = model::programExercises,
             onAdd = model::addProgram,
             onDismiss = { showsPrograms = false },
+        )
+    }
+
+    if (showsImport) {
+        RoutineImportSheet(
+            loadCatalog = model::shareCatalog,
+            onAdd = model::addShared,
+            onDismiss = { showsImport = false },
         )
     }
 
@@ -391,7 +411,7 @@ private fun UpNextLine(item: UpNextItem) {
 
 /**
  * `workout.routines` + one [RoutineRow] per routine but the up-next one, then the ghost "New
- * routine", "Browse programs" ([ProgramBrowserSheet]) and "Start empty workout". `workout.noRoutines` only when there are no routines at all
+ * routine", "Browse programs" ([ProgramBrowserSheet]), "Import routine" ([RoutineImportSheet]) and "Start empty workout". `workout.noRoutines` only when there are no routines at all
  * ([hasRoutines]).
  */
 @Composable
@@ -402,6 +422,7 @@ private fun RoutinesSection(
     onStart: (String) -> Unit,
     onNewRoutine: () -> Unit,
     onBrowsePrograms: () -> Unit,
+    onImportRoutine: () -> Unit,
     onStartEmpty: () -> Unit,
 ) {
     Column {
@@ -427,6 +448,7 @@ private fun RoutinesSection(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             GhostButton(title = stringResource(S.routine_new), icon = NtIcons.Plus, onClick = onNewRoutine)
             GhostButton(title = stringResource(S.program_browse), icon = NtIcons.Dumbbell, onClick = onBrowsePrograms)
+            GhostButton(title = stringResource(S.routine_import), icon = NtIcons.SquareAndArrowDown, onClick = onImportRoutine)
             GhostButton(title = stringResource(S.workout_startEmpty), onClick = onStartEmpty)
         }
     }
