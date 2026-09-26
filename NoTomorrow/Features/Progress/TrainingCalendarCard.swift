@@ -115,12 +115,20 @@ struct TrainingCalendarCard: View {
             Button {
                 selected = dayWorkouts.first
             } label: {
-                Text(verbatim: "\(calendar.component(.day, from: day))")
-                    .font(level > 0 ? NT.Fonts.footnoteBold : NT.Fonts.footnote)
-                    .foregroundStyle(level >= 3 ? NT.Colors.onPrimary : (day > .now ? NT.Colors.ink3 : NT.Colors.ink))
-                    .tabular()
-                    .frame(maxWidth: .infinity)
+                // A flexible square carries the number, so every cell gets the same width (a Text sized to its
+                // number made the row uneven and squeezed some days down to "…").
+                Color.clear
                     .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .overlay {
+                        Text(verbatim: "\(calendar.component(.day, from: day))")
+                            .font(level > 0 ? NT.Fonts.footnoteBold : NT.Fonts.footnote)
+                            .foregroundStyle(level >= 3 ? NT.Colors.onPrimary : (day > .now ? NT.Colors.ink3 : NT.Colors.ink))
+                            .tabular()
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                    .contentShape(Rectangle())
                     .background(NT.Colors.heat[level], in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay {
                         if isToday {
@@ -134,7 +142,7 @@ struct TrainingCalendarCard: View {
             .accessibilityValue(dayWorkouts.isEmpty ? Text("calendar.rest")
                                 : Text(verbatim: WorkoutStrings.workouts(dayWorkouts.count) + ", " + WorkoutStrings.sets(sets)))
         } else {
-            Color.clear.frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
+            Color.clear.aspectRatio(1, contentMode: .fit).frame(maxWidth: .infinity).accessibilityHidden(true)
         }
     }
 }
