@@ -405,6 +405,13 @@
     <string name="onboarding_you_subtitle">Just enough to set your calories. Everything can be changed later in Settings.</string>
     <string name="onboarding_you_suggested">Use the suggestion</string>
     <string name="onboarding_you_title">Who\'s lifting?</string>
+    <string name="plates_bar">Bar</string>
+    <string name="plates_belowBar">That\'s lighter than the bar.</string>
+    <string name="plates_emptyBar">Just the bar.</string>
+    <string name="plates_notExact_s">These plates can\'t make that exactly. The closest load is %s.</string>
+    <string name="plates_perSide">Each side</string>
+    <string name="plates_title">Plates</string>
+    <string name="plates_use_s">Use %s</string>
     <string name="progress_body">Body</string>
     <string name="progress_bodyWeightTrend">Body weight · trend</string>
     <string name="progress_daysAgo_n">%d days ago</string>

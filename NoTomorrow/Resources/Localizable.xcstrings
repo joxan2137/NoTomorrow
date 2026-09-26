@@ -11633,6 +11633,118 @@
           }
         }
       }
+    },
+    "plates.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plates"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talerze"
+          }
+        }
+      }
+    },
+    "plates.bar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bar"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gryf"
+          }
+        }
+      }
+    },
+    "plates.perSide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each side"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na każdą stronę"
+          }
+        }
+      }
+    },
+    "plates.emptyBar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just the bar."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sam gryf."
+          }
+        }
+      }
+    },
+    "plates.belowBar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's lighter than the bar."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To mniej niż sam gryf."
+          }
+        }
+      }
+    },
+    "plates.notExact %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These plates can't make that exactly. The closest load is %@."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tymi talerzami nie da się tego ułożyć dokładnie. Najbliżej: %@."
+          }
+        }
+      }
+    },
+    "plates.use %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw %@"
+          }
+        }
+      }
     }
   }
 }

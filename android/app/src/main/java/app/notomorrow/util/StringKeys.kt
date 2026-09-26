@@ -420,6 +420,13 @@ object S {
     val onboarding_you_subtitle = R.string.onboarding_you_subtitle
     val onboarding_you_suggested = R.string.onboarding_you_suggested
     val onboarding_you_title = R.string.onboarding_you_title
+    val plates_bar = R.string.plates_bar
+    val plates_belowBar = R.string.plates_belowBar
+    val plates_emptyBar = R.string.plates_emptyBar
+    val plates_notExact_s = R.string.plates_notExact_s  // plates.notExact %@
+    val plates_perSide = R.string.plates_perSide
+    val plates_title = R.string.plates_title
+    val plates_use_s = R.string.plates_use_s  // plates.use %@
     val progress_body = R.string.progress_body
     val progress_bodyWeightTrend = R.string.progress_bodyWeightTrend
     val progress_daysAgo_n = R.string.progress_daysAgo_n  // progress.daysAgo %lld

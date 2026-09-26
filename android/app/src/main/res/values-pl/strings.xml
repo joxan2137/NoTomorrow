@@ -405,6 +405,13 @@
     <string name="onboarding_you_subtitle">Tyle, żeby ustawić kalorie. Wszystko zmienisz później w ustawieniach.</string>
     <string name="onboarding_you_suggested">Użyj sugestii</string>
     <string name="onboarding_you_title">Kto dziś dźwiga?</string>
+    <string name="plates_bar">Gryf</string>
+    <string name="plates_belowBar">To mniej niż sam gryf.</string>
+    <string name="plates_emptyBar">Sam gryf.</string>
+    <string name="plates_notExact_s">Tymi talerzami nie da się tego ułożyć dokładnie. Najbliżej: %s.</string>
+    <string name="plates_perSide">Na każdą stronę</string>
+    <string name="plates_title">Talerze</string>
+    <string name="plates_use_s">Ustaw %s</string>
     <string name="progress_body">Waga</string>
     <string name="progress_bodyWeightTrend">Waga · trend</string>
     <string name="progress_daysAgo_n">%d dni temu</string>
