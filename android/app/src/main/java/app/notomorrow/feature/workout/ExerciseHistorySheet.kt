@@ -18,6 +18,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.relation.CompletedSetRow
@@ -188,6 +191,7 @@ private fun SessionBlock(session: ExerciseHistorySession, unit: WeightUnit) {
         }
         session.sets.forEach { set ->
             Row(
+                modifier = Modifier.semantics(mergeDescendants = true) {},
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -204,7 +208,13 @@ private fun SessionBlock(session: ExerciseHistorySession, unit: WeightUnit) {
                     color = NT.Colors.ink,
                 )
                 set.rpe?.let { rpe ->
-                    NtText("@" + Rpe.label(rpe), style = NT.Fonts.caption, color = NT.Colors.ember)
+                    val spoken = Rpe.spoken(rpe)
+                    NtText(
+                        "@" + Rpe.label(rpe),
+                        modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+                        style = NT.Fonts.caption,
+                        color = NT.Colors.ember,
+                    )
                 }
                 if (set.isPR) Badge(text = stringResource(S.workout_pr))
             }

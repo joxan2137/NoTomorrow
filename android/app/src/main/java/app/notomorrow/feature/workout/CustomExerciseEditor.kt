@@ -24,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -164,11 +167,18 @@ fun CustomExerciseEditor(exercise: ExerciseEntity, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                NtText(stringResource(S.workout_edit_name), style = NT.Fonts.body, color = NT.Colors.ink, maxLines = 1)
+                val nameLabel = stringResource(S.workout_edit_name)
+                NtText(
+                    nameLabel,
+                    modifier = Modifier.clearAndSetSemantics {},
+                    style = NT.Fonts.body,
+                    color = NT.Colors.ink,
+                    maxLines = 1,
+                )
                 BasicTextField(
                     value = name,
                     onValueChange = { name = it },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).semantics { contentDescription = nameLabel },
                     textStyle = NT.Fonts.body.copy(color = NT.Colors.ink, textAlign = TextAlign.End),
                     singleLine = true,
                     cursorBrush = SolidColor(NT.Colors.ink),

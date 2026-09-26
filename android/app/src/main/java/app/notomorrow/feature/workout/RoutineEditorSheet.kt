@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -444,13 +445,18 @@ private fun RoutineItemCard(
             Box(
                 modifier = Modifier
                     .size(NT.Size.control)
-                    .ntPlainClickable {
+                    .ntPlainClickable(role = Role.Button) {
                         focusManager.clearFocus()
                         menuExpanded = true
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                NtIcon(NtIcons.Ellipsis, size = sfIconSize(18f), tint = NT.Colors.ink2)
+                NtIcon(
+                    NtIcons.Ellipsis,
+                    size = sfIconSize(18f),
+                    tint = NT.Colors.ink2,
+                    contentDescription = stringResource(S.common_moreOptions),
+                )
                 NtMenu(expanded = menuExpanded, onDismiss = { menuExpanded = false }, items = items)
             }
         }

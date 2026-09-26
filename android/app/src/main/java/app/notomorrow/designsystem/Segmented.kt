@@ -20,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -85,7 +87,8 @@ fun <T> NtSegmented(
                             indication = null,
                             role = Role.Tab,
                             onClick = { onSelect(option) },
-                        ),
+                        )
+                        .semantics { this.selected = isSelected },
                     contentAlignment = Alignment.Center,
                 ) {
                     NtText(

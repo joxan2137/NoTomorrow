@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -154,7 +155,8 @@ private fun PageButton(icon: NtIcons, label: String, enabled: Boolean, onClick: 
 @Composable
 private fun WeekdayHeader() {
     val locale = appLocale()
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    // Single letters; each day cell reads its own date.
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.clearAndSetSemantics {}) {
         for (day in DayOfWeek.entries) {
             NtText(
                 text = day.getDisplayName(TextStyle.NARROW_STANDALONE, locale),
@@ -177,14 +179,19 @@ private fun DayCell(
     onOpen: (String) -> Unit,
 ) {
     if (day == null) {
-        Spacer(modifier.aspectRatio(1f))
+        Spacer(modifier.aspectRatio(1f).clearAndSetSemantics {})
         return
     }
     val sets = entry?.sets ?: 0
     val level = TrainingCalendar.level(sets)
     val first = entry?.workoutIds?.firstOrNull()
     val label = Fmt.dayMonth(day, appLocale())
-    val value = if (first == null) stringResource(S.calendar_rest) else workoutSetCount(sets)
+    val workouts = entry?.workoutIds?.size ?: 0
+    val value = if (first == null) {
+        stringResource(S.calendar_rest)
+    } else {
+        workoutCount(workouts) + ", " + workoutSetCount(sets)
+    }
     Box(
         modifier = modifier
             .aspectRatio(1f)

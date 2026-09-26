@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Eyebrow
@@ -424,10 +426,15 @@ private fun Header(
         Box(
             modifier = Modifier
                 .size(NT.Size.control)
-                .ntPlainClickable { menuExpanded = true },
+                .ntPlainClickable(role = Role.Button) { menuExpanded = true },
             contentAlignment = Alignment.Center,
         ) {
-            NtIcon(NtIcons.Ellipsis, size = sfIconSize(18f), tint = NT.Colors.ink2)
+            NtIcon(
+                NtIcons.Ellipsis,
+                size = sfIconSize(18f),
+                tint = NT.Colors.ink2,
+                contentDescription = stringResource(S.common_moreOptions),
+            )
             NtMenu(
                 expanded = menuExpanded,
                 onDismiss = { menuExpanded = false },
@@ -486,6 +493,7 @@ private fun ExerciseNoteField(exercise: WorkoutExerciseUi, onNote: (String) -> U
     var text by remember(exercise.id, exercise.exerciseId) { mutableStateOf(exercise.notes) }
     val placeholder = exercise.previousNote?.let { stringResource(S.note_last_s, it) }
         ?: stringResource(S.note_placeholder)
+    val fieldLabel = stringResource(S.note_add)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -501,7 +509,7 @@ private fun ExerciseNoteField(exercise: WorkoutExerciseUi, onNote: (String) -> U
                 text = new
                 if (new != exercise.notes) onNote(new)
             },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = fieldLabel },
             textStyle = NT.Fonts.subheadline.copy(color = NT.Colors.ink),
             cursorBrush = SolidColor(NT.Colors.ink),
             maxLines = 4,

@@ -249,14 +249,23 @@ object Milestones {
     }
 
     /** "32 / 50", "7 450 / 10 000 kg", "95 / 100 kg". */
-    fun progressText(milestone: Milestone, unit: WeightUnit, locale: Locale = LocaleProvider.current()): String =
-        when (milestone.kind) {
-            Kind.Workouts, Kind.WeekStreak -> "${milestone.current.toInt()} / ${milestone.target.toInt()}"
-            Kind.Volume -> Fmt.volume(milestone.current, unit, withUnit = false, locale = locale) + " / " +
-                Fmt.volume(milestone.target, unit, locale = locale)
-            else -> Fmt.weight(milestone.current, unit, withUnit = false, locale = locale) + " / " +
-                Fmt.weight(milestone.target, unit, locale = locale)
-        }
+    fun progressText(milestone: Milestone, unit: WeightUnit, locale: Locale = LocaleProvider.current()): String {
+        val (current, target) = progressParts(milestone, unit, locale)
+        return "$current / $target"
+    }
+
+    /** The two sides of [progressText]: "7 450" and "10 000 kg" (TalkBack reads "7 450 of 10 000 kg"). */
+    fun progressParts(
+        milestone: Milestone,
+        unit: WeightUnit,
+        locale: Locale = LocaleProvider.current(),
+    ): Pair<String, String> = when (milestone.kind) {
+        Kind.Workouts, Kind.WeekStreak -> "${milestone.current.toInt()}" to "${milestone.target.toInt()}"
+        Kind.Volume -> Fmt.volume(milestone.current, unit, withUnit = false, locale = locale) to
+            Fmt.volume(milestone.target, unit, locale = locale)
+        else -> Fmt.weight(milestone.current, unit, withUnit = false, locale = locale) to
+            Fmt.weight(milestone.target, unit, locale = locale)
+    }
 
     /** "1.5×" / "1,5×" */
     fun multiple(milestone: Milestone, locale: Locale = LocaleProvider.current()): String {

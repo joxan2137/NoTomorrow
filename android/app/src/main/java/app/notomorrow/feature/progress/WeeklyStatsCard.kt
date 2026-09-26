@@ -59,7 +59,10 @@ fun WeeklyStatsCard(
     val thisWeek = weeks.lastOrNull()
     val lastWeek = if (weeks.size >= 2) weeks[weeks.size - 2] else null
     val ratio = WeeklyStats.change(weeks, metric)
-    val chartDescription = titles.getValue(metric) + ": " + weeks.joinToString(", ") { format(it) }
+    val weekOf = stringResource(S.stats_weekOf)
+    val chartDescription = titles.getValue(metric) + ": " + weeks.joinToString(", ") { week ->
+        weekOf.format(Fmt.dayMonth(week.weekStart), format(week))
+    }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SectionHeader(title = stringResource(S.stats_title))

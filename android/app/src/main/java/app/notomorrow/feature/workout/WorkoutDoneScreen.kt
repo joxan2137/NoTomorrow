@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -260,7 +261,7 @@ private fun MilestoneChip(milestone: Milestones.Milestone, unit: WeightUnit) {
     val strings = rememberNtStrings()
     Row(
         modifier = Modifier
-            .height(30.dp)
+            .heightIn(min = 30.dp)
             .background(NT.Colors.emberTint, CircleShape)
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),

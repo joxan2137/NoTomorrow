@@ -31,6 +31,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.data.entity.SetEntryEntity
@@ -438,7 +440,13 @@ private fun WorkoutDetailSetLine(set: SetEntryEntity, label: String, unit: Weigh
             color = NT.Colors.ink,
         )
         set.rpe?.let { rpe ->
-            TabularText(text = "@" + Rpe.label(rpe), style = NT.Fonts.caption, color = NT.Colors.ember)
+            val spoken = Rpe.spoken(rpe)
+            TabularText(
+                text = "@" + Rpe.label(rpe),
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+                style = NT.Fonts.caption,
+                color = NT.Colors.ember,
+            )
         }
         Spacer(Modifier.weight(1f))
         when {

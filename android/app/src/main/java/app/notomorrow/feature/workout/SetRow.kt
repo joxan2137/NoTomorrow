@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -276,7 +278,13 @@ private fun KindMenu(
                 }
             }
             row.rpe?.let { rpe ->
-                TabularText(text = "@" + Rpe.label(rpe), style = RPE_STYLE, color = NT.Colors.ember)
+                val spoken = Rpe.spoken(rpe)
+                TabularText(
+                    text = "@" + Rpe.label(rpe),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+                    style = RPE_STYLE,
+                    color = NT.Colors.ember,
+                )
             }
         }
         NtMenu(expanded = expanded, onDismiss = { expanded = false }, items = items)
@@ -299,6 +307,10 @@ object Rpe {
             minimumFractionDigits = 0
             maximumFractionDigits = 1
         }.format(value)
+
+    /** "RPE 8" for TalkBack, where the screen shows "@8". */
+    @Composable
+    fun spoken(value: Double): String = stringResource(S.rpe_title) + " " + label(value)
 }
 
 /** `SetKindMenu.letter(for:)` — W / D / F, never localized; the detail sheet uses the same glyphs. */

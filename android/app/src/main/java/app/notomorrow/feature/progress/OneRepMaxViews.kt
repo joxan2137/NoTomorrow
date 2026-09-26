@@ -28,6 +28,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -54,9 +58,11 @@ import app.notomorrow.util.S
  */
 @Composable
 fun PercentageTable(e1RM: Double, unit: WeightUnit, modifier: Modifier = Modifier) {
+    val repsLabel = stringResource(S.workout_reps)
     Column(modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            // Each row below names its own columns for TalkBack.
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).clearAndSetSemantics {},
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ColumnHeader(stringResource(S.onerm_percent), Modifier.width(PERCENT_COLUMN), TextAlign.Start)
@@ -66,7 +72,10 @@ fun PercentageTable(e1RM: Double, unit: WeightUnit, modifier: Modifier = Modifie
         OneRepMax.rows(e1RM, WarmupPlan.increment(unit)).forEachIndexed { index, row ->
             if (index > 0) Hairline()
             Row(
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).clearAndSetSemantics {
+                    contentDescription = Fmt.percent(row.percent / 100.0) + ", " + Fmt.plate(row.weight, unit)
+                    stateDescription = "$repsLabel ${row.reps}"
+                },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TabularText(
@@ -256,7 +265,7 @@ private fun NumberField(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Eyebrow(label)
+        Eyebrow(label, modifier = Modifier.clearAndSetSemantics {})
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -273,7 +282,10 @@ private fun NumberField(
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focus)
+                        .semantics { contentDescription = label },
                     textStyle = NT.Fonts.title2.tabular().copy(color = NT.Colors.ink),
                     singleLine = true,
                     cursorBrush = SolidColor(NT.Colors.ink),

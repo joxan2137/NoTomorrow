@@ -94,6 +94,7 @@
     <string name="common_done">Done</string>
     <string name="common_edit">Edit</string>
     <string name="common_goal">Goal</string>
+    <string name="common_moreOptions">More options</string>
     <string name="common_name">Name</string>
     <string name="common_save">Save</string>
     <string name="common_share">Share</string>
@@ -383,6 +384,7 @@
     <string name="milestones_empty">Finish your first workout to earn your first milestone.</string>
     <string name="milestones_latest">Latest</string>
     <string name="milestones_noBodyWeight">Log your body weight to unlock the strength milestones.</string>
+    <string name="milestones_progressOf">%1$s of %2$s</string>
     <string name="milestones_section_strength">Strength</string>
     <string name="milestones_section_volume">Total volume</string>
     <string name="milestones_section_weekStreak">Longest week streak</string>
@@ -476,6 +478,8 @@
     <string name="onerm_percent">Of 1RM</string>
     <string name="onerm_percentages">Percentages</string>
     <string name="onerm_weight">Weight</string>
+    <string name="photos_a11y">Progress photo, %s</string>
+    <string name="photos_a11y_pose">Progress photo, %1$s, %2$s</string>
     <string name="photos_add">Add photo</string>
     <string name="photos_after">After</string>
     <string name="photos_before">Before</string>
@@ -711,6 +715,7 @@
     <string name="split_pushPull">Push / Pull</string>
     <string name="split_pushPullLegs">Push / Pull / Legs</string>
     <string name="stats_title">Weekly stats</string>
+    <string name="stats_weekOf">Week of %1$s: %2$s</string>
     <string name="stats_workouts">Workouts</string>
     <string name="store_error_body">No Tomorrow can\'t open the workouts, meals and everything else saved on this phone. Nothing has been deleted. Try again, or save a copy of the data first.</string>
     <string name="store_error_details">Details</string>

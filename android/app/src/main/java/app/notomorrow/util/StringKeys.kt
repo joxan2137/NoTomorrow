@@ -109,6 +109,7 @@ object S {
     val common_done = R.string.common_done
     val common_edit = R.string.common_edit
     val common_goal = R.string.common_goal
+    val common_moreOptions = R.string.common_moreOptions
     val common_name = R.string.common_name
     val common_save = R.string.common_save
     val common_share = R.string.common_share
@@ -398,6 +399,7 @@ object S {
     val milestones_empty = R.string.milestones_empty
     val milestones_latest = R.string.milestones_latest
     val milestones_noBodyWeight = R.string.milestones_noBodyWeight
+    val milestones_progressOf = R.string.milestones_progressOf
     val milestones_section_strength = R.string.milestones_section_strength
     val milestones_section_volume = R.string.milestones_section_volume
     val milestones_section_weekStreak = R.string.milestones_section_weekStreak
@@ -491,6 +493,8 @@ object S {
     val onerm_percent = R.string.onerm_percent
     val onerm_percentages = R.string.onerm_percentages
     val onerm_weight = R.string.onerm_weight
+    val photos_a11y = R.string.photos_a11y
+    val photos_a11y_pose = R.string.photos_a11y_pose
     val photos_add = R.string.photos_add
     val photos_after = R.string.photos_after
     val photos_before = R.string.photos_before
@@ -726,6 +730,7 @@ object S {
     val split_pushPull = R.string.split_pushPull
     val split_pushPullLegs = R.string.split_pushPullLegs
     val stats_title = R.string.stats_title
+    val stats_weekOf = R.string.stats_weekOf
     val stats_workouts = R.string.stats_workouts
     val store_error_body = R.string.store_error_body
     val store_error_details = R.string.store_error_details

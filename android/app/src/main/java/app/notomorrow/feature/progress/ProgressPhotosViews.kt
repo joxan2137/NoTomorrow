@@ -41,6 +41,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.entity.ProgressPhotoEntity
@@ -59,6 +64,7 @@ import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtSpinner
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.appLocale
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.di.LocalAppContainer
@@ -229,16 +235,19 @@ private fun AddPhotoTile(importing: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun PhotoThumbnail(photo: ProgressPhotoEntity, files: ProgressPhotoFiles, onClick: () -> Unit) {
+    val description = photoDescription(photo)
     Box(
         modifier = Modifier
             .size(TileWidth, TileHeight)
             .pressScale(onClick = onClick)
+            .semantics { contentDescription = description }
             .clip(NtShapes.cell),
     ) {
         PhotoImage(files.file(photo.fileName), maxPixel = 320, crop = true, modifier = Modifier.fillMaxSize())
         NtText(
             text = ProgressPhotos.shortDateLabel(photo.takenAt),
             modifier = Modifier
+                .clearAndSetSemantics {}
                 .align(Alignment.BottomStart)
                 .padding(5.dp)
                 .background(Color.Black.copy(alpha = 0.55f), NtShapes.capsule)
@@ -248,6 +257,14 @@ private fun PhotoThumbnail(photo: ProgressPhotoEntity, files: ProgressPhotoFiles
             maxLines = 1,
         )
     }
+}
+
+/** TalkBack's name for a photo: "Progress photo, front, 26 September 2026". */
+@Composable
+private fun photoDescription(photo: ProgressPhotoEntity): String {
+    val date = ProgressPhotos.dateLabel(photo.takenAt)
+    val pose = ProgressPhotos.pose(photo) ?: return stringResource(S.photos_a11y, date)
+    return stringResource(S.photos_a11y_pose, stringResource(NtKeys.pose(pose)).lowercase(appLocale()), date)
 }
 
 /** A stored photo decoded at about [maxPixel] on its long edge, off the main thread. */
@@ -323,7 +340,16 @@ private fun ProgressPhotoViewer(
             key = { page -> photos.getOrNull(page)?.id ?: page },
         ) { page ->
             photos.getOrNull(page)?.let { photo ->
-                PhotoImage(files.file(photo.fileName), maxPixel = 2048, crop = false, modifier = Modifier.fillMaxSize())
+                val description = photoDescription(photo)
+                PhotoImage(
+                    files.file(photo.fileName),
+                    maxPixel = 2048,
+                    crop = false,
+                    modifier = Modifier.fillMaxSize().semantics {
+                        contentDescription = description
+                        role = Role.Image
+                    },
+                )
             }
         }
         if (current != null) {
@@ -431,12 +457,20 @@ private fun CompareColumn(
         return if (pose == null) date else "$date · $pose"
     }
 
+    val description = title + ": " + photoDescription(photo)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         PhotoImage(
             files.file(photo.fileName),
             maxPixel = 1200,
             crop = true,
-            modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(NtShapes.cell),
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 4f)
+                .clip(NtShapes.cell)
+                .semantics {
+                    contentDescription = description
+                    role = Role.Image
+                },
         )
         Box(
             modifier = Modifier.fillMaxWidth().heightIn(min = NT.Size.control).ntPlainClickable { expanded = true },

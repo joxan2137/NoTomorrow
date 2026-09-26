@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Chip
 import app.notomorrow.designsystem.Eyebrow
@@ -187,7 +188,10 @@ private fun PerSideList(load: PlateMath.Load, unit: WeightUnit, modifier: Modifi
                 load.groups.forEachIndexed { index, group ->
                     if (index > 0) Hairline()
                     Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = NT.Size.control),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = NT.Size.control)
+                            .semantics(mergeDescendants = true) {},
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

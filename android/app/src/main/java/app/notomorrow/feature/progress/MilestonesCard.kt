@@ -14,8 +14,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Eyebrow
 import app.notomorrow.designsystem.Hairline
@@ -130,8 +135,16 @@ fun MilestoneAchievedRow(milestone: Milestones.Milestone, unit: WeightUnit, modi
 @Composable
 fun MilestoneProgressRow(milestone: Milestones.Milestone, unit: WeightUnit, modifier: Modifier = Modifier) {
     val strings = rememberNtStrings()
+    val title = Milestones.title(milestone, unit, strings)
+    val parts = Milestones.progressParts(milestone, unit)
+    val spokenProgress = stringResource(S.milestones_progressOf, parts.first, parts.second) + ", " +
+        Fmt.percent(milestone.progress.coerceIn(0.0, 1.0))
     Column(
-        modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        modifier = modifier.fillMaxWidth().clearAndSetSemantics {
+            contentDescription = title
+            stateDescription = spokenProgress
+            progressBarRangeInfo = ProgressBarRangeInfo(milestone.progress.toFloat().coerceIn(0f, 1f), 0f..1f)
+        },
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
@@ -140,7 +153,7 @@ fun MilestoneProgressRow(milestone: Milestones.Milestone, unit: WeightUnit, modi
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TabularText(
-                text = Milestones.title(milestone, unit, strings),
+                text = title,
                 modifier = Modifier.weight(1f),
                 style = NT.Fonts.subheadline,
                 color = NT.Colors.ink,

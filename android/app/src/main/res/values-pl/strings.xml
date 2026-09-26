@@ -94,6 +94,7 @@
     <string name="common_done">Gotowe</string>
     <string name="common_edit">Edytuj</string>
     <string name="common_goal">Cel</string>
+    <string name="common_moreOptions">Więcej opcji</string>
     <string name="common_name">Imię</string>
     <string name="common_save">Zapisz</string>
     <string name="common_share">Udostępnij</string>
@@ -383,6 +384,7 @@
     <string name="milestones_empty">Zakończ pierwszy trening, a zdobędziesz pierwsze osiągnięcie.</string>
     <string name="milestones_latest">Ostatnie</string>
     <string name="milestones_noBodyWeight">Zapisz masę ciała, aby odblokować osiągnięcia siłowe.</string>
+    <string name="milestones_progressOf">%1$s z %2$s</string>
     <string name="milestones_section_strength">Siła</string>
     <string name="milestones_section_volume">Łączna objętość</string>
     <string name="milestones_section_weekStreak">Najdłuższa seria tygodni</string>
@@ -476,6 +478,8 @@
     <string name="onerm_percent">Z 1RM</string>
     <string name="onerm_percentages">Procenty 1RM</string>
     <string name="onerm_weight">Ciężar</string>
+    <string name="photos_a11y">Zdjęcie sylwetki, %s</string>
+    <string name="photos_a11y_pose">Zdjęcie sylwetki, %1$s, %2$s</string>
     <string name="photos_add">Dodaj zdjęcie</string>
     <string name="photos_after">Po</string>
     <string name="photos_before">Przed</string>
@@ -711,6 +715,7 @@
     <string name="split_pushPull">Push / Pull</string>
     <string name="split_pushPullLegs">Push / Pull / Legs</string>
     <string name="stats_title">Statystyki tygodniowe</string>
+    <string name="stats_weekOf">Tydzień od %1$s: %2$s</string>
     <string name="stats_workouts">Treningi</string>
     <string name="store_error_body">No Tomorrow nie może otworzyć treningów, posiłków i reszty danych zapisanych na tym telefonie. Nic nie zostało usunięte. Spróbuj ponownie albo najpierw zapisz kopię danych.</string>
     <string name="store_error_details">Szczegóły</string>

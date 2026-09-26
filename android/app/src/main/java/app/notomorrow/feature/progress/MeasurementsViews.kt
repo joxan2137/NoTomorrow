@@ -29,6 +29,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -237,7 +240,9 @@ private fun MeasurementField(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        NtText(stringResource(NtKeys.measure(kind)), style = NT.Fonts.body, color = NT.Colors.ink, maxLines = 1)
+        val title = stringResource(NtKeys.measure(kind))
+        val fieldLabel = title + ", " + Measurements.unitLabel(kind, unit)
+        NtText(title, modifier = Modifier.clearAndSetSemantics {}, style = NT.Fonts.body, color = NT.Colors.ink, maxLines = 1)
         Spacer(Modifier.weight(1f).widthIn(min = 8.dp))
         Box(Modifier.width(90.dp), contentAlignment = Alignment.CenterEnd) {
             if (text.isEmpty()) {
@@ -246,7 +251,7 @@ private fun MeasurementField(
             BasicTextField(
                 value = text,
                 onValueChange = onText,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = fieldLabel },
                 textStyle = NT.Fonts.body.tabular().copy(color = NT.Colors.ink, textAlign = TextAlign.End),
                 singleLine = true,
                 cursorBrush = SolidColor(NT.Colors.ink),
@@ -255,7 +260,7 @@ private fun MeasurementField(
         }
         NtText(
             text = Measurements.unitLabel(kind, unit),
-            modifier = Modifier.width(24.dp),
+            modifier = Modifier.widthIn(min = 24.dp).clearAndSetSemantics {},
             style = NT.Fonts.subheadline,
             color = NT.Colors.ink2,
             maxLines = 1,

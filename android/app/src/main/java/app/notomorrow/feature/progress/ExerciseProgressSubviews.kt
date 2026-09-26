@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -16,6 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.notomorrow.designsystem.Hairline
@@ -219,8 +223,12 @@ fun RepMaxSection(state: ExerciseProgressUiState, modifier: Modifier = Modifier)
             color = NT.Colors.ink,
             maxLines = 1,
         )
+        val repsLabel = stringResource(S.workout_reps)
+        val bestLabel = stringResource(S.repmax_best)
+        val estimatedLabel = stringResource(S.repmax_estimated)
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp),
+            // Each row below names its own columns for TalkBack.
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 4.dp).clearAndSetSemantics {},
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RepMaxHeader(stringResource(S.workout_reps), Modifier.width(REPS_COLUMN), TextAlign.Start)
@@ -229,8 +237,14 @@ fun RepMaxSection(state: ExerciseProgressUiState, modifier: Modifier = Modifier)
         }
         state.repMaxes.forEachIndexed { index, row ->
             if (index > 0) Hairline()
+            val bestSpoken = row.best?.let { Fmt.set(it.weightKg, it.reps, state.unit) + ", " + Fmt.dayMonth(it.day) }
+                ?: "\u2014"
             Row(
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).clearAndSetSemantics {
+                    contentDescription = "$repsLabel ${row.reps}"
+                    stateDescription = "$bestLabel $bestSpoken, $estimatedLabel " +
+                        Fmt.weight(row.estimatedKg, state.unit)
+                },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TabularText(
