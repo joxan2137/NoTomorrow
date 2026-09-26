@@ -3,11 +3,12 @@ import SwiftData
 
 /// Progress tab: last-PR eyebrow, title, Lifts / Body segmented. Lifts: a chip per lift over the selected lift's
 /// focal card (e1RM, range delta, chart, range picker), the muscles trained this week, the e1RM list, the training
-/// calendar and the weekly stats. Under the e1RM list, a link to the all-time records (`RecordsView`).
+/// calendar, the weekly stats and the milestones (`MilestonesView`). Under the e1RM list, a link to the all-time
+/// records (`RecordsView`).
 struct ProgressHomeView: View {
     private enum Tab: Hashable { case lifts, body }
     /// Screens Progress pushes besides a lift's page.
-    enum ProgressDestination: Hashable { case records }
+    enum ProgressDestination: Hashable { case records, milestones }
 
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
@@ -37,6 +38,7 @@ struct ProgressHomeView: View {
                         liftsSection.padding(.top, NT.Spacing.section)
                         TrainingCalendarCard(unit: model.unit).padding(.top, NT.Spacing.section)
                         WeeklyStatsCard(unit: model.unit).padding(.top, NT.Spacing.section)
+                        MilestonesCard(unit: model.unit).padding(.top, NT.Spacing.section)
                     case .body:
                         BodyTabView(stats: model.body, unit: model.unit) { showsLogWeight = true }
                             .padding(.top, 18)
@@ -56,6 +58,7 @@ struct ProgressHomeView: View {
             .navigationDestination(for: ProgressDestination.self) { destination in
                 switch destination {
                 case .records: RecordsView()
+                case .milestones: MilestonesView()
                 }
             }
         }

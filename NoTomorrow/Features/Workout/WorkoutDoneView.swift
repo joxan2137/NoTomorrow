@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 /// "DONE." summary after finishing: volume hero, delta vs the last workout with the same name,
-/// Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets.
+/// a "New milestone" chip per milestone it crossed, Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets.
 struct WorkoutDoneView: View {
     let workout: Workout
     var unit: WeightUnit = .kg
@@ -16,6 +16,8 @@ struct WorkoutDoneView: View {
     @Query private var pairings: [BroPairing]
     @State private var previousVolume: Double?
     @State private var shareImage: Image?
+    /// Milestones this workout crossed (`Milestones.crossed`), read once on appear.
+    @State private var newMilestones: [Milestones.Milestone] = []
 
     private var volume: Double { workout.totalVolumeKg }
     /// `endedAt` is stamped on Finish, before this screen shows.
@@ -61,6 +63,7 @@ struct WorkoutDoneView: View {
         .ntScreenBackground()
         .onAppear {
             loadPrevious()
+            loadMilestones()
             renderShareImage()
         }
     }
@@ -120,7 +123,23 @@ struct WorkoutDoneView: View {
             if let previousVolume, previousVolume != volume {
                 deltaChip(delta: volume - previousVolume)
             }
+            ForEach(newMilestones) { milestone in
+                milestoneChip(milestone)
+            }
         }
+    }
+
+    /// "New milestone: 50 workouts" under the volume.
+    private func milestoneChip(_ milestone: Milestones.Milestone) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "trophy").font(.system(size: 12, weight: .bold))
+            Text("milestone.new \(MilestoneText.title(milestone, unit: unit))").lineLimit(1)
+        }
+        .font(NT.Fonts.footnoteBold).tabular()
+        .foregroundStyle(NT.Colors.ember)
+        .padding(.horizontal, 12)
+        .frame(height: 30)
+        .background(NT.Colors.emberTint, in: Capsule())
     }
 
     private func deltaChip(delta: Double) -> some View {
@@ -189,6 +208,10 @@ struct WorkoutDoneView: View {
     }
 
     // MARK: Data
+
+    private func loadMilestones() {
+        newMilestones = Milestones.crossed(by: workout.id, in: Milestones.evaluate(in: context, including: workout))
+    }
 
     private func loadPrevious() {
         let name = workout.name
