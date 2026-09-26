@@ -39,11 +39,15 @@ import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NTCard
+import app.notomorrow.designsystem.NtIcon
+import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtSegmented
+import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.SectionHeader
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.ntPlainClickable
+import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.di.ntViewModel
 import app.notomorrow.feature.bro.bleedHorizontally
@@ -64,7 +68,7 @@ import app.notomorrow.util.S
  * trained this week, the e1RM list, the training calendar and the weekly stats; the Body tab replaces them with the full body view and the measurements.
  */
 @Composable
-fun ProgressHomeScreen(onExercise: (String) -> Unit) {
+fun ProgressHomeScreen(onExercise: (String) -> Unit, onRecords: () -> Unit) {
     val model = ntViewModel { container ->
         ProgressHomeViewModel(
             profileDao = container.db.profileDao(),
@@ -130,6 +134,7 @@ fun ProgressHomeScreen(onExercise: (String) -> Unit) {
                             LiftsSection(
                                 state = state,
                                 onExercise = onExercise,
+                                onRecords = onRecords,
                                 onStartWorkout = model::selectTrainTab,
                                 modifier = Modifier.padding(top = NT.Spacing.section),
                             )
@@ -416,6 +421,7 @@ private fun MusclesSection(muscles: MuscleWeek, modifier: Modifier = Modifier) {
 private fun LiftsSection(
     state: ProgressHomeUiState,
     onExercise: (String) -> Unit,
+    onRecords: () -> Unit,
     onStartWorkout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -448,9 +454,37 @@ private fun LiftsSection(
                     onClick = { onExercise(lift.exerciseId) },
                 )
             }
+            RecordsLink(onClick = onRecords, modifier = Modifier.padding(top = 12.dp))
         } else {
             ProgressEmptyState(onStartWorkout = onStartWorkout)
         }
+    }
+}
+
+/** "All-time records ›" under the list (`ProgressHomeView.recordsLink`): opens [RecordsScreen]. */
+@Composable
+private fun RecordsLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .background(NT.Colors.surface, NtShapes.tile)
+            .ntPlainClickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(18.dp), contentAlignment = Alignment.Center) {
+            NtIcon(NtIcons.Trophy, size = sfIconSize(16f), tint = NT.Colors.ember)
+        }
+        NtText(
+            text = stringResource(S.records_title),
+            modifier = Modifier.weight(1f),
+            style = NT.Fonts.subheadline,
+            color = NT.Colors.ink,
+            maxLines = 1,
+        )
+        NtIcon(NtIcons.ChevronRight, size = sfIconSize(13f), tint = NT.Colors.ink3)
     }
 }
 

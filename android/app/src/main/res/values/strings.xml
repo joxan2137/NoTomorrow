@@ -496,6 +496,11 @@
     <string name="range_1y">1Y</string>
     <string name="range_3m">3M</string>
     <string name="range_all">All</string>
+    <string name="records_bestE1RM">Best e1RM</string>
+    <string name="records_bestVolumeSet">Best set</string>
+    <string name="records_empty">No records yet. Finish a workout and your PRs show up here.</string>
+    <string name="records_heaviest">Heaviest</string>
+    <string name="records_title">All-time records</string>
     <string name="repmax_best">Best lifted</string>
     <string name="repmax_estimated">Estimated</string>
     <string name="repmax_footnote">Estimates come from your best e1RM (Epley formula); they get less reliable past 10 reps.</string>

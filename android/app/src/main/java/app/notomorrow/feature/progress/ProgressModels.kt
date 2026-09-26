@@ -110,7 +110,7 @@ data class LiftSummary(
         .sumOf { it.weightKg * it.reps }
 
     val heaviest: CompletedSetRow?
-        get() = sets.maxWithOrNull(compareBy({ it.weightKg }, { it.reps }))
+        get() = LiftRecords.heaviest(sets)
 
     val mostReps: CompletedSetRow?
         get() = sets.maxWithOrNull(compareBy({ it.reps }, { it.weightKg }))
@@ -297,6 +297,29 @@ data class ExerciseProgressUiState(
     val mostReps: RecordSet? = null,
     /** The rep-max table ([RepMax.rows]), one row per rep count. */
     val repMaxes: List<RepMaxRow> = emptyList(),
+    /** `false` until the first store emission — see [ProgressHomeUiState.loaded]. */
+    val loaded: Boolean = false,
+)
+
+/** One lift on the Records screen ([LiftRecords]), already derived. */
+@Immutable
+data class RecordsRowState(
+    val exerciseId: String,
+    val name: String,
+    val lastPR: ProgressPhraseRef,
+    /** `prInLast30Days` — the last-PR phrase turns ember. */
+    val isHot: Boolean,
+    val bestE1RMKg: Double,
+    val bestE1RMDay: LocalDate,
+    val heaviest: RecordSet,
+    val bestVolume: RecordSet,
+)
+
+/** Everything `RecordsScreen` renders. */
+@Immutable
+data class RecordsUiState(
+    val unit: WeightUnit = WeightUnit.Kg,
+    val rows: List<RecordsRowState> = emptyList(),
     /** `false` until the first store emission — see [ProgressHomeUiState.loaded]. */
     val loaded: Boolean = false,
 )

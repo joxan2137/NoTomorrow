@@ -511,6 +511,11 @@ object S {
     val range_1y = R.string.range_1y
     val range_3m = R.string.range_3m
     val range_all = R.string.range_all
+    val records_bestE1RM = R.string.records_bestE1RM
+    val records_bestVolumeSet = R.string.records_bestVolumeSet
+    val records_empty = R.string.records_empty
+    val records_heaviest = R.string.records_heaviest
+    val records_title = R.string.records_title
     val repmax_best = R.string.repmax_best
     val repmax_estimated = R.string.repmax_estimated
     val repmax_footnote = R.string.repmax_footnote

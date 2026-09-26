@@ -496,6 +496,11 @@
     <string name="range_1y">1R</string>
     <string name="range_3m">3M</string>
     <string name="range_all">Od początku</string>
+    <string name="records_bestE1RM">Najlepszy e1RM</string>
+    <string name="records_bestVolumeSet">Najlepsza seria</string>
+    <string name="records_empty">Jeszcze bez rekordów. Zakończ trening, a Twoje życiówki pojawią się tutaj.</string>
+    <string name="records_heaviest">Najcięższy</string>
+    <string name="records_title">Rekordy wszech czasów</string>
     <string name="repmax_best">Najlepsza seria</string>
     <string name="repmax_estimated">Szacunkowo</string>
     <string name="repmax_footnote">Szacunki wynikają z najlepszego e1RM (wzór Epleya); powyżej 10 powtórzeń są mniej dokładne.</string>

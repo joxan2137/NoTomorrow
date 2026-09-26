@@ -59,6 +59,7 @@ import app.notomorrow.feature.dashboard.DashboardScreen
 import app.notomorrow.feature.fuel.FuelHomeScreen
 import app.notomorrow.feature.progress.ExerciseProgressScreen
 import app.notomorrow.feature.progress.ProgressHomeScreen
+import app.notomorrow.feature.progress.RecordsScreen
 import app.notomorrow.feature.settings.SettingsSheetHost
 import app.notomorrow.feature.workout.ActiveWorkoutScreen
 import app.notomorrow.feature.workout.ActiveWorkoutViewModel
@@ -87,7 +88,7 @@ import app.notomorrow.util.NtStrings
  *
  * The roots are warmed one per frame after the shell's first frame, so start-up shows the selected
  * tab immediately and the rest are ready within a few frames. Progress is the one tab with a
- * stack (`progress` → `progress/exercise/{id}`), so it carries its own small `NavHost`; back
+ * stack (`progress` → `progress/records` / `progress/exercise/{id}`), so it carries its own small `NavHost`; back
  * presses reach it only while it is the visible tab ([TabPage]).
  *
  * The bar itself is [NtTabBar]: content scrolls **under** it, so screens add [LocalTabBarHeight] as
@@ -415,7 +416,7 @@ private fun TabPage(visible: Boolean, content: @Composable () -> Unit) {
  */
 val LocalTabPageVisible = compositionLocalOf { true }
 
-/** The Progress tab's own stack: its root and the per-exercise page it pushes. */
+/** The Progress tab's own stack: its root, the records list and the per-exercise page they push. */
 @Composable
 private fun ProgressTab(navController: NavHostController) {
     NavHost(
@@ -431,6 +432,13 @@ private fun ProgressTab(navController: NavHostController) {
         composable(NtRoute.Progress.route) {
             ProgressHomeScreen(
                 onExercise = { id -> navController.navigate(NtRoute.ExerciseProgress.of(id)) },
+                onRecords = { navController.navigate(NtRoute.ProgressRecords.route) },
+            )
+        }
+        composable(NtRoute.ProgressRecords.route) {
+            RecordsScreen(
+                onExercise = { id -> navController.navigate(NtRoute.ExerciseProgress.of(id)) },
+                onBack = { navController.popBackStack() },
             )
         }
         composable(
