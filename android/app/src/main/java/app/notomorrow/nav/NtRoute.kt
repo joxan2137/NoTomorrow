@@ -70,6 +70,7 @@ sealed class NtRoute(val route: String) {
     data object SettingsNotifications : NtRoute("settings/notifications")
     data object SettingsHealth : NtRoute("settings/health")
     data object SettingsExport : NtRoute("settings/export")
+    data object SettingsImport : NtRoute("settings/import")
     data object SettingsAi : NtRoute("settings/ai")
     data object SettingsPartner : NtRoute("settings/partner")
 
