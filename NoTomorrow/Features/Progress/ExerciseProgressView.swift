@@ -9,6 +9,7 @@ struct ExerciseProgressView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model = ProgressModel()
     @State private var range: ProgressRange = .m3
+    @State private var showsCalculator = false
 
     private var lift: LiftSummary? { model.lift(for: exercise) }
 
@@ -23,6 +24,7 @@ struct ExerciseProgressView: View {
                     weekly.padding(.top, NT.Spacing.section)
                     records(lift).padding(.top, 18)
                     repMaxes(lift).padding(.top, NT.Spacing.section)
+                    percentages(lift).padding(.top, NT.Spacing.section)
                 } else {
                     Text("progress.empty")
                         .font(NT.Fonts.subheadline)
@@ -36,6 +38,7 @@ struct ExerciseProgressView: View {
         .ntScreenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { model.reload(modelContext) }
+        .sheet(isPresented: $showsCalculator) { OneRepMaxCalculatorSheet(unit: model.unit) }
         .onReceive(NotificationCenter.default.publisher(for: .workoutHistoryDidChange)) { _ in model.reload(modelContext) }
     }
 
@@ -219,6 +222,30 @@ struct ExerciseProgressView: View {
                 .frame(height: 44)
             }
             Text("repmax.footnote")
+                .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+        }
+    }
+
+    // MARK: Percentages
+
+    /// 100 … 50 % of the best e1RM, rounded to plates, with the reps each allows; "1RM calculator" beside the title.
+    private func percentages(_ lift: LiftSummary) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("onerm.percentages").font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
+                Spacer()
+                Button { showsCalculator = true } label: {
+                    Text("onerm.calculator").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+                        .frame(minHeight: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressScale())
+            }
+            PercentageTable(e1RM: SetInput.display(lift.current, unit: model.unit), unit: model.unit)
+                .padding(.top, 4)
+            Text("onerm.footnote")
                 .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)

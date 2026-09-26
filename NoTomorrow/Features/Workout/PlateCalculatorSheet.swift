@@ -11,6 +11,7 @@ struct PlateCalculatorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("nt.plates.barKg") private var barKg: Double = 20
     @AppStorage("nt.plates.barLb") private var barLb: Double = 45
+    @State private var showsOneRepMax = false
 
     private var target: Double { SetInput.display(weightKg, unit: unit) }
     private var bar: Double { unit == .kg ? barKg : barLb }
@@ -35,6 +36,8 @@ struct PlateCalculatorSheet: View {
                     } else if !load.isExact {
                         closest(load)
                     }
+                    GhostButton(title: "onerm.calculator", systemImage: "percent") { showsOneRepMax = true }
+                        .padding(.top, NT.Spacing.section)
                 }
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.bottom, NT.Spacing.section)
@@ -44,6 +47,7 @@ struct PlateCalculatorSheet: View {
         .presentationBackground(NT.Colors.ground)
         .presentationDragIndicator(.visible)
         .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showsOneRepMax) { OneRepMaxCalculatorSheet(unit: unit, initialWeight: target) }
     }
 
     private var header: some View {

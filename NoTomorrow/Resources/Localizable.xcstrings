@@ -13761,6 +13761,118 @@
           }
         }
       }
+    },
+    "onerm.percentages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percentages"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procenty 1RM"
+          }
+        }
+      }
+    },
+    "onerm.calculator": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1RM calculator"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalkulator 1RM"
+          }
+        }
+      }
+    },
+    "onerm.percent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Of 1RM"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z 1RM"
+          }
+        }
+      }
+    },
+    "onerm.weight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciężar"
+          }
+        }
+      }
+    },
+    "onerm.estimated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated 1RM"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szacowany 1RM"
+          }
+        }
+      }
+    },
+    "onerm.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the weight and reps of a set to estimate your one-rep max."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz ciężar i liczbę powtórzeń serii, a oszacujemy Twój maks na jedno powtórzenie."
+          }
+        }
+      }
+    },
+    "onerm.footnote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Percentages of your best estimated 1RM, rounded to 2.5 kg / 5 lb. Reps are what that 1RM predicts at each weight."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procenty najlepszego szacowanego 1RM, zaokrąglone do 2,5 kg / 5 lb. Powtórzenia to tyle, ile ten 1RM przewiduje przy danym ciężarze."
+          }
+        }
+      }
     }
   }
 }
