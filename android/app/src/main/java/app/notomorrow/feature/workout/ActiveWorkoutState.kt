@@ -1,5 +1,6 @@
 package app.notomorrow.feature.workout
 
+import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.relation.CompletedSetRow
 import app.notomorrow.data.relation.RoutineWithItems
 import app.notomorrow.data.relation.WorkoutExerciseWithSets
@@ -194,6 +195,33 @@ internal fun routineTargetReps(routines: List<RoutineWithItems>, workoutName: St
     return targets
 }
 
+// MARK: - Warm-ups
+
+/**
+ * `warmupTarget(for:)` — the working weight a warm-up ramp builds to: the first normal set's
+ * weight (row order), in [unit] (0 = none).
+ */
+internal fun warmupTarget(sets: List<SetEntryEntity>, unit: WeightUnit): Double {
+    val kg = sets.sortedBy { it.order }.firstOrNull { it.kind == SetKind.Normal && it.weightKg > 0 }?.weightKg ?: 0.0
+    return SetInput.display(kg, unit)
+}
+
+/** `warmupSteps(for:)` — the ramp "Add warm-up sets" would add; empty disables the menu item. */
+internal fun warmupSteps(sets: List<SetEntryEntity>, equipment: String?, unit: WeightUnit): List<WarmupPlan.Step> =
+    WarmupPlan.steps(warmupTarget(sets, unit), unit, equipment)
+
+/**
+ * `addWarmups(to:)`'s new row order: the sets that stay (every set but the open warm-ups) with the
+ * completed warm-ups first, then the [steps] (a `null` id each), then the rest, in row order.
+ * Returns the ids in their new order.
+ */
+internal fun warmupRowOrder(sets: List<SetEntryEntity>, steps: Int): List<Long?> {
+    val kept = sets.filter { it.kind != SetKind.Warmup || it.isCompleted }.sortedBy { it.order }
+    return kept.filter { it.kind == SetKind.Warmup }.map { it.id } +
+        List(steps) { null } +
+        kept.filter { it.kind != SetKind.Warmup }.map { it.id }
+}
+
 /** The sets "Use" writes to and the suggestion watches: open, not a warm-up, not a drop set. */
 internal fun SetRowUi.takesSuggestion(): Boolean = !isCompleted && kind != SetKind.Warmup && kind != SetKind.Drop
 
@@ -223,13 +251,14 @@ internal fun foldCurrentExercise(exercises: List<WorkoutExerciseUi>, expandedId:
  * One Room section folded into one [WorkoutExerciseUi] — `setNumber(for:in:)` (warm-ups do not
  * count), `currentSetID(in:)`, the per-row `previous(for:in:)` ghost by [SetSlot] and
  * `suggestion(for:)` ([suggestion] is the one the previous session allows; it is kept only while
- * an open set still has the previous top weight).
+ * an open set still has the previous top weight) and `warmupSteps(for:)` in [unit].
  */
 internal fun WorkoutExerciseWithSets.toUi(
     locale: Locale,
     previousLast: SetValue?,
     previous: (SetSlot) -> SetValue?,
     suggestion: WeightSuggestion? = null,
+    unit: WeightUnit = WeightUnit.Kg,
 ): WorkoutExerciseUi {
     val ordered = sortedSets
     val currentSetId = ordered.firstOrNull { !it.isCompleted }?.id
@@ -262,6 +291,7 @@ internal fun WorkoutExerciseWithSets.toUi(
         suggestion = suggestion?.takeIf { s ->
             showsSuggestion(s, rows.filter { it.takesSuggestion() }.map { it.weightKg })
         },
+        warmupSteps = warmupSteps(ordered, exercise?.equipment, unit),
     )
 }
 

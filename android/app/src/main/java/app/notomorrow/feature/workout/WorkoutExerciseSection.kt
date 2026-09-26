@@ -59,6 +59,7 @@ import app.notomorrow.util.S
  * header shows the muscle only and its menu offers [onMoveUp] / [onMoveDown] (hidden when null,
  * at the ends) before Remove; rows are never dimmed or locked and the Previous column is blank.
  * Weights are shown in [unit]. [onDeleteSet] adds "Delete set" to every row's kind menu.
+ * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -82,6 +83,7 @@ fun WorkoutExerciseSection(
     onMoveDown: (() -> Unit)? = null,
     onRowAppear: (Long) -> Unit = {},
     onUseSuggestion: () -> Unit = {},
+    onAddWarmups: (() -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -104,6 +106,7 @@ fun WorkoutExerciseSection(
             onMoveDown = onMoveDown,
             onRowAppear = onRowAppear,
             onUseSuggestion = onUseSuggestion,
+            onAddWarmups = onAddWarmups,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -177,6 +180,7 @@ private fun Expanded(
     onMoveDown: (() -> Unit)?,
     onRowAppear: (Long) -> Unit,
     onUseSuggestion: () -> Unit,
+    onAddWarmups: (() -> Unit)?,
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 12.dp),
@@ -191,6 +195,7 @@ private fun Expanded(
             onRemove = onRemove,
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
+            onAddWarmups = onAddWarmups,
         )
         if (!editing) {
             // `.transition(.opacity)`: Use fades the line out; latch the last suggestion so the
@@ -256,6 +261,7 @@ private fun Header(
     onRemove: () -> Unit,
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
+    onAddWarmups: (() -> Unit)?,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val muscle = exercise.primaryMuscle?.let { workoutMuscleName(it) }
@@ -267,6 +273,16 @@ private fun Header(
     val items = buildList {
         onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
         onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        onAddWarmups?.let {
+            add(
+                NtMenuItem(
+                    title = stringResource(S.warmup_add),
+                    onClick = it,
+                    icon = NtIcons.Flame,
+                    enabled = exercise.warmupSteps.isNotEmpty(),
+                ),
+            )
+        }
         add(
             NtMenuItem(
                 title = stringResource(S.workout_removeExercise),
@@ -485,4 +501,6 @@ data class WorkoutExerciseUi(
     val sets: List<SetRowUi>,
     /** The suggested weight while it applies (`ActiveWorkoutModel.suggestion(for:)`); never in the editor. */
     val suggestion: WeightSuggestion? = null,
+    /** The ramp "Add warm-up sets" would add (`warmupSteps(for:)`); empty disables it. Never in the editor. */
+    val warmupSteps: List<WarmupPlan.Step> = emptyList(),
 )

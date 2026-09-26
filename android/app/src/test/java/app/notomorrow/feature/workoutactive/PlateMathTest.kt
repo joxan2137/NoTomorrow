@@ -1,19 +1,46 @@
 package app.notomorrow.feature.workoutactive
 
+import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.feature.workout.PlateMath
+import app.notomorrow.feature.workout.WarmupPlan
+import app.notomorrow.feature.workout.WarmupPlan.Step
+import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.LocaleProvider
 import java.util.Locale
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 /**
  * Plate calculator (`PlateMathTests.swift`): plates per side, the closest load when the plates
- * cannot make a weight, and the bar edge cases.
+ * cannot make a weight, and the bar edge cases; then the warm-up ramp and "Add warm-up sets".
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlateMathTest {
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        LocaleProvider.override = { Locale.UK }
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        LocaleProvider.override = null
+    }
 
     @Test
     fun `loads heaviest plates first`() {
@@ -55,5 +82,63 @@ class PlateMathTest {
     fun `plate labels keep two decimals`() {
         assertEquals("1,25 kg", Fmt.plate(1.25, WeightUnit.Kg, Locale.forLanguageTag("pl-PL")))
         assertEquals("45 lb", Fmt.plate(45.0, WeightUnit.Lb, Locale.UK))
+    }
+
+    // MARK: - Warm-up ramp
+
+    @Test
+    fun `barbell ramp starts with the bar`() {
+        val steps = WarmupPlan.steps(working = 100.0, unit = WeightUnit.Kg, equipment = "barbell")
+        assertEquals(listOf(Step(20.0, 10), Step(50.0, 5), Step(70.0, 3), Step(85.0, 1)), steps)
+    }
+
+    @Test
+    fun `light barbell drops steps below the bar`() {
+        val steps = WarmupPlan.steps(working = 40.0, unit = WeightUnit.Kg, equipment = "barbell")
+        assertEquals(listOf(20.0, 27.5, 32.5), steps.map { it.weight })
+        assertTrue(WarmupPlan.steps(working = 22.5, unit = WeightUnit.Kg, equipment = "barbell").isEmpty())
+    }
+
+    @Test
+    fun `dumbbell ramp and pounds`() {
+        assertEquals(
+            listOf(Step(15.0, 8), Step(22.5, 4)),
+            WarmupPlan.steps(working = 30.0, unit = WeightUnit.Kg, equipment = "dumbbell"),
+        )
+        assertEquals(
+            listOf(45.0, 110.0, 155.0, 190.0),
+            WarmupPlan.steps(working = 225.0, unit = WeightUnit.Lb, equipment = "barbell").map { it.weight },
+        )
+        assertTrue(WarmupPlan.steps(working = 0.0, unit = WeightUnit.Kg, equipment = "body only").isEmpty())
+    }
+
+    @Test
+    fun `add warm-ups replaces open warm-ups before the first working set and keeps done ones`() = runTest {
+        val harness = ActiveWorkoutHarness(backgroundScope)
+        val entry = harness.seed(exerciseIds = listOf("row"), sets = 0).single()
+        val dao = harness.workouts
+        dao.insertSet(SetEntryEntity(workoutExerciseId = entry, order = 0, kind = SetKind.Warmup, weightKg = 10.0, reps = 5, completedAt = 1L))
+        dao.insertSet(SetEntryEntity(workoutExerciseId = entry, order = 1, kind = SetKind.Warmup, weightKg = 12.0, reps = 5))
+        dao.insertSet(SetEntryEntity(workoutExerciseId = entry, order = 2, weightKg = 30.0, reps = 8))
+        dao.insertSet(SetEntryEntity(workoutExerciseId = entry, order = 3, weightKg = 30.0, reps = 8))
+        val model = harness.model()
+        runCurrent()
+        assertEquals(listOf(Step(15.0, 8), Step(22.5, 4)), model.state.value.exercises.single().warmupSteps)
+
+        model.addWarmups(entry)
+        runCurrent()
+
+        val rows = dao.sets(entry).map { Triple(it.kind, it.weightKg, it.completedAt != null) }
+        assertEquals(
+            listOf(
+                Triple(SetKind.Warmup, 10.0, true),
+                Triple(SetKind.Warmup, 15.0, false),
+                Triple(SetKind.Warmup, 22.5, false),
+                Triple(SetKind.Normal, 30.0, false),
+                Triple(SetKind.Normal, 30.0, false),
+            ),
+            rows,
+        )
+        assertEquals(listOf(0, 1, 2, 3, 4), dao.sets(entry).map { it.order })
     }
 }

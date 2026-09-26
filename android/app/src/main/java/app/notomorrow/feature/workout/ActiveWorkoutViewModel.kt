@@ -198,6 +198,7 @@ class ActiveWorkoutViewModel(
                 suggestion = exerciseId?.let { id ->
                     weightSuggestion(previousRows[id]?.normal.orEmpty(), targetReps[id], unit)
                 },
+                unit = unit,
             )
         }
         _state.value = ActiveWorkoutUiState(
@@ -341,6 +342,41 @@ class ActiveWorkoutViewModel(
                     .forEach { set ->
                         if (set.weightKg != suggestion.toKg) workoutDao.updateSet(set.copy(weightKg = suggestion.toKg))
                     }
+            }
+        }
+    }
+
+    /**
+     * `addWarmups(to:)` — "Add warm-up sets": open warm-up rows are replaced by the ramp to the
+     * working weight, placed before the first working set. Completed warm-ups stay.
+     */
+    fun addWarmups(exerciseUiId: Long) {
+        viewModelScope.launch {
+            writes.withLock {
+                val sets = workoutDao.sets(exerciseUiId)
+                val equipment = graph?.exercises?.firstOrNull { it.workoutExercise.id == exerciseUiId }?.exercise?.equipment
+                val steps = warmupSteps(sets, equipment, unit)
+                if (steps.isEmpty()) return@launch
+                sets.filter { it.kind == SetKind.Warmup && !it.isCompleted }.forEach { workoutDao.deleteSet(it) }
+                val byId = sets.associateBy { it.id }
+                var step = 0
+                warmupRowOrder(sets, steps.size).forEachIndexed { order, id ->
+                    if (id == null) {
+                        val next = steps[step++]
+                        workoutDao.insertSet(
+                            SetEntryEntity(
+                                workoutExerciseId = exerciseUiId,
+                                order = order,
+                                kind = SetKind.Warmup,
+                                weightKg = SetInput.kg(next.weight, unit),
+                                reps = next.reps,
+                            ),
+                        )
+                    } else {
+                        val set = byId.getValue(id)
+                        if (set.order != order) workoutDao.updateSet(set.copy(order = order))
+                    }
+                }
             }
         }
     }

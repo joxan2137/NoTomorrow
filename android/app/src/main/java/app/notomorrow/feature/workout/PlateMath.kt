@@ -1,6 +1,7 @@
 package app.notomorrow.feature.workout
 
 import app.notomorrow.model.WeightUnit
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.roundToLong
 
@@ -80,4 +81,43 @@ object PlateMath {
     private fun units(value: Double): Long = (value * SCALE).roundToLong()
 
     private const val SCALE = 100.0
+}
+
+/**
+ * Warm-up ramp for an exercise's working weight (the exercise menu's "Add warm-up sets"), in the
+ * user's unit — `WarmupPlan` (`PlateMath.swift`). Barbell lifts start with the empty bar;
+ * everything else ramps from half the working weight. Weights round down to what plates can make
+ * (2.5 kg / 5 lb); steps that land on the same weight are dropped.
+ */
+object WarmupPlan {
+
+    data class Step(val weight: Double, val reps: Int)
+
+    fun increment(unit: WeightUnit): Double = if (unit == WeightUnit.Kg) 2.5 else 5.0
+
+    fun isBarbell(equipment: String?): Boolean {
+        val value = equipment?.lowercase() ?: return false
+        return value == "barbell" || value.contains("curl bar")
+    }
+
+    fun steps(working: Double, unit: WeightUnit, equipment: String?): List<Step> {
+        val step = increment(unit)
+        if (working < step * 4) return emptyList()
+        val result = mutableListOf<Step>()
+        val ramp: List<Pair<Double, Int>>
+        if (isBarbell(equipment)) {
+            val bar = PlateMath.bars(unit).first()
+            if (working <= bar + step) return emptyList()
+            result += Step(bar, 10)
+            ramp = listOf(0.5 to 5, 0.7 to 3, 0.85 to 1)
+        } else {
+            ramp = listOf(0.5 to 8, 0.75 to 4)
+        }
+        for ((ratio, reps) in ramp) {
+            val weight = floor(working * ratio / step + 1e-9) * step
+            if (weight >= working || weight <= (result.lastOrNull()?.weight ?: 0.0)) continue
+            result += Step(weight, reps)
+        }
+        return result
+    }
 }

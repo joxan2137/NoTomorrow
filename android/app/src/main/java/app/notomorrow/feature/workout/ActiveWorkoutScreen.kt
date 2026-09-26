@@ -213,6 +213,7 @@ fun ActiveWorkoutScreen(
                     },
                     onRowAppear = model::prefillFromPrevious,
                     onUseSuggestion = model::useSuggestion,
+                    onAddWarmups = model::addWarmups,
                 )
             }
         }
