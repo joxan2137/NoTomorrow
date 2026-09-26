@@ -232,6 +232,8 @@ private struct ExerciseNoteField: View {
         .padding(.vertical, 10)
         .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.cell, style: .continuous))
         .onAppear { text = exercise.notes }
+        // "Replace exercise" clears the note: the field must not keep (and later write back) the old one.
+        .onChange(of: exercise.exercise?.id) { _, _ in text = exercise.notes }
         .onChange(of: text) { _, new in
             guard new != exercise.notes else { return }
             exercise.notes = new

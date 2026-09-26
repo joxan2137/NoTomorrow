@@ -481,7 +481,9 @@ internal fun SupersetTag(letter: String) {
  */
 @Composable
 private fun ExerciseNoteField(exercise: WorkoutExerciseUi, onNote: (String) -> Unit) {
-    var text by remember(exercise.id) { mutableStateOf(exercise.notes) }
+    // Keyed on the exercise too: "Replace exercise" clears the note in the store, and the field must not keep
+    // showing (and on the next keystroke write back) the old exercise's note.
+    var text by remember(exercise.id, exercise.exerciseId) { mutableStateOf(exercise.notes) }
     val placeholder = exercise.previousNote?.let { stringResource(S.note_last_s, it) }
         ?: stringResource(S.note_placeholder)
     Row(
