@@ -338,7 +338,7 @@
     <string name="history_title">History</string>
     <string name="import_choose">Choose CSV file</string>
     <string name="import_chooseAnother">Choose another file</string>
-    <string name="import_confirm_n">Import %d workouts</string>
+    <string name="import_confirm_n">Import workouts: %d</string>
     <string name="import_description">Bring your history from Strong or Hevy: export your workouts as a CSV file from that app\'s settings, then choose the file here. A No Tomorrow workouts.csv works too. Workouts already here are skipped.</string>
     <string name="import_done">Imported</string>
     <string name="import_duplicates">Already here, skipped</string>

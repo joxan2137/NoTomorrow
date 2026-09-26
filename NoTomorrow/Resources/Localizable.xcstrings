@@ -12263,7 +12263,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import %lld workouts"
+            "value": "Import workouts: %lld"
           }
         },
         "pl": {
