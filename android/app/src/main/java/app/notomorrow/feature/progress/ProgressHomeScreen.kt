@@ -61,7 +61,7 @@ import app.notomorrow.util.S
  * No visible top bar: the eyebrow (last PR date), the title and the Lifts / Body
  * segmented control are the screen's own header. The Lifts tab shows a chip per lift over
  * the selected lift's [FocalCard] (e1RM, range delta, chart, range picker), the muscles
- * trained this week, the e1RM list and the training calendar; the Body tab replaces them with the full body view and the measurements.
+ * trained this week, the e1RM list, the training calendar and the weekly stats; the Body tab replaces them with the full body view and the measurements.
  */
 @Composable
 fun ProgressHomeScreen(onExercise: (String) -> Unit) {
@@ -141,6 +141,11 @@ fun ProgressHomeScreen(onExercise: (String) -> Unit) {
                                     modifier = Modifier.padding(top = NT.Spacing.section),
                                 )
                             }
+                            WeeklyStatsCard(
+                                weeks = state.weeklyStats,
+                                unit = state.unit,
+                                modifier = Modifier.padding(top = NT.Spacing.section),
+                            )
                         }
 
                         ProgressTab.Body -> Column(Modifier.fillMaxWidth()) {

@@ -620,6 +620,8 @@
     <string name="split_fullBody">Full body</string>
     <string name="split_pushPull">Push / Pull</string>
     <string name="split_pushPullLegs">Push / Pull / Legs</string>
+    <string name="stats_title">Weekly stats</string>
+    <string name="stats_workouts">Workouts</string>
     <string name="store_error_body">No Tomorrow can\'t open the workouts, meals and everything else saved on this phone. Nothing has been deleted. Try again, or save a copy of the data first.</string>
     <string name="store_error_details">Details</string>
     <string name="store_error_retry">Try again</string>

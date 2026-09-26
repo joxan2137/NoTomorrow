@@ -620,6 +620,8 @@
     <string name="split_fullBody">FBW</string>
     <string name="split_pushPull">Push / Pull</string>
     <string name="split_pushPullLegs">Push / Pull / Legs</string>
+    <string name="stats_title">Statystyki tygodniowe</string>
+    <string name="stats_workouts">Treningi</string>
     <string name="store_error_body">No Tomorrow nie może otworzyć treningów, posiłków i reszty danych zapisanych na tym telefonie. Nic nie zostało usunięte. Spróbuj ponownie albo najpierw zapisz kopię danych.</string>
     <string name="store_error_details">Szczegóły</string>
     <string name="store_error_retry">Spróbuj ponownie</string>

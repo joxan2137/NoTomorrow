@@ -635,6 +635,8 @@ object S {
     val split_fullBody = R.string.split_fullBody
     val split_pushPull = R.string.split_pushPull
     val split_pushPullLegs = R.string.split_pushPullLegs
+    val stats_title = R.string.stats_title
+    val stats_workouts = R.string.stats_workouts
     val store_error_body = R.string.store_error_body
     val store_error_details = R.string.store_error_details
     val store_error_retry = R.string.store_error_retry
