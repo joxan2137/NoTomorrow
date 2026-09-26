@@ -315,6 +315,10 @@ object Fmt {
     fun monthShort(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
         format(date, "LLL", locale)
 
+    /** "September 2026" / "wrzesień 2026" — `.dateTime.month(.wide).year()`, the training calendar's title. */
+    fun monthYear(date: LocalDate, locale: Locale = LocaleProvider.current()): String =
+        format(date, "LLLL y", locale)
+
     /** ISO weekday: 1 = Monday … 7 = Sunday. */
     fun isoWeekday(date: LocalDate): Int = date.dayOfWeek.value
 

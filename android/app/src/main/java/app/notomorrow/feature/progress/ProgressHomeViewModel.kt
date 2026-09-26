@@ -186,6 +186,8 @@ class ProgressHomeViewModel(
             hasCompletedSets = lifts.isNotEmpty(),
             muscles = ProgressDerivations.buildMuscleWeek(data.sets, weekStart) { muscles[it] },
             body = ProgressDerivations.buildBody(data.body, today),
+            calendarDays = TrainingCalendar.days(data.sets, zone),
+            today = today,
             loaded = true,
         )
         return Derived(state = state, lifts = lifts, today = today)

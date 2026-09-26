@@ -242,6 +242,10 @@ data class ProgressHomeUiState(
     val range: ProgressRange = ProgressRange.M3,
     val muscles: MuscleWeek = MuscleWeek(),
     val body: BodyStats = BodyStats(),
+    /** The training calendar's days: finished workouts with a completed set, by start day. */
+    val calendarDays: Map<LocalDate, TrainingCalendar.Day> = emptyMap(),
+    /** The day the calendar (and every relative phrase) is measured against; `null` before the first load. */
+    val today: LocalDate? = null,
     val tab: ProgressTab = ProgressTab.Lifts,
     val showsLogWeight: Boolean = false,
     /**

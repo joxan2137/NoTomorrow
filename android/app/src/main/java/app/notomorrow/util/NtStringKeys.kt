@@ -142,6 +142,22 @@ object NtKeys {
         PluralCategory.Many -> S.workout_setCount_many
     }
 
+    /** `"calendar.workoutCount.\(one|few|many)"` */
+    @StringRes
+    fun workoutCount(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.calendar_workoutCount_one
+        PluralCategory.Few -> S.calendar_workoutCount_few
+        PluralCategory.Many -> S.calendar_workoutCount_many
+    }
+
+    /** `"calendar.weekStreak.\(one|few|many)"` */
+    @StringRes
+    fun weekStreak(n: Int): Int = when (pluralCategory(n)) {
+        PluralCategory.One -> S.calendar_weekStreak_one
+        PluralCategory.Few -> S.calendar_weekStreak_few
+        PluralCategory.Many -> S.calendar_weekStreak_many
+    }
+
     /** `"fuel.ai.provider.\(google|anthropic)"` — `AIScanModel.Upload.providerNameKey`. */
     @StringRes
     fun aiProviderName(anthropic: Boolean): Int =
