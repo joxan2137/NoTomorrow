@@ -7,6 +7,7 @@ struct RoutineEditRequest: Identifiable {
     var routine: Routine?
     var draft: RoutineDraft
 
+    @MainActor
     static func edit(_ routine: Routine) -> RoutineEditRequest {
         RoutineEditRequest(routine: routine, draft: RoutineStore.draft(of: routine))
     }
