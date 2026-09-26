@@ -95,6 +95,7 @@ struct WorkoutExerciseSection: View {
                     withAnimation(.easeInOut(duration: 0.2)) { model.addWarmups(to: exercise) }
                 }
                 .disabled(model.warmupSteps(for: exercise).isEmpty)
+                restMenu
                 if model.canLinkWithNext(exercise) {
                     Button("superset.linkNext", systemImage: "link") {
                         withAnimation(.easeInOut(duration: 0.2)) { model.linkWithNext(exercise) }
@@ -124,6 +125,28 @@ struct WorkoutExerciseSection: View {
             if let ex = exercise.exercise {
                 ExerciseHistorySheet(exercise: ex, unit: model.unit, excluding: model.workout)
             }
+        }
+    }
+
+    /// "Rest timer  1:30" submenu: Default (the Rest length setting) and 30 s to 5 min, the current one ticked.
+    private var restMenu: some View {
+        let current = exercise.restSeconds
+        let defaultSeconds = model.defaultRestSeconds(for: exercise)
+        return Menu {
+            ForEach(WorkoutRest.options(current: current, defaultSeconds: defaultSeconds), id: \.self) { option in
+                Button {
+                    model.setRest(option.seconds, for: exercise)
+                } label: {
+                    if WorkoutRest.isChecked(option, current: current, defaultSeconds: defaultSeconds) {
+                        Label(WorkoutRest.label(option), systemImage: "checkmark")
+                    } else {
+                        Text(WorkoutRest.label(option))
+                    }
+                }
+            }
+        } label: {
+            Label("workout.restTimer", systemImage: "timer")
+            Text(Fmt.clock(TimeInterval(current)))
         }
     }
 

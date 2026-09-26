@@ -769,6 +769,8 @@
     <string name="workout_previous">Previous</string>
     <string name="workout_removeExercise">Remove exercise</string>
     <string name="workout_reps">Reps</string>
+    <string name="workout_restDefault">Default (%s)</string>
+    <string name="workout_restTimer">Rest timer</string>
     <string name="workout_routines">Routines</string>
     <string name="workout_set">Set</string>
     <string name="workout_setCount_few">%d sets</string>

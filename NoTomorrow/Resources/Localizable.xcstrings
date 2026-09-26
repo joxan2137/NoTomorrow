@@ -12689,6 +12689,38 @@
           }
         }
       }
+    },
+    "workout.restTimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest timer"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik przerwy"
+          }
+        }
+      }
+    },
+    "workout.restDefault": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default (%@)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślna (%@)"
+          }
+        }
+      }
     }
   }
 }

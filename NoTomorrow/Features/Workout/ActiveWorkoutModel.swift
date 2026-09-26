@@ -410,6 +410,23 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    // MARK: Rest
+
+    /// The rest this exercise would get from the user's Rest length setting (heavy compounds 30 s more).
+    func defaultRestSeconds(for exercise: WorkoutExercise) -> Int {
+        let defaultRest = WorkoutStarter.defaultRestSeconds(in: context)
+        guard let id = exercise.exercise?.id else { return defaultRest }
+        return RoutineSeeder.restSeconds(for: id, defaultRest: defaultRest)
+    }
+
+    /// The exercise menu's Rest timer: the length the next rest after this exercise's sets counts down. A rest
+    /// already running keeps its length (the pill's −15 / +15 adjust it).
+    func setRest(_ seconds: Int, for exercise: WorkoutExercise) {
+        guard seconds > 0 else { return }
+        exercise.restSeconds = seconds
+        try? context.save()
+    }
+
     /// Removes an exercise and its sets. Progress reloads, as after `removeSet`.
     func remove(_ exercise: WorkoutExercise) {
         if expandedExerciseID == exercise.persistentModelID { expandedExerciseID = nil }
