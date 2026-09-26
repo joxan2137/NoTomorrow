@@ -364,6 +364,7 @@ object S {
     val import_range = R.string.import_range
     val import_skipped = R.string.import_skipped
     val import_title = R.string.import_title
+    val import_writeFailed = R.string.import_writeFailed
     val in_n_d_n_h = R.string.in_n_d_n_h  // in %lld d %lld h
     val in_n_h_n_min = R.string.in_n_h_n_min  // in %lld h %lld min
     val in_n_min = R.string.in_n_min  // in %lld min

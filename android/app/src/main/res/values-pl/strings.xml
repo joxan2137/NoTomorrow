@@ -349,6 +349,7 @@
     <string name="import_range">Okres</string>
     <string name="import_skipped">Pominięte wiersze</string>
     <string name="import_title">Import treningów</string>
+    <string name="import_writeFailed">Nie udało się zapisać treningów. Nic nie zostało zaimportowane.</string>
     <string name="in_n_d_n_h">za %1$d dn. %2$d h</string>
     <string name="in_n_h_n_min">za %1$d h %2$d min</string>
     <string name="in_n_min">za %d min</string>

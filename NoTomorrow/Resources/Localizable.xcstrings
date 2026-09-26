@@ -13425,6 +13425,22 @@
           }
         }
       }
+    },
+    "import.writeFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't save the workouts. Nothing was imported."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać treningów. Nic nie zostało zaimportowane."
+          }
+        }
+      }
     }
   }
 }

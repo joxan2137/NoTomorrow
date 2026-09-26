@@ -60,9 +60,11 @@ fun ImportEditor(
     var failed by remember { mutableStateOf(false) }
     var summary by remember { mutableStateOf<WorkoutImporter.Summary?>(null) }
     var importing by remember { mutableStateOf(false) }
+    var writeFailed by remember { mutableStateOf(false) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         failed = false
+        writeFailed = false
         summary = null
         parsed = null
         if (uri == null) return@rememberLauncherForActivityResult
@@ -136,17 +138,22 @@ fun ImportEditor(
                     )
                     try {
                         summary = importer.importWorkouts(file.workouts)
+                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // The transaction rolled back: nothing was imported. Say so instead of crashing the app.
+                        writeFailed = true
                     } finally {
                         importing = false
                     }
-                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                 }
             }
         }
 
-        if (failed) {
+        if (failed || writeFailed) {
             NtText(
-                text = stringResource(S.import_failed),
+                text = stringResource(if (writeFailed) S.import_writeFailed else S.import_failed),
                 style = NT.Fonts.footnote,
                 color = NT.Colors.bad,
             )
