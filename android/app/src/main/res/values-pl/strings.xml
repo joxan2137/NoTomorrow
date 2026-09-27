@@ -779,6 +779,9 @@
     <string name="unit_kcal">kcal</string>
     <string name="unit_kg">kg</string>
     <string name="unit_lb">lb</string>
+    <string name="update_banner_dismiss">Zamknij</string>
+    <string name="update_banner_subtitle">Dotknij, żeby zobaczyć nowości i pobrać</string>
+    <string name="update_banner_title_s">Wyszło No Tomorrow %s</string>
     <string name="warmup_add">Dodaj serie rozgrzewkowe</string>
     <string name="weekday_fri">PT</string>
     <string name="weekday_fri_short">pt.</string>

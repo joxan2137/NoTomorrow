@@ -794,6 +794,9 @@ object S {
     val unit_kcal = R.string.unit_kcal
     val unit_kg = R.string.unit_kg
     val unit_lb = R.string.unit_lb
+    val update_banner_dismiss = R.string.update_banner_dismiss
+    val update_banner_subtitle = R.string.update_banner_subtitle
+    val update_banner_title_s = R.string.update_banner_title_s  // update.banner.title %@
     val warmup_add = R.string.warmup_add
     val weekday_fri = R.string.weekday_fri
     val weekday_fri_short = R.string.weekday_fri_short
