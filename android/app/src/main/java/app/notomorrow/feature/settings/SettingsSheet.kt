@@ -128,6 +128,7 @@ private fun SettingsNavHost(
         composable(NtRoute.SettingsNotifications.route) { NotificationsEditor(state, model, back) }
         composable(NtRoute.SettingsHealth.route) { HealthEditor(state, model, back) }
         composable(NtRoute.SettingsExport.route) { ExportEditor(state, model, back) }
+        composable(NtRoute.SettingsImport.route) { ImportEditor(state, back) }
         composable(NtRoute.SettingsAi.route) { AIProviderEditor(state, model, back) }
         composable(NtRoute.SettingsPartner.route) {
             PartnerEditor(

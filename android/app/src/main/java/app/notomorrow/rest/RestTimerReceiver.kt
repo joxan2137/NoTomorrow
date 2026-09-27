@@ -3,6 +3,8 @@ package app.notomorrow.rest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import app.notomorrow.widget.WidgetKind
+import app.notomorrow.widget.WidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,7 +19,8 @@ import kotlinx.coroutines.launch
  *   straight to a receiver — never through an Activity, which Android 12 blocks.
  *
  * Everything is routed through [RestTimerController.get], so an action that
- * lands in a fresh process still reads the persisted `endAt` before acting.
+ * lands in a fresh process still reads the persisted `endAt` before acting. Each
+ * one ends by redrawing the Break timer widget (`docs/widgets.md`).
  */
 class RestTimerReceiver : BroadcastReceiver() {
 
@@ -33,6 +36,9 @@ class RestTimerReceiver : BroadcastReceiver() {
                     ACTION_PLUS15 -> controller.handlePlus15()
                     ACTION_SKIP -> controller.handleSkip()
                 }
+                // A fresh process may be gone before `WidgetUpdater` sees the new state: the Break
+                // timer widget flips back to idle (or to "just ended") here, before `finish()`.
+                WidgetUpdater.refresh(context, WidgetKind.Rest)
             } finally {
                 pending.finish()
             }

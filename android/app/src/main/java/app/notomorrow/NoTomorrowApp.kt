@@ -3,11 +3,13 @@ package app.notomorrow
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.media.AudioAttributes
-import android.media.RingtoneManager
+import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.getSystemService
 import app.notomorrow.di.AppContainer
+import app.notomorrow.widget.WidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,6 +54,8 @@ class NoTomorrowApp : Application() {
     private fun start() {
         scope.launch {
             container.load()
+            // The home-screen widgets follow Room and the rest timer from here on (it waits for the store).
+            WidgetUpdater.start(this@NoTomorrowApp, container)
             // Re-arms the notification and the alarm from `nt.rest.*` after a cold start.
             container.restTimer.awaitRestored()
             container.seed()
@@ -60,6 +64,9 @@ class NoTomorrowApp : Application() {
 
     private fun createNotificationChannels() {
         val manager = getSystemService<NotificationManager>() ?: return
+        // A channel's sound is fixed at creation: the chime needed a new channel, and the old one
+        // would otherwise linger in the app's notification settings.
+        manager.deleteNotificationChannel(NtChannels.LEGACY_REST_DONE)
         manager.createNotificationChannels(
             listOf(
                 channel(
@@ -75,12 +82,11 @@ class NoTomorrowApp : Application() {
                     NotificationManager.IMPORTANCE_HIGH,
                 ).apply {
                     enableVibration(true)
-                    // From API 26 the channel, not the builder, owns the sound. USAGE_NOTIFICATION
-                    // makes playing music duck instead of pausing — the behaviour iOS gets from
-                    // `.timeSensitive` — and it must match what `RestTimerNotifier.notifyDone`
-                    // sets on the pre-O path.
+                    // From API 26 the channel, not the builder, owns the sound: the rest chime
+                    // (`res/raw/rest_over`, `docs/widgets.md`). USAGE_NOTIFICATION makes playing
+                    // music duck instead of pausing — the behaviour iOS gets from `.timeSensitive`.
                     setSound(
-                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                        restChimeUri(this@NoTomorrowApp),
                         AudioAttributes.Builder()
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .setUsage(AudioAttributes.USAGE_NOTIFICATION)
@@ -118,8 +124,14 @@ object NtChannels {
     /** Ongoing rest countdown. `IMPORTANCE_LOW`, no sound. */
     const val REST = "nt.rest"
 
-    /** End-of-rest alert — the analogue of iOS's `.timeSensitive`. */
-    const val REST_DONE = "nt.rest.done"
+    /**
+     * End-of-rest alert — the analogue of iOS's `.timeSensitive` — playing the rest chime. Replaces
+     * [LEGACY_REST_DONE]: a channel's sound cannot change after creation.
+     */
+    const val REST_DONE = "nt.rest.chime"
+
+    /** The end-of-rest channel before the chime (system sound); deleted at start-up. */
+    const val LEGACY_REST_DONE = "nt.rest.done"
 
     /** Gym-day reminders and the evening check-in. */
     const val REMINDERS = "nt.reminders"
@@ -131,3 +143,6 @@ object NtChannels {
      */
     const val HEADS_UPS = "nt.headsup"
 }
+
+/** `android.resource://<package>/raw/rest_over` — the chime the end-of-rest channel plays. */
+fun restChimeUri(context: Context): Uri = Uri.parse("android.resource://${context.packageName}/raw/rest_over")

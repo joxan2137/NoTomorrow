@@ -4,13 +4,19 @@ import ActivityKit
 import UserNotifications
 import AVFoundation
 import UIKit
+import WidgetKit
 
 /// Rest timer that survives backgrounding and termination.
-/// Truth is an absolute `endDate` persisted in UserDefaults; the UI derives the remaining time from it.
-/// Runs a Live Activity (Lock Screen / Dynamic Island) and a local notification for the moment it ends.
+/// Truth is an absolute `endDate` persisted in the App Group (`SharedRestState`, `.standard` without a group); the UI
+/// derives the remaining time from it. Runs a Live Activity (Lock Screen / Dynamic Island), a local notification for
+/// the moment it ends, and the Break timer widget.
 @Observable
 @MainActor
 final class RestTimerController {
+    /// The one instance: the scene puts it in the environment, and the Break timer widget's intents, which iOS
+    /// performs in the app's process, reach it here (`RestCommandRunner`).
+    static let shared = RestTimerController()
+
     private(set) var endDate: Date?
     private(set) var totalSeconds: Int = 90
     private(set) var exerciseName: String = ""
@@ -22,7 +28,7 @@ final class RestTimerController {
     var progress: Double { totalSeconds > 0 ? 1 - remaining / Double(totalSeconds) : 1 }
 
     /// Identifier of the "rest is over" notification (`NotificationRouter` routes its taps to the workout).
-    nonisolated static let notificationID = "nt.rest.end"
+    nonisolated static let notificationID = SharedRestState.notificationID
 
     @ObservationIgnored private var activity: Activity<RestTimerAttributes>?
     /// Tail of the ActivityKit queue: calls run one after another in call order, so a Skip followed by a quick
@@ -76,6 +82,39 @@ final class RestTimerController {
         skip()
     }
 
+    /// A Break timer widget button. A start while a workout's rest labels are around keeps them (the widget is a
+    /// shortcut for the same rest); a start with no workout running is a plain break.
+    func handle(_ command: RestCommand) {
+        switch command {
+        case .start(let seconds):
+            let inWorkout = UserDefaults.standard.string(forKey: "nt.workout.active") != nil
+            start(seconds: seconds,
+                  exerciseName: inWorkout ? exerciseName : "",
+                  nextSetLabel: inWorkout ? nextSetLabel : "",
+                  workoutName: inWorkout ? workoutName : "")
+        case .adjust(let delta):
+            adjust(by: delta)
+        case .skip:
+            skip()
+        }
+    }
+
+    /// Back in the foreground: adopt what an extension wrote without the app (`RestCommand.applyWithoutApp`), and
+    /// bring the Live Activity in line with it.
+    func syncFromStore() {
+        let stored = SharedRestState.load()
+        let storedEnd = stored.endDate.flatMap { $0 > .now ? $0 : nil }
+        guard storedEnd != endDate || stored.totalSeconds != totalSeconds else { return }
+        endDate = storedEnd
+        totalSeconds = stored.totalSeconds
+        if endDate == nil {
+            enqueueActivity { await $0.endActivity() }
+        } else {
+            enqueueActivity { await $0.startOrUpdateActivity() }
+        }
+        reloadWidget()
+    }
+
     /// Called by the UI when remaining hits zero.
     func finishIfElapsed() {
         guard let end = endDate, end <= .now else { return }
@@ -87,33 +126,24 @@ final class RestTimerController {
 
     // MARK: Persistence
 
-    private enum Keys {
-        static let end = "nt.rest.endDate"
-        static let total = "nt.rest.total"
-        static let exercise = "nt.rest.exercise"
-        static let next = "nt.rest.next"
-        static let workout = "nt.rest.workout"
+    /// Every change goes through here, so the Break timer widget follows the app.
+    private func persist() {
+        SharedRestState(endDate: endDate, totalSeconds: totalSeconds, exerciseName: exerciseName,
+                        nextSetLabel: nextSetLabel, workoutName: workoutName).save()
+        reloadWidget()
     }
 
-    private func persist() {
-        let d = UserDefaults.standard
-        d.set(endDate?.timeIntervalSince1970, forKey: Keys.end)
-        d.set(totalSeconds, forKey: Keys.total)
-        d.set(exerciseName, forKey: Keys.exercise)
-        d.set(nextSetLabel, forKey: Keys.next)
-        d.set(workoutName, forKey: Keys.workout)
+    private func reloadWidget() {
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.rest)
     }
 
     private func restore() {
-        let d = UserDefaults.standard
-        if let ts = d.object(forKey: Keys.end) as? Double {
-            let end = Date(timeIntervalSince1970: ts)
-            endDate = end > .now ? end : nil
-        }
-        totalSeconds = max(5, d.integer(forKey: Keys.total))
-        exerciseName = d.string(forKey: Keys.exercise) ?? ""
-        nextSetLabel = d.string(forKey: Keys.next) ?? ""
-        workoutName = d.string(forKey: Keys.workout) ?? ""
+        let stored = SharedRestState.load()
+        endDate = stored.endDate.flatMap { $0 > .now ? $0 : nil }
+        totalSeconds = stored.totalSeconds
+        exerciseName = stored.exerciseName
+        nextSetLabel = stored.nextSetLabel
+        workoutName = stored.workoutName
         activity = Activity<RestTimerAttributes>.activities.first
         if endDate == nil { enqueueActivity { await $0.endActivity() } }
     }
@@ -126,8 +156,8 @@ final class RestTimerController {
         center.removePendingNotificationRequests(withIdentifiers: [notificationId])
         let content = UNMutableNotificationContent()
         content.title = String(localized: "timer.notification.title")
-        content.body = nextSetLabel.isEmpty ? exerciseName : "\(exerciseName) · \(nextSetLabel)"
-        content.sound = .default
+        content.body = [exerciseName, nextSetLabel].filter { !$0.isEmpty }.joined(separator: " · ")
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(SharedRestState.soundName))
         content.interruptionLevel = .timeSensitive
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, endDate.timeIntervalSinceNow), repeats: false)
         center.add(UNNotificationRequest(identifier: notificationId, content: content, trigger: trigger))

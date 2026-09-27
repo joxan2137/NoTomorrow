@@ -5,7 +5,7 @@ import SwiftData
 enum SettingsRoute: Hashable {
     case name, bodyWeight, dailyTarget
     case schedule, restTimer, units
-    case language, notifications, health, export, ai
+    case language, notifications, health, export, importWorkouts, ai
     case partner
 }
 
@@ -124,6 +124,7 @@ struct SettingsView: View {
             STLinkRow(label: "settings.health", value: model.healthValue, destination: SettingsRoute.health,
                       dot: model.health.isAuthorized ? NT.Colors.good : nil)
             STLinkRow(label: "settings.export", value: "CSV", destination: SettingsRoute.export)
+            STLinkRow(label: "import.title", value: "Strong · Hevy", destination: SettingsRoute.importWorkouts)
             STLinkRow(label: "settings.aiProvider", value: model.aiValue, destination: SettingsRoute.ai)
         }
     }
@@ -182,6 +183,7 @@ struct SettingsView: View {
         case .notifications: NotificationsEditor(schedule: schedule, model: model)
         case .health: HealthEditor(model: model)
         case .export: ExportView()
+        case .importWorkouts: ImportView()
         case .ai: AIProviderEditor(model: model)
         case .partner: PartnerEditor(model: model, onUnpaired: { path.removeAll() })
         }

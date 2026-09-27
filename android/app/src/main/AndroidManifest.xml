@@ -130,6 +130,53 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home-screen widgets (docs/widgets.md), Jetpack Glance. Exported with the
+             APPWIDGET_UPDATE filter, as the launcher binds them. -->
+        <receiver
+            android:name=".widget.QuickLogWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_fuel_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_log_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.FuelCalendarWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_history_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/fuel_calendar_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.WeekWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_week_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/week_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.BreakTimerWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_rest_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/break_timer_widget_info" />
+        </receiver>
+
         <!-- Push (FCM). Inert until android/app/google-services.json exists. -->
         <service
             android:name=".push.NtMessagingService"

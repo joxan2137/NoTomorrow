@@ -234,6 +234,14 @@ private fun AppGroup(state: SettingsUiState, onRoute: (String) -> Unit) {
             )
         }
         row {
+            // `Text(verbatim:)` on iOS: the two app names are not localized.
+            StLinkRow(
+                label = stringResource(S.import_title),
+                value = "Strong · Hevy",
+                onClick = { onRoute(NtRoute.SettingsImport.route) },
+            )
+        }
+        row {
             StLinkRow(
                 label = stringResource(S.settings_aiProvider),
                 value = stringResource(

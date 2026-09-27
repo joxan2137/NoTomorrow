@@ -165,6 +165,18 @@ jobs:
           stage="$RUNNER_TEMP/ipa"
           mkdir -p "$stage/Payload" dist
           cp -R "$app" "$stage/Payload/"
+          # Ad-hoc signature carrying the entitlements: the build itself is unsigned, and sideloading tools
+          # (AltStore, SideStore, Sideloadly) read the App Group (widgets) and HealthKit entitlements from the
+          # binary when they re-sign it. Nested code first, the app last.
+          payload_app="$stage/Payload/NoTomorrow.app"
+          if [ -d "$payload_app/Frameworks" ]; then
+            find "$payload_app/Frameworks" -maxdepth 1 \( -name '*.framework' -o -name '*.dylib' \) \
+              -exec codesign --force --sign - {} \;
+          fi
+          codesign --force --sign - --entitlements NoTomorrowWidgets/NoTomorrowWidgets.entitlements \
+            "$payload_app/PlugIns/NoTomorrowWidgets.appex"
+          codesign --force --sign - --entitlements NoTomorrow/NoTomorrow.entitlements "$payload_app"
+          codesign --display --entitlements - "$payload_app"
           (cd "$stage" && zip -qry "$GITHUB_WORKSPACE/dist/NoTomorrow-${LABEL}-ios-unsigned.ipa" Payload)
           if [ -d "$ARCHIVE_PATH/dSYMs" ]; then
             (cd "$ARCHIVE_PATH" && zip -qry "$GITHUB_WORKSPACE/dist/NoTomorrow-${LABEL}-ios-dSYMs.zip" dSYMs)

@@ -101,6 +101,8 @@ class ExerciseProgressViewModel(
             thisWeekVolume = lift?.thisWeekVolume(weekStart) ?: 0.0,
             heaviest = lift?.heaviest?.toRecord(),
             mostReps = lift?.mostReps?.toRecord(),
+            repMaxes = lift?.let { RepMax.rows(it.sets, it.current) }.orEmpty()
+                .map { RepMaxRow(reps = it.reps, best = it.best?.toRecord(), estimatedKg = it.estimatedKg) },
         )
     }
 
@@ -128,6 +130,7 @@ class ExerciseProgressViewModel(
             sessions = lift.sessions(start),
             heaviest = data.heaviest,
             mostReps = data.mostReps,
+            repMaxes = data.repMaxes,
         )
     }
 
@@ -153,5 +156,6 @@ class ExerciseProgressViewModel(
         val thisWeekVolume: Double,
         val heaviest: RecordSet?,
         val mostReps: RecordSet?,
+        val repMaxes: List<RepMaxRow>,
     )
 }

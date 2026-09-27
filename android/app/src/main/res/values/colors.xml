@@ -6,4 +6,6 @@
     <color name="nt_ink">#FFF2F2F4</color>
     <color name="nt_ember">#FFFF6A2B</color>
     <color name="nt_transparent">#00000000</color>
+    <!-- Home-screen widget drawables (res/drawable/widget_*.xml). -->
+    <color name="nt_surface2">#FF2A2A2E</color>
 </resources>

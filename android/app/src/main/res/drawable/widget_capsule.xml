@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget button: a `surface2` capsule (docs/widgets.md, "Look"). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/nt_surface2" />
+    <corners android:radius="999dp" />
+</shape>

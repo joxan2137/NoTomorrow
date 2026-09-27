@@ -72,7 +72,13 @@ class AppState(
         RestTimer("restTimer"),
         ActiveWorkout("activeWorkout"),
         Bro("bro"),
-        Settings("settings");
+        Settings("settings"),
+
+        /** The Quick log and Fuel calendar widgets (`notomorrow://fuel`): the Fuel tab on today. */
+        Fuel("fuel"),
+
+        /** The Gym week widget (`notomorrow://today`): the Today tab. */
+        Today("today");
 
         companion object {
             fun from(raw: String?): Route? {

@@ -20,6 +20,7 @@ navigationCompose   = "2.10.0"
 room                = "2.8.4"
 datastore           = "1.2.1"
 work                = "2.11.2"
+glance              = "1.2.0"      # home-screen widgets (docs/widgets.md)
 coreKtx             = "1.19.0"     # NotificationCompat.ProgressStyle, setRequestPromotedOngoing
 splashscreen        = "1.2.0"
 healthConnect       = "1.1.0"
@@ -35,6 +36,7 @@ googleid            = "1.2.0"
 firebaseBom         = "34.18.0"
 googleServices      = "4.5.0"
 mlkitBarcode        = "17.3.0"     # bundled
+mlkitTextRecognition = "16.0.1"    # bundled, Latin script (machine placards)
 
 # ---- Kotlin ecosystem ----
 coroutines          = "1.11.0"
@@ -76,6 +78,7 @@ androidx-room-compiler      = { module = "androidx.room:room-compiler",         
 androidx-room-testing       = { module = "androidx.room:room-testing",                      version.ref = "room" }
 androidx-datastore-prefs    = { module = "androidx.datastore:datastore-preferences",        version.ref = "datastore" }
 androidx-work-ktx           = { module = "androidx.work:work-runtime-ktx",                  version.ref = "work" }
+androidx-glance-appwidget   = { module = "androidx.glance:glance-appwidget",                version.ref = "glance" }
 androidx-health-connect     = { module = "androidx.health.connect:connect-client",          version.ref = "healthConnect" }
 androidx-camera-core        = { module = "androidx.camera:camera-core",                     version.ref = "camerax" }
 androidx-camera-camera2     = { module = "androidx.camera:camera-camera2",                  version.ref = "camerax" }
@@ -95,6 +98,7 @@ google-id                   = { module = "com.google.android.libraries.identity.
 firebase-bom                = { module = "com.google.firebase:firebase-bom",                version.ref = "firebaseBom" }
 firebase-messaging          = { module = "com.google.firebase:firebase-messaging" }
 mlkit-barcode               = { module = "com.google.mlkit:barcode-scanning",               version.ref = "mlkitBarcode" }
+mlkit-text-recognition      = { module = "com.google.mlkit:text-recognition",               version.ref = "mlkitTextRecognition" }
 
 # Kotlin ecosystem
 kotlinx-coroutines-android  = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

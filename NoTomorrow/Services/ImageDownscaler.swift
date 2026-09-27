@@ -9,16 +9,24 @@ enum ImageDownscaler {
     static let plateLongEdge: CGFloat = 1024
     static let labelLongEdge: CGFloat = 1600
 
+    /// The pixel size a `width` × `height` image is drawn at: the long edge brought down to `maxLongEdge` (never
+    /// up), both sides rounded down; nil when either side would be under a pixel.
+    static func targetPixelSize(width: CGFloat, height: CGFloat, maxLongEdge: CGFloat) -> CGSize? {
+        guard width > 0, height > 0, maxLongEdge > 0 else { return nil }
+        let longEdge = max(width, height)
+        let factor = longEdge > maxLongEdge ? maxLongEdge / longEdge : 1
+        let target = CGSize(width: (width * factor).rounded(.down), height: (height * factor).rounded(.down))
+        guard target.width >= 1, target.height >= 1 else { return nil }
+        return target
+    }
+
     static func jpegData(from image: UIImage, maxLongEdge: CGFloat = plateLongEdge, quality: CGFloat = 0.8) -> Data? {
         // `size` is already orientation-corrected (points); multiply by scale to reason in pixels.
         let pixelWidth = image.size.width * image.scale
         let pixelHeight = image.size.height * image.scale
-        guard pixelWidth > 0, pixelHeight > 0 else { return nil }
-
-        let longEdge = max(pixelWidth, pixelHeight)
-        let factor = longEdge > maxLongEdge ? maxLongEdge / longEdge : 1
-        let target = CGSize(width: (pixelWidth * factor).rounded(.down), height: (pixelHeight * factor).rounded(.down))
-        guard target.width >= 1, target.height >= 1 else { return nil }
+        guard let target = targetPixelSize(width: pixelWidth, height: pixelHeight, maxLongEdge: maxLongEdge) else {
+            return nil
+        }
 
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1            // 1 pt == 1 px so `target` is the pixel size
