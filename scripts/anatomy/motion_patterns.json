@@ -1105,7 +1105,8 @@
     "upper": 10,
     "fore": 150
    }
-  ]
+  ],
+  "supinate": true
  },
  "pushdown": {
   "props": [
@@ -2245,7 +2246,7 @@
      110,
      128
     ],
-    "torso": 165,
+    "torso": 140,
     "neck": -15,
     "thigh": -76,
     "shin": -76,
