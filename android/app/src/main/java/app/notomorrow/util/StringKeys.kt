@@ -819,6 +819,7 @@ object S {
     val widget_fuel_empty = R.string.widget_fuel_empty
     val widget_fuel_logged = R.string.widget_fuel_logged
     val widget_fuel_name = R.string.widget_fuel_name
+    val widget_fuel_over = R.string.widget_fuel_over
     val widget_history_description = R.string.widget_history_description
     val widget_history_name = R.string.widget_history_name
     val widget_history_onTarget_n = R.string.widget_history_onTarget_n  // widget.history.onTarget %lld

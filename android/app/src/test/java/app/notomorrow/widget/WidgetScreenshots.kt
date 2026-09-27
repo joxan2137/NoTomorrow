@@ -62,6 +62,11 @@ class WidgetScreenshots {
         val data = QuickLogData(1240.0, 96.0, 130.0, 38.0, FuelGoals(2400.0, 180.0, 260.0, 80.0), foods)
         shoot("quicklog-small", small) { QuickLogContent(data) }
         shoot("quicklog-medium", medium) { QuickLogContent(data) }
+        val empty = data.copy(kcal = 0.0, protein = 0.0, carbs = 0.0, fat = 0.0, foods = emptyList())
+        shoot("quicklog-small-empty", small) { QuickLogContent(empty) }
+        shoot("quicklog-medium-empty", medium) { QuickLogContent(empty) }
+        val over = data.copy(kcal = 2650.0, protein = 170.0, carbs = 280.0, fat = 85.0)
+        shoot("quicklog-medium-over", medium) { QuickLogContent(over) }
     }
 
     @Test
@@ -99,6 +104,11 @@ class WidgetScreenshots {
         val data = WeekData(days, isPaired = true, today = today, next = next, routineName = "Push A")
         shoot("week-small", small) { WeekContent(data) }
         shoot("week-medium", medium) { WeekContent(data) }
+        val solo = data.copy(isPaired = false)
+        shoot("week-medium-solo", medium) { WeekContent(solo) }
+        val none = WeekData(days.map { it.copy(isGymDay = false, myState = DayState.Rest, partnerState = DayState.Rest) }, false, today, null, null)
+        shoot("week-small-noschedule", small) { WeekContent(none) }
+        shoot("week-medium-noschedule", medium) { WeekContent(none) }
     }
 
     @Test
@@ -114,6 +124,9 @@ class WidgetScreenshots {
         shoot("break-medium-idle", medium) { BreakTimerContent(idle) }
         shoot("break-small-running", small) { BreakTimerContent(running) }
         shoot("break-medium-running", medium) { BreakTimerContent(running) }
+        val ended = RestData(RestTimerState(), endedAt = now - 5_000, defaultRestSeconds = 90)
+        shoot("break-small-ended", small) { BreakTimerContent(ended) }
+        shoot("break-medium-ended", medium) { BreakTimerContent(ended) }
     }
 
     private fun shoot(name: String, size: DpSize, content: @androidx.compose.runtime.Composable () -> Unit) {
@@ -132,8 +145,20 @@ class WidgetScreenshots {
         parent.addView(view)
         parent.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
         parent.layout(0, 0, w, h)
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        parent.draw(Canvas(bitmap))
+        // On a wallpaper-like backdrop, the way a launcher shows it.
+        val pad = (20 * density).toInt()
+        val bitmap = Bitmap.createBitmap(w + 2 * pad, h + 2 * pad, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val backdrop = android.graphics.Paint().apply {
+            shader = android.graphics.LinearGradient(
+                0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(),
+                intArrayOf(0xFF3B5A7A.toInt(), 0xFF6F8FA8.toInt(), 0xFF2E3F56.toInt()), null,
+                android.graphics.Shader.TileMode.CLAMP,
+            )
+        }
+        canvas.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), backdrop)
+        canvas.translate(pad.toFloat(), pad.toFloat())
+        parent.draw(canvas)
         dir!!.mkdirs()
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }

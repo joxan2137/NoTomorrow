@@ -34,6 +34,7 @@ import androidx.glance.layout.width
 import androidx.glance.text.Text
 import app.notomorrow.R
 import app.notomorrow.app.AppState
+import app.notomorrow.designsystem.NT
 import app.notomorrow.util.Fmt
 
 /**
@@ -80,26 +81,50 @@ internal fun QuickLogContent(data: QuickLogData) {
         if (size.width.value >= MEDIUM_MIN_WIDTH_DP) {
             Medium(context, data, logged, size.width.value - 32f, size.height.value - 32f)
         } else {
-            Small(context, data, logged, size.height.value - 32f)
+            Small(context, data, logged, size.width.value - 32f, size.height.value - 32f)
         }
     }
 }
 
+/** The ring's number and label: kcal left, or "+250 over" in `bad` past the goal. */
+private fun ring(context: Context, data: QuickLogData, sizeDp: Float, lineDp: Float, numberSp: Float, withLabel: Boolean): WidgetBitmaps.Sized {
+    val over = data.kcal - data.goals.kcal
+    return if (over >= 1.0) {
+        WidgetBitmaps.macroRing(
+            context, sizeDp, lineDp, data,
+            "+" + Fmt.kcal(over, withUnit = false), numberSp,
+            if (withLabel) context.getString(R.string.widget_fuel_over) else null,
+            numberColor = NT.Colors.bad, labelColor = NT.Colors.bad,
+        )
+    } else {
+        WidgetBitmaps.macroRing(
+            context, sizeDp, lineDp, data,
+            Fmt.kcal(data.kcalLeft, withUnit = false), numberSp,
+            if (withLabel) context.getString(R.string.dashboard_left) else null,
+        )
+    }
+}
+
 @Composable
-private fun Small(context: Context, data: QuickLogData, logged: String?, heightDp: Float) {
-    // Eyebrow 14, button 36, two 8 dp gaps: the ring takes what is left, up to 64 dp.
-    val ring = (heightDp - 14f - W.buttonHeight.value - 16f).coerceIn(40f, 64f)
+private fun Small(context: Context, data: QuickLogData, logged: String?, widthDp: Float, heightDp: Float) {
+    // Eyebrow 14, button 36, two 8 dp gaps: the ring takes what is left, up to 76 dp; the macro
+    // bars fill the width beside it.
+    val ring = (heightDp - 14f - W.buttonHeight.value - 16f).coerceIn(44f, 76f)
+    val barsWidth = widthDp - ring - 12f
     Column(GlanceModifier.fillMaxSize()) {
-        Eyebrow(context.getString(R.string.fuel_kcalLeft))
-        Box(GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.CenterStart) {
-            BitmapImage(
-                WidgetBitmaps.macroRing(context, ring, 8f, data, Fmt.kcal(data.kcalLeft, withUnit = false), 26f, null),
-                description = context.getString(R.string.fuel_kcalLeft),
-            )
+        Eyebrow(context.getString(R.string.fuel_kcalLeft), icon = R.drawable.ic_flame)
+        Spacer(GlanceModifier.height(8.dp))
+        Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+            BitmapImage(ring(context, data, ring, 7f, 24f * ring / 76f, withLabel = false), description = context.getString(R.string.fuel_kcalLeft))
+            if (barsWidth >= 44f) {
+                Spacer(GlanceModifier.width(12.dp))
+                BitmapImage(WidgetBitmaps.macroBars(context, barsWidth, ring, data, "g"))
+            }
         }
+        Spacer(GlanceModifier.height(8.dp))
         val food = data.foods.firstOrNull()
         if (food == null) {
-            Text(context.getString(R.string.widget_fuel_empty), style = W.footnote, maxLines = 2)
+            Text(context.getString(R.string.widget_fuel_empty), style = W.caption, maxLines = 3)
         } else {
             val isLogged = logged == food.key
             Capsule(onClick = logAction(food), modifier = GlanceModifier.fillMaxWidth()) {
@@ -109,7 +134,7 @@ private fun Small(context: Context, data: QuickLogData, logged: String?, heightD
                 Spacer(GlanceModifier.width(6.dp))
                 Text(
                     text = if (isLogged) context.getString(R.string.widget_fuel_logged) else Fmt.kcal(food.kcal, withUnit = false),
-                    style = W.footnote,
+                    style = if (isLogged) W.footnote.copy(color = W.good) else W.footnote,
                     maxLines = 1,
                 )
             }
@@ -119,35 +144,24 @@ private fun Small(context: Context, data: QuickLogData, logged: String?, heightD
 
 @Composable
 private fun Medium(context: Context, data: QuickLogData, logged: String?, widthDp: Float, heightDp: Float) {
-    val left = widthDp * 0.42f
-    val ring = (heightDp - 36f).coerceIn(56f, 92f).coerceAtMost(left)
+    val left = widthDp * 0.40f
+    // The ring fills the height above the one-line eaten / goal caption.
+    val ring = (heightDp - 22f).coerceIn(56f, 116f).coerceAtMost(left)
     Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Column(
             GlanceModifier.width(left.dp).fillMaxHeight(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BitmapImage(
-                WidgetBitmaps.macroRing(
-                    context, ring, 8f, data,
-                    Fmt.kcal(data.kcalLeft, withUnit = false),
-                    34f * ring / 92f,
-                    context.getString(R.string.dashboard_left),
-                ),
-                description = context.getString(R.string.fuel_kcalLeft),
-            )
+            BitmapImage(ring(context, data, ring, 9f, 36f * ring / 116f, withLabel = true), description = context.getString(R.string.fuel_kcalLeft))
             Spacer(GlanceModifier.height(6.dp))
             Text(
-                text = context.getString(
-                    R.string.fuel_eatenGoal,
-                    Fmt.kcal(data.kcal, withUnit = false),
-                    Fmt.kcal(data.goals.kcal, withUnit = false),
-                ),
-                style = W.footnote,
-                maxLines = 2,
+                text = "${Fmt.kcal(data.kcal, withUnit = false)} / ${Fmt.kcal(data.goals.kcal)}",
+                style = W.caption,
+                maxLines = 1,
             )
         }
-        Spacer(GlanceModifier.width(12.dp))
+        Spacer(GlanceModifier.width(14.dp))
         Column(GlanceModifier.defaultWeight().fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
             val rows = ((heightDp + 1f) / (ROW_DP + 1f)).toInt().coerceIn(1, 3)
             val foods = data.foods.take(rows)
@@ -179,7 +193,7 @@ private fun FoodRow(context: Context, food: QuickFood, isLogged: Boolean) {
                     // A food logged without a weight shows just its kcal, not "0 g".
                     if (food.grams > 0) "${Fmt.grams(food.grams)} · ${Fmt.kcal(food.kcal)}" else Fmt.kcal(food.kcal)
                 },
-                style = W.footnote,
+                style = if (isLogged) W.footnote.copy(color = W.good) else W.footnote,
                 maxLines = 1,
             )
         }

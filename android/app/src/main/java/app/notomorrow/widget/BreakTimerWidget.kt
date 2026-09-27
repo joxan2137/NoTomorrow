@@ -30,6 +30,7 @@ import androidx.glance.layout.width
 import androidx.glance.text.Text
 import app.notomorrow.R
 import app.notomorrow.app.AppState
+import app.notomorrow.designsystem.NT
 import app.notomorrow.util.Fmt
 
 /**
@@ -65,7 +66,8 @@ internal fun BreakTimerContent(data: RestData) {
     val justEnded = end == null && data.endedAt != null && now - data.endedAt in 0 until WidgetUpdater.JUST_ENDED_MS
     val medium = size.width.value >= MEDIUM_MIN_WIDTH_DP
     val height = size.height.value - 2 * W.margin.value
-    WidgetFrame(onClick = W.open(context, AppState.Route.RestTimer)) {
+    val background = if (justEnded) R.drawable.widget_background_go else R.drawable.widget_background
+    WidgetFrame(onClick = W.open(context, AppState.Route.RestTimer), background = background) {
         when {
             medium -> Medium(context, data, end, justEnded, height)
             end != null -> SmallRunning(context, data, end, height)
@@ -77,16 +79,28 @@ internal fun BreakTimerContent(data: RestData) {
 private fun caption(context: Context, justEnded: Boolean): String =
     context.getString(if (justEnded) R.string.timer_notification_title else R.string.widget_rest_start)
 
+/** The caption under the length: quiet while idle, bold `ink` once the rest just ended. */
+private fun captionStyle(justEnded: Boolean) = if (justEnded) W.subheadlineBold else W.footnote
+
+/** The idle ring: a faint ember track waiting to be filled; full ember once the rest just ended. */
+private fun idleRing(context: Context, sizeDp: Float, text: String, justEnded: Boolean) =
+    WidgetBitmaps.progressRing(
+        context, sizeDp, 6f,
+        fraction = if (justEnded) 1f else 0f,
+        track = NT.Colors.ember.copy(alpha = 0.22f),
+        center = text, centerSp = 34f * sizeDp / 110f,
+    )
+
 private fun exerciseName(context: Context, data: RestData): String =
     data.state.exerciseName.ifEmpty { context.getString(R.string.timer_rest) }
 
 @Composable
 private fun SmallIdle(context: Context, data: RestData, justEnded: Boolean) {
     Column(GlanceModifier.fillMaxSize()) {
-        Eyebrow(context.getString(R.string.timer_rest))
+        Eyebrow(context.getString(R.string.timer_rest), color = if (justEnded) W.ember else W.ink2, icon = R.drawable.ic_clock)
         val text = Fmt.clock(data.defaultRestSeconds)
         BitmapImage(WidgetBitmaps.displayText(context, text, 44f), description = text)
-        Text(caption(context, justEnded), style = W.footnote, maxLines = 2)
+        Text(caption(context, justEnded), style = captionStyle(justEnded), maxLines = 2)
         Spacer(GlanceModifier.defaultWeight())
         PresetRow(data.defaultRestSeconds)
     }
@@ -120,15 +134,12 @@ private fun Medium(context: Context, data: RestData, end: Long?, justEnded: Bool
                 Countdown(context, data, end, ring, 6f, 34f * ring / 110f)
             } else {
                 val text = Fmt.clock(data.defaultRestSeconds)
-                BitmapImage(
-                    WidgetBitmaps.progressRing(context, ring, 6f, 0f, center = text, centerSp = 34f * ring / 110f),
-                    description = text,
-                )
+                BitmapImage(idleRing(context, ring, text, justEnded), description = text)
             }
         }
         Spacer(GlanceModifier.width(14.dp))
         Column(GlanceModifier.defaultWeight().fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
-            Eyebrow(context.getString(R.string.timer_rest), color = if (end != null) W.ember else W.ink2)
+            Eyebrow(context.getString(R.string.timer_rest), color = if (end != null || justEnded) W.ember else W.ink2, icon = R.drawable.ic_clock)
             Spacer(GlanceModifier.height(2.dp))
             if (end != null) {
                 Text(exerciseName(context, data), style = W.headline, maxLines = 1)
@@ -136,7 +147,7 @@ private fun Medium(context: Context, data: RestData, end: Long?, justEnded: Bool
                     Text(data.state.nextSetLabel, style = W.footnote, maxLines = 1)
                 }
             } else {
-                Text(caption(context, justEnded), style = W.footnote, maxLines = 2)
+                Text(caption(context, justEnded), style = captionStyle(justEnded), maxLines = 2)
             }
             Spacer(GlanceModifier.height(8.dp))
             if (end != null) {

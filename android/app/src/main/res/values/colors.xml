@@ -8,4 +8,12 @@
     <color name="nt_transparent">#00000000</color>
     <!-- Home-screen widget drawables (res/drawable/widget_*.xml). -->
     <color name="nt_surface2">#FF2A2A2E</color>
+    <color name="nt_surface3">#FF38383C</color>
+    <!-- The widget surface: its top, the ember glow, the hairline edge, stat tiles, the "Go" state. -->
+    <color name="nt_widget_top">#FF1A1A1D</color>
+    <color name="nt_widget_glow">#26FF6A2B</color>
+    <color name="nt_widget_edge">#1AFFFFFF</color>
+    <color name="nt_widget_tile">#801C1C1E</color>
+    <color name="nt_widget_go">#B3FF6A2B</color>
+    <color name="nt_widget_go_edge">#66FF6A2B</color>
 </resources>

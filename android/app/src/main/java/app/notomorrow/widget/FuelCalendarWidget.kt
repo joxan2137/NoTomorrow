@@ -3,6 +3,7 @@ package app.notomorrow.widget
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.ImageProvider
@@ -18,9 +19,11 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.Text
@@ -57,7 +60,7 @@ private const val LARGE_MIN_HEIGHT_DP = 220f
 
 private const val HEADER_DP = 18f
 private const val LEGEND_DP = 16f
-private const val STATS_DP = 50f
+private const val STATS_DP = 58f
 private const val GAP_DP = 10f
 
 @Composable
@@ -72,26 +75,52 @@ internal fun CalendarContent(data: CalendarData) {
     WidgetFrame(onClick = W.open(context, AppState.Route.Fuel)) {
         Column(GlanceModifier.fillMaxSize()) {
             Row(GlanceModifier.fillMaxWidth().height(HEADER_DP.dp), verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow(context.getString(R.string.widget_history_name), modifier = GlanceModifier.defaultWeight())
-                Text(
-                    context.getString(R.string.widget_history_onTarget_n, data.stats.onTarget30),
-                    style = W.footnote,
-                    maxLines = 1,
-                )
+                Eyebrow(context.getString(R.string.widget_history_name), modifier = GlanceModifier.defaultWeight(), icon = R.drawable.ic_calendar)
+                if (large) {
+                    Text(
+                        context.getString(R.string.widget_history_onTarget_n, data.stats.onTarget30),
+                        style = W.footnote,
+                        maxLines = 1,
+                    )
+                }
             }
             Spacer(GlanceModifier.height(GAP_DP.dp))
-            BitmapImage(
-                WidgetCharts.heatGrid(context, width, gridHeight.coerceAtLeast(24f), data, months = large, locale = locale),
-                description = context.getString(R.string.widget_history_description),
-            )
             if (large) {
+                BitmapImage(
+                    WidgetCharts.heatGrid(context, width, gridHeight.coerceAtLeast(24f), data, months = true, locale = locale),
+                    description = context.getString(R.string.widget_history_description),
+                )
                 Spacer(GlanceModifier.height(GAP_DP.dp))
                 Legend(context)
                 Spacer(GlanceModifier.height(GAP_DP.dp))
                 Stats(context, data)
+            } else {
+                // The grid, and beside it the two numbers that matter: days on target, 7-day average.
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    BitmapImage(
+                        WidgetCharts.heatGrid(context, width - SIDE_DP - 14f, gridHeight.coerceAtLeast(24f), data, months = false, locale = locale),
+                        description = context.getString(R.string.widget_history_description),
+                    )
+                    Spacer(GlanceModifier.width(14.dp))
+                    Column(GlanceModifier.width(SIDE_DP.dp).fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
+                        SideStat(context, "${data.stats.onTarget30}/30", R.string.fuel_calendar_onTarget)
+                        Spacer(GlanceModifier.height(8.dp))
+                        Box(GlanceModifier.fillMaxWidth().height(1.dp).background(W.hairline)) {}
+                        Spacer(GlanceModifier.height(8.dp))
+                        SideStat(context, data.stats.avg7?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg7)
+                    }
+                }
             }
         }
     }
+}
+
+private const val SIDE_DP = 74f
+
+@Composable
+private fun SideStat(context: Context, value: String, label: Int) {
+    BitmapImage(WidgetBitmaps.displayText(context, value, 26f), description = value)
+    Text(context.getString(label), style = W.caption, maxLines = 1)
 }
 
 /** The five `heat` swatches, then On target; an `ink` dot, then Trained. */
@@ -114,20 +143,25 @@ private fun Legend(context: Context) {
     }
 }
 
-/** 7-day avg, 30-day avg (kcal, "–" with no logged day) and sessions in the last 30 days. */
+/** 7-day avg, 30-day avg (kcal, "–" with no logged day) and sessions in the last 30 days, as tiles. */
 @Composable
 private fun Stats(context: Context, data: CalendarData) {
     Row(GlanceModifier.fillMaxWidth().height(STATS_DP.dp), verticalAlignment = Alignment.Top) {
-        StatColumn(context, data.stats.avg7?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg7)
-        StatColumn(context, data.stats.avg30?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg30)
-        StatColumn(context, Fmt.count(data.sessions30), R.string.widget_history_sessions30)
+        StatTile(context, data.stats.avg7?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg7)
+        Spacer(GlanceModifier.width(8.dp))
+        StatTile(context, data.stats.avg30?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg30)
+        Spacer(GlanceModifier.width(8.dp))
+        StatTile(context, Fmt.count(data.sessions30), R.string.widget_history_sessions30)
     }
 }
 
 @Composable
-private fun androidx.glance.layout.RowScope.StatColumn(context: Context, value: String, label: Int) {
-    Column(GlanceModifier.defaultWeight()) {
-        BitmapImage(WidgetBitmaps.displayText(context, value, 28f), description = value)
-        Text(context.getString(label), style = W.caption, maxLines = 1)
+private fun androidx.glance.layout.RowScope.StatTile(context: Context, value: String, label: Int) {
+    Column(
+        GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.widget_tile)).padding(horizontal = 8.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BitmapImage(WidgetBitmaps.displayText(context, value, 24f), description = value)
+        Text(context.getString(label), style = W.text(W.caption, size = 10.5.sp), maxLines = 1)
     }
 }
