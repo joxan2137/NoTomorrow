@@ -774,6 +774,9 @@
     <string name="timer_setOf_n_n">Set %1$d of %2$d</string>
     <string name="timer_skip">Skip rest</string>
     <string name="timer_upNext">Up next</string>
+    <string name="tracking_bodyweightReps">Bodyweight reps</string>
+    <string name="tracking_duration">Timed hold</string>
+    <string name="tracking_weightReps">Weight × reps</string>
     <string name="train_upNext">Up next</string>
     <string name="unit_g">g</string>
     <string name="unit_kcal">kcal</string>
@@ -821,6 +824,7 @@
     <string name="workout_beatsBest">%1$s beats your best set (%2$s)</string>
     <string name="workout_beatsBest_s_s">%1$s beats your best set (%2$s)</string>
     <string name="workout_best">Best</string>
+    <string name="workout_bw">BW</string>
     <string name="workout_defaultName">Workout</string>
     <string name="workout_discard">Discard workout</string>
     <string name="workout_done_editSets">Edit sets</string>
@@ -828,8 +832,11 @@
     <string name="workout_done_lbMoved">lb moved</string>
     <string name="workout_done_lessThanLast">%1$s less than last %2$s</string>
     <string name="workout_done_lessThanLast_s_s">%1$s less than last %2$s</string>
+    <string name="workout_done_longestHold">Set record · longest hold</string>
     <string name="workout_done_moreThanLast">%1$s more than last %2$s</string>
     <string name="workout_done_moreThanLast_s_s">%1$s more than last %2$s</string>
+    <string name="workout_done_mostReps">Set record · most reps</string>
+    <string name="workout_done_newBest">New best set</string>
     <string name="workout_done_noRecords">No records tonight. Showing up counts.</string>
     <string name="workout_done_prDetail">New best set · e1RM %1$s, up from %2$s</string>
     <string name="workout_done_prDetail_s_s">New best set · e1RM %1$s, up from %2$s</string>
@@ -891,6 +898,7 @@
     <string name="workout_restDefault">Default (%s)</string>
     <string name="workout_restTimer">Rest timer</string>
     <string name="workout_routines">Routines</string>
+    <string name="workout_seconds">Sec</string>
     <string name="workout_set">Set</string>
     <string name="workout_setCount_few">%d sets</string>
     <string name="workout_setCount_many">%d sets</string>
@@ -903,6 +911,7 @@
     <string name="workout_suggest_try_s">Try %s today</string>
     <string name="workout_suggest_use">Use</string>
     <string name="workout_time">Time</string>
+    <string name="workout_trackAs">Track as</string>
     <string name="workout_untitled">Workout</string>
     <string name="workout_volume">Volume</string>
     <string name="workout_warmup">Warm-up</string>

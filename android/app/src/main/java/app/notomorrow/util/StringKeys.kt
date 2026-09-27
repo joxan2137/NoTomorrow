@@ -789,6 +789,9 @@ object S {
     val timer_setOf_n_n = R.string.timer_setOf_n_n  // timer.setOf %lld %lld
     val timer_skip = R.string.timer_skip
     val timer_upNext = R.string.timer_upNext
+    val tracking_bodyweightReps = R.string.tracking_bodyweightReps
+    val tracking_duration = R.string.tracking_duration
+    val tracking_weightReps = R.string.tracking_weightReps
     val train_upNext = R.string.train_upNext
     val unit_g = R.string.unit_g
     val unit_kcal = R.string.unit_kcal
@@ -836,6 +839,7 @@ object S {
     val workout_beatsBest = R.string.workout_beatsBest
     val workout_beatsBest_s_s = R.string.workout_beatsBest_s_s  // workout.beatsBest %@ %@
     val workout_best = R.string.workout_best
+    val workout_bw = R.string.workout_bw
     val workout_defaultName = R.string.workout_defaultName
     val workout_discard = R.string.workout_discard
     val workout_done_editSets = R.string.workout_done_editSets
@@ -843,8 +847,11 @@ object S {
     val workout_done_lbMoved = R.string.workout_done_lbMoved
     val workout_done_lessThanLast = R.string.workout_done_lessThanLast
     val workout_done_lessThanLast_s_s = R.string.workout_done_lessThanLast_s_s  // workout.done.lessThanLast %@ %@
+    val workout_done_longestHold = R.string.workout_done_longestHold
     val workout_done_moreThanLast = R.string.workout_done_moreThanLast
     val workout_done_moreThanLast_s_s = R.string.workout_done_moreThanLast_s_s  // workout.done.moreThanLast %@ %@
+    val workout_done_mostReps = R.string.workout_done_mostReps
+    val workout_done_newBest = R.string.workout_done_newBest
     val workout_done_noRecords = R.string.workout_done_noRecords
     val workout_done_prDetail = R.string.workout_done_prDetail
     val workout_done_prDetail_s_s = R.string.workout_done_prDetail_s_s  // workout.done.prDetail %@ %@
@@ -906,6 +913,7 @@ object S {
     val workout_restDefault = R.string.workout_restDefault
     val workout_restTimer = R.string.workout_restTimer
     val workout_routines = R.string.workout_routines
+    val workout_seconds = R.string.workout_seconds
     val workout_set = R.string.workout_set
     val workout_setCount_few = R.string.workout_setCount_few
     val workout_setCount_many = R.string.workout_setCount_many
@@ -918,6 +926,7 @@ object S {
     val workout_suggest_try_s = R.string.workout_suggest_try_s  // workout.suggest.try %@
     val workout_suggest_use = R.string.workout_suggest_use
     val workout_time = R.string.workout_time
+    val workout_trackAs = R.string.workout_trackAs
     val workout_untitled = R.string.workout_untitled
     val workout_volume = R.string.workout_volume
     val workout_warmup = R.string.workout_warmup

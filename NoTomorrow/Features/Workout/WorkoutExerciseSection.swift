@@ -17,10 +17,18 @@ struct WorkoutExerciseSection: View {
     @State private var showsReplace = false
 
     private var name: String { exercise.exercise?.localizedName ?? "" }
+    private var tracking: ExerciseTracking { exercise.exercise?.tracking ?? .weightReps }
 
     private var lastLine: String? {
         guard let last = model.lastSet(for: exercise) else { return nil }
-        return "\(String(localized: "workout.last")): \(Fmt.weight(last.weightKg, unit: model.unit)) × \(last.reps)"
+        let text = tracking == .weightReps
+            ? "\(Fmt.weight(last.weightKg, unit: model.unit)) × \(last.reps)"
+            : setText(last)
+        return "\(String(localized: "workout.last")): \(text)"
+    }
+
+    private func setText(_ value: ActiveWorkoutModel.SetValue) -> String {
+        Fmt.set(value.weightKg, value.reps, seconds: value.seconds, tracking: tracking, unit: model.unit)
     }
 
     var body: some View {
@@ -62,7 +70,7 @@ struct WorkoutExerciseSection: View {
                 suggestionRow(suggestion)
                     .transition(.opacity)
             }
-            SetColumnHeader(unit: model.unit)
+            SetColumnHeader(unit: model.unit, tracking: tracking)
             ForEach(exercise.sortedSets) { set in
                 SetRowView(set: set, exercise: exercise, model: model,
                            isCurrent: model.currentSetID(in: exercise) == set.persistentModelID,
@@ -122,6 +130,13 @@ struct WorkoutExerciseSection: View {
                     Button("note.add", systemImage: "note.text") {
                         withAnimation(.easeInOut(duration: 0.2)) { showsNote = true }
                     }
+                }
+                if let ex = exercise.exercise {
+                    Picker("workout.trackAs", selection: Binding(get: { ex.tracking },
+                                                                 set: { model.setTracking($0, of: exercise) })) {
+                        ForEach(ExerciseTracking.allCases, id: \.self) { Text(WorkoutStrings.tracking($0)).tag($0) }
+                    }
+                    .pickerStyle(.menu)
                 }
                 Button("workout.removeExercise", role: .destructive) { model.remove(exercise) }
             } label: {
@@ -199,10 +214,10 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    private func hint(set: SetEntry, best: (weightKg: Double, reps: Int)) -> some View {
+    private func hint(set: SetEntry, best: ActiveWorkoutModel.SetValue) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "trophy").font(.system(size: 12, weight: .semibold))
-            Text("workout.beatsBest \(Fmt.set(set.weightKg, set.reps, unit: model.unit)) \(Fmt.set(best.weightKg, best.reps, unit: model.unit))")
+            Text("workout.beatsBest \(Fmt.set(set, unit: model.unit)) \(setText(best))")
                 .font(NT.Fonts.footnoteBold).tabular()
         }
         .foregroundStyle(NT.Colors.ember)

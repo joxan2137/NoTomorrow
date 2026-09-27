@@ -774,6 +774,9 @@
     <string name="timer_setOf_n_n">Seria %1$d z %2$d</string>
     <string name="timer_skip">Pomiń przerwę</string>
     <string name="timer_upNext">Następna</string>
+    <string name="tracking_bodyweightReps">Powtórzenia z masą ciała</string>
+    <string name="tracking_duration">Czas utrzymania</string>
+    <string name="tracking_weightReps">Ciężar × powtórzenia</string>
     <string name="train_upNext">Następny</string>
     <string name="unit_g">g</string>
     <string name="unit_kcal">kcal</string>
@@ -821,6 +824,7 @@
     <string name="workout_beatsBest">%1$s bije twoją najlepszą serię (%2$s)</string>
     <string name="workout_beatsBest_s_s">%1$s bije twoją najlepszą serię (%2$s)</string>
     <string name="workout_best">Najlepiej</string>
+    <string name="workout_bw">MC</string>
     <string name="workout_defaultName">Trening</string>
     <string name="workout_discard">Odrzuć trening</string>
     <string name="workout_done_editSets">Popraw serie</string>
@@ -828,8 +832,11 @@
     <string name="workout_done_lbMoved">lb przerzucone</string>
     <string name="workout_done_lessThanLast">%1$s mniej niż ostatni %2$s</string>
     <string name="workout_done_lessThanLast_s_s">%1$s mniej niż ostatni %2$s</string>
+    <string name="workout_done_longestHold">Rekord serii · najdłuższe utrzymanie</string>
     <string name="workout_done_moreThanLast">%1$s więcej niż ostatni %2$s</string>
     <string name="workout_done_moreThanLast_s_s">%1$s więcej niż ostatni %2$s</string>
+    <string name="workout_done_mostReps">Rekord serii · najwięcej powtórzeń</string>
+    <string name="workout_done_newBest">Nowa najlepsza seria</string>
     <string name="workout_done_noRecords">Dziś bez rekordów. Liczy się, że byłeś.</string>
     <string name="workout_done_prDetail">Nowa najlepsza seria · szac. 1RM %1$s, poprzednio %2$s</string>
     <string name="workout_done_prDetail_s_s">Nowa najlepsza seria · szac. 1RM %1$s, poprzednio %2$s</string>
@@ -891,6 +898,7 @@
     <string name="workout_restDefault">Domyślna (%s)</string>
     <string name="workout_restTimer">Minutnik przerwy</string>
     <string name="workout_routines">Plany</string>
+    <string name="workout_seconds">Sek.</string>
     <string name="workout_set">Seria</string>
     <string name="workout_setCount_few">%d serie</string>
     <string name="workout_setCount_many">%d serii</string>
@@ -903,6 +911,7 @@
     <string name="workout_suggest_try_s">Dziś spróbuj %s</string>
     <string name="workout_suggest_use">Użyj</string>
     <string name="workout_time">Czas</string>
+    <string name="workout_trackAs">Rejestruj jako</string>
     <string name="workout_untitled">Trening</string>
     <string name="workout_volume">Objętość</string>
     <string name="workout_warmup">Rozgrzewka</string>

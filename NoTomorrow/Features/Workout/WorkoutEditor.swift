@@ -51,6 +51,7 @@ enum WorkoutEditor {
                 set.kind = draftSet.kind
                 set.weightKg = max(0, draftSet.weightKg)
                 set.reps = max(0, draftSet.reps)
+                set.seconds = max(0, draftSet.seconds)
                 set.completedAt = draftSet.isLogged ? (times[draftSet.id] ?? draft.startedAt) : nil
                 if !draftSet.isLogged {
                     set.isPR = false

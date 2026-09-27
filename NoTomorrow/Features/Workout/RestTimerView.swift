@@ -142,7 +142,11 @@ struct RestTimerView: View {
                             .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2).tabular().lineLimit(1)
                     }
                     Spacer(minLength: 12)
-                    if let upNext, upNext.weightKg > 0 || upNext.reps > 0 {
+                    if let upNext, upNext.tracking != .weightReps, upNext.weightKg > 0 || upNext.reps > 0 || upNext.seconds > 0 {
+                        Text(upNext.setText)
+                            .font(NT.Fonts.display(32)).foregroundStyle(NT.Colors.ink).tabular()
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                    } else if let upNext, upNext.weightKg > 0 || upNext.reps > 0 {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(Fmt.weight(upNext.weightKg, unit: upNext.unit, withUnit: false))
                                 .font(NT.Fonts.display(32)).foregroundStyle(NT.Colors.ink).tabular()
@@ -159,8 +163,8 @@ struct RestTimerView: View {
 
     private var upNextLine: String {
         guard let upNext else { return restTimer.nextSetLabel }
-        if let kg = upNext.bestKg, let reps = upNext.bestReps {
-            return "\(upNext.setLabel) · \(String(localized: "workout.best")): \(Fmt.set(kg, reps, unit: upNext.unit))"
+        if let best = upNext.bestText {
+            return "\(upNext.setLabel) · \(String(localized: "workout.best")): \(best)"
         }
         return upNext.setLabel
     }
