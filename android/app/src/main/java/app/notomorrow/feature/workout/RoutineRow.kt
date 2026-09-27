@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -35,6 +36,7 @@ import app.notomorrow.designsystem.NtIcons
 import app.notomorrow.designsystem.NtMenu
 import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.pressScale
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.service.localizedName
@@ -79,6 +81,7 @@ fun RoutineRow(
         }
         // `Spacer(minLength: 8)` between two 12 pt `HStack` gaps — 32 pt of clearance in total.
         Spacer(Modifier.width(8.dp))
+        RoutineMoreButton(menu = menu)
         StartPlayButton(routineName = routine.name, onClick = onStart)
     }
 }
@@ -118,14 +121,7 @@ fun RoutineMenuBox(
     val moveUpLabel = stringResource(S.workout_edit_moveUp)
     val moveDownLabel = stringResource(S.workout_edit_moveDown)
     val deleteLabel = stringResource(S.routine_delete)
-    val items = listOfNotNull(
-        NtMenuItem(title = editLabel, onClick = menu.onEdit, icon = NtIcons.Pencil),
-        NtMenuItem(title = duplicateLabel, onClick = menu.onDuplicate, icon = NtIcons.PlusSquareOnSquare),
-        NtMenuItem(title = shareLabel, onClick = menu.onShare, icon = NtIcons.SquareAndArrowUp),
-        menu.onMoveUp?.let { NtMenuItem(title = moveUpLabel, onClick = it, icon = NtIcons.ArrowUp) },
-        menu.onMoveDown?.let { NtMenuItem(title = moveDownLabel, onClick = it, icon = NtIcons.ArrowDown) },
-        NtMenuItem(title = deleteLabel, onClick = menu.onDelete, destructive = true, icon = NtIcons.Trash),
-    )
+    val items = routineMenuItems(menu)
     val interaction = remember { MutableInteractionSource() }
     val openMenu = {
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -161,6 +157,37 @@ fun RoutineMenuBox(
                 },
         ) { content() }
         NtMenu(expanded = expanded, onDismiss = { expanded = false }, items = items)
+    }
+}
+
+/** The routine menu's entries: Edit, Duplicate, Share, Move up / down (when possible), Delete. */
+@Composable
+private fun routineMenuItems(menu: RoutineMenuActions): List<NtMenuItem> = listOfNotNull(
+    NtMenuItem(title = stringResource(S.routine_edit), onClick = menu.onEdit, icon = NtIcons.Pencil),
+    NtMenuItem(title = stringResource(S.routine_duplicate), onClick = menu.onDuplicate, icon = NtIcons.PlusSquareOnSquare),
+    NtMenuItem(title = stringResource(S.routine_share), onClick = menu.onShare, icon = NtIcons.SquareAndArrowUp),
+    menu.onMoveUp?.let { NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it, icon = NtIcons.ArrowUp) },
+    menu.onMoveDown?.let { NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it, icon = NtIcons.ArrowDown) },
+    NtMenuItem(title = stringResource(S.routine_delete), onClick = menu.onDelete, destructive = true, icon = NtIcons.Trash),
+)
+
+/** The row's visible "…" button: the same menu as the long press, for people who never long-press. */
+@Composable
+private fun RoutineMoreButton(menu: RoutineMenuActions) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier
+            .size(NT.Size.control)
+            .ntPlainClickable(role = Role.Button) { expanded = true },
+        contentAlignment = Alignment.Center,
+    ) {
+        NtIcon(
+            NtIcons.Ellipsis,
+            size = sfIconSize(18f),
+            tint = NT.Colors.ink2,
+            contentDescription = stringResource(S.common_moreOptions),
+        )
+        NtMenu(expanded = expanded, onDismiss = { expanded = false }, items = routineMenuItems(menu))
     }
 }
 

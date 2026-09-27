@@ -1,11 +1,13 @@
 import SwiftUI
 
 /// One routine: name, "5 exercises · Bench, Press, Raise", and a round play button.
-/// Tapping the text opens the routine editor.
+/// Tapping the text opens the routine editor; `menu`, when given, sits before the play button as a "…" button so
+/// Duplicate / Move / Delete are visible without a long press.
 struct RoutineRow: View {
     var routine: Routine
     var onStart: () -> Void
     var onEdit: () -> Void = {}
+    var menu: AnyView? = nil
 
     private var exerciseNames: [String] {
         routine.sortedItems.compactMap { $0.exercise?.localizedName }
@@ -37,6 +39,17 @@ struct RoutineRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityHint(Text("routine.edit"))
+            if let menu {
+                Menu { menu } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(NT.Colors.ink2)
+                        .frame(width: NT.Size.control, height: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .menuIndicator(.hidden)
+                .accessibilityLabel(Text("common.moreOptions"))
+            }
             StartPlayButton(routineName: routine.name, action: onStart)
         }
         .padding(.vertical, 14)

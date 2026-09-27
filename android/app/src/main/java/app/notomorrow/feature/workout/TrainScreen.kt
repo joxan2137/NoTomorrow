@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,7 +45,9 @@ import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
 import app.notomorrow.designsystem.NtAlertAction
 import app.notomorrow.designsystem.NtAlertRole
+import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.PrimaryButton
 import app.notomorrow.designsystem.SectionHeader
@@ -427,7 +430,20 @@ private fun RoutinesSection(
 ) {
     Column {
         Spacer(Modifier.height(NT.Spacing.section))
-        SectionHeader(title = stringResource(S.workout_routines))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionHeader(title = stringResource(S.workout_routines), modifier = Modifier.weight(1f))
+            // A second, always-visible way in: `TrainView`'s "+ New routine" beside the header.
+            Row(
+                modifier = Modifier
+                    .heightIn(min = NT.Size.control)
+                    .ntPlainClickable(role = Role.Button, onClick = onNewRoutine),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                NtIcon(NtIcons.Plus, size = sfIconSize(14f), tint = NT.Colors.ember, contentDescription = null)
+                NtText(stringResource(S.routine_new), style = NT.Fonts.subheadlineBold, color = NT.Colors.ember, maxLines = 1)
+            }
+        }
         Spacer(Modifier.height(4.dp))
 
         if (!hasRoutines) {

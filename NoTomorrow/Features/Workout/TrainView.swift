@@ -152,9 +152,19 @@ struct TrainView: View {
     /// Every routine but the one on the Up next card.
     private func routinesSection(excluding upNext: Routine?) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            SectionHeader(title: "workout.routines")
-                .padding(.top, NT.Spacing.section)
-                .padding(.bottom, 4)
+            HStack {
+                SectionHeader(title: "workout.routines")
+                Button { routineEdit = .new() } label: {
+                    Label("routine.new", systemImage: "plus")
+                        .font(NT.Fonts.subheadlineBold)
+                        .foregroundStyle(NT.Colors.ember)
+                        .frame(minHeight: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, NT.Spacing.section)
+            .padding(.bottom, 4)
             if routines.isEmpty {
                 Text("workout.noRoutines")
                     .font(NT.Fonts.subheadline)
@@ -163,7 +173,8 @@ struct TrainView: View {
             } else {
                 ForEach(routines.filter { $0.persistentModelID != upNext?.persistentModelID }) { routine in
                     RoutineRow(routine: routine, onStart: { requestStart(.routine(routine)) },
-                               onEdit: { routineEdit = .edit(routine) })
+                               onEdit: { routineEdit = .edit(routine) },
+                               menu: AnyView(routineMenu(routine)))
                         .contextMenu { routineMenu(routine) }
                     Hairline()
                 }

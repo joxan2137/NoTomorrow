@@ -160,6 +160,18 @@ class GymScreenshots {
     private fun exerciseName(id: String): String =
         onWorker { container.db.exerciseDao().byId(id)!!.localizedName(LocaleProvider.current()) }
 
+    @Test
+    fun train() {
+        prepare()
+        show { app.notomorrow.feature.workout.TrainScreen() }
+        waitForText("Upper strength")
+        shoot("train")
+        compose.onAllNodesWithContentDescription(string(app.notomorrow.util.S.common_moreOptions), useUnmergedTree = true)
+            .onFirst().performClick()
+        compose.waitForIdle()
+        shoot("train-routine-menu")
+    }
+
     @Test fun routineEditor() = routineEditor("")
 
     @Test @Config(qualifiers = "+pl")
