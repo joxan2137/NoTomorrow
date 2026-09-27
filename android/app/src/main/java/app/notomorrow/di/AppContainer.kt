@@ -165,7 +165,9 @@ class AppContainer(val app: Application) {
         ExerciseLibrary(app, db.exerciseDao(), ExerciseLibrary.VersionStamp.prefs(appPrefs))
     }
 
-    val routineSeeder: RoutineSeeder by lazy { RoutineSeeder(db.routineDao(), db.exerciseDao()) }
+    val routineSeeder: RoutineSeeder by lazy {
+        RoutineSeeder(db.routineDao(), db.exerciseDao(), RoutineSeeder.Seeded.prefs(appPrefs))
+    }
 
     val recordService: RecordService by lazy { RecordService(db.workoutDao()) }
 

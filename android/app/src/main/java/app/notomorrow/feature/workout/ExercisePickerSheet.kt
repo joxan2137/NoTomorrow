@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -69,6 +70,8 @@ import app.notomorrow.util.S
  *   rows) before [onAdd] runs, and everything already in it renders as "In".
  * @param alreadyIn used only when [workoutId] is null — the plain `init(alreadyIn:onAdd:)`.
  * @param onAdd the chosen exercise ids, in tap order.
+ * @param onPick single-select ("Replace exercise"): a tap on a row picks that exercise and closes
+ *   the sheet; nothing is appended and there is no "Add n" bar.
  */
 @Composable
 fun ExercisePickerSheet(
@@ -77,6 +80,7 @@ fun ExercisePickerSheet(
     workoutId: String? = null,
     alreadyIn: Set<String> = emptySet(),
     onAdd: (List<String>) -> Unit = {},
+    onPick: ((String) -> Unit)? = null,
 ) {
     val model = ntViewModel(key = workoutId?.let { "picker/$it" } ?: "picker") { container ->
         ExercisePickerViewModel(container, workoutId, alreadyIn)
@@ -84,6 +88,9 @@ fun ExercisePickerSheet(
     val state by model.state.collectAsStateWithLifecycle()
     var detail by remember { mutableStateOf<ExerciseEntity?>(null) }
     detail?.let { ExerciseDetailSheet(it) { detail = null } }
+    // `@State private var editing: Exercise?` — the custom exercise the editor is open for.
+    var editing by remember { mutableStateOf<ExerciseEntity?>(null) }
+    editing?.let { CustomExerciseEditor(it) { editing = null } }
     val keyboard = LocalSoftwareKeyboardController.current
 
     // `@State private var model = ExercisePickerViewModel()` is rebuilt on every `.sheet`
@@ -97,7 +104,10 @@ fun ExercisePickerSheet(
         showsHandle = true,
         containerColor = NT.Colors.ground,
     ) {
-        PickerHeader(onCancel = onDismiss)
+        PickerHeader(
+            title = stringResource(if (onPick != null) S.workout_replaceExercise else S.exercises_add),
+            onCancel = onDismiss,
+        )
 
         PickerSearchField(
             query = state.query,
@@ -113,7 +123,49 @@ fun ExercisePickerSheet(
             modifier = Modifier.padding(top = 12.dp),
         )
 
+        val equipment by model.equipment.collectAsStateWithLifecycle()
+        EquipmentChips(
+            selected = equipment,
+            onSelect = model::setEquipment,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
+        // One result card; long press: favorite toggle, then Edit / Delete for a custom exercise.
+        val card: @Composable (ExercisePickerEntry) -> Unit = { entry ->
+            ExerciseResultCard(
+                entry = entry,
+                state = state.rowState(entry.exercise.id),
+                onToggle = {
+                    if (onPick == null) {
+                        model.toggle(entry.exercise.id)
+                    } else if (!state.alreadyIn.contains(entry.exercise.id)) {
+                        model.pick(entry.exercise.id) { id ->
+                            onPick(id)
+                            onDismiss()
+                        }
+                    }
+                },
+                onDetails = { detail = entry.exercise },
+                unit = state.unit,
+                isFavorite = entry.exercise.id in state.favoriteIds,
+                onToggleFavorite = { model.toggleFavorite(entry.exercise.id) },
+                onEdit = if (entry.exercise.isCustom) ({ editing = entry.exercise }) else null,
+                onDelete = if (CustomExercises.canDelete(entry.exercise, state.usedIds)) {
+                    { model.deleteCustom(entry.exercise) }
+                } else {
+                    null
+                },
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+        val sections = state.sections
+
+        val listState = rememberLazyListState()
+        // Opens on the favorites: the first real read inserts them above the results header, and
+        // the list otherwise lands on that header with the favorites scrolled out of sight.
+        LaunchedEffect(state.loaded) { if (state.loaded) listState.scrollToItem(0) }
         LazyColumn(
+            state = listState,
             // `.scrollDismissesKeyboard(.immediately)` (`ExercisePickerView.swift:152`) — the
             // keyboard goes the moment the 876-row list starts moving.
             modifier = Modifier.fillMaxWidth().weight(1f).ntDismissKeyboardOnScroll(),
@@ -123,25 +175,35 @@ fun ExercisePickerSheet(
                 bottom = 12.dp,
             ),
         ) {
+            // Nothing until the first real read, rather than a flash of "0 results".
+            if (!state.loaded) return@LazyColumn
+            if (sections.favorites.isNotEmpty()) {
+                item(key = "favoritesHeader") {
+                    Eyebrow(
+                        text = stringResource(S.exercises_favorites),
+                        modifier = Modifier.padding(top = 18.dp, bottom = 8.dp),
+                    )
+                }
+                items(sections.favorites, key = { it.exercise.id }) { card(it) }
+            }
+
             item(key = "header") { PickerResultsHeader(count = state.results.size) }
 
-            items(state.results, key = { it.exercise.id }) { entry ->
-                ExerciseResultCard(
-                    entry = entry,
-                    state = state.rowState(entry.exercise.id),
-                    onToggle = { model.toggle(entry.exercise.id) },
-                    onDetails = { detail = entry.exercise },
-                    unit = state.unit,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
+            items(sections.others, key = { it.exercise.id }) { card(it) }
 
             if (state.showsCreateRow) {
                 item(key = "create") {
                     CreateExerciseRow(
                         query = state.trimmedQuery,
                         onClick = {
-                            model.createExercise()
+                            if (onPick == null) {
+                                model.createExercise()
+                            } else {
+                                model.createExercise { id ->
+                                    onPick(id)
+                                    onDismiss()
+                                }
+                            }
                             keyboard?.hide()
                         },
                     )
@@ -160,7 +222,7 @@ fun ExercisePickerSheet(
 
         // `.safeAreaInset(edge: .bottom)` — the bar appears only once something is selected.
         AnimatedVisibility(
-            visible = state.selectedCount > 0,
+            visible = state.selectedCount > 0 && onPick == null,
             enter = slideInVertically(tween(200, easing = NT.Ease.out)) { it } + fadeIn(NT.Anim.easeOut20),
             exit = slideOutVertically(tween(200, easing = NT.Ease.out)) { it } + fadeOut(NT.Anim.easeOut20),
         ) {
@@ -187,7 +249,7 @@ fun ExercisePickerSheet(
 
 /** "Add exercise" + a plain Cancel. */
 @Composable
-private fun PickerHeader(onCancel: () -> Unit) {
+private fun PickerHeader(title: String, onCancel: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -197,7 +259,7 @@ private fun PickerHeader(onCancel: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NtText(
-            text = stringResource(S.exercises_add),
+            text = title,
             style = NT.Fonts.title2,
             color = NT.Colors.ink,
             maxLines = 1,
@@ -319,6 +381,28 @@ private fun PickerChips(
                 title = stringResource(group.titleRes),
                 selected = group == selected,
                 onClick = { onSelect(group) },
+            )
+        }
+    }
+}
+
+/** Any equipment, Barbell, Dumbbell…: a second row under the muscles, combined with them and the search. */
+@Composable
+private fun EquipmentChips(
+    selected: ExerciseEquipment,
+    onSelect: (ExerciseEquipment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = NT.Spacing.screenH),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(ExerciseEquipment.entries.toList(), key = { it.raw }) { equipment ->
+            Chip(
+                title = stringResource(equipment.titleRes),
+                selected = equipment == selected,
+                onClick = { onSelect(equipment) },
             )
         }
     }

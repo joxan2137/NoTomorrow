@@ -13,6 +13,7 @@ struct WorkoutDetailSheet: View {
     @Environment(\.modelContext) private var context
     @State private var editModel: WorkoutEditModel?
     @State private var showsDiscard = false
+    @State private var routineEdit: RoutineEditRequest?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -33,6 +34,7 @@ struct WorkoutDetailSheet: View {
         .interactiveDismissDisabled(editModel?.isDirty == true)
         // An alert, so "Keep editing" stays visible: on iOS 26 a confirmation dialog turns into a popover without its
         // cancel button.
+        .sheet(item: $routineEdit) { RoutineEditorSheet(request: $0) }
         .alert("workout.edit.discardConfirm", isPresented: $showsDiscard) {
             Button("workout.edit.discard", role: .destructive) { endEditing() }
             Button("workout.edit.keepEditing", role: .cancel) {}
@@ -101,6 +103,12 @@ struct WorkoutDetailSheet: View {
                     ForEach(workout.sortedExercises, id: \.persistentModelID) { item in
                         WorkoutDetailExercise(item: item, unit: unit)
                         Hairline()
+                    }
+                    if workout.completedSetCount > 0 {
+                        GhostButton(title: "routine.saveFromWorkout", systemImage: "square.and.arrow.down") {
+                            routineEdit = .new(RoutineStore.draft(from: workout, in: context))
+                        }
+                        .padding(.top, 18)
                     }
                 }
             }
@@ -182,6 +190,11 @@ struct WorkoutDetailExercise: View {
                 .font(NT.Fonts.headline)
                 .foregroundStyle(NT.Colors.ink)
                 .lineLimit(1)
+            if !item.notes.isEmpty {
+                Text(item.notes)
+                    .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if completed.isEmpty {
                 Text("workout.noSetsLogged").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
             } else {
@@ -205,6 +218,11 @@ struct WorkoutDetailExercise: View {
                 .font(NT.Fonts.subheadline)
                 .foregroundStyle(NT.Colors.ink)
                 .tabular()
+            if let rpe = set.rpe {
+                Text(verbatim: "@\(RPE.label(rpe))")
+                    .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ember).tabular()
+                    .accessibilityLabel(RPE.accessibilityText(rpe))
+            }
             Spacer()
             if set.isPR {
                 Badge(text: "workout.pr")
