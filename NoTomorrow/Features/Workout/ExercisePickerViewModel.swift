@@ -27,6 +27,8 @@ final class ExercisePickerViewModel {
     var selectedCount: Int { selectedIDs.count }
 
     private var all: [Entry] = []
+    /// The whole library, custom exercises included, for the machine scanner.
+    var exercises: [Exercise] { all.map(\.exercise) }
     private var filterTask: Task<Void, Never>?
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }

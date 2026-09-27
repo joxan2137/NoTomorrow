@@ -96,6 +96,7 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
             project.findProperty("widgetShots")?.let { test.systemProperty("widgetShots", file(it.toString()).absolutePath) }
+            project.findProperty("scanShots")?.let { test.systemProperty("scanShots", file(it.toString()).absolutePath) }
         }
     }
 
@@ -165,6 +166,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.mlkit)
     implementation(libs.mlkit.barcode)
+    implementation(libs.mlkit.text.recognition)
 
     // ---- Sign-in ----
     implementation(libs.androidx.credentials)

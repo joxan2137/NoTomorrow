@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -39,6 +40,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -84,6 +87,8 @@ fun ExercisePickerSheet(
     val state by model.state.collectAsStateWithLifecycle()
     var detail by remember { mutableStateOf<ExerciseEntity?>(null) }
     detail?.let { ExerciseDetailSheet(it) { detail = null } }
+    var showsScan by remember { mutableStateOf(false) }
+    val library by model.exercises.collectAsStateWithLifecycle()
     val keyboard = LocalSoftwareKeyboardController.current
 
     // `@State private var model = ExercisePickerViewModel()` is rebuilt on every `.sheet`
@@ -97,7 +102,7 @@ fun ExercisePickerSheet(
         showsHandle = true,
         containerColor = NT.Colors.ground,
     ) {
-        PickerHeader(onCancel = onDismiss)
+        PickerHeader(onScan = { showsScan = true }, onCancel = onDismiss)
 
         PickerSearchField(
             query = state.query,
@@ -158,6 +163,28 @@ fun ExercisePickerSheet(
             }
         }
 
+        if (showsScan) {
+            NtSheet(onDismiss = { showsScan = false }, containerColor = NT.Colors.ground) {
+                MachineScanScreen(
+                    candidates = library,
+                    excluding = state.alreadyIn,
+                    onAdd = { id ->
+                        showsScan = false
+                        model.addScanned(id) { ids ->
+                            onAdd(ids)
+                            onDismiss()
+                        }
+                    },
+                    onSearch = { text ->
+                        showsScan = false
+                        model.setQuery(text)
+                    },
+                    onCancel = { showsScan = false },
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                )
+            }
+        }
+
         // `.safeAreaInset(edge: .bottom)` — the bar appears only once something is selected.
         AnimatedVisibility(
             visible = state.selectedCount > 0,
@@ -185,9 +212,9 @@ fun ExercisePickerSheet(
     }
 }
 
-/** "Add exercise" + a plain Cancel. */
+/** "Add exercise", the machine scanner, and a plain Cancel. */
 @Composable
-private fun PickerHeader(onCancel: () -> Unit) {
+private fun PickerHeader(onScan: () -> Unit, onCancel: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -203,6 +230,16 @@ private fun PickerHeader(onCancel: () -> Unit) {
             maxLines = 1,
         )
         Spacer(Modifier.weight(1f))
+        val scanLabel = stringResource(S.scan_machine_open)
+        Box(
+            modifier = Modifier
+                .size(NT.Size.control)
+                .ntPlainClickable(onClick = onScan)
+                .semantics { contentDescription = scanLabel },
+            contentAlignment = Alignment.Center,
+        ) {
+            NtIcon(icon = NtIcons.Camera, size = sfIconSize(20f), tint = NT.Colors.ink)
+        }
         Box(
             modifier = Modifier
                 .heightIn(min = NT.Size.control)

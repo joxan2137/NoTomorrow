@@ -447,6 +447,16 @@
     <string name="range_1y">1R</string>
     <string name="range_3m">3M</string>
     <string name="range_all">Od początku</string>
+    <string name="scan_machine_add">Dodaj</string>
+    <string name="scan_machine_hint">Skieruj aparat na nazwę maszyny</string>
+    <string name="scan_machine_looking">Szukam nazwy maszyny…</string>
+    <string name="scan_machine_matches">Dopasowania</string>
+    <string name="scan_machine_noMatch">Brak pasującego ćwiczenia. Spróbuj pod innym kątem albo wyszukaj.</string>
+    <string name="scan_machine_open">Skanuj maszynę</string>
+    <string name="scan_machine_photo">Zdjęcie</string>
+    <string name="scan_machine_photoHint">Wybierz zdjęcie tabliczki z nazwą maszyny</string>
+    <string name="scan_machine_reading">Czytam zdjęcie…</string>
+    <string name="scan_machine_search">Szukaj</string>
     <string name="settings_account">Konto</string>
     <string name="settings_account_user">Zalogowano jako</string>
     <string name="settings_aiProvider">Szacunki AI</string>

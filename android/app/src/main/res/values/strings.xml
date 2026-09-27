@@ -447,6 +447,16 @@
     <string name="range_1y">1Y</string>
     <string name="range_3m">3M</string>
     <string name="range_all">All</string>
+    <string name="scan_machine_add">Add</string>
+    <string name="scan_machine_hint">Point the camera at the machine\'s name</string>
+    <string name="scan_machine_looking">Looking for the machine\'s name…</string>
+    <string name="scan_machine_matches">Matches</string>
+    <string name="scan_machine_noMatch">No matching exercise. Try another angle, or search instead.</string>
+    <string name="scan_machine_open">Scan a machine</string>
+    <string name="scan_machine_photo">Photo</string>
+    <string name="scan_machine_photoHint">Choose a photo of the machine\'s name plate</string>
+    <string name="scan_machine_reading">Reading the photo…</string>
+    <string name="scan_machine_search">Search</string>
     <string name="settings_account">Account</string>
     <string name="settings_account_user">Signed in as</string>
     <string name="settings_aiProvider">AI estimates</string>

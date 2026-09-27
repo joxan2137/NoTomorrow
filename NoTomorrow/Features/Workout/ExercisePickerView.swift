@@ -28,6 +28,9 @@ struct ExercisePickerView: View {
     @Query private var profiles: [UserProfile]
     @State private var detail: Exercise?
     @State private var model = ExercisePickerViewModel()
+    @State private var showsScan = false
+    /// The exercise picked in the machine scanner, added once its full-screen cover has gone.
+    @State private var scanned: Exercise?
     @FocusState private var searchFocused: Bool
 
     private var unit: WeightUnit { profiles.first?.units ?? .kg }
@@ -48,6 +51,22 @@ struct ExercisePickerView: View {
         .presentationDragIndicator(.visible)
         .onAppear { model.load(context: modelContext) }
         .sheet(item: $detail) { ExerciseDetailView(exercise: $0) }
+        .fullScreenCover(isPresented: $showsScan, onDismiss: addScanned) {
+            MachineScanView(candidates: model.exercises, excluding: alreadyIn) { exercise in
+                scanned = exercise
+                showsScan = false
+            } onSearch: { text in
+                model.query = text
+            }
+        }
+    }
+
+    /// A scanned machine joins whatever was already ticked and goes straight in, like tapping "Add".
+    private func addScanned() {
+        guard let exercise = scanned else { return }
+        scanned = nil
+        if !model.isSelected(exercise.id) { model.toggle(exercise.id) }
+        commit()
     }
 
     // MARK: Header
@@ -58,6 +77,15 @@ struct ExercisePickerView: View {
                 .font(NT.Fonts.title2)
                 .foregroundStyle(NT.Colors.ink)
             Spacer()
+            Button { showsScan = true } label: {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(NT.Colors.ink)
+                    .frame(width: NT.Size.control, height: NT.Size.control)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressScale())
+            .accessibilityLabel(Text("scan.machine.open"))
             Button { dismiss() } label: {
                 Text("common.cancel")
                     .font(NT.Fonts.body)
@@ -176,24 +204,26 @@ struct ExercisePickerView: View {
 
     // MARK: Add bar
 
+    private func commit() {
+        let exercises = model.selectedExercises()
+        let now = Date.now
+        exercises.forEach { $0.lastUsedAt = now }
+        if let targetWorkout {
+            var order = (targetWorkout.exercises.map(\.order).max() ?? -1) + 1
+            for exercise in exercises {
+                WorkoutStarter.append(exercise, to: targetWorkout, order: order, in: modelContext)
+                order += 1
+            }
+        }
+        try? modelContext.save()
+        onAdd(exercises)
+        dismiss()
+    }
+
     @ViewBuilder
     private var addBar: some View {
         if model.selectedCount > 0 {
-            PrimaryButton(title: LocalizedStringKey(WorkoutStrings.add(model.selectedCount))) {
-                let exercises = model.selectedExercises()
-                let now = Date.now
-                exercises.forEach { $0.lastUsedAt = now }
-                if let targetWorkout {
-                    var order = (targetWorkout.exercises.map(\.order).max() ?? -1) + 1
-                    for exercise in exercises {
-                        WorkoutStarter.append(exercise, to: targetWorkout, order: order, in: modelContext)
-                        order += 1
-                    }
-                }
-                try? modelContext.save()
-                onAdd(exercises)
-                dismiss()
-            }
+            PrimaryButton(title: LocalizedStringKey(WorkoutStrings.add(model.selectedCount))) { commit() }
             .padding(.horizontal, NT.Spacing.screenH)
             .padding(.top, 8)
             .padding(.bottom, 8)
