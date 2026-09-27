@@ -13,6 +13,10 @@ struct UpNextTarget: Equatable {
     var bestReps: Int?
     /// The user's unit for the rest card (weights above are kg).
     var unit: WeightUnit = .kg
+    /// Seconds to hold, for a timed exercise.
+    var seconds: Int = 0
+    var bestSeconds: Int?
+    var tracking: ExerciseTracking = .weightReps
 
     var setLabel: String { String(localized: "timer.setOf \(setIndex) \(setCount)") }
 }
@@ -23,14 +27,17 @@ struct UpNextTarget: Equatable {
 @Observable
 @MainActor
 final class ActiveWorkoutModel {
-    /// Weight and reps of a set, copied out of SwiftData so caches never hold a model a history edit may delete.
+    /// Weight and reps (or seconds held) of a set, copied out of SwiftData so caches never hold a model a history edit
+    /// may delete.
     struct SetValue: Equatable {
         var weightKg: Double
         var reps: Int
+        var seconds: Int = 0
     }
 
     /// The rows of the last session with an exercise, split the way the table numbers them: warm-ups apart,
-    /// working sets (reps > 0) counted 1, 2, 3… So "Previous" lines up with the prefill even when warm-ups were logged.
+    /// working sets (reps, or seconds for a timed exercise, > 0) counted 1, 2, 3… So "Previous" lines up with the
+    /// prefill even when warm-ups were logged.
     struct PreviousRows: Equatable {
         var warmups: [SetValue]
         var working: [SetValue]
@@ -45,10 +52,9 @@ final class ActiveWorkoutModel {
 
         /// From that session's completed sets, in row order.
         init(completed sets: [SetEntry]) {
-            warmups = sets.filter { $0.kind == .warmup }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
-            working = sets.filter { $0.kind != .warmup && $0.reps > 0 }.map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
-            normal = sets.filter { $0.kind != .warmup && $0.kind != .drop && $0.reps > 0 }
-                .map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+            warmups = sets.filter { $0.kind == .warmup }.map(SetValue.init)
+            working = sets.filter { $0.kind != .warmup && $0.amount > 0 }.map(SetValue.init)
+            normal = sets.filter { $0.kind != .warmup && $0.kind != .drop && $0.amount > 0 }.map(SetValue.init)
         }
 
         /// The row at the same position: the k-th warm-up for a warm-up, the k-th working set otherwise.
@@ -80,7 +86,7 @@ final class ActiveWorkoutModel {
     var expandedExerciseID: PersistentIdentifier?
     /// Set whose "beats your best" hint is showing, with the best-before it beat.
     var hintSetID: PersistentIdentifier?
-    var hintBest: (weightKg: Double, reps: Int)?
+    var hintBest: SetValue?
     /// Cached "previous" rows per exercise (from the most recent other finished workout that did it).
     private var previousRows: [PersistentIdentifier: PreviousRows] = [:]
     private var previousLast: [PersistentIdentifier: SetValue?] = [:]
@@ -157,20 +163,24 @@ final class ActiveWorkoutModel {
         return slot.isWarmup ? nil : lastSet(for: exercise)
     }
 
-    /// Fills an open row's empty cells from Previous (the table shows what a tick will log).
+    /// Fills an open row's empty cells from Previous (the table shows what a tick will log): the weight, and the reps
+    /// or, for a timed exercise, the seconds.
     func prefillFromPrevious(_ set: SetEntry, in exercise: WorkoutExercise) {
-        guard !set.isCompleted, set.weightKg == 0 || set.reps == 0,
+        guard !set.isCompleted, set.weightKg == 0 || set.amount == 0,
               let previous = previous(for: set, in: exercise) else { return }
         if set.weightKg == 0, previous.weightKg > 0 { set.weightKg = previous.weightKg }
-        if set.reps == 0, previous.reps > 0 { set.reps = previous.reps }
+        if set.tracking == .duration {
+            if set.seconds == 0, previous.seconds > 0 { set.seconds = previous.seconds }
+        } else if set.reps == 0, previous.reps > 0 {
+            set.reps = previous.reps
+        }
     }
 
     /// "Last: 80 kg × 8" source for the exercise header.
     func lastSet(for exercise: WorkoutExercise) -> SetValue? {
         guard let ex = exercise.exercise else { return nil }
         if let cached = previousLast[ex.persistentModelID] { return cached }
-        let found = (RecordService.lastSet(for: ex, excluding: workout) ?? fetchedLastSet(for: ex))
-            .map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+        let found = (RecordService.lastSet(for: ex, excluding: workout) ?? fetchedLastSet(for: ex)).map(SetValue.init)
         previousLast[ex.persistentModelID] = found
         return found
     }
@@ -188,7 +198,7 @@ final class ActiveWorkoutModel {
             let earlier = ex.usages
                 .filter { usage in
                     guard let other = usage.workout, other.persistentModelID != myID, other.endedAt != nil else { return false }
-                    return usage.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+                    return usage.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.amount > 0 }
                 }
                 .max { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }
             let rows = earlier?.sortedSets.filter(\.isCompleted) ?? fetchedRows(for: ex)
@@ -204,7 +214,7 @@ final class ActiveWorkoutModel {
         let workouts = (try? context.fetch(d)) ?? []
         for w in workouts where w.persistentModelID != myID {
             if let we = w.sortedExercises.first(where: { we in
-                we.exercise?.id == exercise.id && we.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.reps > 0 }
+                we.exercise?.id == exercise.id && we.sets.contains { $0.isCompleted && $0.kind != .warmup && $0.amount > 0 }
             }) {
                 return we.sortedSets.filter(\.isCompleted)
             }
@@ -213,7 +223,7 @@ final class ActiveWorkoutModel {
     }
 
     private func fetchedLastSet(for exercise: Exercise) -> SetEntry? {
-        fetchedRows(for: exercise).filter { $0.kind != .warmup && $0.reps > 0 }
+        fetchedRows(for: exercise).filter { $0.kind != .warmup && $0.amount > 0 }
             .max(by: RecordService.completedEarlier)
     }
 
@@ -256,9 +266,9 @@ final class ActiveWorkoutModel {
         openWeights.contains { abs($0 - suggestion.fromKg) < sameWeight }
     }
 
-    /// The suggestion for an expanded exercise, while it applies.
+    /// The suggestion for an expanded exercise, while it applies. None for a timed exercise (it reads reps).
     func suggestion(for exercise: WorkoutExercise) -> Suggestion? {
-        guard let ex = exercise.exercise,
+        guard let ex = exercise.exercise, ex.tracking != .duration,
               let suggestion = Self.suggestion(previous: previousRows[ex.persistentModelID]?.normal ?? [],
                                                targetReps: targetReps[ex.persistentModelID], unit: unit),
               Self.showsSuggestion(suggestion, openWeights: Self.openNormalSets(of: exercise).map(\.weightKg))
@@ -280,31 +290,39 @@ final class ActiveWorkoutModel {
     // MARK: Mutations
 
     /// Ticks a set: stamps `completedAt`, evaluates records and starts the rest (not before a drop set).
-    /// An empty row takes Previous; a row that still has no reps is not logged (no "0 × 0" sets) and stays open,
-    /// so the caller can send the user to its reps cell. Returns whether a rest started.
+    /// An empty row takes Previous; a row that still has no reps (no seconds, for a timed exercise) is not logged
+    /// (no "0 × 0" sets) and stays open, so the caller can send the user to that cell. Returns whether a rest started.
     @discardableResult
     func complete(_ set: SetEntry, in exercise: WorkoutExercise, restTimer: RestTimerController) -> Bool {
-        if set.weightKg == 0 && set.reps == 0, let prev = previous(for: set, in: exercise) {
+        if set.weightKg == 0 && set.amount == 0, let prev = previous(for: set, in: exercise) {
             set.weightKg = prev.weightKg
-            set.reps = prev.reps
+            if set.tracking == .duration { set.seconds = prev.seconds } else { set.reps = prev.reps }
         }
-        guard set.reps > 0 else { return false }
+        guard set.amount > 0 else { return false }
         set.completedAt = .now
         let result = RecordService.mark(set: set, in: context)
         if result.isPR || result.isSetRecord, let best = result.bestBefore {
             hintSetID = set.persistentModelID
-            hintBest = (best.weightKg, best.reps)
+            hintBest = SetValue(best)
         } else if hintSetID == set.persistentModelID {
             hintSetID = nil
         }
         try? context.save()
 
-        let target = nextTarget(after: set, in: exercise)
+        var target = nextTarget(after: set, in: exercise)
+        if let hop = supersetHop(after: set, in: exercise) {
+            // A superset moves straight on to its next exercise; the rest comes after the round's last one.
+            expandedExerciseID = hop.exercise.persistentModelID
+            guard hop.rests, let next = hop.exercise.sortedSets.first(where: { !$0.isCompleted }) else { return false }
+            let fallback = hop.exercise.sortedSets.last(where: \.isCompleted).map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+                ?? lastSet(for: hop.exercise)
+            target = NextTarget(upNext: makeUpNext(next, in: hop.exercise, fallback: fallback), isDrop: false)
+        }
         let autoStart = UserDefaults.standard.object(forKey: "nt.rest.autoStart") as? Bool ?? true
         if let target, !target.isDrop, autoStart {
             upNext = target.upNext
             restTimer.start(seconds: exercise.restSeconds, exerciseName: target.upNext.exerciseName,
-                            nextSetLabel: "\(target.upNext.setLabel) · \(Fmt.set(target.upNext.weightKg, target.upNext.reps, unit: unit))",
+                            nextSetLabel: "\(target.upNext.setLabel) · \(target.upNext.setText)",
                             workoutName: workout.name)
             return true
         }
@@ -324,6 +342,25 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    func setRPE(_ rpe: Double?, for set: SetEntry) {
+        set.rpe = rpe
+        try? context.save()
+    }
+
+    /// The note left on this exercise the last time it was done (Hevy-style "sticky" notes: seat height, grip…),
+    /// shown as the note field's placeholder.
+    func previousNote(for exercise: WorkoutExercise) -> String? {
+        guard let ex = exercise.exercise else { return nil }
+        let myID = workout.persistentModelID
+        return ex.usages
+            .filter { usage in
+                guard let other = usage.workout, other.persistentModelID != myID, other.endedAt != nil else { return false }
+                return !usage.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            .max { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }?
+            .notes
+    }
+
     /// "Delete set" from the kind menu: removes the row and renumbers the rest. Records are re-derived on Finish.
     /// Progress (open under the mini bar) reloads, so it drops a deleted completed set.
     func removeSet(_ set: SetEntry, in exercise: WorkoutExercise) {
@@ -341,11 +378,63 @@ final class ActiveWorkoutModel {
         let order = (sets.last?.order ?? -1) + 1
         let new: SetEntry
         if let last = sets.last {
-            new = SetEntry(order: order, kind: last.kind == .warmup ? .normal : last.kind, weightKg: last.weightKg, reps: last.reps)
+            new = SetEntry(order: order, kind: last.kind == .warmup ? .normal : last.kind, weightKg: last.weightKg,
+                           reps: last.reps, seconds: last.seconds)
         } else {
             new = SetEntry(order: order)
         }
         exercise.sets.append(new)
+        try? context.save()
+    }
+
+    /// The working weight a warm-up ramp builds to: the first normal set's weight in the user's unit (0 = none).
+    func warmupTarget(for exercise: WorkoutExercise) -> Double {
+        let kg = exercise.sortedSets.first { $0.kind == .normal && $0.weightKg > 0 }?.weightKg ?? 0
+        return SetInput.display(kg, unit: unit)
+    }
+
+    func warmupSteps(for exercise: WorkoutExercise) -> [WarmupPlan.Step] {
+        WarmupPlan.steps(working: warmupTarget(for: exercise), unit: unit, equipment: exercise.exercise?.equipment)
+    }
+
+    /// "Add warm-up sets": open warm-up rows are replaced by the ramp to the working weight, placed before the
+    /// first working set. Completed warm-ups stay.
+    func addWarmups(to exercise: WorkoutExercise) {
+        let steps = warmupSteps(for: exercise)
+        guard !steps.isEmpty else { return }
+        for set in exercise.sets where set.kind == .warmup && !set.isCompleted {
+            exercise.sets.removeAll { $0.persistentModelID == set.persistentModelID }
+            context.delete(set)
+        }
+        let kept = exercise.sortedSets
+        let doneWarmups = kept.filter { $0.kind == .warmup }
+        let rest = kept.filter { $0.kind != .warmup }
+        var ordered = doneWarmups
+        for step in steps {
+            let set = SetEntry(order: 0, kind: .warmup, weightKg: SetInput.kg(fromDisplay: step.weight, unit: unit),
+                               reps: step.reps)
+            exercise.sets.append(set)
+            ordered.append(set)
+        }
+        ordered += rest
+        for (i, set) in ordered.enumerated() { set.order = i }
+        try? context.save()
+    }
+
+    // MARK: Rest
+
+    /// The rest this exercise would get from the user's Rest length setting (heavy compounds 30 s more).
+    func defaultRestSeconds(for exercise: WorkoutExercise) -> Int {
+        let defaultRest = WorkoutStarter.defaultRestSeconds(in: context)
+        guard let id = exercise.exercise?.id else { return defaultRest }
+        return RoutineSeeder.restSeconds(for: id, defaultRest: defaultRest)
+    }
+
+    /// The exercise menu's Rest timer: the length the next rest after this exercise's sets counts down. A rest
+    /// already running keeps its length (the pill's −15 / +15 adjust it).
+    func setRest(_ seconds: Int, for exercise: WorkoutExercise) {
+        guard seconds > 0 else { return }
+        exercise.restSeconds = seconds
         try? context.save()
     }
 
@@ -358,8 +447,95 @@ final class ActiveWorkoutModel {
         for set in Array(exercise.sets) { context.delete(set) }
         context.delete(exercise)
         for (i, we) in exercises.enumerated() { we.order = i }
+        let groups = Superset.normalized(exercises.map(\.supersetGroup))
+        for (we, group) in zip(exercises, groups) where we.supersetGroup != group { we.supersetGroup = group }
         try? context.save()
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+    }
+
+    // MARK: Replace / reorder
+
+    /// "Replace exercise" is offered only while none of the exercise's sets is completed (as in Hevy): logged sets
+    /// belong to the exercise they were done on.
+    func canReplace(_ exercise: WorkoutExercise) -> Bool {
+        !exercise.sets.contains(where: \.isCompleted)
+    }
+
+    /// Puts `replacement` in the slot of `exercise`: same position, superset and rest; its open rows stay (same
+    /// count and kinds) but lose the old exercise's numbers and take the new one's Previous, as a fresh row would.
+    /// The note goes with the old exercise. Refused when a set is completed or the exercise is the same one.
+    @discardableResult
+    func replace(_ exercise: WorkoutExercise, with replacement: Exercise) -> Bool {
+        guard canReplace(exercise), exercise.exercise?.id != replacement.id else { return false }
+        exercise.exercise = replacement
+        exercise.notes = ""
+        replacement.lastUsedAt = .now
+        let ids = Set(exercise.sets.map(\.persistentModelID))
+        if let hint = hintSetID, ids.contains(hint) { hintSetID = nil }
+        for set in exercise.sets {
+            set.weightKg = 0
+            set.reps = 0
+            set.seconds = 0
+            set.rpe = nil
+            set.isPR = false
+            set.isSetRecord = false
+        }
+        reloadPrevious()
+        for set in exercise.sortedSets { prefillFromPrevious(set, in: exercise) }
+        try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+        return true
+    }
+
+    /// Whether Move up (-1) / Move down (+1) has somewhere to go.
+    func canMove(_ exercise: WorkoutExercise, by offset: Int) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return exercises.indices.contains(i + offset)
+    }
+
+    /// Move up (-1) / down (+1): swaps with the neighbour and renumbers. Supersets are normalized afterwards, as in
+    /// `RoutineDraft.move`, so a member moved away from its partners leaves the superset.
+    func move(_ exercise: WorkoutExercise, by offset: Int) {
+        var list = exercises
+        guard let from = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        let to = from + offset
+        guard list.indices.contains(to) else { return }
+        list.swapAt(from, to)
+        for (i, we) in list.enumerated() where we.order != i { we.order = i }
+        let groups = Superset.normalized(list.map(\.supersetGroup))
+        for (we, group) in zip(list, groups) where we.supersetGroup != group { we.supersetGroup = group }
+        try? context.save()
+    }
+
+    /// "Track as" in the exercise's ⋯ menu: the exercise keeps the type from here on, in every workout. This
+    /// workout's rows, done ones included, move their number across (a plank logged as "60" reps becomes 60 s), so a
+    /// ticked row stays a logged set instead of one Finish would no longer count. Records are re-derived for the
+    /// exercise, since what counts as its best changed.
+    func setTracking(_ new: ExerciseTracking, of exercise: WorkoutExercise) {
+        guard let ex = exercise.exercise else { return }
+        let old = ex.tracking
+        guard new != old else { return }
+        ex.tracking = new
+        Self.carryAmounts(of: exercise.sets, from: old, to: new)
+        RecordService.rebuild(exerciseIDs: [ex.id], in: context)
+        if let id = hintSetID, exercise.sets.contains(where: { $0.persistentModelID == id }) { hintSetID = nil }
+        try? context.save()
+        reloadPrevious()
+    }
+
+    /// Moves reps into seconds when a type becomes timed, and back when it stops being timed. A row that already
+    /// holds the other number keeps it. Between weight × reps and bodyweight reps nothing moves.
+    static func carryAmounts(of sets: [SetEntry], from old: ExerciseTracking, to new: ExerciseTracking) {
+        guard (old == .duration) != (new == .duration) else { return }
+        for set in sets {
+            if new == .duration, set.seconds == 0 {
+                set.seconds = set.reps
+                set.reps = 0
+            } else if old == .duration, set.reps == 0 {
+                set.reps = set.seconds
+                set.seconds = 0
+            }
+        }
     }
 
     func toggleExpanded(_ exercise: WorkoutExercise) {
@@ -389,6 +565,8 @@ final class ActiveWorkoutModel {
             WorkoutEditor.releaseAttendance(of: workout, in: context, today: now)
         }
         try? context.save()
+        // Progress (open under the mini bar) reloads: its milestones and lifts are built from the finished workouts.
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = true
     }
 
@@ -402,6 +580,7 @@ final class ActiveWorkoutModel {
     func reopen() {
         workout.endedAt = nil
         try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = false
     }
 
@@ -414,6 +593,58 @@ final class ActiveWorkoutModel {
 
     // MARK: Next target
 
+    // MARK: Supersets
+
+    private var supersetGroups: [Int?] { exercises.map(\.supersetGroup) }
+
+    /// "A", "B"… for an exercise in a superset (the header's tag), nil for one on its own.
+    func supersetLetter(for exercise: WorkoutExercise) -> String? {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        return Superset.letters(supersetGroups)[i]
+    }
+
+    func canLinkWithNext(_ exercise: WorkoutExercise) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return i + 1 < exercises.count && !Superset.isLinkedToNext(supersetGroups, at: i)
+    }
+
+    func linkWithNext(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.linkWithNext(supersetGroups, at: i))
+    }
+
+    func unlinkSuperset(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.unlink(supersetGroups, at: i))
+    }
+
+    private func applySupersets(_ groups: [Int?]) {
+        for (exercise, group) in zip(exercises, groups) where exercise.supersetGroup != group {
+            exercise.supersetGroup = group
+        }
+        try? context.save()
+    }
+
+    /// Where a tick in a superset goes next: a later exercise of the superset with an open set (no rest), else,
+    /// after the round's last exercise, back to the first one with an open set (rest first). Nil outside a superset,
+    /// once the superset is done, or when a drop set follows in the same exercise.
+    private func supersetHop(after set: SetEntry, in exercise: WorkoutExercise) -> (exercise: WorkoutExercise, rests: Bool)? {
+        guard let group = exercise.supersetGroup else { return nil }
+        if let next = exercise.sortedSets.first(where: { $0.order > set.order && !$0.isCompleted }), next.kind == .drop {
+            return nil
+        }
+        let list = exercises
+        guard let i = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        var start = i, end = i
+        while start > 0, list[start - 1].supersetGroup == group { start -= 1 }
+        while end + 1 < list.count, list[end + 1].supersetGroup == group { end += 1 }
+        guard end > start else { return nil }
+        let hasOpen: (WorkoutExercise) -> Bool = { $0.sets.contains { !$0.isCompleted } }
+        if i < end, let later = list[(i + 1)...end].first(where: hasOpen) { return (later, false) }
+        if let first = list[start...end].first(where: hasOpen) { return (first, true) }
+        return nil
+    }
+
     private struct NextTarget {
         var upNext: UpNextTarget
         var isDrop: Bool
@@ -422,7 +653,7 @@ final class ActiveWorkoutModel {
     private func nextTarget(after set: SetEntry, in exercise: WorkoutExercise) -> NextTarget? {
         let sets = exercise.sortedSets
         if let next = sets.first(where: { $0.order > set.order && !$0.isCompleted }) {
-            return NextTarget(upNext: makeUpNext(next, in: exercise, fallback: SetValue(weightKg: set.weightKg, reps: set.reps)),
+            return NextTarget(upNext: makeUpNext(next, in: exercise, fallback: SetValue(set)),
                               isDrop: next.kind == .drop)
         }
         // Exercise done: rest before the next exercise that still has work.
@@ -430,13 +661,13 @@ final class ActiveWorkoutModel {
         guard let i = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
         for we in list[(i + 1)...] {
             if let next = we.sortedSets.first(where: { !$0.isCompleted }) {
-                let fallback = we.sortedSets.last(where: \.isCompleted).map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+                let fallback = we.sortedSets.last(where: \.isCompleted).map(SetValue.init)
                     ?? lastSet(for: we)
                 return NextTarget(upNext: makeUpNext(next, in: we, fallback: fallback), isDrop: false)
             }
         }
         // Nothing left: still rest, aimed at this exercise's numbers.
-        return NextTarget(upNext: makeUpNext(set, in: exercise, fallback: SetValue(weightKg: set.weightKg, reps: set.reps)),
+        return NextTarget(upNext: makeUpNext(set, in: exercise, fallback: SetValue(set)),
                           isDrop: false)
     }
 
@@ -445,10 +676,30 @@ final class ActiveWorkoutModel {
         let index = (sets.firstIndex { $0.persistentModelID == next.persistentModelID } ?? 0) + 1
         let weight = next.weightKg > 0 ? next.weightKg : (fallback?.weightKg ?? previous(for: next, in: exercise)?.weightKg ?? 0)
         let reps = next.reps > 0 ? next.reps : (fallback?.reps ?? previous(for: next, in: exercise)?.reps ?? 0)
+        let seconds = next.seconds > 0 ? next.seconds : (fallback?.seconds ?? previous(for: next, in: exercise)?.seconds ?? 0)
         let best = exercise.exercise.flatMap { RecordService.bestSet(for: $0) }
         return UpNextTarget(exerciseName: exercise.exercise?.localizedName ?? "",
                             setIndex: index, setCount: sets.count,
                             weightKg: weight, reps: reps,
-                            bestKg: best?.weightKg, bestReps: best?.reps, unit: unit)
+                            bestKg: best?.weightKg, bestReps: best?.reps, unit: unit,
+                            seconds: seconds, bestSeconds: best?.seconds,
+                            tracking: exercise.exercise?.tracking ?? .weightReps)
+    }
+}
+
+extension ActiveWorkoutModel.SetValue {
+    init(_ set: SetEntry) {
+        self.init(weightKg: set.weightKg, reps: set.reps, seconds: set.seconds)
+    }
+}
+
+extension UpNextTarget {
+    /// "80 × 8", "BW × 12", "45 s": the set coming up, in its exercise's type.
+    var setText: String { Fmt.set(weightKg, reps, seconds: seconds, tracking: tracking, unit: unit) }
+
+    /// The best set before it, in the same form; nil before there is one.
+    var bestText: String? {
+        guard let bestKg, let bestReps else { return nil }
+        return Fmt.set(bestKg, bestReps, seconds: bestSeconds ?? 0, tracking: tracking, unit: unit)
     }
 }

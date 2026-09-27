@@ -68,4 +68,6 @@ data class RoutineItemEntity(
     val targetSets: Int = 3,
     val targetReps: Int = 8,
     val restSeconds: Int = 90,
+    /** Neighbouring items with the same id form a superset (`Superset`); `null` = on its own. Schema 2. */
+    val supersetGroup: Int? = null,
 )

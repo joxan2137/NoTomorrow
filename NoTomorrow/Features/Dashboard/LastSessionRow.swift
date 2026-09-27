@@ -59,7 +59,7 @@ struct LastSessionRow: View {
 
     private func chipText(_ set: SetEntry) -> String {
         let name = set.workoutExercise?.exercise?.localizedName ?? ""
-        return "\(name) \(Fmt.set(set.weightKg, set.reps, unit: units))"
+        return "\(name) \(Fmt.set(set, unit: units))"
     }
 }
 

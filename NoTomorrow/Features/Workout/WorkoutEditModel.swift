@@ -34,8 +34,11 @@ final class WorkoutEditModel {
         draft.updateSet(setID, in: exerciseID) { $0.weightKg = SetInput.weightKg(text, unit: unit) }
     }
 
+    /// The second cell: reps, or seconds for a timed exercise.
     func setReps(_ text: String, for setID: UUID, in exerciseID: UUID) {
-        draft.updateSet(setID, in: exerciseID) { $0.reps = SetInput.reps(text) }
+        draft.updateSet(setID, in: exerciseID) { set in
+            if set.tracking == .duration { set.seconds = SetInput.seconds(text) } else { set.reps = SetInput.reps(text) }
+        }
     }
 
     /// Adds the exercises picked in the exercise picker, each with one row from the last time it was done.
@@ -46,7 +49,8 @@ final class WorkoutEditModel {
             draft.appendExercise(id: exercise.id, name: exercise.localizedName,
                                  primaryMuscle: exercise.primaryMuscles.first,
                                  restSeconds: RoutineSeeder.restSeconds(for: exercise.id, defaultRest: defaultRest),
-                                 template: last.map { ($0.weightKg, $0.reps) })
+                                 template: last.map { ($0.weightKg, $0.reps) }, seconds: last?.seconds ?? 0,
+                                 tracking: exercise.tracking)
         }
     }
 

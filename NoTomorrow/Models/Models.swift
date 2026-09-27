@@ -7,7 +7,7 @@ enum NoTomorrowSchema {
         UserProfile.self, GymSchedule.self,
         Exercise.self, Routine.self, RoutineItem.self,
         Workout.self, WorkoutExercise.self, SetEntry.self,
-        FoodItem.self, MealEntry.self, BodyWeightEntry.self,
+        FoodItem.self, MealEntry.self, BodyWeightEntry.self, BodyMeasurement.self, ProgressPhoto.self,
         BroPairing.self, AttendanceRecord.self, HeadsUp.self,
     ]
 }
@@ -17,6 +17,9 @@ enum NoTomorrowSchema {
 enum TrainingGoal: String, Codable, CaseIterable { case buildMuscle, loseFat, maintain }
 enum WeightUnit: String, Codable, CaseIterable { case kg, lb }
 enum SetKind: String, Codable, CaseIterable { case normal, warmup, drop, failure }
+/// What a set of an exercise records: weight × reps, reps at body weight (optional added weight), or seconds held
+/// (optional added weight). See `Exercise.tracking`.
+enum ExerciseTracking: String, Codable, CaseIterable { case weightReps, bodyweightReps, duration }
 enum MealSlot: String, Codable, CaseIterable { case breakfast, lunch, snack, dinner }
 enum FoodSource: String, Codable { case openFoodFacts, usda, custom, aiEstimate, quickAdd }
 enum AttendanceStatus: String, Codable { case planned, confirmed, attended, missed, cancelled }
@@ -101,6 +104,9 @@ final class Exercise {
     var instructions: [String]
     var isCustom: Bool
     var lastUsedAt: Date?
+    /// The user's choice of `ExerciseTracking` (raw value); nil follows `ExerciseTracking.inferred`. Optional so
+    /// stores from before it open with a lightweight migration and nothing to rewrite.
+    var trackingRaw: String?
 
     @Relationship(deleteRule: .nullify, inverse: \WorkoutExercise.exercise) var usages: [WorkoutExercise] = []
 
@@ -125,6 +131,57 @@ final class Exercise {
         if Locale.current.language.languageCode?.identifier == "pl", let namePL, !namePL.isEmpty { return namePL }
         return name
     }
+
+    /// What its sets record: the user's choice, else what the library data implies.
+    var tracking: ExerciseTracking {
+        get {
+            trackingRaw.flatMap(ExerciseTracking.init(rawValue:))
+                ?? ExerciseTracking.inferred(id: id, equipment: equipment, category: category, isCustom: isCustom)
+        }
+        set {
+            let inferred = ExerciseTracking.inferred(id: id, equipment: equipment, category: category, isCustom: isCustom)
+            trackingRaw = newValue == inferred ? nil : newValue.rawValue
+        }
+    }
+}
+
+extension ExerciseTracking {
+    /// Library exercises that are held for time although their data says strength (planks, hangs, isometrics).
+    static let timedIDs: Set<String> = [
+        "Plank", "Side_Bridge", "nt_copenhagen_side_plank", "One_Handed_Hang",
+        "Isometric_Neck_Exercise_-_Front_And_Back", "Isometric_Neck_Exercise_-_Sides",
+    ]
+
+    /// Body-weight movements the data files under "other" equipment (a bar, rings, a band).
+    static let bodyweightIDs: Set<String> = [
+        "Parallel_Bar_Dip", "Ring_Dips", "Dips_-_Chest_Version", "Muscle_Up", "Kipping_Muscle_Up", "One_Arm_Chin-Up",
+        "Band_Assisted_Pull-Up", "Rocky_Pull-Ups_Pulldowns", "Suspended_Push-Up", "Suspended_Reverse_Crunch",
+    ]
+
+    /// The default for an exercise nobody chose a type for. Custom exercises start as weight × reps (they carry no
+    /// equipment to go by); the library goes by id, then category (stretches and cardio are timed), then equipment
+    /// (body only, or none, is reps at body weight).
+    static func inferred(id: String, equipment: String?, category: String, isCustom: Bool) -> ExerciseTracking {
+        if isCustom { return .weightReps }
+        if timedIDs.contains(id) { return .duration }
+        if bodyweightIDs.contains(id) { return .bodyweightReps }
+        switch category {
+        case "stretching", "cardio": return .duration
+        default: break
+        }
+        switch equipment {
+        case nil, "body only": return .bodyweightReps
+        default: return .weightReps
+        }
+    }
+
+    /// Seconds for a timed exercise, reps otherwise.
+    static func amount(reps: Int, seconds: Int, tracking: ExerciseTracking) -> Int {
+        tracking == .duration ? seconds : reps
+    }
+
+    /// Weight is what the exercise is about (a weighted set without it isn't one); otherwise it's optional extra load.
+    var weightIsAdded: Bool { self != .weightReps }
 }
 
 @Model
@@ -152,6 +209,8 @@ final class RoutineItem {
     var targetSets: Int
     var targetReps: Int
     var restSeconds: Int
+    /// Neighbouring items with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var routine: Routine?
 
     init(order: Int, exercise: Exercise, targetSets: Int = 3, targetReps: Int = 8, restSeconds: Int = 90) {
@@ -200,6 +259,8 @@ final class WorkoutExercise {
     var exercise: Exercise?
     var restSeconds: Int
     var notes: String
+    /// Neighbouring exercises with the same id form a superset (`Superset`); nil = on its own.
+    var supersetGroup: Int?
     var workout: Workout?
     @Relationship(deleteRule: .cascade, inverse: \SetEntry.workoutExercise) var sets: [SetEntry] = []
 
@@ -224,22 +285,38 @@ final class SetEntry {
     var isPR: Bool
     var isSetRecord: Bool
     var rpe: Double?
+    /// Seconds held, for a timed exercise. Optional so stores from before it open with a lightweight migration;
+    /// read and write it through `seconds`.
+    var durationSeconds: Int?
     var workoutExercise: WorkoutExercise?
 
-    init(order: Int, kind: SetKind = .normal, weightKg: Double = 0, reps: Int = 0) {
+    init(order: Int, kind: SetKind = .normal, weightKg: Double = 0, reps: Int = 0, seconds: Int = 0) {
         self.order = order
         self.kind = kind
         self.weightKg = weightKg
         self.reps = reps
+        self.durationSeconds = seconds > 0 ? seconds : nil
         self.isPR = false
         self.isSetRecord = false
     }
 
     var isCompleted: Bool { completedAt != nil }
 
-    /// Epley estimated one-rep max. Returns weight for a single.
+    var seconds: Int {
+        get { durationSeconds ?? 0 }
+        set { durationSeconds = newValue > 0 ? newValue : nil }
+    }
+
+    /// Its exercise's type (weight × reps when it has none).
+    var tracking: ExerciseTracking { workoutExercise?.exercise?.tracking ?? .weightReps }
+
+    /// What makes the set count, in its exercise's type: seconds for a timed exercise, reps otherwise. A row logged
+    /// before the exercise's type changed (a plank logged as "0 × 60") keeps its numbers but has no amount now.
+    var amount: Int { ExerciseTracking.amount(reps: reps, seconds: seconds, tracking: tracking) }
+
+    /// Epley estimated one-rep max. Returns weight for a single. None for a timed set.
     var estimatedOneRepMax: Double {
-        guard reps > 0, weightKg > 0 else { return 0 }
+        guard reps > 0, weightKg > 0, tracking != .duration else { return 0 }
         if reps == 1 { return weightKg }
         return weightKg * (1 + Double(reps) / 30)
     }
@@ -335,6 +412,55 @@ final class BodyWeightEntry {
         self.kg = kg
         self.source = source
     }
+}
+
+/// Tape measurements and body fat (Progress > Body > Measurements). One row per (day, kind); lengths in cm.
+enum MeasurementKind: String, Codable, CaseIterable {
+    case waist, chest, hips, arm, thigh, neck, bodyFat
+}
+
+@Model
+final class BodyMeasurement {
+    @Attribute(.unique) var id: UUID
+    /// Start of day (local calendar).
+    var day: Date
+    var kindRaw: String
+    /// Centimetres, or percent for body fat.
+    var value: Double
+
+    init(day: Date, kind: MeasurementKind, value: Double) {
+        self.id = UUID()
+        self.day = Calendar.current.startOfDay(for: day)
+        self.kindRaw = kind.rawValue
+        self.value = value
+    }
+
+    var kind: MeasurementKind? { MeasurementKind(rawValue: kindRaw) }
+}
+
+/// Which way the body faces in a progress photo; optional.
+enum ProgressPose: String, Codable, CaseIterable {
+    case front, side, back
+}
+
+/// A private progress photo (Progress > Body > Photos). The JPEG lives on this phone only, in
+/// Application Support/ProgressPhotos/`fileName` (`ProgressPhotoStore`); it is never exported or synced.
+@Model
+final class ProgressPhoto {
+    @Attribute(.unique) var id: UUID
+    var takenAt: Date
+    /// File name inside the photos directory, e.g. "3f2c….jpg".
+    var fileName: String
+    var poseRaw: String?
+
+    init(id: UUID = UUID(), takenAt: Date = .now, fileName: String, pose: ProgressPose? = nil) {
+        self.id = id
+        self.takenAt = takenAt
+        self.fileName = fileName
+        self.poseRaw = pose?.rawValue
+    }
+
+    var pose: ProgressPose? { poseRaw.flatMap(ProgressPose.init(rawValue:)) }
 }
 
 // MARK: - Gym bro

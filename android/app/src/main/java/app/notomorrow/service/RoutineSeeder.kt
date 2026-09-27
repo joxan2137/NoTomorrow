@@ -2,6 +2,7 @@ package app.notomorrow.service
 
 import app.notomorrow.data.dao.ExerciseDao
 import app.notomorrow.data.dao.RoutineDao
+import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.data.entity.RoutineEntity
 import app.notomorrow.data.entity.RoutineItemEntity
 import java.util.Locale
@@ -15,18 +16,50 @@ import java.util.UUID
  * Ids that are missing are skipped; if **none** of the fifteen are found the seed is
  * postponed, so a later call (after the import) can still do it. The routine names are
  * data, not UI copy: iOS keeps them unlocalised in the store.
+ *
+ * It runs once ([Seeded]): after that, deleting every routine leaves the list empty instead of
+ * bringing the starters back. The delete-account wipe clears the flag, so the next setup seeds
+ * again.
  */
 class RoutineSeeder(
     private val routineDao: RoutineDao,
     private val exerciseDao: ExerciseDao,
+    private val seeded: Seeded = Seeded.InMemory(),
 ) {
 
     /** One starter routine. */
     data class Template(val name: String, val exerciseIds: List<String>)
 
-    /** Idempotent: only runs when no routine exists yet. */
+    /**
+     * `seededKey` (`nt.routines.seeded`): set once the starter routines exist. `AppPrefs` in the
+     * app, [InMemory] in tests.
+     */
+    interface Seeded {
+        suspend fun isSeeded(): Boolean
+        suspend fun markSeeded()
+
+        class InMemory(var value: Boolean = false) : Seeded {
+            override suspend fun isSeeded(): Boolean = value
+            override suspend fun markSeeded() {
+                value = true
+            }
+        }
+
+        companion object {
+            fun prefs(prefs: AppPrefs): Seeded = object : Seeded {
+                override suspend fun isSeeded(): Boolean = prefs.routinesSeededOnce()
+                override suspend fun markSeeded() = prefs.setRoutinesSeeded(true)
+            }
+        }
+    }
+
+    /** Idempotent: runs once, and only when no routine exists yet. */
     suspend fun seedIfNeeded(now: Long = System.currentTimeMillis()) {
-        if (routineDao.routineCount() > 0) return
+        if (seeded.isSeeded()) return
+        if (routineDao.routineCount() > 0) {
+            seeded.markSeeded()
+            return
+        }
 
         val ids = TEMPLATES.flatMap { it.exerciseIds }
         val found = exerciseDao.byIds(ids)
@@ -54,6 +87,7 @@ class RoutineSeeder(
             }
             routineDao.insertRoutineWithItems(routine, items)
         }
+        seeded.markSeeded()
     }
 
     /**

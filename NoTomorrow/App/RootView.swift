@@ -10,16 +10,18 @@ struct RootView: View {
     var body: some View {
         Group {
             if !store.isOpen {
-                StoreErrorView()
+                StoreErrorView().updateBannerInset()
             } else if appState.hasOnboarded {
-                MainTabView()
+                MainTabView()   // reserves the banner's space inside each tab
             } else {
-                OnboardingFlow()
+                OnboardingFlow().updateBannerInset()
             }
         }
         .environment(\.locale, AppLocale.effective(languageOverride: appState.languageOverride))
         // Home-screen widgets: the snapshot they render and the quick-log taps they queue.
         .widgetSync()
+        // Once per launch; silent when offline or rate-limited (`UpdateChecker`).
+        .task { await UpdateChecker.shared.checkOnce() }
         // Once per opened store: at launch, and again after StoreErrorView recovers one.
         .task(id: store.generation) {
             guard store.isOpen else { return }
@@ -79,6 +81,8 @@ struct MainTabView: View {
         TabView(selection: $appState.selectedTab) {
             ForEach(AppTab.allCases) { tab in
                 tabContent(tab)
+                    // Per tab, like the mini bar: a top inset set outside the TabView does not reach its tabs.
+                    .updateBannerInset()
                     .workoutMiniBar(isEnabled: session.showsMiniBar)
                     .tabItem { Label(tab.titleKey, systemImage: tab.symbol) }
                     .tag(tab)

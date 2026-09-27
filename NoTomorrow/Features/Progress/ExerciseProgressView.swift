@@ -9,6 +9,7 @@ struct ExerciseProgressView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model = ProgressModel()
     @State private var range: ProgressRange = .m3
+    @State private var showsCalculator = false
 
     private var lift: LiftSummary? { model.lift(for: exercise) }
 
@@ -22,6 +23,8 @@ struct ExerciseProgressView: View {
                     tiles(lift).padding(.top, 14)
                     weekly.padding(.top, NT.Spacing.section)
                     records(lift).padding(.top, 18)
+                    repMaxes(lift).padding(.top, NT.Spacing.section)
+                    percentages(lift).padding(.top, NT.Spacing.section)
                 } else {
                     Text("progress.empty")
                         .font(NT.Fonts.subheadline)
@@ -35,6 +38,7 @@ struct ExerciseProgressView: View {
         .ntScreenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { model.reload(modelContext) }
+        .sheet(isPresented: $showsCalculator) { OneRepMaxCalculatorSheet(unit: model.unit) }
         .onReceive(NotificationCenter.default.publisher(for: .workoutHistoryDidChange)) { _ in model.reload(modelContext) }
     }
 
@@ -106,36 +110,46 @@ struct ExerciseProgressView: View {
 
     // MARK: Tiles
 
+    /// Last PR · This week · Sessions. Labels wrap to two lines before shrinking ("Ostatnia życiówka",
+    /// "Sessions · 3M") instead of truncating; the row takes its tallest tile's height and each value sits on
+    /// the tile's bottom edge so the three values stay level.
     private func tiles(_ lift: LiftSummary) -> some View {
         HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("progress.lastPR").eyebrow()
+            tile(Text("progress.lastPR")) {
                 Group {
                     if let date = lift.lastPR { Text(ProgressPhrase.ago(date)) } else { Text("progress.noPRYet") }
                 }
                 .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1).minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
 
-            StatTile(label: "progress.thisWeek", value: Fmt.volume(lift.thisWeekVolume, unit: model.unit))
+            // `StatTile`'s value: shrinks rather than truncates.
+            tile(Text("progress.thisWeek")) {
+                Text(Fmt.volume(lift.thisWeekVolume, unit: model.unit))
+                    .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular().lineLimit(1)
+                    .minimumScaleFactor(0.6).allowsTightening(true)
+            }
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 0) {
-                    Text("progress.sessions")
-                    Text(" · ")
-                    Text(range.titleKey)
-                }
-                .eyebrow()
-                .lineLimit(1)
+            tile(Text("progress.sessions") + Text(verbatim: " · ") + Text(range.titleKey)) {
                 Text(lift.sessions(in: range).formatted())
                     .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
         }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// `StatTile` geometry with a two-line label and a caller-supplied value pinned to the bottom.
+    private func tile<Value: View>(_ label: Text, @ViewBuilder value: () -> Value) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            label
+                .eyebrow()
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+            value()
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.tile, style: .continuous))
     }
 
     // MARK: Weekly volume (all lifts)
@@ -176,6 +190,90 @@ struct ExerciseProgressView: View {
             if let most = lift.mostReps {
                 recordRow(label: "progress.mostReps", set: most)
             }
+        }
+    }
+
+    // MARK: Rep maxes
+
+    /// Reps · best actually lifted for at least that many (with its date) · what the best e1RM predicts.
+    private func repMaxes(_ lift: LiftSummary) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("repmax.title").font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
+            HStack {
+                Text("workout.reps").frame(width: 44, alignment: .leading)
+                Text("repmax.best").frame(maxWidth: .infinity, alignment: .leading)
+                Text("repmax.estimated").frame(width: 84, alignment: .trailing)
+            }
+            .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
+            .padding(.top, 10).padding(.bottom, 4)
+            // Each row below names its own columns for VoiceOver.
+            .accessibilityHidden(true)
+            ForEach(Array(RepMax.rows(sets: lift.sets, e1RM: lift.current).enumerated()), id: \.offset) { index, row in
+                if index > 0 { Hairline() }
+                HStack {
+                    Text(verbatim: "\(row.reps)")
+                        .font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink).tabular()
+                        .frame(width: 44, alignment: .leading)
+                    Group {
+                        if let best = row.best {
+                            HStack(spacing: 6) {
+                                Text(verbatim: Fmt.set(best.weightKg, best.reps, unit: model.unit))
+                                    .foregroundStyle(NT.Colors.ink)
+                                Text(Fmt.dayMonth(best.date)).font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                            }
+                        } else {
+                            Text(verbatim: "—").foregroundStyle(NT.Colors.ink3)
+                        }
+                    }
+                    .font(NT.Fonts.subheadline).tabular()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(Fmt.weight(row.estimatedKg, unit: model.unit))
+                        .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
+                        .frame(width: 84, alignment: .trailing)
+                }
+                .frame(minHeight: 44)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("workout.reps") + Text(verbatim: " \(row.reps)"))
+                .accessibilityValue(repMaxValue(row))
+            }
+            Text("repmax.footnote")
+                .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+        }
+    }
+
+    /// "Best lifted 100 kg × 5, 4 Sep, Estimated 102 kg" for one rep-max row.
+    private func repMaxValue(_ row: RepMax.Row) -> Text {
+        let best: Text = row.best.map { set in
+            Text("repmax.best") + Text(verbatim: " " + Fmt.set(set.weightKg, set.reps, unit: model.unit)
+                + ", " + Fmt.dayMonth(set.date))
+        } ?? (Text("repmax.best") + Text(verbatim: " —"))
+        return best + Text(verbatim: ", ") + Text("repmax.estimated")
+            + Text(verbatim: " " + Fmt.weight(row.estimatedKg, unit: model.unit))
+    }
+
+    // MARK: Percentages
+
+    /// 100 … 50 % of the best e1RM, rounded to plates, with the reps each allows; "1RM calculator" beside the title.
+    private func percentages(_ lift: LiftSummary) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("onerm.percentages").font(NT.Fonts.headline).foregroundStyle(NT.Colors.ink)
+                Spacer()
+                Button { showsCalculator = true } label: {
+                    Text("onerm.calculator").font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2)
+                        .frame(minHeight: NT.Size.control)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressScale())
+            }
+            PercentageTable(e1RM: SetInput.display(lift.current, unit: model.unit), unit: model.unit)
+                .padding(.top, 4)
+            Text("onerm.footnote")
+                .font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
         }
     }
 

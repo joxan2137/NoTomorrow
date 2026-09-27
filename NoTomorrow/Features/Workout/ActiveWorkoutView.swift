@@ -19,6 +19,7 @@ struct ActiveWorkoutView: View {
     @State private var showsPicker = false
     @State private var showsRestSheet = false
     @FocusState private var focus: SetField?
+    @State private var plateSet: SetEntry?
 
     var body: some View {
         ZStack {
@@ -108,10 +109,20 @@ struct ActiveWorkoutView: View {
         .animation(.easeInOut(duration: 0.2), value: model.expandedExerciseID)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
+                if let set = focusedWeightSet(in: model) {
+                    Button("plates.title", systemImage: "circle.grid.2x1") {
+                        focus = nil
+                        plateSet = set
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
                 Spacer()
                 Button("common.done") { focus = nil }
                     .font(NT.Fonts.headline)
             }
+        }
+        .sheet(item: $plateSet) { set in
+            PlateCalculatorSheet(weightKg: set.weightKg, unit: model.unit) { set.weightKg = $0 }
         }
         // An alert, not a confirmation dialog: on iOS 26 a dialog here turns into a popover floating over the
         // exercise list, pointing at nothing, and drops its Cancel. The alert keeps Cancel on screen.
@@ -129,6 +140,17 @@ struct ActiveWorkoutView: View {
         .sheet(isPresented: $showsPicker, onDismiss: { model.reloadPrevious() }) {
             ExercisePickerView(workout: workout)
         }
+    }
+
+    /// The set whose weight cell has the keyboard, when it has a weight to load (the Plates button).
+    private func focusedWeightSet(in model: ActiveWorkoutModel) -> SetEntry? {
+        guard let focus, !focus.isReps else { return nil }
+        for exercise in model.exercises {
+            if let set = exercise.sets.first(where: { AnyHashable($0.persistentModelID) == focus.setID }) {
+                return set.weightKg > 0 ? set : nil
+            }
+        }
+        return nil
     }
 
     private func header(_ model: ActiveWorkoutModel) -> some View {

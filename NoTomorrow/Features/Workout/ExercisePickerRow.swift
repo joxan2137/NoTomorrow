@@ -7,6 +7,8 @@ struct ExerciseResultCard: View {
     var exercise: Exercise
     var unit: WeightUnit
     var state: ExercisePickerRow.State
+    /// Starred from the long-press menu: a small star after the name.
+    var isFavorite = false
     var onToggle: () -> Void
     var onDetails: () -> Void
 
@@ -29,7 +31,7 @@ struct ExerciseResultCard: View {
 
     private var content: some View {
         HStack(spacing: 0) {
-            ExercisePickerRow(exercise: exercise, unit: unit, state: state, action: onToggle)
+            ExercisePickerRow(exercise: exercise, unit: unit, state: state, isFavorite: isFavorite, action: onToggle)
                 .padding(.leading, 14)
             Button(action: onDetails) {
                 Image(systemName: "info.circle")
@@ -51,21 +53,30 @@ struct ExercisePickerRow: View {
     var exercise: Exercise
     var unit: WeightUnit = .kg
     var state: State
+    var isFavorite = false
     var action: () -> Void
 
     private var lastSetLabel: String? {
         guard let set = RecordService.lastSet(for: exercise) else { return nil }
-        return Fmt.set(set.weightKg, set.reps, unit: unit)
+        return Fmt.set(set, unit: unit)
     }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(exercise.localizedName)
-                        .font(NT.Fonts.headline)
-                        .foregroundStyle(state == .alreadyIn ? NT.Colors.ink2 : NT.Colors.ink)
-                        .lineLimit(1)
+                    HStack(spacing: 5) {
+                        Text(exercise.localizedName)
+                            .font(NT.Fonts.headline)
+                            .foregroundStyle(state == .alreadyIn ? NT.Colors.ink2 : NT.Colors.ink)
+                            .lineLimit(1)
+                        if isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(NT.Colors.ember)
+                                .accessibilityLabel(Text("exercises.starred"))
+                        }
+                    }
                     Text(WorkoutStrings.subtitle(for: exercise))
                         .font(NT.Fonts.footnote)
                         .foregroundStyle(NT.Colors.ink2)

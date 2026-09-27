@@ -56,6 +56,10 @@ interface ExerciseDao {
     @Update
     suspend fun update(exercise: ExerciseEntity)
 
+    /** The picker's Delete exercise: one custom row (a bundled one is never deleted). */
+    @Query("DELETE FROM exercise WHERE id = :id AND isCustom = 1")
+    suspend fun deleteCustomById(id: String)
+
     /** Delete-account wipe: the bundled library is not the user's data, custom rows are. */
     @Query("DELETE FROM exercise WHERE isCustom = 1")
     suspend fun deleteCustom()

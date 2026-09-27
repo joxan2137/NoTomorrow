@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,11 +30,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.notomorrow.designsystem.Eyebrow
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
@@ -46,6 +51,7 @@ import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.model.SetKind
 import app.notomorrow.model.WeightUnit
+import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.S
 
@@ -59,6 +65,11 @@ import app.notomorrow.util.S
  * header shows the muscle only and its menu offers [onMoveUp] / [onMoveDown] (hidden when null,
  * at the ends) before Remove; rows are never dimmed or locked and the Previous column is blank.
  * Weights are shown in [unit]. [onDeleteSet] adds "Delete set" to every row's kind menu.
+ * [onAddWarmups] (the active workout only) adds "Add warm-up sets" to the header menu, [onNote]
+ * "Add note" and the note field under the header, [onRpe] the RPE submenu on every set,
+ * [onLinkNext] / [onUnlinkSuperset] "Superset with next" / "Remove from superset" (each shown only
+ * when it applies), [onHistory] "History" (the exercise's past sessions), [onRest] "Rest timer"
+ * (Default and 30 s to 5 min, opened in place of the menu like the RPE list). An exercise in a superset carries the "SUPERSET A" tag over its name.
  */
 @Composable
 fun WorkoutExerciseSection(
@@ -82,6 +93,14 @@ fun WorkoutExerciseSection(
     onMoveDown: (() -> Unit)? = null,
     onRowAppear: (Long) -> Unit = {},
     onUseSuggestion: () -> Unit = {},
+    onAddWarmups: (() -> Unit)? = null,
+    onNote: ((String) -> Unit)? = null,
+    onRpe: ((Long, Double?) -> Unit)? = null,
+    onLinkNext: (() -> Unit)? = null,
+    onUnlinkSuperset: (() -> Unit)? = null,
+    onHistory: (() -> Unit)? = null,
+    onRest: ((Int) -> Unit)? = null,
+    onReplace: (() -> Unit)? = null,
 ) {
     if (isExpanded || editing) {
         Expanded(
@@ -104,6 +123,14 @@ fun WorkoutExerciseSection(
             onMoveDown = onMoveDown,
             onRowAppear = onRowAppear,
             onUseSuggestion = onUseSuggestion,
+            onAddWarmups = onAddWarmups,
+            onNote = onNote,
+            onRpe = onRpe,
+            onLinkNext = onLinkNext,
+            onUnlinkSuperset = onUnlinkSuperset,
+            onHistory = onHistory,
+            onRest = onRest,
+            onReplace = onReplace,
         )
     } else {
         Collapsed(exercise = exercise, unit = unit, modifier = modifier, onClick = onToggleExpanded)
@@ -126,7 +153,7 @@ private fun Collapsed(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .heightIn(min = 60.dp)
             .ntPlainClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -134,6 +161,7 @@ private fun Collapsed(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
+            exercise.supersetLetter?.let { SupersetTag(it) }
             NtText(exercise.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
             NtText(
                 text = subtitle,
@@ -177,7 +205,17 @@ private fun Expanded(
     onMoveDown: (() -> Unit)?,
     onRowAppear: (Long) -> Unit,
     onUseSuggestion: () -> Unit,
+    onAddWarmups: (() -> Unit)?,
+    onNote: ((String) -> Unit)?,
+    onRpe: ((Long, Double?) -> Unit)?,
+    onLinkNext: (() -> Unit)?,
+    onUnlinkSuperset: (() -> Unit)?,
+    onHistory: (() -> Unit)?,
+    onRest: ((Int) -> Unit)?,
+    onReplace: (() -> Unit)?,
 ) {
+    // `@State private var showsNote` — "Add note" opens the field before anything is typed.
+    var showsNote by remember(exercise.id) { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxWidth().padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -191,7 +229,31 @@ private fun Expanded(
             onRemove = onRemove,
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
+            onAddWarmups = onAddWarmups,
+            onHistory = onHistory?.takeIf { exercise.exerciseId != null },
+            onRest = onRest,
+            onReplace = onReplace?.takeIf { exercise.canReplace },
+            onLinkNext = onLinkNext?.takeIf { exercise.canLinkNext },
+            onUnlinkSuperset = onUnlinkSuperset?.takeIf { exercise.supersetGroup != null },
+            onAddNote = if (onNote != null && exercise.notes.isEmpty() && !showsNote) {
+                { showsNote = true }
+            } else {
+                null
+            },
         )
+        if (onNote != null) {
+            AnimatedVisibility(
+                visible = showsNote || exercise.notes.isNotEmpty(),
+                enter = fadeIn(SUGGESTION_FADE),
+                exit = fadeOut(SUGGESTION_FADE),
+            ) {
+                // Typing keeps the field up, so clearing a note does not pull it away mid-edit.
+                ExerciseNoteField(exercise = exercise, onNote = { text ->
+                    showsNote = true
+                    onNote(text)
+                })
+            }
+        }
         if (!editing) {
             // `.transition(.opacity)`: Use fades the line out; latch the last suggestion so the
             // exit has something to fade, as SwiftUI keeps the removed view alive.
@@ -220,6 +282,7 @@ private fun Expanded(
                     onReps = { value -> onReps(row.id, value) },
                     onToggle = { onToggleSet(row) },
                     onDelete = onDeleteSet?.let { delete -> { delete(row.id) } },
+                    onRpe = onRpe?.let { rpe -> { value -> rpe(row.id, value) } },
                     onAppear = { onRowAppear(row.id) },
                 )
                 val visible = hintSetId == row.id && hintBest != null
@@ -256,8 +319,16 @@ private fun Header(
     onRemove: () -> Unit,
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
+    onAddWarmups: (() -> Unit)?,
+    onHistory: (() -> Unit)?,
+    onLinkNext: (() -> Unit)?,
+    onUnlinkSuperset: (() -> Unit)?,
+    onAddNote: (() -> Unit)?,
+    onRest: ((Int) -> Unit)?,
+    onReplace: (() -> Unit)? = null,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var restExpanded by remember { mutableStateOf(false) }
     val muscle = exercise.primaryMuscle?.let { workoutMuscleName(it) }
     val subtitle = if (editing) {
         muscle
@@ -265,8 +336,61 @@ private fun Header(
         listOfNotNull(muscle, lastLine(exercise, unit)).joinToString(SEPARATOR)
     }
     val items = buildList {
-        onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
-        onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        if (editing) {
+            onMoveUp?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveUp), onClick = it)) }
+            onMoveDown?.let { add(NtMenuItem(title = stringResource(S.workout_edit_moveDown), onClick = it)) }
+        }
+        onHistory?.let { add(NtMenuItem(title = stringResource(S.history_title), onClick = it, icon = NtIcons.Clock)) }
+        onAddWarmups?.let {
+            add(
+                NtMenuItem(
+                    title = stringResource(S.warmup_add),
+                    onClick = it,
+                    icon = NtIcons.Flame,
+                    enabled = exercise.warmupSteps.isNotEmpty(),
+                ),
+            )
+        }
+        if (onRest != null) {
+            add(
+                NtMenuItem(
+                    title = stringResource(S.workout_restTimer) + SEPARATOR + Fmt.clock(exercise.restSeconds),
+                    onClick = { restExpanded = true },
+                    icon = NtIcons.Timer,
+                ),
+            )
+        }
+        if (!editing) {
+            // The active workout (as on iOS): after the rest, disabled at the ends instead of hidden.
+            onMoveUp?.let {
+                add(
+                    NtMenuItem(
+                        title = stringResource(S.workout_edit_moveUp),
+                        onClick = it,
+                        icon = NtIcons.ArrowUp,
+                        enabled = exercise.canMoveUp,
+                    ),
+                )
+            }
+            onMoveDown?.let {
+                add(
+                    NtMenuItem(
+                        title = stringResource(S.workout_edit_moveDown),
+                        onClick = it,
+                        icon = NtIcons.ArrowDown,
+                        enabled = exercise.canMoveDown,
+                    ),
+                )
+            }
+        }
+        onReplace?.let {
+            add(NtMenuItem(title = stringResource(S.workout_replaceExercise), onClick = it))
+        }
+        onLinkNext?.let { add(NtMenuItem(title = stringResource(S.superset_linkNext), onClick = it, icon = NtIcons.Link)) }
+        onUnlinkSuperset?.let {
+            add(NtMenuItem(title = stringResource(S.superset_unlink), onClick = it, icon = NtIcons.Link))
+        }
+        onAddNote?.let { add(NtMenuItem(title = stringResource(S.note_add), onClick = it, icon = NtIcons.Pencil)) }
         add(
             NtMenuItem(
                 title = stringResource(S.workout_removeExercise),
@@ -287,6 +411,7 @@ private fun Header(
             // boxes, so stacking 2 dp on top makes the block 2 dp taller than iOS.
             verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
+            exercise.supersetLetter?.let { SupersetTag(it) }
             NtText(exercise.name, style = NT.Fonts.headline, color = NT.Colors.ink, maxLines = 1)
             if (subtitle != null) {
                 NtText(
@@ -301,16 +426,102 @@ private fun Header(
         Box(
             modifier = Modifier
                 .size(NT.Size.control)
-                .ntPlainClickable { menuExpanded = true },
+                .ntPlainClickable(role = Role.Button) { menuExpanded = true },
             contentAlignment = Alignment.Center,
         ) {
-            NtIcon(NtIcons.Ellipsis, size = sfIconSize(18f), tint = NT.Colors.ink2)
+            NtIcon(
+                NtIcons.Ellipsis,
+                size = sfIconSize(18f),
+                tint = NT.Colors.ink2,
+                contentDescription = stringResource(S.common_moreOptions),
+            )
             NtMenu(
                 expanded = menuExpanded,
                 onDismiss = { menuExpanded = false },
                 items = items,
             )
+            if (onRest != null) {
+                NtMenu(
+                    expanded = restExpanded,
+                    onDismiss = { restExpanded = false },
+                    items = restItems(exercise, onRest),
+                )
+            }
         }
+    }
+}
+
+/**
+ * The Rest timer list (`WorkoutRest`): "Default (1:30)" and 30 s to 5 min, a check on the current
+ * length. NtMenu has no submenus, so it opens in place of the exercise menu (iOS nests a `Menu`).
+ */
+@Composable
+private fun restItems(exercise: WorkoutExerciseUi, onRest: (Int) -> Unit): List<NtMenuItem> {
+    val current = exercise.restSeconds
+    val defaultSeconds = exercise.defaultRestSeconds
+    val defaultLabel = stringResource(S.workout_restDefault, Fmt.clock(defaultSeconds))
+    return WorkoutRest.options(current, defaultSeconds).map { option ->
+        NtMenuItem(
+            title = if (option.isDefault) defaultLabel else Fmt.clock(option.seconds),
+            onClick = { onRest(option.seconds) },
+            icon = if (WorkoutRest.isChecked(option, current, defaultSeconds)) NtIcons.Checkmark else null,
+        )
+    }
+}
+
+/** `SupersetTag` — "SUPERSET A" over the name of an exercise in a superset (the routine editor's too). */
+@Composable
+internal fun SupersetTag(letter: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NtIcon(NtIcons.Link, size = sfIconSize(9f), tint = NT.Colors.ember)
+        Eyebrow(stringResource(S.superset_tag_s, letter), color = NT.Colors.ember)
+    }
+}
+
+/**
+ * `ExerciseNoteField` — the exercise's note for this workout, saved as it is typed. Its placeholder
+ * is the note from last time, so a seat height or grip written once shows up again next session.
+ * The text is the field's own from the first frame (`.onAppear { text = exercise.notes }`).
+ */
+@Composable
+private fun ExerciseNoteField(exercise: WorkoutExerciseUi, onNote: (String) -> Unit) {
+    // Keyed on the exercise too: "Replace exercise" clears the note in the store, and the field must not keep
+    // showing (and on the next keystroke write back) the old exercise's note.
+    var text by remember(exercise.id, exercise.exerciseId) { mutableStateOf(exercise.notes) }
+    val placeholder = exercise.previousNote?.let { stringResource(S.note_last_s, it) }
+        ?: stringResource(S.note_placeholder)
+    val fieldLabel = stringResource(S.note_add)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NT.Colors.surface, NtShapes.cell)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        NtIcon(NtIcons.Pencil, modifier = Modifier.padding(top = 2.dp), size = sfIconSize(13f), tint = NT.Colors.ink3)
+        BasicTextField(
+            value = text,
+            onValueChange = { new ->
+                text = new
+                if (new != exercise.notes) onNote(new)
+            },
+            modifier = Modifier.weight(1f).semantics { contentDescription = fieldLabel },
+            textStyle = NT.Fonts.subheadline.copy(color = NT.Colors.ink),
+            cursorBrush = SolidColor(NT.Colors.ink),
+            maxLines = 4,
+            decorationBox = { inner ->
+                Box {
+                    if (text.isEmpty()) {
+                        NtText(placeholder, style = NT.Fonts.subheadline, color = NT.Colors.ink3, maxLines = 4)
+                    }
+                    inner()
+                }
+            },
+        )
     }
 }
 
@@ -478,6 +689,8 @@ data class WorkoutExerciseUi(
     /** Raw free-exercise-db value; localized by the view through `WorkoutStrings.muscle`. */
     val primaryMuscle: String?,
     val restSeconds: Int,
+    /** The rest this exercise gets from the Rest length setting (heavy lifts 30 s more): the menu's Default. */
+    val defaultRestSeconds: Int = RoutineSeeder.DEFAULT_REST_SECONDS,
     val setCount: Int,
     val isDone: Boolean,
     /** "Last: 80 kg × 8". */
@@ -485,4 +698,22 @@ data class WorkoutExerciseUi(
     val sets: List<SetRowUi>,
     /** The suggested weight while it applies (`ActiveWorkoutModel.suggestion(for:)`); never in the editor. */
     val suggestion: WeightSuggestion? = null,
-)
+    /** The ramp "Add warm-up sets" would add (`warmupSteps(for:)`); empty disables it. Never in the editor. */
+    val warmupSteps: List<WarmupPlan.Step> = emptyList(),
+    /** This workout's note on the exercise. */
+    val notes: String = "",
+    /** Last session's note (`previousNote(for:)`), the note field's placeholder. */
+    val previousNote: String? = null,
+    /** Neighbouring exercises with the same id form a superset (`WorkoutExercise.supersetGroup`). */
+    val supersetGroup: Int? = null,
+    /** "A", "B"… for an exercise in a superset (`supersetLetter(for:)`), the header's tag. */
+    val supersetLetter: String? = null,
+    /** "Superset with next" applies (`canLinkWithNext(_:)`). */
+    val canLinkNext: Boolean = false,
+    /** Move up / Move down have somewhere to go (`canMove(_:by:)`); the active workout disables them at the ends. */
+    val canMoveUp: Boolean = false,
+    val canMoveDown: Boolean = false,
+) {
+    /** "Replace exercise" is offered only while no set is completed (`canReplace(_:)`). */
+    val canReplace: Boolean get() = sets.none { it.isCompleted }
+}

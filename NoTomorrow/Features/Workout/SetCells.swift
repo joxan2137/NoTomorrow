@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Identifies one numeric cell for the shared keyboard focus. `setID` is the set's `PersistentIdentifier` in the
-/// active workout and the draft row's UUID in the workout editor.
+/// active workout and the draft row's UUID in the workout editor. `isReps` is the second cell: reps, or seconds for a
+/// timed exercise.
 struct SetField: Hashable {
     var setID: AnyHashable
     var isReps: Bool
@@ -46,6 +47,19 @@ enum SetInput {
     static func reps(_ text: String) -> Int {
         Int(min(number(text), 9_999).rounded())
     }
+
+    /// Cell text for a hold, in whole seconds ("90"), empty for none.
+    static func text(seconds: Int) -> String { seconds > 0 ? "\(seconds)" : "" }
+
+    /// Typed seconds, up to 24 hours.
+    static func seconds(_ text: String) -> Int {
+        Int(min(number(text), 86_400).rounded())
+    }
+
+    /// The second cell's text in the exercise's type: seconds for a timed exercise, reps otherwise.
+    static func amountText(reps: Int, seconds: Int, tracking: ExerciseTracking) -> String {
+        tracking == .duration ? text(seconds: seconds) : text(reps: reps)
+    }
 }
 
 // MARK: - Cells
@@ -57,6 +71,9 @@ struct SetKindMenu: View {
     var onKind: (SetKind) -> Void
     /// When set, the menu ends with a destructive "Delete set".
     var onDelete: (() -> Void)? = nil
+    /// The set's RPE; with `onRPE` the menu offers an RPE submenu and the cell shows "@8" under the number.
+    var rpe: Double? = nil
+    var onRPE: ((Double?) -> Void)? = nil
 
     var body: some View {
         Menu {
@@ -64,26 +81,58 @@ struct SetKindMenu: View {
             Button("workout.dropset") { onKind(.drop) }
             Button("workout.failure") { onKind(.failure) }
             Button("workout.normalSet") { onKind(.normal) }
+            if let onRPE {
+                Menu {
+                    ForEach(RPE.options, id: \.self) { value in
+                        Button {
+                            onRPE(value)
+                        } label: {
+                            if value == rpe {
+                                Label(RPE.label(value), systemImage: "checkmark")
+                            } else {
+                                Text(RPE.label(value))
+                            }
+                        }
+                    }
+                    if rpe != nil {
+                        Divider()
+                        Button("rpe.clear") { onRPE(nil) }
+                    }
+                } label: {
+                    Label("rpe.title", systemImage: "gauge.with.dots.needle.67percent")
+                }
+            }
             if let onDelete {
                 Divider()
                 Button("workout.edit.deleteSet", role: .destructive, action: onDelete)
             }
         } label: {
-            Group {
-                if kind == .normal {
-                    Text("\(number)")
-                        .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
-                } else {
-                    Text(verbatim: Self.letter(for: kind))
-                        .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
-                        .frame(width: 24, height: 24)
-                        .background(NT.Colors.surface2, in: Circle())
+            VStack(spacing: 0) {
+                kindGlyph
+                if let rpe {
+                    Text(verbatim: "@\(RPE.label(rpe))")
+                        .font(.system(size: 9, weight: .semibold)).foregroundStyle(NT.Colors.ember).tabular()
+                        .lineLimit(1).fixedSize()
+                        .accessibilityLabel(RPE.accessibilityText(rpe))
                 }
             }
             .frame(width: 36, height: NT.Size.control)
             .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
+    }
+
+    @ViewBuilder
+    private var kindGlyph: some View {
+        if kind == .normal {
+            Text("\(number)")
+                .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink).tabular()
+        } else {
+            Text(verbatim: Self.letter(for: kind))
+                .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)
+                .frame(width: 24, height: 24)
+                .background(NT.Colors.surface2, in: Circle())
+        }
     }
 
     /// W / D / F for warm-up, drop and failure sets (the same glyphs in the table and the detail sheet).
@@ -94,6 +143,21 @@ struct SetKindMenu: View {
         case .failure: "F"
         case .normal: ""
         }
+    }
+}
+
+/// Rate of perceived exertion for a set: 6 (easy, 4 left in the tank) to 10 (nothing left), in half steps.
+enum RPE {
+    static let options: [Double] = stride(from: 6.0, through: 10.0, by: 0.5).map { $0 }
+
+    /// "8" or "8,5" (locale decimal separator).
+    static func label(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)).locale(Fmt.locale))
+    }
+
+    /// "RPE 8" for VoiceOver, where the screen shows "@8".
+    static func accessibilityText(_ value: Double) -> Text {
+        Text("rpe.title") + Text(verbatim: " " + label(value))
     }
 }
 
@@ -173,9 +237,11 @@ struct AddSetButton: View {
 }
 
 /// Set · Previous · kg (or lb) · Reps · ✓ column titles. The editor leaves the Previous column blank.
+/// A body-weight exercise's weight column is "+kg" (added weight); a timed one's second column is seconds.
 struct SetColumnHeader: View {
     var unit: WeightUnit
     var showsPrevious: Bool = true
+    var tracking: ExerciseTracking = .weightReps
 
     var body: some View {
         HStack(spacing: 8) {
@@ -185,8 +251,8 @@ struct SetColumnHeader: View {
             } else {
                 Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
             }
-            Text(verbatim: unit.rawValue).frame(width: 60)
-            Text("workout.reps").frame(width: 60)
+            Text(verbatim: tracking.weightIsAdded ? "+\(unit.rawValue)" : unit.rawValue).frame(width: 60)
+            Text(tracking == .duration ? LocalizedStringKey("workout.seconds") : "workout.reps").frame(width: 60)
             Color.clear.frame(width: 48, height: 1)
         }
         .font(NT.Fonts.caption).foregroundStyle(NT.Colors.ink2)

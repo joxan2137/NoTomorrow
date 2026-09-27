@@ -10,6 +10,7 @@ import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.ExerciseNoteRow
 import app.notomorrow.data.relation.WorkoutWithExercises
 import kotlinx.coroutines.flow.Flow
 
@@ -183,6 +184,35 @@ interface WorkoutDao {
 
     @Query(COMPLETED_SETS_SELECT + " AND we.exerciseId = :exerciseId")
     fun observeCompletedSetsForExercise(exerciseId: String): Flow<List<CompletedSetRow>>
+
+    /** Every entry of [exerciseId] with a note, and its workout (`ActiveWorkoutModel.previousNote(for:)`). */
+    @Query(
+        """
+        SELECT we.notes AS notes, w.id AS workoutId, w.startedAt AS workoutStartedAt, w.endedAt AS workoutEndedAt,
+               we.id AS workoutExerciseId
+        FROM workout_exercise we JOIN workout w ON w.id = we.workoutId
+        WHERE we.exerciseId = :exerciseId AND we.notes != ''
+        """,
+    )
+    suspend fun exerciseNotes(exerciseId: String): List<ExerciseNoteRow>
+
+    /**
+     * Exercises with at least one workout entry, finished or in progress — a custom exercise in
+     * none of them may be deleted from the picker (`exercise.usages.isEmpty`).
+     */
+    @Query("SELECT DISTINCT exerciseId FROM workout_exercise WHERE exerciseId IS NOT NULL")
+    fun observeUsedExerciseIds(): Flow<List<String>>
+
+    /** Workout entries of [exerciseId] — the delete's last check. */
+    @Query("SELECT COUNT(*) FROM workout_exercise WHERE exerciseId = :exerciseId")
+    suspend fun usageCount(exerciseId: String): Int
+
+    @Query("UPDATE workout_exercise SET notes = :notes WHERE id = :id")
+    suspend fun updateWorkoutExerciseNotes(id: Long, notes: String)
+
+    /** The exercise menu's Rest timer: the rest after this workout exercise's sets. */
+    @Query("UPDATE workout_exercise SET restSeconds = :seconds WHERE id = :id")
+    suspend fun updateWorkoutExerciseRest(id: Long, seconds: Int)
 
     // MARK: - Writes
 
