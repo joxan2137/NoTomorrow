@@ -15,7 +15,7 @@ struct WorkoutHistoryRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(workout.name)
+                    Text(WorkoutStrings.displayName(workout.name))
                         .font(NT.Fonts.headline)
                         .foregroundStyle(NT.Colors.ink)
                         .lineLimit(1)

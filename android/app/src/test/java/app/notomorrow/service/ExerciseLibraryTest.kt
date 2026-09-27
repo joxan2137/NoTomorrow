@@ -115,6 +115,15 @@ class ExerciseLibraryTest {
     }
 
     @Test
+    fun `an exact name in either language, filtered out or not, means no duplicate Create row`() {
+        val list = listOf(exercise("belt", "Belt Squat", namePL = "Przysiad z pasem", muscles = listOf("quadriceps")))
+        assertTrue(ExerciseLibrary.hasName(list, "belt squat "))
+        assertTrue(ExerciseLibrary.hasName(list, "PRZYSIAD Z PASEM"))
+        assertFalse(ExerciseLibrary.hasName(list, "belt"))
+        assertFalse(ExerciseLibrary.hasName(list, "  "))
+    }
+
+    @Test
     fun `folding flattens every Polish letter, the stroked l included, whatever the phone's locale`() {
         assertEquals("acelnoszz acelnoszz", ExerciseLibrary.fold("ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ"))
         val turkish = Locale.getDefault()

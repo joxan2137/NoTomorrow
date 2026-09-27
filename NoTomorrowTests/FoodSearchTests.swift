@@ -28,7 +28,7 @@ final class FoodSearchTests: XCTestCase {
         let records = try JSONDecoder().decode([ExerciseLibrary.Record].self, from: Data(contentsOf: url))
         XCTAssertEqual(records.count, 989, "free-exercise-db plus the app's nt_ additions (ExerciseLibrary)")
         XCTAssertEqual(Set(records.map(\.id)).count, records.count)
-        let represented = Set(ExerciseMedia.regions.map(\.muscle))
+        let represented = Set(Body3D.muscles)
         for record in records {
             XCTAssertTrue(Set(record.primaryMuscles + record.secondaryMuscles).isSubset(of: represented), record.id)
         }

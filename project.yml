@@ -39,6 +39,15 @@ targets:
       - path: NoTomorrow
         excludes:
           - "Resources/Info.plist"
+          - "Resources/Demos/**"
+          - "Resources/Body3D/**"
+      # The rendered 3D exercise clips and muscle-view layers (scripts/anatomy/body3d), kept as folders in the bundle.
+      - path: NoTomorrow/Resources/Demos
+        type: folder
+        buildPhase: resources
+      - path: NoTomorrow/Resources/Body3D
+        type: folder
+        buildPhase: resources
       - path: Shared
       # The AI prompt/schema/table spec is shared with the backend (and Android); never copy it into the app tree.
       - path: backend/data/ai/estimate-spec.json

@@ -19,3 +19,4 @@ backend/.env
 android/app/google-services.json
 # Local scratch
 *.log
+__pycache__/

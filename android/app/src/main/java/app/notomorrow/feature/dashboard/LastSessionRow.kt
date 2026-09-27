@@ -81,10 +81,11 @@ fun LastSessionRow(
 @Composable
 private fun Summary(session: LastSession, modifier: Modifier = Modifier) {
     val strings = rememberNtStrings()
+    val name = app.notomorrow.feature.workout.workoutDisplayName(session.name)
     val text = buildAnnotatedString {
         append(dayLabel(session.at))
         append(" · ")
-        append(session.name)
+        append(name)
         append(" · ")
         append(Fmt.duration(session.durationSeconds, strings))
         if (session.prCount > 0) {

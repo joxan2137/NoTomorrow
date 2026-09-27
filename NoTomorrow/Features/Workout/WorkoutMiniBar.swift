@@ -61,7 +61,7 @@ struct WorkoutMiniBar: View {
                 HStack(spacing: 12) {
                     leading(state)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(workout.name)
+                        Text(WorkoutStrings.displayName(workout.name))
                             .font(NT.Fonts.subheadlineBold).foregroundStyle(NT.Colors.ink).lineLimit(1)
                         detail(state)
                     }
@@ -77,7 +77,7 @@ struct WorkoutMiniBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("workout.miniBar.label \(workout.name) \(Fmt.duration(now.timeIntervalSince(workout.startedAt)))"))
+            .accessibilityLabel(Text("workout.miniBar.label \(WorkoutStrings.displayName(workout.name)) \(Fmt.duration(now.timeIntervalSince(workout.startedAt)))"))
             .accessibilityValue(accessibilityValue(state))
             .accessibilityHint(Text("workout.miniBar.hint"))
 
