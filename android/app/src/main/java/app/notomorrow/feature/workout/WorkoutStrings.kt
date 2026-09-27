@@ -37,6 +37,12 @@ object WorkoutStrings {
     /** "3 sets" / "3 serie" */
     fun sets(n: Int, strings: Localizer): String = strings.string(NtKeys.setCount(n), n)
 
+    /** "12 workouts" / "12 treningów" */
+    fun workouts(n: Int, strings: Localizer): String = strings.string(NtKeys.workoutCount(n), n)
+
+    /** "3-week streak" / "3 tygodnie z rzędu" */
+    fun weekStreak(n: Int, strings: Localizer): String = strings.string(NtKeys.weekStreak(n), n)
+
     /** "2 PRs" — the dashboard key; Polish keeps "PR" invariant. */
     fun prs(n: Int, strings: Localizer): String = strings.string(S.dashboard_prs, n)
 
@@ -94,6 +100,14 @@ fun workoutExerciseCount(n: Int): String = stringResource(NtKeys.exerciseCount(n
 /** [WorkoutStrings.sets] inside composition. */
 @Composable
 fun workoutSetCount(n: Int): String = stringResource(NtKeys.setCount(n), n)
+
+/** [WorkoutStrings.workouts] inside composition. */
+@Composable
+fun workoutCount(n: Int): String = stringResource(NtKeys.workoutCount(n), n)
+
+/** [WorkoutStrings.weekStreak] inside composition. */
+@Composable
+fun workoutWeekStreak(n: Int): String = stringResource(NtKeys.weekStreak(n), n)
 
 /** [WorkoutStrings.muscle] inside composition. */
 @Composable

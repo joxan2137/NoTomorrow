@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
@@ -49,6 +50,8 @@ class ProgressHomeViewModel(
     private val appState: AppState,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val locale: () -> Locale = { LocaleProvider.current() },
+    /** The weekly stats card's first day: Monday, like the rest of the app (training calendar, muscles this week). */
+    private val firstDayOfWeek: () -> DayOfWeek = { DayOfWeek.MONDAY },
 ) : ViewModel() {
 
     private val tab = MutableStateFlow(ProgressTab.Lifts)
@@ -69,6 +72,7 @@ class ProgressHomeViewModel(
     ) { profile, sets, exercises, weights ->
         Store(
             unit = profile?.units ?: WeightUnit.Kg,
+            profileBodyWeightKg = profile?.bodyWeightKg,
             sets = sets,
             exercises = exercises,
             body = weights.map { BodyEntry(Days.date(it.day, zone), it.kg, it.source) },
@@ -186,6 +190,13 @@ class ProgressHomeViewModel(
             hasCompletedSets = lifts.isNotEmpty(),
             muscles = ProgressDerivations.buildMuscleWeek(data.sets, weekStart) { muscles[it] },
             body = ProgressDerivations.buildBody(data.body, today),
+            calendarDays = TrainingCalendar.days(data.sets, zone),
+            weeklyStats = WeeklyStats.weeks(WeeklyStats.sessions(data.sets), today, firstDayOfWeek(), zone),
+            milestones = Milestones.evaluate(
+                Milestones.sessions(data.sets, zone),
+                Milestones.bodyWeight(data.body.lastOrNull()?.kg, data.profileBodyWeightKg),
+            ),
+            today = today,
             loaded = true,
         )
         return Derived(state = state, lifts = lifts, today = today)
@@ -217,6 +228,7 @@ class ProgressHomeViewModel(
 
     private data class Store(
         val unit: WeightUnit,
+        val profileBodyWeightKg: Double?,
         val sets: List<CompletedSetRow>,
         val exercises: List<ExerciseEntity>,
         val body: List<BodyEntry>,

@@ -106,10 +106,14 @@ enum WorkoutStarter {
             let rest = item.restSeconds > 0
                 ? item.restSeconds
                 : RoutineSeeder.restSeconds(for: exercise.id, defaultRest: defaultRest)
-            append(exercise, to: workout, order: order, setCount: max(1, item.targetSets),
-                   targetReps: item.targetReps, restSeconds: rest, in: context)
+            let added = append(exercise, to: workout, order: order, setCount: max(1, item.targetSets),
+                               targetReps: item.targetReps, restSeconds: rest, in: context)
+            added.supersetGroup = item.supersetGroup
             order += 1
         }
+        // An item whose exercise was deleted may have split a superset.
+        let started = workout.sortedExercises
+        for (entry, group) in zip(started, Superset.normalized(started.map(\.supersetGroup))) { entry.supersetGroup = group }
         try? context.save()
         session.begin(workout)
         return workout
