@@ -639,6 +639,16 @@ object S {
     val routine_share_rest_s = R.string.routine_share_rest_s  // routine.share.rest %@
     val rpe_clear = R.string.rpe_clear
     val rpe_title = R.string.rpe_title
+    val scan_machine_add = R.string.scan_machine_add
+    val scan_machine_hint = R.string.scan_machine_hint
+    val scan_machine_looking = R.string.scan_machine_looking
+    val scan_machine_matches = R.string.scan_machine_matches
+    val scan_machine_noMatch = R.string.scan_machine_noMatch
+    val scan_machine_open = R.string.scan_machine_open
+    val scan_machine_photo = R.string.scan_machine_photo
+    val scan_machine_photoHint = R.string.scan_machine_photoHint
+    val scan_machine_reading = R.string.scan_machine_reading
+    val scan_machine_search = R.string.scan_machine_search
     val settings_account = R.string.settings_account
     val settings_account_user = R.string.settings_account_user
     val settings_aiProvider = R.string.settings_aiProvider

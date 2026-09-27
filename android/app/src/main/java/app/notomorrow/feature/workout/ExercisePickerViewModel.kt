@@ -62,6 +62,10 @@ class ExercisePickerViewModel(
     private val library: Flow<List<ExerciseEntity>> =
         exerciseDao.observeAllByName().map { ExerciseLibrary.sorted(it) }
 
+    /** The whole library, custom exercises included, for the machine scanner. */
+    val exercises: StateFlow<List<ExerciseEntity>> =
+        library.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /** Most recent completed working set per exercise (`RecordService.lastSet(for:)`). */
     private val lastSets: Flow<Map<String, CompletedSetRow>> =
         workoutDao.observeCompletedSets().map { rows ->
@@ -234,6 +238,15 @@ class ExercisePickerViewModel(
             selectedInput.value = emptyList()
             onCommitted(ids)
         }
+    }
+
+    /**
+     * A machine picked in the scanner joins whatever was already ticked and goes straight in, like
+     * tapping "Add".
+     */
+    fun addScanned(id: String, onCommitted: (List<String>) -> Unit) {
+        if (!selectedInput.value.contains(id)) selectedInput.value = selectedInput.value + id
+        add(onCommitted)
     }
 
     private data class PickerContext(
