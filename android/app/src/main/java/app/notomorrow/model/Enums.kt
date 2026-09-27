@@ -39,6 +39,32 @@ enum class SetKind(val raw: String) {
     }
 }
 
+/** `MeasurementKind` — what a `body_measurement` row measures, in display order. */
+enum class MeasurementKind(val raw: String) {
+    Waist("waist"),
+    Chest("chest"),
+    Hips("hips"),
+    Arm("arm"),
+    Thigh("thigh"),
+    Neck("neck"),
+    BodyFat("bodyFat");
+
+    companion object {
+        fun from(raw: String?): MeasurementKind? = entries.firstOrNull { it.raw == raw }
+    }
+}
+
+/** `ProgressPose` — which way the body faces in a progress photo (optional on the row). */
+enum class ProgressPose(val raw: String) {
+    Front("front"),
+    Side("side"),
+    Back("back");
+
+    companion object {
+        fun from(raw: String?): ProgressPose? = entries.firstOrNull { it.raw == raw }
+    }
+}
+
 enum class MealSlot(val raw: String) {
     Breakfast("breakfast"),
     Lunch("lunch"),

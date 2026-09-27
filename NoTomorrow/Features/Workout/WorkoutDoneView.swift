@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 /// "DONE." summary after finishing: volume hero, delta vs the last workout with the same name,
-/// Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets.
+/// a "New milestone" chip per milestone it crossed, Time / Sets / Exercises tiles, records list, bro card when paired, Done + Edit sets.
 struct WorkoutDoneView: View {
     let workout: Workout
     var unit: WeightUnit = .kg
@@ -15,6 +15,9 @@ struct WorkoutDoneView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var pairings: [BroPairing]
     @State private var previousVolume: Double?
+    @State private var shareImage: Image?
+    /// Milestones this workout crossed (`Milestones.crossed`), read once on appear.
+    @State private var newMilestones: [Milestones.Milestone] = []
 
     private var volume: Double { workout.totalVolumeKg }
     /// `endedAt` is stamped on Finish, before this screen shows.
@@ -58,7 +61,11 @@ struct WorkoutDoneView: View {
             .padding(.bottom, 8)
         }
         .ntScreenBackground()
-        .onAppear(perform: loadPrevious)
+        .onAppear {
+            loadPrevious()
+            loadMilestones()
+            renderShareImage()
+        }
     }
 
     // MARK: Header
@@ -69,13 +76,33 @@ struct WorkoutDoneView: View {
                 .eyebrow(NT.Colors.ember)
                 .lineLimit(1)
             Spacer(minLength: 12)
-            ShareLink(item: shareText) {
-                Text("common.share").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
-                    .frame(height: NT.Size.control)
-                    .contentShape(Rectangle())
+            Group {
+                if let shareImage {
+                    ShareLink(item: shareImage, message: Text(verbatim: shareText),
+                              preview: SharePreview(Text(verbatim: workout.name), image: shareImage)) { shareLabel }
+                } else {
+                    ShareLink(item: shareText) { shareLabel }
+                }
             }
         }
         .frame(height: NT.Size.control)
+    }
+
+    private var shareLabel: some View {
+        Text("common.share").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink2)
+            .frame(height: NT.Size.control)
+            .contentShape(Rectangle())
+    }
+
+    /// The workout card picture (`WorkoutShareCard`), rendered once the screen is up.
+    private func renderShareImage() {
+        let card = WorkoutShareCard(
+            title: workout.name,
+            subtitle: "\(Fmt.longDay(workout.startedAt)) · \(Fmt.time(workout.startedAt))",
+            volume: Fmt.volume(volume, unit: unit), time: Fmt.duration(duration),
+            sets: "\(workout.completedSetCount)", prs: records.filter(\.isPR).count,
+            lines: WorkoutShareCard.lines(for: workout, unit: unit))
+        shareImage = WorkoutShareCard.render(card)
     }
 
     private var shareText: String {
@@ -96,7 +123,24 @@ struct WorkoutDoneView: View {
             if let previousVolume, previousVolume != volume {
                 deltaChip(delta: volume - previousVolume)
             }
+            ForEach(newMilestones) { milestone in
+                milestoneChip(milestone)
+            }
         }
+    }
+
+    /// "New milestone: 50 workouts" under the volume.
+    private func milestoneChip(_ milestone: Milestones.Milestone) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "trophy").font(.system(size: 12, weight: .bold))
+                .accessibilityHidden(true)
+            Text("milestone.new \(MilestoneText.title(milestone, unit: unit))").lineLimit(1)
+        }
+        .font(NT.Fonts.footnoteBold).tabular()
+        .foregroundStyle(NT.Colors.ember)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 30)
+        .background(NT.Colors.emberTint, in: Capsule())
     }
 
     private func deltaChip(delta: Double) -> some View {
@@ -165,6 +209,10 @@ struct WorkoutDoneView: View {
     }
 
     // MARK: Data
+
+    private func loadMilestones() {
+        newMilestones = Milestones.crossed(by: workout.id, in: Milestones.evaluate(in: context, including: workout))
+    }
 
     private func loadPrevious() {
         let name = workout.name

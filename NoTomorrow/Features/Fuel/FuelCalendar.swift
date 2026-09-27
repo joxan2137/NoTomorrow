@@ -31,27 +31,17 @@ enum FuelCalendar {
 
     /// kcal eaten as whole permille of the goal, clamped to 0…10 000 (0 when the goal is not positive). Integer
     /// band edges keep both platforms equal: as Doubles, 2200 / 2000 − 1 is 0.10000000000000009, not 0.10.
+    /// The scoring itself lives in `FuelHeat` (Shared), so the widgets score days exactly like this grid.
     static func permille(kcalEaten: Double, kcalGoal: Double) -> Int {
-        guard kcalGoal > 0 else { return 0 }
-        let ratio = kcalEaten / kcalGoal
-        guard !ratio.isNaN else { return 0 }
-        return Int((min(max(ratio, 0), 10) * 1000).rounded())   // half away from zero, like Android's Fmt.roundHalfAwayFromZero
+        FuelHeat.permille(kcalEaten: kcalEaten, kcalGoal: kcalGoal)
     }
 
     /// 0 = nothing logged, 1 = far off … 4 = on target. Today, while still below its best band, reads as progress
     /// instead (under 50 % → 1, under 75 % → 2, otherwise 3), so the cell brightens as the day fills up.
     static func level(kcalEaten: Double, kcalGoal: Double, goal: TrainingGoal, hasEntries: Bool, isToday: Bool) -> Int {
-        guard hasEntries else { return 0 }
-        guard kcalGoal > 0 else { return 1 }
-        let p = permille(kcalEaten: kcalEaten, kcalGoal: kcalGoal)
         let tolerance = tolerance(for: goal)
-        if isToday && p < 1000 - tolerance.under[0] { return min(3, max(1, p / 250)) }
-        let deviation = abs(p - 1000)
-        let steps = p >= 1000 ? tolerance.over : tolerance.under
-        if deviation <= steps[0] { return 4 }
-        if deviation <= steps[1] { return 3 }
-        if deviation <= steps[2] { return 2 }
-        return 1
+        return FuelHeat.level(kcalEaten: kcalEaten, kcalGoal: kcalGoal, under: tolerance.under, over: tolerance.over,
+                              hasEntries: hasEntries, isToday: isToday)
     }
 
     // MARK: - Layout

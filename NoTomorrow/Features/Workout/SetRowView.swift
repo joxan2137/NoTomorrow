@@ -18,7 +18,8 @@ struct SetRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             SetKindMenu(kind: set.kind, number: model.setNumber(for: set, in: exercise),
-                        onKind: { model.setKind($0, for: set) }, onDelete: onDelete)
+                        onKind: { model.setKind($0, for: set) }, onDelete: onDelete,
+                        rpe: set.rpe, onRPE: { model.setRPE($0, for: set) })
             Text(previous.map { Fmt.set($0.weightKg, $0.reps, unit: unit) } ?? "—")
                 .font(NT.Fonts.subheadline).foregroundStyle(NT.Colors.ink2).tabular()
                 .frame(maxWidth: .infinity)

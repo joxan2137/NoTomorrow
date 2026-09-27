@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget background: `ground`, rounded for launchers before API 31 (on 31+ the
+     system radius clips it, `GlanceModifier.cornerRadius`). docs/widgets.md, "Look". -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/nt_ground" />
+    <corners android:radius="22dp" />
+</shape>

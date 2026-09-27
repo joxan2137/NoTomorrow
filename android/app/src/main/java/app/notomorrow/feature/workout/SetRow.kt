@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -29,10 +30,14 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
@@ -121,7 +126,8 @@ class SetFieldFocus {
  * A completed row sits on a faint ember tint (radius `NT.Radius.cell`), its numbers at full
  * strength. [editing] is the workout editor's row: never tinted or locked, the Previous column
  * left blank.
- * [onDelete] adds "Delete set" to the kind menu. [onAppear] runs once per row, like `.onAppear`
+ * [onDelete] adds "Delete set" to the kind menu, [onRpe] its RPE submenu (the active table only).
+ * [onAppear] runs once per row, like `.onAppear`
  * (the active table prefills an open row from Previous there).
  */
 @Composable
@@ -136,6 +142,7 @@ fun SetRow(
     onReps: (Int) -> Unit,
     onToggle: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    onRpe: ((Double?) -> Unit)? = null,
     onAppear: () -> Unit = {},
 ) {
     LaunchedEffect(row.id) { onAppear() }
@@ -146,7 +153,7 @@ fun SetRow(
         horizontalArrangement = Arrangement.spacedBy(SetTable.spacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        KindMenu(row = row, onKind = onKind, onDelete = onDelete)
+        KindMenu(row = row, onKind = onKind, onDelete = onDelete, onRpe = onRpe)
 
         if (editing) {
             Spacer(Modifier.weight(1f).height(1.dp))
@@ -190,17 +197,29 @@ fun SetRow(
 // MARK: - Set column
 
 /**
- * 36 × 44 cell: the row number, or the kind letter in a 24 dp `surface2` circle. The menu ends
- * with a destructive "Delete set" after a divider when [onDelete] is set.
+ * 36 × 44 cell: the row number, or the kind letter in a 24 dp `surface2` circle, with "@8" under it
+ * when the set has an RPE. With [onRpe] the menu offers "RPE", which opens the 6…10 list in its
+ * place (NtMenu has no submenus; iOS nests a `Menu`), with a check on the current value and
+ * "Clear RPE" once one is set. The menu ends with a destructive "Delete set" after a divider when
+ * [onDelete] is set.
  */
 @Composable
-private fun KindMenu(row: SetRowUi, onKind: (SetKind) -> Unit, onDelete: (() -> Unit)?) {
+private fun KindMenu(
+    row: SetRowUi,
+    onKind: (SetKind) -> Unit,
+    onDelete: (() -> Unit)?,
+    onRpe: ((Double?) -> Unit)?,
+) {
     var expanded by remember { mutableStateOf(false) }
+    var rpeExpanded by remember { mutableStateOf(false) }
     val items = buildList {
         add(NtMenuItem(title = stringResource(S.workout_warmup), onClick = { onKind(SetKind.Warmup) }))
         add(NtMenuItem(title = stringResource(S.workout_dropset), onClick = { onKind(SetKind.Drop) }))
         add(NtMenuItem(title = stringResource(S.workout_failure), onClick = { onKind(SetKind.Failure) }))
         add(NtMenuItem(title = stringResource(S.workout_normalSet), onClick = { onKind(SetKind.Normal) }))
+        if (onRpe != null) {
+            add(NtMenuItem(title = stringResource(S.rpe_title), onClick = { rpeExpanded = true }))
+        }
         if (onDelete != null) {
             add(
                 NtMenuItem(
@@ -212,29 +231,86 @@ private fun KindMenu(row: SetRowUi, onKind: (SetKind) -> Unit, onDelete: (() -> 
             )
         }
     }
+    val rpeItems = if (onRpe == null) {
+        emptyList()
+    } else {
+        buildList {
+            for (value in Rpe.options) {
+                add(
+                    NtMenuItem(
+                        title = Rpe.label(value),
+                        onClick = { onRpe(value) },
+                        icon = if (value == row.rpe) NtIcons.Checkmark else null,
+                    ),
+                )
+            }
+            if (row.rpe != null) {
+                add(
+                    NtMenuItem(
+                        title = stringResource(S.rpe_clear),
+                        onClick = { onRpe(null) },
+                        separatorBefore = true,
+                    ),
+                )
+            }
+        }
+    }
     Box(
         modifier = Modifier
             .size(width = SetTable.setColumn, height = NT.Size.control)
             .ntPlainClickable { expanded = true },
         contentAlignment = Alignment.Center,
     ) {
-        if (row.kind == SetKind.Normal) {
-            TabularText(row.number.toString(), style = NT.Fonts.subheadline, color = NT.Colors.ink)
-        } else {
-            Box(
-                modifier = Modifier.size(24.dp).background(NT.Colors.surface2, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                NtText(
-                    text = kindLetter(row.kind),
-                    style = NT.Fonts.caption,
-                    color = NT.Colors.ink2,
-                    maxLines = 1,
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (row.kind == SetKind.Normal) {
+                TabularText(row.number.toString(), style = NT.Fonts.subheadline, color = NT.Colors.ink)
+            } else {
+                Box(
+                    modifier = Modifier.size(24.dp).background(NT.Colors.surface2, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NtText(
+                        text = kindLetter(row.kind),
+                        style = NT.Fonts.caption,
+                        color = NT.Colors.ink2,
+                        maxLines = 1,
+                    )
+                }
+            }
+            row.rpe?.let { rpe ->
+                val spoken = Rpe.spoken(rpe)
+                TabularText(
+                    text = "@" + Rpe.label(rpe),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+                    style = RPE_STYLE,
+                    color = NT.Colors.ember,
                 )
             }
         }
         NtMenu(expanded = expanded, onDismiss = { expanded = false }, items = items)
+        if (onRpe != null) {
+            NtMenu(expanded = rpeExpanded, onDismiss = { rpeExpanded = false }, items = rpeItems)
+        }
     }
+}
+
+/** `.font(.system(size: 9, weight: .semibold))` — the "@8" under the set number. */
+private val RPE_STYLE = NT.Fonts.caption.copy(fontSize = 9.sp, lineHeight = 11.sp, fontWeight = FontWeight.SemiBold)
+
+/** Rate of perceived exertion for a set — `RPE`: 6 (easy, 4 left in the tank) to 10 (nothing left), in half steps. */
+object Rpe {
+    val options: List<Double> = (0..8).map { 6.0 + it * 0.5 }
+
+    /** "8" or "8,5" (locale decimal separator). */
+    fun label(value: Double, locale: Locale = LocaleProvider.current()): String =
+        (NumberFormat.getNumberInstance(locale) as DecimalFormat).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 1
+        }.format(value)
+
+    /** "RPE 8" for TalkBack, where the screen shows "@8". */
+    @Composable
+    fun spoken(value: Double): String = stringResource(S.rpe_title) + " " + label(value)
 }
 
 /** `SetKindMenu.letter(for:)` — W / D / F, never localized; the detail sheet uses the same glyphs. */
@@ -393,4 +469,6 @@ data class SetRowUi(
     val previous: SetValue?,
     /** First uncompleted row of the exercise: the one with the highlighted cells. */
     val isCurrent: Boolean,
+    /** Rate of perceived exertion, "@8" under the number. */
+    val rpe: Double? = null,
 )

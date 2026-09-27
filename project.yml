@@ -28,7 +28,7 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     DEVELOPMENT_LANGUAGE: en
-    MARKETING_VERSION: "0.4.1"
+    MARKETING_VERSION: "0.6.1"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -42,6 +42,9 @@ targets:
       - path: Shared
       # The AI prompt/schema/table spec is shared with the backend (and Android); never copy it into the app tree.
       - path: backend/data/ai/estimate-spec.json
+        buildPhase: resources
+      # The built-in training programs ("Browse programs"), shared with Android; never copied into the app tree.
+      - path: data/programs/programs.json
         buildPhase: resources
     info:
       path: NoTomorrow/Resources/Info.plist
@@ -61,8 +64,8 @@ targets:
         NSSupportsLiveActivitiesFrequentUpdates: false
         UIAppFonts:
           - BigShouldersDisplay-ExtraBold.ttf
-        NSCameraUsageDescription: "No Tomorrow uses the camera to scan food barcodes and to estimate calories from a photo of your meal."
-        NSPhotoLibraryUsageDescription: "No Tomorrow lets you pick a meal photo to estimate its calories."
+        NSCameraUsageDescription: "No Tomorrow uses the camera to scan food barcodes, to estimate calories from a photo of your meal and to read the name on a gym machine."
+        NSPhotoLibraryUsageDescription: "No Tomorrow lets you pick a meal photo to estimate its calories, or a photo of a gym machine to find its exercise."
         NSHealthShareUsageDescription: "No Tomorrow reads your body weight to chart your progress."
         NSHealthUpdateUsageDescription: "No Tomorrow writes the meals and gym sessions you log so they appear in the Health app."
         NSUserNotificationsUsageDescription: "Reminders before your gym session, rest-timer alerts and heads-ups from your gym bro."
@@ -76,6 +79,8 @@ targets:
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        # Shared with the widget extension (docs/widgets.md): the widget snapshot, quick-log queue, rest timer.
+        com.apple.security.application-groups: [group.app.notomorrow.ios]
     dependencies:
       - target: NoTomorrowWidgets
         embed: true
@@ -98,17 +103,33 @@ targets:
       - path: NoTomorrowWidgets
         excludes:
           - "Info.plist"
+          - "*.entitlements"
       - path: Shared
+      # The widgets speak the app's language and use its display face; one catalog and one font file for both targets.
+      - path: NoTomorrow/Resources/Localizable.xcstrings
+      - path: NoTomorrow/Resources/Fonts
     info:
       path: NoTomorrowWidgets/Info.plist
       properties:
-        CFBundleDisplayName: No Tomorrow Timer
+        CFBundleDisplayName: No Tomorrow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleLocalizations: [en, pl]
+        CFBundleDevelopmentRegion: en
+        UIAppFonts:
+          - BigShouldersDisplay-ExtraBold.ttf
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: NoTomorrowWidgets/NoTomorrowWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.notomorrow.ios]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.notomorrow.ios.widgets
         SKIP_INSTALL: YES
+        # Shared/WidgetIntents.swift runs the Break timer intents through the app when compiled into it.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) WIDGET_EXTENSION
 
   NoTomorrowTests:
     type: bundle.unit-test

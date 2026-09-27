@@ -50,6 +50,8 @@ data class WorkoutExerciseEntity(
     @ColumnInfo(name = "orderIndex") val order: Int,
     val restSeconds: Int = 90,
     val notes: String = "",
+    /** Neighbouring exercises with the same id form a superset (`Superset`); `null` = on its own. Schema 2. */
+    val supersetGroup: Int? = null,
 )
 
 /**

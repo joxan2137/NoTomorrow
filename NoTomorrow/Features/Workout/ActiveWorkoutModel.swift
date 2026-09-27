@@ -299,7 +299,15 @@ final class ActiveWorkoutModel {
         }
         try? context.save()
 
-        let target = nextTarget(after: set, in: exercise)
+        var target = nextTarget(after: set, in: exercise)
+        if let hop = supersetHop(after: set, in: exercise) {
+            // A superset moves straight on to its next exercise; the rest comes after the round's last one.
+            expandedExerciseID = hop.exercise.persistentModelID
+            guard hop.rests, let next = hop.exercise.sortedSets.first(where: { !$0.isCompleted }) else { return false }
+            let fallback = hop.exercise.sortedSets.last(where: \.isCompleted).map { SetValue(weightKg: $0.weightKg, reps: $0.reps) }
+                ?? lastSet(for: hop.exercise)
+            target = NextTarget(upNext: makeUpNext(next, in: hop.exercise, fallback: fallback), isDrop: false)
+        }
         let autoStart = UserDefaults.standard.object(forKey: "nt.rest.autoStart") as? Bool ?? true
         if let target, !target.isDrop, autoStart {
             upNext = target.upNext
@@ -322,6 +330,25 @@ final class ActiveWorkoutModel {
     func setKind(_ kind: SetKind, for set: SetEntry) {
         set.kind = kind
         try? context.save()
+    }
+
+    func setRPE(_ rpe: Double?, for set: SetEntry) {
+        set.rpe = rpe
+        try? context.save()
+    }
+
+    /// The note left on this exercise the last time it was done (Hevy-style "sticky" notes: seat height, grip…),
+    /// shown as the note field's placeholder.
+    func previousNote(for exercise: WorkoutExercise) -> String? {
+        guard let ex = exercise.exercise else { return nil }
+        let myID = workout.persistentModelID
+        return ex.usages
+            .filter { usage in
+                guard let other = usage.workout, other.persistentModelID != myID, other.endedAt != nil else { return false }
+                return !usage.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            .max { ($0.workout?.startedAt ?? .distantPast) < ($1.workout?.startedAt ?? .distantPast) }?
+            .notes
     }
 
     /// "Delete set" from the kind menu: removes the row and renumbers the rest. Records are re-derived on Finish.
@@ -349,6 +376,57 @@ final class ActiveWorkoutModel {
         try? context.save()
     }
 
+    /// The working weight a warm-up ramp builds to: the first normal set's weight in the user's unit (0 = none).
+    func warmupTarget(for exercise: WorkoutExercise) -> Double {
+        let kg = exercise.sortedSets.first { $0.kind == .normal && $0.weightKg > 0 }?.weightKg ?? 0
+        return SetInput.display(kg, unit: unit)
+    }
+
+    func warmupSteps(for exercise: WorkoutExercise) -> [WarmupPlan.Step] {
+        WarmupPlan.steps(working: warmupTarget(for: exercise), unit: unit, equipment: exercise.exercise?.equipment)
+    }
+
+    /// "Add warm-up sets": open warm-up rows are replaced by the ramp to the working weight, placed before the
+    /// first working set. Completed warm-ups stay.
+    func addWarmups(to exercise: WorkoutExercise) {
+        let steps = warmupSteps(for: exercise)
+        guard !steps.isEmpty else { return }
+        for set in exercise.sets where set.kind == .warmup && !set.isCompleted {
+            exercise.sets.removeAll { $0.persistentModelID == set.persistentModelID }
+            context.delete(set)
+        }
+        let kept = exercise.sortedSets
+        let doneWarmups = kept.filter { $0.kind == .warmup }
+        let rest = kept.filter { $0.kind != .warmup }
+        var ordered = doneWarmups
+        for step in steps {
+            let set = SetEntry(order: 0, kind: .warmup, weightKg: SetInput.kg(fromDisplay: step.weight, unit: unit),
+                               reps: step.reps)
+            exercise.sets.append(set)
+            ordered.append(set)
+        }
+        ordered += rest
+        for (i, set) in ordered.enumerated() { set.order = i }
+        try? context.save()
+    }
+
+    // MARK: Rest
+
+    /// The rest this exercise would get from the user's Rest length setting (heavy compounds 30 s more).
+    func defaultRestSeconds(for exercise: WorkoutExercise) -> Int {
+        let defaultRest = WorkoutStarter.defaultRestSeconds(in: context)
+        guard let id = exercise.exercise?.id else { return defaultRest }
+        return RoutineSeeder.restSeconds(for: id, defaultRest: defaultRest)
+    }
+
+    /// The exercise menu's Rest timer: the length the next rest after this exercise's sets counts down. A rest
+    /// already running keeps its length (the pill's −15 / +15 adjust it).
+    func setRest(_ seconds: Int, for exercise: WorkoutExercise) {
+        guard seconds > 0 else { return }
+        exercise.restSeconds = seconds
+        try? context.save()
+    }
+
     /// Removes an exercise and its sets. Progress reloads, as after `removeSet`.
     func remove(_ exercise: WorkoutExercise) {
         if expandedExerciseID == exercise.persistentModelID { expandedExerciseID = nil }
@@ -358,8 +436,63 @@ final class ActiveWorkoutModel {
         for set in Array(exercise.sets) { context.delete(set) }
         context.delete(exercise)
         for (i, we) in exercises.enumerated() { we.order = i }
+        let groups = Superset.normalized(exercises.map(\.supersetGroup))
+        for (we, group) in zip(exercises, groups) where we.supersetGroup != group { we.supersetGroup = group }
         try? context.save()
         NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+    }
+
+    // MARK: Replace / reorder
+
+    /// "Replace exercise" is offered only while none of the exercise's sets is completed (as in Hevy): logged sets
+    /// belong to the exercise they were done on.
+    func canReplace(_ exercise: WorkoutExercise) -> Bool {
+        !exercise.sets.contains(where: \.isCompleted)
+    }
+
+    /// Puts `replacement` in the slot of `exercise`: same position, superset and rest; its open rows stay (same
+    /// count and kinds) but lose the old exercise's numbers and take the new one's Previous, as a fresh row would.
+    /// The note goes with the old exercise. Refused when a set is completed or the exercise is the same one.
+    @discardableResult
+    func replace(_ exercise: WorkoutExercise, with replacement: Exercise) -> Bool {
+        guard canReplace(exercise), exercise.exercise?.id != replacement.id else { return false }
+        exercise.exercise = replacement
+        exercise.notes = ""
+        replacement.lastUsedAt = .now
+        let ids = Set(exercise.sets.map(\.persistentModelID))
+        if let hint = hintSetID, ids.contains(hint) { hintSetID = nil }
+        for set in exercise.sets {
+            set.weightKg = 0
+            set.reps = 0
+            set.rpe = nil
+            set.isPR = false
+            set.isSetRecord = false
+        }
+        reloadPrevious()
+        for set in exercise.sortedSets { prefillFromPrevious(set, in: exercise) }
+        try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
+        return true
+    }
+
+    /// Whether Move up (-1) / Move down (+1) has somewhere to go.
+    func canMove(_ exercise: WorkoutExercise, by offset: Int) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return exercises.indices.contains(i + offset)
+    }
+
+    /// Move up (-1) / down (+1): swaps with the neighbour and renumbers. Supersets are normalized afterwards, as in
+    /// `RoutineDraft.move`, so a member moved away from its partners leaves the superset.
+    func move(_ exercise: WorkoutExercise, by offset: Int) {
+        var list = exercises
+        guard let from = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        let to = from + offset
+        guard list.indices.contains(to) else { return }
+        list.swapAt(from, to)
+        for (i, we) in list.enumerated() where we.order != i { we.order = i }
+        let groups = Superset.normalized(list.map(\.supersetGroup))
+        for (we, group) in zip(list, groups) where we.supersetGroup != group { we.supersetGroup = group }
+        try? context.save()
     }
 
     func toggleExpanded(_ exercise: WorkoutExercise) {
@@ -389,6 +522,8 @@ final class ActiveWorkoutModel {
             WorkoutEditor.releaseAttendance(of: workout, in: context, today: now)
         }
         try? context.save()
+        // Progress (open under the mini bar) reloads: its milestones and lifts are built from the finished workouts.
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = true
     }
 
@@ -402,6 +537,7 @@ final class ActiveWorkoutModel {
     func reopen() {
         workout.endedAt = nil
         try? context.save()
+        NotificationCenter.default.post(name: .workoutHistoryDidChange, object: nil)
         showsSummary = false
     }
 
@@ -413,6 +549,58 @@ final class ActiveWorkoutModel {
     }
 
     // MARK: Next target
+
+    // MARK: Supersets
+
+    private var supersetGroups: [Int?] { exercises.map(\.supersetGroup) }
+
+    /// "A", "B"… for an exercise in a superset (the header's tag), nil for one on its own.
+    func supersetLetter(for exercise: WorkoutExercise) -> String? {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        return Superset.letters(supersetGroups)[i]
+    }
+
+    func canLinkWithNext(_ exercise: WorkoutExercise) -> Bool {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return false }
+        return i + 1 < exercises.count && !Superset.isLinkedToNext(supersetGroups, at: i)
+    }
+
+    func linkWithNext(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.linkWithNext(supersetGroups, at: i))
+    }
+
+    func unlinkSuperset(_ exercise: WorkoutExercise) {
+        guard let i = exercises.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return }
+        applySupersets(Superset.unlink(supersetGroups, at: i))
+    }
+
+    private func applySupersets(_ groups: [Int?]) {
+        for (exercise, group) in zip(exercises, groups) where exercise.supersetGroup != group {
+            exercise.supersetGroup = group
+        }
+        try? context.save()
+    }
+
+    /// Where a tick in a superset goes next: a later exercise of the superset with an open set (no rest), else,
+    /// after the round's last exercise, back to the first one with an open set (rest first). Nil outside a superset,
+    /// once the superset is done, or when a drop set follows in the same exercise.
+    private func supersetHop(after set: SetEntry, in exercise: WorkoutExercise) -> (exercise: WorkoutExercise, rests: Bool)? {
+        guard let group = exercise.supersetGroup else { return nil }
+        if let next = exercise.sortedSets.first(where: { $0.order > set.order && !$0.isCompleted }), next.kind == .drop {
+            return nil
+        }
+        let list = exercises
+        guard let i = list.firstIndex(where: { $0.persistentModelID == exercise.persistentModelID }) else { return nil }
+        var start = i, end = i
+        while start > 0, list[start - 1].supersetGroup == group { start -= 1 }
+        while end + 1 < list.count, list[end + 1].supersetGroup == group { end += 1 }
+        guard end > start else { return nil }
+        let hasOpen: (WorkoutExercise) -> Bool = { $0.sets.contains { !$0.isCompleted } }
+        if i < end, let later = list[(i + 1)...end].first(where: hasOpen) { return (later, false) }
+        if let first = list[start...end].first(where: hasOpen) { return (first, true) }
+        return nil
+    }
 
     private struct NextTarget {
         var upNext: UpNextTarget
