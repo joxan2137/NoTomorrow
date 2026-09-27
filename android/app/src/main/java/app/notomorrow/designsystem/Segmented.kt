@@ -14,17 +14,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.floor
 
 /**
  * The app's hand-built segmented control — never
@@ -53,6 +58,17 @@ fun <T> NtSegmented(
 ) {
     if (options.isEmpty()) return
     val selectedIndex = options.indexOf(selected).coerceAtLeast(0)
+    // `ProgressSegmented`'s `minimumScaleFactor(0.8)`: labels shrink before they truncate.
+    // The floor sits a whole number of 0.25 sp steps below the style size so the step grid
+    // lands exactly on it and a label that fits is drawn at full size.
+    val labelAutoSize = remember(style.fontSize) {
+        val max = style.fontSize.value
+        TextAutoSize.StepBased(
+            minFontSize = (max - floor(max * 0.2f / 0.25f) * 0.25f).sp,
+            maxFontSize = style.fontSize,
+            stepSize = 0.25.sp,
+        )
+    }
     BoxWithConstraints(
         modifier = modifier
             .then(if (width != null) Modifier.width(width) else Modifier.fillMaxWidth())
@@ -85,7 +101,8 @@ fun <T> NtSegmented(
                             indication = null,
                             role = Role.Tab,
                             onClick = { onSelect(option) },
-                        ),
+                        )
+                        .semantics { this.selected = isSelected },
                     contentAlignment = Alignment.Center,
                 ) {
                     NtText(
@@ -96,6 +113,7 @@ fun <T> NtSegmented(
                         color = if (isSelected) NT.Colors.ink else NT.Colors.ink2,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
+                        autoSize = labelAutoSize,
                     )
                 }
             }

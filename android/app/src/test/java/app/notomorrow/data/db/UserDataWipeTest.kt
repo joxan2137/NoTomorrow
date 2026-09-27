@@ -1,8 +1,10 @@
 package app.notomorrow.data.db
 
+import app.notomorrow.data.dao.BodyMeasurementDao
 import app.notomorrow.data.dao.BodyWeightDao
 import app.notomorrow.data.dao.BroPairingDao
 import app.notomorrow.data.dao.HeadsUpDao
+import app.notomorrow.data.dao.ProgressPhotoDao
 import app.notomorrow.data.entity.AttendanceRecordEntity
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.FoodItemEntity
@@ -11,6 +13,7 @@ import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.data.entity.RoutineEntity
 import app.notomorrow.data.entity.RoutineItemEntity
 import app.notomorrow.data.entity.UserProfileEntity
+import app.notomorrow.data.files.ProgressPhotoFiles
 import app.notomorrow.feature.fuelhome.FakeFoodDao
 import app.notomorrow.feature.fuelhome.FakeMealDao
 import app.notomorrow.model.FoodSource
@@ -125,6 +128,8 @@ class UserDataWipeTest {
         val headsUps = mockk<HeadsUpDao>(relaxed = true)
         val pairing = mockk<BroPairingDao>(relaxed = true)
         val bodyWeight = mockk<BodyWeightDao>(relaxed = true)
+        val measurements = mockk<BodyMeasurementDao>(relaxed = true)
+        val photos = mockk<ProgressPhotoDao>(relaxed = true)
 
         val db = mockk<NoTomorrowDatabase> {
             every { workoutDao() } returns workouts
@@ -138,6 +143,8 @@ class UserDataWipeTest {
             every { headsUpDao() } returns headsUps
             every { broPairingDao() } returns pairing
             every { bodyWeightDao() } returns bodyWeight
+            every { bodyMeasurementDao() } returns measurements
+            every { progressPhotoDao() } returns photos
         }
 
         for (step in UserDataWipe.steps) step.run(db)
@@ -158,5 +165,28 @@ class UserDataWipeTest {
         coVerify(exactly = 1) { headsUps.deleteAll() }
         coVerify(exactly = 1) { pairing.deleteAll() }
         coVerify(exactly = 1) { bodyWeight.deleteAll() }
+        coVerify(exactly = 1) { measurements.deleteAll() }
+        coVerify(exactly = 1) { photos.deleteAll() }
+    }
+
+    @Test
+    fun `the progress photo files go with their rows, and nothing else in filesDir`() {
+        val filesDir = kotlin.io.path.createTempDirectory("wipe").toFile()
+        try {
+            val store = ProgressPhotoFiles.inFilesDir(filesDir)
+            store.write(byteArrayOf(1, 2, 3), "a.jpg")
+            store.write(byteArrayOf(4, 5, 6), "b.jpg")
+            val other = File(filesDir, "keep.txt").apply { writeText("not a photo") }
+            assertEquals(listOf("a.jpg", "b.jpg"), store.fileNames())
+
+            UserDataWipe.deleteFiles(filesDir)
+
+            assertEquals(emptyList(), store.fileNames())
+            assertTrue(!store.directory.exists(), "the photos folder is gone")
+            assertTrue(other.exists(), "only the photos folder is removed")
+            UserDataWipe.deleteFiles(filesDir) // nothing left: a second run is a no-op
+        } finally {
+            filesDir.deleteRecursively()
+        }
     }
 }

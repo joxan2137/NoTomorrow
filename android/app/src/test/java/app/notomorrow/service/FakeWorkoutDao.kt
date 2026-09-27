@@ -5,6 +5,7 @@ import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.ExerciseNoteRow
 import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.data.relation.WorkoutWithExercises
 import kotlinx.coroutines.flow.Flow
@@ -147,6 +148,25 @@ class FakeWorkoutDao : WorkoutDao {
 
     override fun observeCompletedSetsForExercise(exerciseId: String): Flow<List<CompletedSetRow>> =
         tables.map { completedRows().filter { it.exerciseId == exerciseId } }
+
+    override suspend fun exerciseNotes(exerciseId: String): List<ExerciseNoteRow> =
+        exercises.value.filter { it.exerciseId == exerciseId && it.notes.isNotEmpty() }.mapNotNull { we ->
+            val w = workouts.value.firstOrNull { it.id == we.workoutId } ?: return@mapNotNull null
+            ExerciseNoteRow(we.notes, w.id, w.startedAt, w.endedAt, we.id)
+        }
+
+    override fun observeUsedExerciseIds(): Flow<List<String>> =
+        exercises.map { rows -> rows.mapNotNull { it.exerciseId }.distinct() }
+
+    override suspend fun usageCount(exerciseId: String): Int = exercises.value.count { it.exerciseId == exerciseId }
+
+    override suspend fun updateWorkoutExerciseNotes(id: Long, notes: String) {
+        exercises.value = exercises.value.map { if (it.id == id) it.copy(notes = notes) else it }
+    }
+
+    override suspend fun updateWorkoutExerciseRest(id: Long, seconds: Int) {
+        exercises.value = exercises.value.map { if (it.id == id) it.copy(restSeconds = seconds) else it }
+    }
 
     // MARK: - Writes
 

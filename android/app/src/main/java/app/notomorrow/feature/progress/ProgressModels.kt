@@ -10,6 +10,7 @@ import app.notomorrow.designsystem.WeekVolumeBar
 import app.notomorrow.model.BodyWeightSource
 import app.notomorrow.model.WeightUnit
 import app.notomorrow.util.Fmt
+import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import java.time.Instant
 import java.time.LocalDate
@@ -110,7 +111,7 @@ data class LiftSummary(
         .sumOf { it.weightKg * it.reps }
 
     val heaviest: CompletedSetRow?
-        get() = sets.maxWithOrNull(compareBy({ it.weightKg }, { it.reps }))
+        get() = LiftRecords.heaviest(sets)
 
     val mostReps: CompletedSetRow?
         get() = sets.maxWithOrNull(compareBy({ it.reps }, { it.weightKg }))
@@ -242,6 +243,14 @@ data class ProgressHomeUiState(
     val range: ProgressRange = ProgressRange.M3,
     val muscles: MuscleWeek = MuscleWeek(),
     val body: BodyStats = BodyStats(),
+    /** The training calendar's days: finished workouts with a completed set, by start day. */
+    val calendarDays: Map<LocalDate, TrainingCalendar.Day> = emptyMap(),
+    /** The weekly stats card's last eight weeks, oldest first ([WeeklyStats.weeks]). */
+    val weeklyStats: List<WeeklyStats.Week> = emptyList(),
+    /** Every lifetime milestone ([Milestones.evaluate]), for the milestones card. */
+    val milestones: List<Milestones.Milestone> = emptyList(),
+    /** The day the calendar (and every relative phrase) is measured against; `null` before the first load. */
+    val today: LocalDate? = null,
     val tab: ProgressTab = ProgressTab.Lifts,
     val showsLogWeight: Boolean = false,
     /**
@@ -259,6 +268,14 @@ data class RecordSet(
     val weightKg: Double,
     val reps: Int,
     val day: LocalDate,
+)
+
+/** One row of the rep-max table: the best set lifted for at least [reps] reps and the e1RM's estimate. */
+@Immutable
+data class RepMaxRow(
+    val reps: Int,
+    val best: RecordSet?,
+    val estimatedKg: Double,
 )
 
 /** Everything `ExerciseProgressScreen` renders, for the selected range. */
@@ -281,6 +298,31 @@ data class ExerciseProgressUiState(
     val weekOverWeek: Double? = null,
     val heaviest: RecordSet? = null,
     val mostReps: RecordSet? = null,
+    /** The rep-max table ([RepMax.rows]), one row per rep count. */
+    val repMaxes: List<RepMaxRow> = emptyList(),
+    /** `false` until the first store emission — see [ProgressHomeUiState.loaded]. */
+    val loaded: Boolean = false,
+)
+
+/** One lift on the Records screen ([LiftRecords]), already derived. */
+@Immutable
+data class RecordsRowState(
+    val exerciseId: String,
+    val name: String,
+    val lastPR: ProgressPhraseRef,
+    /** `prInLast30Days` — the last-PR phrase turns ember. */
+    val isHot: Boolean,
+    val bestE1RMKg: Double,
+    val bestE1RMDay: LocalDate,
+    val heaviest: RecordSet,
+    val bestVolume: RecordSet,
+)
+
+/** Everything `RecordsScreen` renders. */
+@Immutable
+data class RecordsUiState(
+    val unit: WeightUnit = WeightUnit.Kg,
+    val rows: List<RecordsRowState> = emptyList(),
     /** `false` until the first store emission — see [ProgressHomeUiState.loaded]. */
     val loaded: Boolean = false,
 )
@@ -320,7 +362,7 @@ object ProgressPhrase {
             days == 0 -> ProgressPhraseRef.Res(S.progress_prToday)
             days == 1 -> ProgressPhraseRef.Res(S.progress_prYesterday)
             days in 2..6 -> ProgressPhraseRef.Res(S.progress_prOn_s, weekday(date, zone, locale))
-            days in 7..29 -> ProgressPhraseRef.Res(S.progress_weeksSincePR_n, days / 7)
+            days in 7..29 -> ProgressPhraseRef.Res(NtKeys.weeksSincePR(days / 7), days / 7)
             else -> ProgressPhraseRef.Res(S.progress_stalledWeeks_n, days / 7)
         }
     }

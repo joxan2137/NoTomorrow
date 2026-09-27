@@ -57,6 +57,7 @@ class AccountDataResetTest {
 
         var restStopped = false
         var sessionLetGoFirst = false
+        var seededCleared = false
         val wiped = AccountDataReset.run(
             stopRestTimer = { restStopped = true },
             session = session,
@@ -64,9 +65,11 @@ class AccountDataResetTest {
                 sessionLetGoFirst = session.activeWorkoutId.value == null
                 for (step in UserDataWipe.steps) step.run(db)
             },
+            afterWipe = { seededCleared = true },
         )
 
         assertTrue(wiped)
+        assertTrue(seededCleared, "nt.routines.seeded is cleared, so the next setup seeds again")
         assertTrue(restStopped, "the rest alarm and notification are cancelled")
         assertTrue(sessionLetGoFirst, "the session lets go before the rows go, as on iOS")
         assertNull(session.activeWorkoutId.value)
@@ -93,13 +96,16 @@ class AccountDataResetTest {
         session.collapse()
 
         var restStopped = false
+        var seededCleared = false
         val wiped = AccountDataReset.run(
             stopRestTimer = { restStopped = true },
             session = session,
             wipe = { throw IllegalStateException("FOREIGN KEY constraint failed") },
+            afterWipe = { seededCleared = true },
         )
 
         assertFalse(wiped)
+        assertFalse(seededCleared, "the routines are still there, so they stay seeded")
         assertTrue(restStopped)
         assertNull(session.activeWorkoutId.value)
     }

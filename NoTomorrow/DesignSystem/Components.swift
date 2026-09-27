@@ -189,6 +189,7 @@ struct Chip: View {
             .overlay(Capsule().strokeBorder(tint?.opacity(0.4) ?? .clear, lineWidth: 1))
         }
         .buttonStyle(PressScale())
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

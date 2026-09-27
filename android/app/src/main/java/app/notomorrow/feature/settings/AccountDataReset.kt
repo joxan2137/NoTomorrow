@@ -12,6 +12,9 @@ import kotlinx.coroutines.CancellationException
  * Without the first two, a collapsed workout outlived its rows: the session kept its id (and
  * `nt.activeWorkoutId`), so the next account got the old workout's mini bar and a "Resume" that
  * led nowhere, and a running rest kept its alarm and notification.
+ *
+ * [afterWipe] runs only once the rows are gone — iOS's `LocalDataWipe` clears
+ * `nt.routines.seeded` there, so the next setup seeds the starter routines again.
  */
 internal object AccountDataReset {
 
@@ -20,10 +23,11 @@ internal object AccountDataReset {
         stopRestTimer: () -> Unit,
         session: WorkoutSessionController,
         wipe: suspend () -> Unit,
+        afterWipe: suspend () -> Unit = {},
     ): Boolean {
         stopRestTimer()
         session.end()
-        return try {
+        val wiped = try {
             wipe()
             true
         } catch (e: CancellationException) {
@@ -31,5 +35,7 @@ internal object AccountDataReset {
         } catch (e: Exception) {
             false
         }
+        if (wiped) afterWipe()
+        return wiped
     }
 }

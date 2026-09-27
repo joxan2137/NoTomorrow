@@ -31,6 +31,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.data.entity.SetEntryEntity
@@ -38,6 +40,7 @@ import app.notomorrow.data.relation.WorkoutExerciseWithSets
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.designsystem.Badge
 import app.notomorrow.designsystem.Eyebrow
+import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.Hairline
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtActionSheet
@@ -88,6 +91,7 @@ fun WorkoutDetailPresenter(
     WorkoutDetailSheet(
         workout = workout,
         unit = unit,
+        host = host,
         edit = edit?.takeIf { it.workoutId == workout.workout.id },
         model = model,
         onDismiss = {
@@ -113,17 +117,22 @@ fun WorkoutDetailPresenter(
  * `.presentationBackground(NT.Colors.ground)` + `.presentationDragIndicator(.visible)`. While the
  * draft has unsaved changes a swipe, a scrim tap or back does not close it: it asks
  * "Discard changes?", as Cancel does.
+ *
+ * A workout with completed sets offers "Save as routine" under its exercises: the routine editor
+ * opens over this sheet, prefilled from the workout ([RoutineEditRequest.FromWorkout]).
  */
 @Composable
 private fun WorkoutDetailSheet(
     workout: WorkoutWithExercises,
     unit: WeightUnit,
+    host: String,
     edit: WorkoutEditState?,
     model: WorkoutEditViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var showsDiscard by remember { mutableStateOf(false) }
+    var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
     val focus = remember { SetFieldFocus() }
     // The sheet is its own window with its own focus owner: the manager read out here (the
     // activity's) cannot clear a field focused inside it, so the one the content reads is kept.
@@ -186,10 +195,22 @@ private fun WorkoutDetailSheet(
                         onEdit = model::beginEditing,
                         onDone = onDismiss,
                     )
-                    WorkoutDetailBody(workout = workout, unit = unit, modifier = Modifier.fillMaxWidth().weight(1f))
+                    WorkoutDetailBody(
+                        workout = workout,
+                        unit = unit,
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        onSaveAsRoutine = { routineEdit = RoutineEditRequest.FromWorkout(workout.workout.id) },
+                    )
                 }
             }
         }
+
+        // Composed inside this sheet, so the editor stacks above it (see the prompt below).
+        RoutineEditorPresenter(
+            request = routineEdit,
+            host = "workoutDetail/$host",
+            onDismiss = { routineEdit = null },
+        )
 
         if (showsDiscard) {
             // `.confirmationDialog("workout.edit.discardConfirm")`: Discard (destructive), Keep
@@ -261,9 +282,14 @@ private fun HeaderButton(text: String, modifier: Modifier, onClick: () -> Unit) 
     }
 }
 
-/** Tiles, the PR line, the notes, then every exercise. */
+/** Tiles, the PR line, the notes, then every exercise, and "Save as routine" once a set is done. */
 @Composable
-private fun WorkoutDetailBody(workout: WorkoutWithExercises, unit: WeightUnit, modifier: Modifier) {
+private fun WorkoutDetailBody(
+    workout: WorkoutWithExercises,
+    unit: WeightUnit,
+    modifier: Modifier,
+    onSaveAsRoutine: () -> Unit,
+) {
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -318,6 +344,14 @@ private fun WorkoutDetailBody(workout: WorkoutWithExercises, unit: WeightUnit, m
                 WorkoutDetailExercise(item = item, unit = unit)
                 Hairline()
             }
+            if (workout.completedSetCount > 0) {
+                GhostButton(
+                    title = stringResource(S.routine_saveFromWorkout),
+                    modifier = Modifier.padding(top = 18.dp),
+                    icon = NtIcons.SquareAndArrowDown,
+                    onClick = onSaveAsRoutine,
+                )
+            }
         }
     }
 }
@@ -351,7 +385,7 @@ private fun WorkoutDetailTiles(workout: WorkoutWithExercises, unit: WeightUnit) 
     }
 }
 
-/** Exercise name + one line per completed set with PR / set-record badges. */
+/** Exercise name, its note, then one line per completed set with its RPE and PR / set-record badges. */
 @Composable
 private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUnit) {
     val ordered = item.sortedSets
@@ -367,6 +401,9 @@ private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUni
             color = NT.Colors.ink,
             maxLines = 1,
         )
+        if (item.workoutExercise.notes.isNotEmpty()) {
+            NtText(text = item.workoutExercise.notes, style = NT.Fonts.footnote, color = NT.Colors.ink2)
+        }
         if (completed.isEmpty()) {
             NtText(
                 text = stringResource(S.workout_noSetsLogged),
@@ -379,7 +416,7 @@ private fun WorkoutDetailExercise(item: WorkoutExerciseWithSets, unit: WeightUni
     }
 }
 
-/** 32 pt line: the numbered chip, "85 × 7", and the record badge. */
+/** 32 pt line: the numbered chip, "85 × 7", "@8" when rated, and the record badge. */
 @Composable
 private fun WorkoutDetailSetLine(set: SetEntryEntity, label: String, unit: WeightUnit) {
     Row(
@@ -402,6 +439,15 @@ private fun WorkoutDetailSetLine(set: SetEntryEntity, label: String, unit: Weigh
             style = NT.Fonts.subheadline,
             color = NT.Colors.ink,
         )
+        set.rpe?.let { rpe ->
+            val spoken = Rpe.spoken(rpe)
+            TabularText(
+                text = "@" + Rpe.label(rpe),
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+                style = NT.Fonts.caption,
+                color = NT.Colors.ember,
+            )
+        }
         Spacer(Modifier.weight(1f))
         when {
             set.isPR -> Badge(text = stringResource(S.workout_pr))
