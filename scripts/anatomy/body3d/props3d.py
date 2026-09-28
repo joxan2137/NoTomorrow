@@ -93,7 +93,7 @@ def build(pattern, rig, view, j2d):
                 cylinder(bar + Vector((0, -0.32, 0)), bar + Vector((0, 0.32, 0)), 0.02, frame)
                 for dy in (-0.26, 0.26):
                     cylinder(bar + Vector((0, dy, 0)), Vector((x, h.y + dy, 0.0)), 0.025, frame)
-                scene3d.reach(rig, S, bar + Vector((0, 0, 0.03)), Vector((0, 1, -0.2)))
+                scene3d.reach(rig, S, bar + Vector((0, 0, 0.03)), Vector((0, 1, -0.2))); look.hold(rig, S)
         elif t == 'post':
             a, b = world(pr['from']), world(pr['to'])
             cylinder(a, b, 0.028, frame)
@@ -107,6 +107,10 @@ def build(pattern, rig, view, j2d):
                 p = p + Vector((0, 0.07, -0.02))   # racked on the upper back, behind the neck
                 for S, x in (('L', -0.3), ('R', 0.3)):
                     scene3d.reach(rig, S, Vector((x, p.y, p.z)), Vector((0, 0.6, -1)))
+            if pr.get('hold') and not front:
+                for S, x in (('L', -0.3), ('R', 0.3)):
+                    scene3d.reach(rig, S, Vector((x, p.y, p.z + 0.03)), Vector((0, 0.3, 1)))
+                overhand()
             if isinstance(pr['at'], str) and (pr['at'].startswith('wrist') or pr['at'] == 'spine') and not front:
                 c = overhand()
                 if pr['at'] != 'spine': p = c
@@ -127,8 +131,22 @@ def build(pattern, rig, view, j2d):
                 for q, sgn in ((a, -1), (b, 1)):
                     cylinder(q, q + axis * sgn * 0.045, 0.05, black, 32)
         elif t == 'bar':
-            c = overhand()
-            a, b = lateral(c, 0.34); cylinder(a, b, 0.016, steel)
+            c = overhand(); half = pr.get('half', 0.34)
+            a, b = lateral(c, half); cylinder(a, b, 0.016, steel)
+            if pr.get('uprights'):
+                for q in (a, b):
+                    cylinder(q, Vector((q.x, q.y, 0.0)), 0.025, frame)
+                    box(Vector((q.x, q.y, 0.012)), (0.08, 0.36, 0.024) if not front else (0.36, 0.08, 0.024), frame, bevel=0.005)
+        elif t == 'handles':
+            # machine handles: a grip in each fist on a lever that swings about a pivot beside the seat
+            piv = scene3d.to3(pr['pivot'], view)
+            for S in 'LR':
+                look.hold(rig, S)
+                g, axis, _ = look.grip(rig, S)
+                cylinder(g - axis * 0.06, g + axis * 0.06, 0.017, black, 24)
+                end = g - axis * 0.06 if (g - axis * 0.06).z < (g + axis * 0.06).z else g + axis * 0.06
+                q = Vector((g.x, piv.y, piv.z)) if not front else Vector((piv.x, g.y, piv.z))
+                cylinder(end, q, 0.02, frame); cylinder(q + Vector((0, 0, -0.03)), q + Vector((0, 0, 0.03)), 0.035, frame)
         elif t == 'cable':
             a = world(pr['from']); b = scene3d.to3(pr['to'], view)
             if isinstance(pr['from'], str) and pr['from'].startswith('wrist') and front:

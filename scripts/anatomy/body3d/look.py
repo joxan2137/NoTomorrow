@@ -116,7 +116,7 @@ def twist(rig, bone, want, rest_front):
 
 def fix_arms(rig, supinate=False):
     """Rolls each bent arm so the biceps faces the forearm; with `supinate`, also turns the palm toward the
-    shoulder (curls). Then closes the hands."""
+    shoulder (curls). Then relaxes the hands."""
     pb = rig.pose.bones
     for S in 'LR':
         up = pb[f'upper.{S}']; fo = pb[f'fore.{S}']; hd = pb[f'hand.{S}']
@@ -131,7 +131,7 @@ def fix_arms(rig, supinate=False):
             if supinate: twist(rig, f'fore.{S}', -up_dir, (0, -1, 0))
             hd.matrix = Matrix.Translation(fo.matrix @ Vector((0, fo.bone.length, 0)) - fo.matrix.translation) @ fo.matrix
             bpy.context.view_layer.update()
-        scene3d.curl(rig, S, 100)
+        scene3d.curl(rig, S, 35, 20)   # relaxed; look.hold closes a hand on a handle
 
 
 # How far the handle's centre sits from the hand bone: into the palm, and back from the knuckles toward the wrist.

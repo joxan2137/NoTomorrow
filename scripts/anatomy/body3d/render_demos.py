@@ -30,7 +30,7 @@ CAM = {'bench_press': (44, 22), 'incline_press': (46, 18), 'hip_thrust': (44, 16
        'reverse_nordic': (44, 10),
        # back-of-body work, seen from behind at 3/4
        'nordic': (318, 10), 'pull_up': (310, 4), 'pulldown': (310, 6), 'shrug': (300, 8), 'deadlift': (320, 9),
-       'rdl': (320, 9), 'glute_kickback': (320, 8), 'supported_row': (310, 12), 'bent_row': (320, 9),
+       'rdl': (320, 9), 'glute_kickback': (320, 8), 'supported_row': (310, 12), 'bent_row': (345, 8),
        'seated_row': (320, 10), 'back_extension': (320, 14)}
 
 
