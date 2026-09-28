@@ -174,6 +174,13 @@ struct FoodSearchView: View {
 
     @ViewBuilder
     private var content: some View {
+        // Quick add stays reachable once there are saved foods: the hint, not-found and error rows carry their own
+        // button, everywhere else it leads the list.
+        if let quickAddAction, !stateRowOffersQuickAdd {
+            GhostButton(title: "fuel.quickAdd", systemImage: "plus", action: quickAddAction)
+                .padding(.bottom, 16)
+        }
+
         if !recent.isEmpty {
             FoodSectionLabel(text: String(localized: model.trimmedQuery.isEmpty ? "fuel.recent" : "fuel.yourFoods"))
             ForEach(recent, id: \.id) { item in
@@ -217,6 +224,15 @@ struct FoodSearchView: View {
             dismiss()
         } else {
             portionFood = food
+        }
+    }
+
+    /// The empty-search hint, not-found and error rows show their own Quick add.
+    private var stateRowOffersQuickAdd: Bool {
+        guard model.canSearch else { return recent.isEmpty }
+        switch model.phase {
+        case .empty, .error: return true
+        case .idle, .loading, .results: return false
         }
     }
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.notomorrow.data.entity.FoodItemEntity
+import app.notomorrow.designsystem.GhostButton
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
@@ -349,6 +350,22 @@ private fun FoodSearchContent(
 ) {
     val hasRecent = state.recent.isNotEmpty()
     val sectionTop = if (hasRecent) 16.dp else 0.dp
+
+    // Quick add stays reachable once there are saved foods: the hint, not-found and error rows
+    // carry their own button, everywhere else it leads the list.
+    val stateRowOffersQuickAdd = if (state.canSearch) {
+        state.phase == FoodSearchPhase.Empty || state.phase is FoodSearchPhase.Error
+    } else {
+        !hasRecent
+    }
+    if (onQuickAdd != null && !stateRowOffersQuickAdd) {
+        GhostButton(
+            title = stringResource(S.fuel_quickAdd),
+            modifier = Modifier.padding(bottom = 16.dp),
+            icon = NtIcons.Plus,
+            onClick = onQuickAdd,
+        )
+    }
 
     if (hasRecent) {
         FoodSectionLabel(stringResource(if (state.hasQuery) S.fuel_yourFoods else S.fuel_recent))
