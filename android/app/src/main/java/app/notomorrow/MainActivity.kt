@@ -17,6 +17,7 @@ import app.notomorrow.designsystem.GlassDebug
 import app.notomorrow.designsystem.GlassTier
 import app.notomorrow.di.LocalAppContainer
 import app.notomorrow.push.NtPushIntents
+import app.notomorrow.service.UpdateChecker
 
 /**
  * The single Activity. `AppCompatActivity` is mandatory, not decorative:
@@ -121,11 +122,14 @@ class MainActivity : AppCompatActivity() {
             GlassDebug.noAggregate = "noagg" in set
             GlassDebug.noBlur = "noblur" in set
         }
+        // `--es app.notomorrow.debug.simulatedAppVersion 0.1.0`: the update banner, without an old build.
+        intent.getStringExtra(EXTRA_DEBUG_APP_VERSION)?.let { UpdateChecker.simulatedAppVersion = it }
     }
 
     private companion object {
         const val EXTRA_DEBUG_GLASS_TIER = "app.notomorrow.debug.glassTier"
         const val EXTRA_DEBUG_PILL_LENS = "app.notomorrow.debug.pillLens"
         const val EXTRA_DEBUG_SHADER = "app.notomorrow.debug.shader"
+        const val EXTRA_DEBUG_APP_VERSION = "app.notomorrow.debug.simulatedAppVersion"
     }
 }

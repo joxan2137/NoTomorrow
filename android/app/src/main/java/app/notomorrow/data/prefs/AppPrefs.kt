@@ -246,6 +246,13 @@ class AppPrefs(context: Context) {
         store.edit { it[Keys.exerciseLibraryVersion] = version }
     }
 
+    // MARK: - Update banner
+
+    /** `update.dismissedTag` — the release whose banner was closed (`UpdateChecker`); same key as iOS. */
+    suspend fun updateDismissedTagOnce(): String? = data.first()[Keys.updateDismissedTag]
+
+    suspend fun setUpdateDismissedTag(tag: String) = put(Keys.updateDismissedTag, tag)
+
     // MARK: - Internals
 
     private suspend fun put(key: Preferences.Key<Boolean>, value: Boolean) {
@@ -275,6 +282,7 @@ class AppPrefs(context: Context) {
         val plateBarKg = doublePreferencesKey("nt.plates.barKg")
         val plateBarLb = doublePreferencesKey("nt.plates.barLb")
         val favoriteExercises = stringSetPreferencesKey("nt.favoriteExercises")
+        val updateDismissedTag = stringPreferencesKey("update.dismissedTag")
     }
 
     companion object {

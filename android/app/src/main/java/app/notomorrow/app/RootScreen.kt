@@ -95,7 +95,9 @@ fun RootScreen() {
                         modifier = Modifier.fillMaxSize(),
                     )
                     // Never the tabs or onboarding over a store that did not open (`RootView`).
-                    is StoreLoader.State.Failed -> StoreErrorScreen(store.message, Modifier.fillMaxSize())
+                    is StoreLoader.State.Failed -> UpdateBannerInset {
+                        StoreErrorScreen(store.message, Modifier.fillMaxSize())
+                    }
                     StoreLoader.State.Loading -> Unit
                 }
             }
@@ -123,6 +125,9 @@ fun RootScreen() {
             }
         }
     }
+
+    // Once per launch; silent when offline or rate-limited (`UpdateChecker`).
+    LaunchedEffect(Unit) { container.updateChecker.checkOnce() }
 
     // A tap that arrives while the store error screen is up waits for the store to open.
     if (isLoaded && storeOpen) PendingRouteConsumer(pendingRoute)
