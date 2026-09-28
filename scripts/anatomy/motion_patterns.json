@@ -783,8 +783,8 @@
     "torso": 70,
     "thigh": 28,
     "shin": -12,
-    "upper": -112,
-    "fore": -8
+    "upper": -80,
+    "fore": 0
    }
   ]
  },
@@ -856,8 +856,8 @@
      4,
      6
     ],
-    "upper": -100,
-    "fore": -10
+    "upper": -72,
+    "fore": 0
    }
   ]
  },
@@ -973,7 +973,8 @@
     "to": [
      90,
      4
-    ]
+    ],
+    "grip": "overhand"
    }
   ],
   "frames": [
@@ -1119,7 +1120,8 @@
     "to": [
      125,
      4
-    ]
+    ],
+    "grip": "overhand"
    }
   ],
   "frames": [

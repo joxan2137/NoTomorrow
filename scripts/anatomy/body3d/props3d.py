@@ -1,7 +1,7 @@
 """3D equipment for the motion patterns' 2D props, rebuilt each frame around the posed body."""
 import bpy, bmesh, math
 from mathutils import Vector, Matrix
-import scene3d
+import scene3d, look
 
 MATS = {}
 def mat(name, color, rough=0.5, metal=0.0):
@@ -66,6 +66,11 @@ def build(pattern, rig, view, j2d):
     frame = mat('frame', (0.16, 0.16, 0.18), 0.35, 0.6)
     def world(v):
         return joint(rig, v, sides) if isinstance(v, str) else scene3d.to3(v, view)
+    def overhand():
+        """Both hands close on a bar with the index fingers toward each other; returns the point between the fists."""
+        wl, wr = (rig.matrix_world @ rig.pose.bones[f'hand.{S}'].head for S in 'LR')
+        look.hold(rig, 'L', wr - wl); look.hold(rig, 'R', wl - wr)
+        return (look.grip(rig, 'L')[0] + look.grip(rig, 'R')[0]) / 2
     def lateral(p, half):
         return (Vector((p.x - half, p.y, p.z)), Vector((p.x + half, p.y, p.z))) if not front else (Vector((p.x, p.y - half, p.z)), Vector((p.x, p.y + half, p.z)))
     for pr in pattern.get('props', []):
@@ -102,6 +107,9 @@ def build(pattern, rig, view, j2d):
                 p = p + Vector((0, 0.07, -0.02))   # racked on the upper back, behind the neck
                 for S, x in (('L', -0.3), ('R', 0.3)):
                     scene3d.reach(rig, S, Vector((x, p.y, p.z)), Vector((0, 0.6, -1)))
+            if isinstance(pr['at'], str) and (pr['at'].startswith('wrist') or pr['at'] == 'spine') and not front:
+                c = overhand()
+                if pr['at'] != 'spine': p = c
             r = pr.get('r', 16) * scene3d.K * 1.25
             a, b = lateral(p, 0.9)
             cylinder(a, b, 0.014, steel)
@@ -110,24 +118,30 @@ def build(pattern, rig, view, j2d):
                     c = lateral(p, e)[0 if sgn < 0 else 1]; c2 = lateral(p, e + 0.035)[0 if sgn < 0 else 1]
                     cylinder(c, c2, r, black, 48)
         elif t == 'dumbbell':
-            for s in ('n', 'f'):
-                p = joint(rig, 'wrist' + s, sides)
-                hand_dir = (joint(rig, 'wrist' + s, sides) - joint(rig, 'elbow' + s, sides)).normalized()
-                c = p + hand_dir * 0.07
-                a, b = lateral(c, 0.1)
+            if pr is not next(q for q in pattern['props'] if q['type'] == 'dumbbell'): continue   # one per hand
+            for S in 'LR':
+                look.hold(rig, S)
+                c, axis, _ = look.grip(rig, S)
+                a, b = c - axis * 0.075, c + axis * 0.075
                 cylinder(a, b, 0.016, steel)
-                for q in (a, b):
-                    d = (q - c).normalized() * 0.045
-                    cylinder(q, q + d, 0.05, black, 32)
+                for q, sgn in ((a, -1), (b, 1)):
+                    cylinder(q, q + axis * sgn * 0.045, 0.05, black, 32)
         elif t == 'bar':
-            p = joint(rig, 'wristn', sides); pf = joint(rig, 'wristf', sides)
-            hand_dir = (p - joint(rig, 'elbown', sides)).normalized()
-            c = (p + pf) / 2 + hand_dir * 0.06
+            c = overhand()
             a, b = lateral(c, 0.34); cylinder(a, b, 0.016, steel)
         elif t == 'cable':
             a = world(pr['from']); b = scene3d.to3(pr['to'], view)
-            if isinstance(pr['from'], str) and pr['from'].startswith('wrist'):
-                a = a + (a - joint(rig, 'elbow' + pr['from'][-1], sides)).normalized() * 0.06
+            if isinstance(pr['from'], str) and pr['from'].startswith('wrist') and front:
+                S = sides[pr['from'][-1]]; look.hold(rig, S); a = look.grip(rig, S)[0]
+            elif isinstance(pr['from'], str) and pr['from'].startswith('wrist'):
+                # side view: both hands share one handle, a bar for an overhand grip or a short grip otherwise
+                if pr.get('grip') == 'overhand': a = overhand()
+                else:
+                    for S in 'LR': look.hold(rig, S)
+                    a = (look.grip(rig, 'L')[0] + look.grip(rig, 'R')[0]) / 2
+                gl, gr = look.grip(rig, 'L')[0], look.grip(rig, 'R')[0]
+                half = max(0.07, (gr - gl).length / 2 + 0.06)
+                h1, h2 = lateral(a, half); cylinder(h1, h2, 0.015, frame)
             cylinder(a, b, 0.005, steel, 12)
             cylinder(b + Vector((0, 0, -0.04)), b + Vector((0, 0, 0.04)), 0.05, frame, 32)
         elif t == 'footplate':

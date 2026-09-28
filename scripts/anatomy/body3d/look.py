@@ -132,3 +132,38 @@ def fix_arms(rig, supinate=False):
             hd.matrix = Matrix.Translation(fo.matrix @ Vector((0, fo.bone.length, 0)) - fo.matrix.translation) @ fo.matrix
             bpy.context.view_layer.update()
         scene3d.curl(rig, S, 100)
+
+
+# How far the handle's centre sits from the hand bone: into the palm, and back from the knuckles toward the wrist.
+GRIP_PALM, GRIP_BACK = 0.03, 0.015
+
+
+def _hand_rest(rig, S):
+    """The hand's rest-pose knuckles, pointing direction, palm normal and index-side direction (armature space)."""
+    b = rig.pose.bones[f'hand.{S}'].bone
+    out = -1 if S == 'L' else 1
+    d = (b.tail_local - b.head_local).normalized()
+    palm = Vector((-out, -0.25, 0)); palm = (palm - d * palm.dot(d)).normalized()
+    index = d.cross(palm).normalized()
+    thumb = rig.pose.bones[f'thumb.{S}'].bone.head_local - b.head_local
+    if index.dot(thumb) < 0: index = -index
+    return b.tail_local, d, palm, index
+
+
+def grip(rig, S):
+    """Where a handle held in hand S sits (world), with the hand's index-side and palm directions."""
+    hb = rig.pose.bones[f'hand.{S}']; mw = rig.matrix_world
+    delta = hb.matrix @ hb.bone.matrix_local.inverted(); rot = (mw @ delta).to_3x3()
+    knuckle, d, palm, index = _hand_rest(rig, S)
+    centre = mw @ delta @ (knuckle + palm * GRIP_PALM - d * GRIP_BACK)
+    return centre, (rot @ index).normalized(), (rot @ palm).normalized()
+
+
+def hold(rig, S, index_want=None):
+    """Closes hand S round a handle. With `index_want`, first rolls the forearm and hand so the index-finger
+    side points that way (toward the other hand for an overhand bar grip)."""
+    if index_want is not None:
+        knuckle, d, palm, index = _hand_rest(rig, S)
+        twist(rig, f'fore.{S}', Vector(index_want), index)
+        twist(rig, f'hand.{S}', Vector(index_want), index)
+    scene3d.curl(rig, S, 105, 60)
