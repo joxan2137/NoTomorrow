@@ -1,14 +1,16 @@
 import Foundation
 import SwiftData
 
-/// Builds `Workout` graphs (exercises + set rows) from a routine or from nothing, and hands them to the session.
-/// The one start path for Train and Today, so both build the same workout.
+/// Builds `Workout` graphs (exercises + set rows) from a routine, from a finished workout ("Copy workout") or from
+/// nothing, and hands them to the session. The one start path for Train and Today, so both build the same workout.
 @MainActor
 enum WorkoutStarter {
 
     /// What a Start tap asks for.
     enum Request {
         case routine(Routine)
+        /// "Copy workout": the exercises and sets of a finished workout, to do again.
+        case copy(Workout)
         case empty
     }
 
@@ -68,6 +70,7 @@ enum WorkoutStarter {
     static func start(_ request: Request, in context: ModelContext, session: WorkoutSessionController) -> Workout {
         switch request {
         case .routine(let routine): start(routine: routine, in: context, session: session)
+        case .copy(let workout): start(copyOf: workout, in: context, session: session)
         case .empty: startEmpty(in: context, session: session)
         }
     }
@@ -117,6 +120,50 @@ enum WorkoutStarter {
         try? context.save()
         session.begin(workout)
         return workout
+    }
+
+    /// "Copy workout": a new workout with the name, exercises, order, rest, supersets and exercise notes of a finished
+    /// one, and a row for every set it logged (same kind, weight and reps or time), none of them done yet. An exercise
+    /// with nothing logged keeps the rows it had; one whose exercise was deleted from the library is left out.
+    @discardableResult
+    static func start(copyOf source: Workout, in context: ModelContext, session: WorkoutSessionController) -> Workout {
+        let workout = Workout(name: source.name)
+        context.insert(workout)
+        var order = 0
+        for item in source.sortedExercises {
+            guard let exercise = item.exercise else { continue }
+            let entry = WorkoutExercise(order: order, exercise: exercise, restSeconds: item.restSeconds)
+            entry.notes = item.notes
+            entry.supersetGroup = item.supersetGroup
+            context.insert(entry)
+            entry.workout = workout
+            for (index, row) in copiedSets(of: item).enumerated() {
+                let set = SetEntry(order: index, kind: row.kind, weightKg: row.weightKg, reps: row.reps, seconds: row.seconds)
+                context.insert(set)
+                set.workoutExercise = entry
+            }
+            exercise.lastUsedAt = .now
+            order += 1
+        }
+        let started = workout.sortedExercises
+        for (entry, group) in zip(started, Superset.normalized(started.map(\.supersetGroup))) { entry.supersetGroup = group }
+        try? context.save()
+        session.begin(workout)
+        return workout
+    }
+
+    /// The rows "Copy workout" makes for one exercise: its completed sets, or every row when none was completed, or one
+    /// empty row when it had none at all.
+    static func copiedSets(of item: WorkoutExercise) -> [(kind: SetKind, weightKg: Double, reps: Int, seconds: Int)] {
+        let completed = item.sortedSets.filter(\.isCompleted)
+        let rows = completed.isEmpty ? item.sortedSets : completed
+        guard !rows.isEmpty else { return [(.normal, 0, 0, 0)] }
+        return rows.map { ($0.kind, $0.weightKg, $0.reps, $0.seconds) }
+    }
+
+    /// Whether "Copy workout" has anything to copy: an exercise still in the library.
+    static func canCopy(_ workout: Workout) -> Bool {
+        workout.exercises.contains { $0.exercise != nil }
     }
 
     /// Starts an empty workout named "Workout".

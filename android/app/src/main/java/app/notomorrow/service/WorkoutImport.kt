@@ -295,6 +295,21 @@ object WorkoutImport {
         return keys.filter { it.isNotEmpty() }
     }
 
+    /**
+     * Keys a library exercise is found by: [matchKeys], except that a machine brand in brackets
+     * ("Leg Press (Hammer Strength Iso-Lateral)") is never dropped, so a plain "Leg Press" from
+     * another app does not land on the machine. The brand-first form ("Hammer Strength Iso-Lateral
+     * Leg Press", the name before library version 3) still finds it.
+     */
+    fun libraryKeys(name: String): List<String> {
+        val keys = matchKeys(name)
+        if (keys.size != 3 || BRAND_PREFIXES.none { keys[1].startsWith(it) }) return keys
+        return keys.take(2)
+    }
+
+    /** Machine brands the library names in brackets after the movement, as [clean] writes them. */
+    val BRAND_PREFIXES = listOf("hammer strength ")
+
     private fun clean(text: String): String =
         text.lowercase(Locale.ROOT)
             .map { if (it.isLetter() || it.isDigit()) it else ' ' }
@@ -477,7 +492,7 @@ class WorkoutImporter(
             val byKey = mutableMapOf<String, ExerciseEntity>()
             for (exercise in exerciseDao.allByName()) {
                 for (name in listOfNotNull(exercise.name, exercise.namePL)) {
-                    for (key in WorkoutImport.matchKeys(name)) byKey.putIfAbsent(key, exercise)
+                    for (key in WorkoutImport.libraryKeys(name)) byKey.putIfAbsent(key, exercise)
                 }
             }
             val existing = workoutDao.observeFinishedWorkouts().first()

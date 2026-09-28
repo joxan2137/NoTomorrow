@@ -375,7 +375,7 @@ object RoutineShare {
 
     // MARK: - Matching to the library
 
-    /** The user's exercises, looked up by id and by name (English and Polish, [WorkoutImport.matchKeys]). */
+    /** The user's exercises, looked up by id and by name (English and Polish, [WorkoutImport.libraryKeys]). */
     class Catalog {
         data class Entry(val id: String, val name: String, val primaryMuscle: String?)
 
@@ -385,7 +385,7 @@ object RoutineShare {
         /** [names] are what an exercise is matched on; [Entry.name] is what the preview shows. */
         fun add(entry: Entry, names: List<String>) {
             byId.putIfAbsent(entry.id, entry)
-            for (name in names) for (key in WorkoutImport.matchKeys(name)) byKey.putIfAbsent(key, entry)
+            for (name in names) for (key in WorkoutImport.libraryKeys(name)) byKey.putIfAbsent(key, entry)
         }
 
         fun byId(id: String): Entry? = byId[id]

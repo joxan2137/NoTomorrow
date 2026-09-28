@@ -7,6 +7,7 @@ import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.di.AppContainer
 import app.notomorrow.model.SetKind
 import app.notomorrow.service.RoutineSeeder
+import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.service.localizedName
 import app.notomorrow.util.LocaleProvider
 import java.time.LocalDate
@@ -40,11 +41,16 @@ class WorkoutEditViewModel(
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val locale: () -> Locale = { LocaleProvider.current() },
     private val clock: () -> Long = System::currentTimeMillis,
+    /** What [copyWorkout] starts with; without them (tests) it does nothing. */
+    private val starter: WorkoutStarter.Stores? = null,
+    private val session: WorkoutSessionController? = null,
 ) : ViewModel() {
 
     constructor(container: AppContainer) : this(
         stores = WorkoutEditor.Stores.of(container),
         profileDao = container.db.profileDao(),
+        starter = WorkoutStarter.Stores.of(container),
+        session = container.workoutSession,
     )
 
     private val workoutDao = stores.workoutDao
@@ -208,6 +214,26 @@ class WorkoutEditViewModel(
     fun delete(workoutId: String) {
         if (_edit.value?.workoutId == workoutId) _edit.value = null
         viewModelScope.launch { runCatching { WorkoutEditor.delete(workoutId, stores, zone, LocalDate.now(zone)) } }
+    }
+
+    /**
+     * Copy workout from a sheet whose host has no start guard of its own (Today, Progress), once
+     * the sheet has closed: the copy starts at once, or — while another workout is in progress —
+     * that one comes back full screen, as Today's Start does. Train asks instead
+     * ([TrainViewModel.copyWorkout]).
+     */
+    fun copyWorkout(workoutId: String) {
+        val starter = starter ?: return
+        val session = session ?: return
+        viewModelScope.launch {
+            runCatching {
+                if (session.activeWorkout() != null) {
+                    session.expand()
+                } else {
+                    WorkoutStarter.startCopy(starter, session, workoutId, clock())
+                }
+            }
+        }
     }
 }
 

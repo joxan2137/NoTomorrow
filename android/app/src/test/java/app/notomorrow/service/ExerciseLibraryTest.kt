@@ -198,6 +198,25 @@ class ExerciseLibraryTest {
     }
 
     @Test
+    fun `a new library version renames library rows, keeps their history and leaves custom ones alone`() = runBlocking {
+        val dao = FakeExerciseDao(
+            listOf(
+                ExerciseEntity(id = "a", name = "Hammer Strength A", namePL = "Hammer Strength – ą", lastUsedAt = 5),
+                ExerciseEntity(id = "custom-1", name = "Hammer Strength Mine", isCustom = true),
+            ),
+        )
+        val stamp = ExerciseLibrary.VersionStamp.InMemory(ExerciseLibrary.LIBRARY_VERSION - 1)
+
+        ExerciseLibrary(dao, stamp) { bundled("a", polish = mapOf("a" to "Ą")) }.importIfNeeded()
+
+        val a = dao.rows.value.first { it.id == "a" }
+        assertEquals("A", a.name)
+        assertEquals("Ą", a.namePL)
+        assertEquals(5L, a.lastUsedAt, "a renamed exercise keeps its recent use")
+        assertEquals("Hammer Strength Mine", dao.rows.value.first { it.id == "custom-1" }.name)
+    }
+
+    @Test
     fun `an empty library imports despite the stamp, and a failed read leaves the stamp alone`() = runBlocking {
         val dao = FakeExerciseDao(listOf(ExerciseEntity(id = "custom-1", name = "Mine", isCustom = true)))
         val stamp = ExerciseLibrary.VersionStamp.InMemory(ExerciseLibrary.LIBRARY_VERSION)
@@ -240,6 +259,16 @@ class ExerciseLibraryTest {
         val polish = json.decodeFromString<Map<String, String>>(plFile.readText())
         assertEquals(records.size, polish.size)
         assertNotNull(polish[records.first().id])
+
+        // The Hammer Strength machines name the movement first, the brand in brackets at the end.
+        val machines = records.filter { it.id.startsWith("nt_hs_") }
+        assertEquals(89, machines.size)
+        for (record in machines) {
+            assertFalse(record.name.startsWith("Hammer Strength"), record.name)
+            assertTrue(record.name.endsWith(")") && "(Hammer Strength" in record.name, record.name)
+            val namePL = polish[record.id].orEmpty()
+            assertTrue(namePL.endsWith(")") && !namePL.startsWith("Hammer Strength"), namePL)
+        }
 
         // Every seeded routine id must exist in the library, or the seeder silently skips it.
         val ids = records.map { it.id }.toSet()

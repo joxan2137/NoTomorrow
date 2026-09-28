@@ -1,13 +1,16 @@
 import SwiftUI
 import SwiftData
 
-/// Detail of a finished workout: tiles, notes, then every exercise with its completed sets and record badges.
+/// Detail of a finished workout: tiles, notes, then every exercise with its completed sets and record badges, and
+/// under them Copy workout (do it again) and Save as routine.
 /// Edit switches the same sheet to the editor (Cancel · Edit workout · Save); Delete lives at the editor's bottom.
 struct WorkoutDetailSheet: View {
     var workout: Workout
     var unit: WeightUnit = .kg
     /// Delete confirmed in the editor. The presenter closes the sheet and deletes once it is gone.
     var onDelete: (Workout) -> Void = { _ in }
+    /// Copy workout. The presenter closes the sheet and starts the copy once it is gone; nil hides the button.
+    var onCopy: ((Workout) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
@@ -104,16 +107,31 @@ struct WorkoutDetailSheet: View {
                         WorkoutDetailExercise(item: item, unit: unit)
                         Hairline()
                     }
-                    if workout.completedSetCount > 0 {
-                        GhostButton(title: "routine.saveFromWorkout", systemImage: "square.and.arrow.down") {
-                            routineEdit = .new(RoutineStore.draft(from: workout, in: context))
-                        }
+                    actions
                         .padding(.top, 18)
-                    }
                 }
             }
             .padding(.horizontal, NT.Spacing.screenH)
             .padding(.bottom, NT.Spacing.section)
+        }
+    }
+
+    /// Copy workout (while an exercise is still in the library) and Save as routine (once a set was done).
+    @ViewBuilder
+    private var actions: some View {
+        let canCopy = onCopy != nil && WorkoutStarter.canCopy(workout)
+        let canSave = workout.completedSetCount > 0
+        if canCopy || canSave {
+            VStack(spacing: 10) {
+                if canCopy, let onCopy {
+                    GhostButton(title: "workout.copy", systemImage: "doc.on.doc") { onCopy(workout) }
+                }
+                if canSave {
+                    GhostButton(title: "routine.saveFromWorkout", systemImage: "square.and.arrow.down") {
+                        routineEdit = .new(RoutineStore.draft(from: workout, in: context))
+                    }
+                }
+            }
         }
     }
 
@@ -248,27 +266,47 @@ struct WorkoutDetailExercise: View {
 // MARK: - Presenting
 
 extension View {
-    /// Presents a finished workout's detail sheet (read, edit, delete) from any screen.
+    /// Presents a finished workout's detail sheet (read, edit, delete, copy, save as routine) from any screen.
     func workoutDetailSheet(_ workout: Binding<Workout?>, unit: WeightUnit) -> some View {
         modifier(WorkoutDetailPresenter(workout: workout, unit: unit))
     }
 }
 
-/// A confirmed delete closes the sheet first and deletes once it is gone, so nothing renders a deleted model.
+/// A confirmed delete closes the sheet first and deletes once it is gone, so nothing renders a deleted model. Copy
+/// workout closes it first too, so the new workout (or the "already in progress" dialog) comes up over the tab.
 private struct WorkoutDetailPresenter: ViewModifier {
     @Binding var workout: Workout?
     var unit: WeightUnit
 
     @Environment(\.modelContext) private var context
+    @Environment(WorkoutSessionController.self) private var session
     @State private var pendingDelete: UUID?
+    @State private var pendingCopy: UUID?
 
     func body(content: Content) -> some View {
-        content.sheet(item: $workout, onDismiss: deletePending) { item in
-            WorkoutDetailSheet(workout: item, unit: unit) { doomed in
+        content.sheet(item: $workout, onDismiss: runPending) { item in
+            WorkoutDetailSheet(workout: item, unit: unit, onDelete: { doomed in
                 pendingDelete = doomed.id
                 workout = nil
-            }
+            }, onCopy: { source in
+                pendingCopy = source.id
+                workout = nil
+            })
         }
+    }
+
+    private func runPending() {
+        deletePending()
+        copyPending()
+    }
+
+    private func copyPending() {
+        guard let id = pendingCopy else { return }
+        pendingCopy = nil
+        var descriptor = FetchDescriptor<Workout>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let source = try? context.fetch(descriptor).first else { return }
+        WorkoutStarter.requestStart(.copy(source), in: context, session: session)
     }
 
     private func deletePending() {

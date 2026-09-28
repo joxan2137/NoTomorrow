@@ -3,7 +3,7 @@ import SwiftData
 
 /// Train tab: the "Up next" card (the routine Today suggests, with Start), the other routines, New routine, Browse
 /// programs (`ProgramBrowserSheet`), Import routine (`RoutineImportSheet`), the empty-workout ghost button, and
-/// finished-workout history grouped by week.
+/// finished-workout history grouped by week (a long press copies a workout or saves it as a routine).
 /// A workout in progress lives in the mini bar above the tab bar; Start while one runs asks first (in the tab shell).
 struct TrainView: View {
     @Environment(WorkoutSessionController.self) private var session
@@ -222,10 +222,24 @@ struct TrainView: View {
                             .padding(.top, 12)
                         ForEach(group.items) { workout in
                             WorkoutHistoryRow(workout: workout, unit: unit) { selectedWorkout = workout }
+                                .contextMenu { historyMenu(workout) }
                             Hairline()
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /// Long-press actions on a finished workout: Copy workout (start it again) and Save as routine, as under its detail.
+    @MainActor @ViewBuilder
+    private func historyMenu(_ workout: Workout) -> some View {
+        if WorkoutStarter.canCopy(workout) {
+            Button("workout.copy", systemImage: "doc.on.doc") { requestStart(.copy(workout)) }
+        }
+        if workout.completedSetCount > 0 {
+            Button("routine.saveFromWorkout", systemImage: "square.and.arrow.down") {
+                routineEdit = .new(RoutineStore.draft(from: workout, in: modelContext))
             }
         }
     }

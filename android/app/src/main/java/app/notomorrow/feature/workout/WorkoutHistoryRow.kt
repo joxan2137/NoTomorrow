@@ -1,6 +1,10 @@
 package app.notomorrow.feature.workout
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,14 +12,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.designsystem.NT
+import app.notomorrow.designsystem.NTPressScale
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.NtMenu
+import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.TabularText
 import app.notomorrow.designsystem.pressScale
@@ -28,15 +45,48 @@ import java.time.Instant
 
 /**
  * Finished workout: name · date · duration · volume, PR count in ember, chevron. Tap opens the
- * detail sheet (`NoTomorrow/Features/Workout/WorkoutHistoryRow.swift`).
+ * detail sheet (`NoTomorrow/Features/Workout/WorkoutHistoryRow.swift`). With [menu], a long press
+ * opens it over the row with the long-press haptic and TalkBack gets its entries as custom actions
+ * — the Android reading of iOS's `.contextMenu { historyMenu(workout) }`.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WorkoutHistoryRow(
     workout: WorkoutWithExercises,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     unit: WeightUnit = WeightUnit.Kg,
+    menu: List<NtMenuItem> = emptyList(),
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
+    val interaction = remember { MutableInteractionSource() }
+    val clickable = if (menu.isEmpty()) {
+        Modifier.pressScale(onClick = onClick)
+    } else {
+        Modifier
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = NTPressScale,
+                role = Role.Button,
+                onClick = onClick,
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    expanded = true
+                },
+            )
+            .semantics {
+                customActions = menu.map { item -> CustomAccessibilityAction(item.title) { item.onClick(); true } }
+            }
+    }
+    Box(modifier) {
+        WorkoutHistoryRowContent(workout = workout, unit = unit, modifier = clickable)
+        if (menu.isNotEmpty()) NtMenu(expanded = expanded, onDismiss = { expanded = false }, items = menu)
+    }
+}
+
+@Composable
+private fun WorkoutHistoryRowContent(workout: WorkoutWithExercises, unit: WeightUnit, modifier: Modifier) {
     val strings = rememberNtStrings()
     val row = workout.workout
     val meta = listOf(
@@ -47,9 +97,9 @@ fun WorkoutHistoryRow(
     val prCount = workout.prCount
 
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .pressScale(onClick = onClick)
+            .then(modifier)
             .heightIn(min = 64.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -80,6 +80,18 @@ class WorkoutImportTest {
     }
 
     @Test
+    fun `library keys keep a machine brand in brackets`() {
+        val keys = WorkoutImport.libraryKeys("Leg Press (Hammer Strength Iso-Lateral)")
+        assertEquals(listOf("leg press hammer strength iso lateral", "hammer strength iso lateral leg press"), keys)
+        assertTrue("leg press" !in keys, "a plain Leg Press from another app is not the machine")
+        assertTrue(
+            WorkoutImport.matchKeys("Hammer Strength Iso-Lateral Leg Press").first() in keys,
+            "the name before the rename still finds it",
+        )
+        assertEquals(WorkoutImport.matchKeys("Front Squat (Clean Grip)"), WorkoutImport.libraryKeys("Front Squat (Clean Grip)"))
+    }
+
+    @Test
     fun `csv reader handles quotes, CRLF and a byte-order mark`() {
         val rows = WorkoutImport.csvRows("﻿a,b\r\n\"x, \"\"y\"\"\",\"line\nbreak\"\r\n\r\n")
         assertEquals(listOf(listOf("a", "b"), listOf("x, \"y\"", "line\nbreak")), rows)

@@ -65,15 +65,17 @@ import app.notomorrow.util.rememberNtStrings
 import java.time.Instant
 
 /**
- * Presents a finished workout's detail sheet (read, edit, delete) from any screen — iOS's
- * `View.workoutDetailSheet(_:unit:)`. The Train history and the Today "Last session" row both use
- * it; [host] keeps their models apart (both tabs live in the same view-model store).
+ * Presents a finished workout's detail sheet (read, edit, delete, copy, save as routine) from any
+ * screen — iOS's `View.workoutDetailSheet(_:unit:)`. The Train history and the Today "Last session"
+ * row both use it; [host] keeps their models apart (both tabs live in the same view-model store).
  *
  * A confirmed delete closes the sheet first and deletes once it is gone, so nothing renders the
- * workout while it leaves.
+ * workout while it leaves. Copy workout closes it first too, so the new workout (or the "already in
+ * progress" dialog) comes up over the tab rather than under the sheet.
  *
  * @param workoutId the workout to show; `null` shows nothing.
- * @param onDismiss the sheet closed (Done, a swipe, back, or a delete): the host drops its id.
+ * @param onDismiss the sheet closed (Done, a swipe, back, a delete or a copy): the host drops its id.
+ * @param onCopy starts the copy; `null` uses [WorkoutEditViewModel.copyWorkout].
  */
 @Composable
 fun WorkoutDetailPresenter(
@@ -81,6 +83,7 @@ fun WorkoutDetailPresenter(
     unit: WeightUnit,
     host: String,
     onDismiss: () -> Unit,
+    onCopy: ((String) -> Unit)? = null,
 ) {
     val model = ntViewModel(key = "workoutDetail/$host") { container -> WorkoutEditViewModel(container) }
     LaunchedEffect(workoutId) { model.show(workoutId) }
@@ -104,6 +107,12 @@ fun WorkoutDetailPresenter(
             onDismiss()
             model.delete(id)
         },
+        onCopy = {
+            val id = workout.workout.id
+            model.show(null)
+            onDismiss()
+            if (onCopy != null) onCopy(id) else model.copyWorkout(id)
+        },
     )
 }
 
@@ -118,8 +127,9 @@ fun WorkoutDetailPresenter(
  * draft has unsaved changes a swipe, a scrim tap or back does not close it: it asks
  * "Discard changes?", as Cancel does.
  *
- * A workout with completed sets offers "Save as routine" under its exercises: the routine editor
- * opens over this sheet, prefilled from the workout ([RoutineEditRequest.FromWorkout]).
+ * Under its exercises: "Copy workout" (while an exercise is still in the library) starts it again,
+ * and "Save as routine" (once a set was done) opens the routine editor over this sheet, prefilled
+ * from the workout ([RoutineEditRequest.FromWorkout]).
  */
 @Composable
 private fun WorkoutDetailSheet(
@@ -130,6 +140,7 @@ private fun WorkoutDetailSheet(
     model: WorkoutEditViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
+    onCopy: () -> Unit,
 ) {
     var showsDiscard by remember { mutableStateOf(false) }
     var routineEdit by remember { mutableStateOf<RoutineEditRequest?>(null) }
@@ -199,6 +210,7 @@ private fun WorkoutDetailSheet(
                         workout = workout,
                         unit = unit,
                         modifier = Modifier.fillMaxWidth().weight(1f),
+                        onCopy = onCopy,
                         onSaveAsRoutine = { routineEdit = RoutineEditRequest.FromWorkout(workout.workout.id) },
                     )
                 }
@@ -282,12 +294,16 @@ private fun HeaderButton(text: String, modifier: Modifier, onClick: () -> Unit) 
     }
 }
 
-/** Tiles, the PR line, the notes, then every exercise, and "Save as routine" once a set is done. */
+/**
+ * Tiles, the PR line, the notes, then every exercise, "Copy workout" while an exercise is still in
+ * the library and "Save as routine" once a set is done.
+ */
 @Composable
 private fun WorkoutDetailBody(
     workout: WorkoutWithExercises,
     unit: WeightUnit,
     modifier: Modifier,
+    onCopy: () -> Unit,
     onSaveAsRoutine: () -> Unit,
 ) {
     Column(
@@ -344,13 +360,28 @@ private fun WorkoutDetailBody(
                 WorkoutDetailExercise(item = item, unit = unit)
                 Hairline()
             }
-            if (workout.completedSetCount > 0) {
-                GhostButton(
-                    title = stringResource(S.routine_saveFromWorkout),
+            val canCopy = WorkoutStarter.canCopy(workout)
+            val canSave = workout.completedSetCount > 0
+            if (canCopy || canSave) {
+                Column(
                     modifier = Modifier.padding(top = 18.dp),
-                    icon = NtIcons.SquareAndArrowDown,
-                    onClick = onSaveAsRoutine,
-                )
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (canCopy) {
+                        GhostButton(
+                            title = stringResource(S.workout_copy),
+                            icon = NtIcons.DocOnDoc,
+                            onClick = onCopy,
+                        )
+                    }
+                    if (canSave) {
+                        GhostButton(
+                            title = stringResource(S.routine_saveFromWorkout),
+                            icon = NtIcons.SquareAndArrowDown,
+                            onClick = onSaveAsRoutine,
+                        )
+                    }
+                }
             }
         }
     }

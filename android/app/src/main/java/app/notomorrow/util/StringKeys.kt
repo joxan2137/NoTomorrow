@@ -862,6 +862,7 @@ object S {
     val workout_beatsBest_s_s = R.string.workout_beatsBest_s_s  // workout.beatsBest %@ %@
     val workout_best = R.string.workout_best
     val workout_bw = R.string.workout_bw
+    val workout_copy = R.string.workout_copy
     val workout_defaultName = R.string.workout_defaultName
     val workout_discard = R.string.workout_discard
     val workout_done_editSets = R.string.workout_done_editSets

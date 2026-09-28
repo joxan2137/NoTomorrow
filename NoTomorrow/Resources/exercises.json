@@ -23202,7 +23202,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_bench_press",
-    "name": "Hammer Strength Iso-Lateral Bench Press",
+    "name": "Bench Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23224,7 +23224,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_horizontal_bench_press",
-    "name": "Hammer Strength Iso-Lateral Horizontal Bench Press",
+    "name": "Horizontal Bench Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23246,7 +23246,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_incline_press",
-    "name": "Hammer Strength Iso-Lateral Incline Press",
+    "name": "Incline Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23268,7 +23268,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_super_incline_press",
-    "name": "Hammer Strength Iso-Lateral Super Incline Press",
+    "name": "Super Incline Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23290,7 +23290,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_decline_press",
-    "name": "Hammer Strength Iso-Lateral Decline Press",
+    "name": "Decline Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23312,7 +23312,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_wide_chest",
-    "name": "Hammer Strength Iso-Lateral Wide Chest",
+    "name": "Wide Chest (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23334,7 +23334,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_chest_press_chest_back",
-    "name": "Hammer Strength Iso-Lateral Chest/Back – Press",
+    "name": "Chest/Back Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23356,7 +23356,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_row_chest_back",
-    "name": "Hammer Strength Iso-Lateral Chest/Back – Row",
+    "name": "Chest/Back Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23379,7 +23379,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_shoulder_press",
-    "name": "Hammer Strength Iso-Lateral Shoulder Press",
+    "name": "Shoulder Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23400,7 +23400,7 @@
   },
   {
     "id": "nt_hs_behind_the_neck_press",
-    "name": "Hammer Strength Behind the Neck Press",
+    "name": "Behind the Neck Press (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23421,7 +23421,7 @@
   },
   {
     "id": "nt_hs_super_fly",
-    "name": "Hammer Strength Super Fly",
+    "name": "Super Fly (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23442,7 +23442,7 @@
   },
   {
     "id": "nt_hs_lateral_raise",
-    "name": "Hammer Strength Lateral Raise",
+    "name": "Lateral Raise (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23463,7 +23463,7 @@
   },
   {
     "id": "nt_hs_lying_rear_delt_fly",
-    "name": "Hammer Strength Lying Rear Deltoid Fly",
+    "name": "Lying Rear Deltoid Fly (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23485,7 +23485,7 @@
   },
   {
     "id": "nt_hs_seated_dip",
-    "name": "Hammer Strength Seated Dip",
+    "name": "Seated Dip (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23507,7 +23507,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_row",
-    "name": "Hammer Strength Iso-Lateral Row",
+    "name": "Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23530,7 +23530,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_high_row",
-    "name": "Hammer Strength Iso-Lateral High Row",
+    "name": "High Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23552,7 +23552,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_low_row",
-    "name": "Hammer Strength Iso-Lateral Low Row",
+    "name": "Low Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23575,7 +23575,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_dy_row",
-    "name": "Hammer Strength Iso-Lateral D.Y. Row",
+    "name": "D.Y. Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23597,7 +23597,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_t_bar_row",
-    "name": "Hammer Strength Iso-Lateral T-Bar Row",
+    "name": "T-Bar Row (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23620,7 +23620,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_front_lat_pulldown",
-    "name": "Hammer Strength Iso-Lateral Front Lat Pulldown",
+    "name": "Front Lat Pulldown (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23642,7 +23642,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_wide_pulldown",
-    "name": "Hammer Strength Iso-Lateral Wide Pulldown",
+    "name": "Wide Pulldown (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -23664,7 +23664,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_behind_neck_pulldown",
-    "name": "Hammer Strength Iso-Lateral Behind the Neck Pulldown",
+    "name": "Behind the Neck Pulldown (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23686,7 +23686,7 @@
   },
   {
     "id": "nt_hs_pullover",
-    "name": "Hammer Strength Pullover",
+    "name": "Pullover (Hammer Strength)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "isolation",
@@ -23708,7 +23708,7 @@
   },
   {
     "id": "nt_hs_shrug",
-    "name": "Hammer Strength Seated/Standing Shrug",
+    "name": "Seated/Standing Shrug (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23729,7 +23729,7 @@
   },
   {
     "id": "nt_hs_seated_biceps",
-    "name": "Hammer Strength Seated Biceps",
+    "name": "Seated Biceps (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23750,7 +23750,7 @@
   },
   {
     "id": "nt_hs_gripper",
-    "name": "Hammer Strength Gripper",
+    "name": "Gripper (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23769,7 +23769,7 @@
   },
   {
     "id": "nt_hs_ab_oblique_crunch",
-    "name": "Hammer Strength Abdominal Oblique Crunch",
+    "name": "Abdominal Oblique Crunch (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -23788,7 +23788,7 @@
   },
   {
     "id": "nt_hs_four_way_neck",
-    "name": "Hammer Strength 4-Way Neck",
+    "name": "4-Way Neck (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "isolation",
@@ -23809,7 +23809,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_leg_press",
-    "name": "Hammer Strength Iso-Lateral Leg Press",
+    "name": "Leg Press (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23831,7 +23831,7 @@
   },
   {
     "id": "nt_hs_linear_leg_press",
-    "name": "Hammer Strength Linear Leg Press",
+    "name": "Linear Leg Press (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -23854,7 +23854,7 @@
   },
   {
     "id": "nt_hs_super_squat_press",
-    "name": "Hammer Strength Super Squat Press",
+    "name": "Super Squat Press (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23876,7 +23876,7 @@
   },
   {
     "id": "nt_hs_linear_hack_squat",
-    "name": "Hammer Strength Linear Hack Squat",
+    "name": "Linear Hack Squat (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23897,7 +23897,7 @@
   },
   {
     "id": "nt_hs_v_squat",
-    "name": "Hammer Strength V-Squat",
+    "name": "V-Squat (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23919,7 +23919,7 @@
   },
   {
     "id": "nt_hs_reverse_v_squat",
-    "name": "Hammer Strength Reverse V-Squat",
+    "name": "Reverse V-Squat (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23940,7 +23940,7 @@
   },
   {
     "id": "nt_hs_belt_squat",
-    "name": "Hammer Strength Belt Squat",
+    "name": "Belt Squat (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23963,7 +23963,7 @@
   },
   {
     "id": "nt_hs_pendulum_x_squat",
-    "name": "Hammer Strength Pendulum-X Squat",
+    "name": "Pendulum-X Squat (Hammer Strength)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -23985,7 +23985,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_leg_extension",
-    "name": "Hammer Strength Iso-Lateral Leg Extension",
+    "name": "Leg Extension (Hammer Strength Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24004,7 +24004,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_leg_curl",
-    "name": "Hammer Strength Iso-Lateral Leg Curl",
+    "name": "Leg Curl (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24025,7 +24025,7 @@
   },
   {
     "id": "nt_hs_iso_lateral_kneeling_leg_curl",
-    "name": "Hammer Strength Iso-Lateral Kneeling Leg Curl",
+    "name": "Kneeling Leg Curl (Hammer Strength Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24046,7 +24046,7 @@
   },
   {
     "id": "nt_hs_seated_leg_curl",
-    "name": "Hammer Strength Seated Leg Curl",
+    "name": "Seated Leg Curl (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24067,7 +24067,7 @@
   },
   {
     "id": "nt_hs_seated_calf_raise",
-    "name": "Hammer Strength Seated Calf Raise",
+    "name": "Seated Calf Raise (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24086,7 +24086,7 @@
   },
   {
     "id": "nt_hs_super_horizontal_calf",
-    "name": "Hammer Strength Super Horizontal Calf",
+    "name": "Super Horizontal Calf (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24105,7 +24105,7 @@
   },
   {
     "id": "nt_hs_tibia_dorsi_flexion",
-    "name": "Hammer Strength Tibia Dorsi-Flexion",
+    "name": "Tibia Dorsi-Flexion (Hammer Strength)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24124,7 +24124,7 @@
   },
   {
     "id": "nt_hs_glute_drive",
-    "name": "Hammer Strength Glute Drive",
+    "name": "Glute Drive (Hammer Strength)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24145,7 +24145,7 @@
   },
   {
     "id": "nt_hs_glute_ham_raise",
-    "name": "Hammer Strength Glute Ham/Reverse Hyper – Glute Ham Raise",
+    "name": "Glute Ham Raise (Hammer Strength Glute Ham/Reverse Hyper)",
     "force": "pull",
     "level": "advanced",
     "mechanic": "compound",
@@ -24167,7 +24167,7 @@
   },
   {
     "id": "nt_hs_reverse_hyper",
-    "name": "Hammer Strength Glute Ham/Reverse Hyper – Reverse Hyper",
+    "name": "Reverse Hyper (Hammer Strength Glute Ham/Reverse Hyper)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24189,7 +24189,7 @@
   },
   {
     "id": "nt_hs_gb_jammer",
-    "name": "Hammer Strength Ground Base Jammer",
+    "name": "Jammer (Hammer Strength Ground Base)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24213,7 +24213,7 @@
   },
   {
     "id": "nt_hs_gb_multi_squat",
-    "name": "Hammer Strength Ground Base Multi-Squat",
+    "name": "Multi-Squat (Hammer Strength Ground Base)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24236,7 +24236,7 @@
   },
   {
     "id": "nt_hs_gb_squat_lunge",
-    "name": "Hammer Strength Ground Base Squat Lunge",
+    "name": "Squat Lunge (Hammer Strength Ground Base)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24258,7 +24258,7 @@
   },
   {
     "id": "nt_hs_gb_squat_high_pull",
-    "name": "Hammer Strength Ground Base Squat/High Pull",
+    "name": "Squat/High Pull (Hammer Strength Ground Base)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24282,7 +24282,7 @@
   },
   {
     "id": "nt_hs_gb_incline_press",
-    "name": "Hammer Strength Ground Base Combo Incline – Press",
+    "name": "Combo Incline Press (Hammer Strength Ground Base)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24304,7 +24304,7 @@
   },
   {
     "id": "nt_hs_gb_high_row",
-    "name": "Hammer Strength Ground Base Combo Incline – High Row",
+    "name": "Combo Incline High Row (Hammer Strength Ground Base)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24326,7 +24326,7 @@
   },
   {
     "id": "nt_hs_gb_combo_decline",
-    "name": "Hammer Strength Ground Base Combo Decline",
+    "name": "Combo Decline (Hammer Strength Ground Base)",
     "force": "push",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24348,7 +24348,7 @@
   },
   {
     "id": "nt_hs_gb_twist",
-    "name": "Hammer Strength Ground Base Twist",
+    "name": "Twist (Hammer Strength Ground Base)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24371,7 +24371,7 @@
   },
   {
     "id": "nt_hs_gb_deadlift",
-    "name": "Hammer Strength Ground Base Deadlift",
+    "name": "Deadlift (Hammer Strength Ground Base)",
     "force": "pull",
     "level": "intermediate",
     "mechanic": "compound",
@@ -24396,7 +24396,7 @@
   },
   {
     "id": "nt_hs_mts_chest_press",
-    "name": "Hammer Strength MTS Iso-Lateral Chest Press",
+    "name": "Chest Press (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24418,7 +24418,7 @@
   },
   {
     "id": "nt_hs_mts_incline_press",
-    "name": "Hammer Strength MTS Iso-Lateral Incline Press",
+    "name": "Incline Press (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24440,7 +24440,7 @@
   },
   {
     "id": "nt_hs_mts_decline_press",
-    "name": "Hammer Strength MTS Iso-Lateral Decline Press",
+    "name": "Decline Press (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24462,7 +24462,7 @@
   },
   {
     "id": "nt_hs_mts_shoulder_press",
-    "name": "Hammer Strength MTS Iso-Lateral Shoulder Press",
+    "name": "Shoulder Press (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24483,7 +24483,7 @@
   },
   {
     "id": "nt_hs_mts_front_pulldown",
-    "name": "Hammer Strength MTS Iso-Lateral Front Pulldown",
+    "name": "Front Pulldown (Hammer Strength MTS Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24505,7 +24505,7 @@
   },
   {
     "id": "nt_hs_mts_row",
-    "name": "Hammer Strength MTS Iso-Lateral Row",
+    "name": "Row (Hammer Strength MTS Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24527,7 +24527,7 @@
   },
   {
     "id": "nt_hs_mts_high_row",
-    "name": "Hammer Strength MTS Iso-Lateral High Row",
+    "name": "High Row (Hammer Strength MTS Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24549,7 +24549,7 @@
   },
   {
     "id": "nt_hs_mts_biceps_curl",
-    "name": "Hammer Strength MTS Iso-Lateral Biceps Curl",
+    "name": "Biceps Curl (Hammer Strength MTS Iso-Lateral)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24570,7 +24570,7 @@
   },
   {
     "id": "nt_hs_mts_triceps_extension",
-    "name": "Hammer Strength MTS Iso-Lateral Triceps Extension",
+    "name": "Triceps Extension (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24589,7 +24589,7 @@
   },
   {
     "id": "nt_hs_mts_leg_extension",
-    "name": "Hammer Strength MTS Iso-Lateral Leg Extension",
+    "name": "Leg Extension (Hammer Strength MTS Iso-Lateral)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24608,7 +24608,7 @@
   },
   {
     "id": "nt_hs_mts_kneeling_leg_curl",
-    "name": "Hammer Strength MTS Kneeling Leg Curl",
+    "name": "Kneeling Leg Curl (Hammer Strength MTS)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24629,7 +24629,7 @@
   },
   {
     "id": "nt_hs_mts_ab_crunch",
-    "name": "Hammer Strength MTS Abdominal Crunch",
+    "name": "Abdominal Crunch (Hammer Strength MTS)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24648,7 +24648,7 @@
   },
   {
     "id": "nt_hs_select_chest_press",
-    "name": "Hammer Strength Select Chest Press",
+    "name": "Chest Press (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24670,7 +24670,7 @@
   },
   {
     "id": "nt_hs_select_pec_fly",
-    "name": "Hammer Strength Select Pec Fly",
+    "name": "Pec Fly (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24691,7 +24691,7 @@
   },
   {
     "id": "nt_hs_select_rear_delt",
-    "name": "Hammer Strength Select Rear Deltoid",
+    "name": "Rear Deltoid (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24713,7 +24713,7 @@
   },
   {
     "id": "nt_hs_select_shoulder_press",
-    "name": "Hammer Strength Select Shoulder Press",
+    "name": "Shoulder Press (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24734,7 +24734,7 @@
   },
   {
     "id": "nt_hs_select_lateral_raise",
-    "name": "Hammer Strength Select Lateral Raise",
+    "name": "Lateral Raise (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24755,7 +24755,7 @@
   },
   {
     "id": "nt_hs_select_lat_pulldown",
-    "name": "Hammer Strength Select Lat Pulldown",
+    "name": "Lat Pulldown (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24777,7 +24777,7 @@
   },
   {
     "id": "nt_hs_select_seated_row",
-    "name": "Hammer Strength Select Seated Row",
+    "name": "Seated Row (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24799,7 +24799,7 @@
   },
   {
     "id": "nt_hs_select_biceps_curl",
-    "name": "Hammer Strength Select Biceps Curl",
+    "name": "Biceps Curl (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24820,7 +24820,7 @@
   },
   {
     "id": "nt_hs_select_triceps_extension",
-    "name": "Hammer Strength Select Triceps Extension",
+    "name": "Triceps Extension (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24839,7 +24839,7 @@
   },
   {
     "id": "nt_hs_select_assisted_dip",
-    "name": "Hammer Strength Select Assist Dip",
+    "name": "Assist Dip (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -24861,7 +24861,7 @@
   },
   {
     "id": "nt_hs_select_assisted_chin_up",
-    "name": "Hammer Strength Select Assist Chin",
+    "name": "Assist Chin (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "compound",
@@ -24883,7 +24883,7 @@
   },
   {
     "id": "nt_hs_select_ab_crunch",
-    "name": "Hammer Strength Select Abdominal Crunch",
+    "name": "Abdominal Crunch (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24902,7 +24902,7 @@
   },
   {
     "id": "nt_hs_select_back_extension",
-    "name": "Hammer Strength Select Back Extension",
+    "name": "Back Extension (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24924,7 +24924,7 @@
   },
   {
     "id": "nt_hs_select_leg_extension",
-    "name": "Hammer Strength Select Leg Extension",
+    "name": "Leg Extension (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24943,7 +24943,7 @@
   },
   {
     "id": "nt_hs_select_leg_curl",
-    "name": "Hammer Strength Select Leg Curl",
+    "name": "Leg Curl (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24964,7 +24964,7 @@
   },
   {
     "id": "nt_hs_select_seated_leg_curl",
-    "name": "Hammer Strength Select Seated Leg Curl",
+    "name": "Seated Leg Curl (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -24985,7 +24985,7 @@
   },
   {
     "id": "nt_hs_select_seated_leg_press",
-    "name": "Hammer Strength Select Seated Leg Press",
+    "name": "Seated Leg Press (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "compound",
@@ -25007,7 +25007,7 @@
   },
   {
     "id": "nt_hs_select_standing_calf",
-    "name": "Hammer Strength Select Standing Calf",
+    "name": "Standing Calf (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -25026,7 +25026,7 @@
   },
   {
     "id": "nt_hs_select_horizontal_calf",
-    "name": "Hammer Strength Select Horizontal Calf",
+    "name": "Horizontal Calf (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -25045,7 +25045,7 @@
   },
   {
     "id": "nt_hs_select_hip_abduction",
-    "name": "Hammer Strength Select Hip Abduction",
+    "name": "Hip Abduction (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
@@ -25066,7 +25066,7 @@
   },
   {
     "id": "nt_hs_select_hip_adduction",
-    "name": "Hammer Strength Select Hip Adduction",
+    "name": "Hip Adduction (Hammer Strength Select)",
     "force": "pull",
     "level": "beginner",
     "mechanic": "isolation",
@@ -25085,7 +25085,7 @@
   },
   {
     "id": "nt_hs_select_hip_glute",
-    "name": "Hammer Strength Select Hip and Glute",
+    "name": "Hip and Glute (Hammer Strength Select)",
     "force": "push",
     "level": "beginner",
     "mechanic": "isolation",
