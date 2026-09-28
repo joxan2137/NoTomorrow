@@ -196,12 +196,16 @@ fun MainTabScaffold() {
                     if (tab !in live) continue
                     key(tab) {
                         TabPage(visible = tab == selected && !covering) {
-                            when (tab) {
-                                AppTab.Today -> DashboardScreen()
-                                AppTab.Train -> TrainScreen()
-                                AppTab.Fuel -> FuelHomeScreen()
-                                AppTab.Progress -> ProgressTab(progressNav)
-                                AppTab.Bro -> BroScreen()
+                            // Per tab, as on iOS: the banner sits under the workout layer, which
+                            // covers it the way the `fullScreenCover` does.
+                            UpdateBannerInset {
+                                when (tab) {
+                                    AppTab.Today -> DashboardScreen()
+                                    AppTab.Train -> TrainScreen()
+                                    AppTab.Fuel -> FuelHomeScreen()
+                                    AppTab.Progress -> ProgressTab(progressNav)
+                                    AppTab.Bro -> BroScreen()
+                                }
                             }
                         }
                     }
@@ -358,7 +362,7 @@ private fun WorkoutSessionLaunch() {
 
 /** The last non-null [value] seen — what a layer keeps showing while it animates out. */
 @Composable
-private fun <T : Any> rememberLastNonNull(value: T?): T? {
+internal fun <T : Any> rememberLastNonNull(value: T?): T? {
     val last = remember { arrayOfNulls<Any>(1) }
     if (value != null) last[0] = value
     @Suppress("UNCHECKED_CAST")

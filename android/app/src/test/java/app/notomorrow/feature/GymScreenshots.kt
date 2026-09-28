@@ -172,6 +172,32 @@ class GymScreenshots {
         shoot("train-routine-menu")
     }
 
+    @Test fun updateBanner() = updateBanner("")
+
+    @Test
+    fun updateBannerPl() = polish { updateBanner("-pl") }
+
+    /** The update banner over the Train tab, as a newer release makes it show (`UpdateBannerInset`). */
+    private fun updateBanner(tag: String) {
+        prepare()
+        val checker = app.notomorrow.service.UpdateChecker(
+            fetch = { app.notomorrow.service.UpdateChecker.Reply(200, """{"tag_name":"v0.7.0"}""") },
+            currentVersion = { "0.6.2" },
+            dismissedTag = object : app.notomorrow.service.UpdateChecker.DismissedTagStore {
+                override suspend fun get(): String? = null
+                override suspend fun set(tag: String) = Unit
+            },
+            scope = container.scope,
+        )
+        onWorker { checker.check() }
+        // `polish` switches the formatters; the banner's own strings come from resources.
+        if (tag == "-pl") org.robolectric.RuntimeEnvironment.setQualifiers("+pl")
+        show { app.notomorrow.app.UpdateBannerInset(checker) { app.notomorrow.feature.workout.TrainScreen() } }
+        waitForText("Upper strength")
+        compose.mainClock.advanceTimeBy(1_000)
+        shoot("update-banner$tag")
+    }
+
     @Test fun routineEditor() = routineEditor("")
 
     @Test @Config(qualifiers = "+pl")
