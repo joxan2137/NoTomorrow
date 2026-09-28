@@ -13,6 +13,7 @@ import androidx.core.content.res.ResourcesCompat
 import app.notomorrow.R
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.macroRingArcs
+import app.notomorrow.util.Fmt
 import kotlin.math.PI
 import kotlin.math.ceil
 import kotlin.math.max
@@ -64,9 +65,14 @@ internal object WidgetBitmaps {
             if (tabular) fontFeatureSettings = "'tnum'"
         }
 
-    /** A hero number (or any one line) in the display face, tight to its ink height. */
-    fun displayText(context: Context, text: String, sizeSp: Float, color: Color = NT.Colors.ink): Sized {
+    /**
+     * A hero number (or any one line) in the display face, tight to its ink height; shrunk to
+     * [maxWidthDp] when it would not fit.
+     */
+    fun displayText(context: Context, text: String, sizeSp: Float, color: Color = NT.Colors.ink, maxWidthDp: Float = Float.MAX_VALUE): Sized {
         val paint = textPaint(display(context), sizeSp, color)
+        val natural = paint.measureText(text) + 2f
+        if (natural > maxWidthDp) paint.textSize = sizeSp * maxWidthDp / natural
         val metrics = paint.fontMetrics
         val width = paint.measureText(text).coerceAtLeast(1f) + 2f
         val height = metrics.descent - metrics.ascent
@@ -114,7 +120,9 @@ internal object WidgetBitmaps {
             )
         }
         val numberPaint = textPaint(display(context), numberSp, numberColor)
-        val labelPaint = label?.let { textPaint(Typeface.create("sans-serif", Typeface.NORMAL), 12f, labelColor, false) }
+        val labelPaint = label?.let {
+            textPaint(Typeface.create("sans-serif-medium", Typeface.NORMAL), (numberSp * 0.34f).coerceIn(11f, 15f), labelColor, false)
+        }
         // Shrink a long number to the inner width (`ShrinkingText` in the app).
         val inner = sizeDp - 2 * lineDp - 8f
         val measured = numberPaint.measureText(number)
@@ -131,54 +139,54 @@ internal object WidgetBitmaps {
     }
 
     /**
-     * The small Quick log's macro column: per macro a line "96 / 180 g" (eaten in `ink`, the goal in
-     * `ink3`) over a 4 dp bar in the macro's hue on a `surface2` track, full at the goal.
+     * The medium Quick log's macros: three columns (protein, carbs, fat), each a 5 dp bar in the
+     * macro's hue on a `surface2` track (full at the goal), the macro's name in `ink2`, grams eaten
+     * in the display face filling the height left, and "/ 180 g" in `ink3` under it.
      */
-    fun macroBars(context: Context, widthDp: Float, heightDp: Float, data: QuickLogData, unit: String): Sized {
+    fun macroColumns(context: Context, widthDp: Float, heightDp: Float, data: QuickLogData, names: List<String>): Sized {
         val (bitmap, canvas) = canvas(widthDp, heightDp, scale(context))
         val rows = listOf(
             Triple(data.protein, data.goals.protein, NT.Colors.protein),
             Triple(data.carbs, data.goals.carbs, NT.Colors.carbs),
             Triple(data.fat, data.goals.fat, NT.Colors.fat),
         )
-        val pitch = heightDp / rows.size
-        val bar = 4f
-        val strong = textPaint(Typeface.create("sans-serif-medium", Typeface.NORMAL), 12f, NT.Colors.ink).apply {
-            textAlign = Paint.Align.LEFT
-        }
-        val weak = textPaint(Typeface.create("sans-serif", Typeface.NORMAL), 11f, NT.Colors.ink3).apply {
-            textAlign = Paint.Align.LEFT
-        }
+        val gap = 12f
+        val column = (widthDp - 2 * gap) / 3f
+        val bar = 5f
+        val small = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        val label = textPaint(small, 12f, NT.Colors.ink2, false).apply { textAlign = Paint.Align.LEFT }
+        val goalPaint = textPaint(small, 12f, NT.Colors.ink3).apply { textAlign = Paint.Align.LEFT }
+        val lm = label.fontMetrics
+        val gm = goalPaint.fontMetrics
+        val nameBottom = bar + 6f + (lm.descent - lm.ascent)
+        val goalTop = heightDp - (gm.descent - gm.ascent)
+        // The number takes the band between the name and the goal.
+        val number = textPaint(display(context), 100f, NT.Colors.ink).apply { textAlign = Paint.Align.LEFT }
+        val ratio = number.fontMetrics.let { (it.descent - it.ascent) / 100f }
+        number.textSize = ((goalTop - nameBottom) / ratio).coerceIn(14f, 34f)
         val track = paint(NT.Colors.surface2)
         val rect = RectF()
         rows.forEachIndexed { i, (eaten, goal, color) ->
-            val top = i * pitch
-            val barTop = top + pitch - bar - 4f
-            val baseline = barTop - 4f
-            val eatenText = Math.round(eaten).toString()
-            canvas.drawText(eatenText, 0f, baseline, strong)
-            val x = strong.measureText(eatenText)
-            // "96 / 180 g", or "130 g" when the goal does not fit the column.
-            val full = " / ${Math.round(goal)} $unit"
-            canvas.drawText(if (x + weak.measureText(full) <= widthDp) full else " $unit", x, baseline, weak)
-            rect.set(0f, barTop, widthDp, barTop + bar)
+            val x = i * (column + gap)
+            rect.set(x, 0f, x + column, bar)
             canvas.drawRoundRect(rect, bar / 2f, bar / 2f, track)
             val fraction = if (goal > 0) (eaten / goal).toFloat().coerceIn(0f, 1f) else 0f
             if (fraction > 0f) {
-                rect.set(0f, barTop, (widthDp * fraction).coerceAtLeast(bar), barTop + bar)
+                rect.set(x, 0f, x + (column * fraction).coerceAtLeast(bar), bar)
                 canvas.drawRoundRect(rect, bar / 2f, bar / 2f, paint(color))
             }
+            fun fitted(base: Paint, text: String) = Paint(base).apply {
+                val measured = measureText(text)
+                if (measured > column) textSize *= column / measured
+            }
+            val name = names.getOrElse(i) { "" }
+            canvas.drawText(name, x, bar + 6f - lm.ascent, fitted(label, name))
+            val eatenText = Math.round(eaten).toString()
+            val numberPaint = fitted(number, eatenText)
+            canvas.drawText(eatenText, x, goalTop - numberPaint.fontMetrics.descent, numberPaint)
+            val goalText = "/ " + Fmt.grams(goal)
+            canvas.drawText(goalText, x, heightDp - gm.descent, fitted(goalPaint, goalText))
         }
-        return Sized(bitmap, widthDp, heightDp)
-    }
-
-    /** A thin rounded progress bar: a `surface2` track and a [color] fill of [fraction]. */
-    fun bar(context: Context, widthDp: Float, heightDp: Float, fraction: Float, color: Color = NT.Colors.ember): Sized {
-        val (bitmap, canvas) = canvas(widthDp, heightDp, scale(context))
-        val r = heightDp / 2f
-        canvas.drawRoundRect(RectF(0f, 0f, widthDp, heightDp), r, r, paint(NT.Colors.surface2))
-        val f = fraction.coerceIn(0f, 1f)
-        if (f > 0f) canvas.drawRoundRect(RectF(0f, 0f, (widthDp * f).coerceAtLeast(heightDp), heightDp), r, r, paint(color))
         return Sized(bitmap, widthDp, heightDp)
     }
 

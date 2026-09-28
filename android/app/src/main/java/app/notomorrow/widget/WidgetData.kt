@@ -32,16 +32,13 @@ data class QuickLogData(
     val kcalLeft: Double get() = maxOf(0.0, goals.kcal - kcal)
 }
 
-/** Fuel calendar: kcal per day key since the oldest column, trained days and the stat columns. */
+/** Fuel calendar: kcal per day since the oldest week the widget can show, and the trained days. */
 data class CalendarData(
     val today: LocalDate,
     val kcalByDay: Map<LocalDate, Double>,
     val trainedDays: Set<LocalDate>,
     val kcalGoal: Double,
     val goal: TrainingGoal,
-    val stats: FuelCalendar.Stats,
-    /** Finished workouts with a completed set in the last 30 days, today included. */
-    val sessions30: Int,
 ) {
     /** `FuelCalendar.level` for [day] — 0 for a day with nothing logged. */
     fun level(day: LocalDate): Int {
@@ -150,22 +147,17 @@ object WidgetData {
         val db = container.db
         val profile = db.profileDao().profile()
         val today = Days.date(now, zone)
-        val layout = FuelCalendar.layout(today)
-        val from = FuelCalendar.storedDayBounds(layout.start, zone).lower
+        // The Monday of the oldest week the tallest widget shows (`WidgetCharts.calendar`).
+        val start = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusWeeks(WidgetCharts.MAX_ROWS - 1L)
+        val from = FuelCalendar.storedDayBounds(start, zone).lower
         val kcalByDay = FuelCalendar.kcalByDay(db.mealDao().observeKcalByDaySince(from).first(), zone)
-        val windowStart = minOf(layout.start, today.minusDays(29))
-        val starts = db.workoutDao().countedWorkoutStartsSince(Days.millis(windowStart, zone))
-        val thirtyDaysAgo = Days.millis(today.minusDays(29), zone)
-        val kcalGoal = (profile?.calorieGoal ?: 0).toDouble()
-        val goal = profile?.goal ?: TrainingGoal.BuildMuscle
+        val starts = db.workoutDao().countedWorkoutStartsSince(Days.millis(start, zone))
         return CalendarData(
             today = today,
             kcalByDay = kcalByDay,
             trainedDays = starts.map { Days.date(it, zone) }.toSet(),
-            kcalGoal = kcalGoal,
-            goal = goal,
-            stats = FuelCalendar.stats(kcalByDay, today, kcalGoal, goal),
-            sessions30 = starts.count { it in thirtyDaysAgo..now },
+            kcalGoal = (profile?.calorieGoal ?: 0).toDouble(),
+            goal = profile?.goal ?: TrainingGoal.BuildMuscle,
         )
     }
 

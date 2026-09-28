@@ -5,7 +5,6 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -41,8 +40,8 @@ import app.notomorrow.util.LocaleProvider
 
 /**
  * The widgets' shared look (`docs/widgets.md`, "Look"): `ground` background, 16 dp margins,
- * `11 pt semibold` uppercase eyebrows, `surface2` capsules (the primary one white on `ground`), at
- * least 36 dp tall. Glance has no semibold: `Medium` stands in for it, `Bold` for the bold styles.
+ * `12 pt bold` uppercase eyebrows, `surface2` capsules (the primary one white on `ground`), 40 dp
+ * tall. Glance has no semibold: `Bold` carries every strong style so the widgets read at a glance.
  */
 internal object W {
     val ground = ColorProvider(NT.Colors.ground)
@@ -51,21 +50,18 @@ internal object W {
     val ink3 = ColorProvider(NT.Colors.ink3)
     val ember = ColorProvider(NT.Colors.ember)
     val good = ColorProvider(NT.Colors.good)
-    val hairline = ColorProvider(NT.Colors.hairline)
 
     fun color(color: Color): ColorProvider = ColorProvider(color)
 
-    val eyebrow = TextStyle(color = ink2, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-    val headline = TextStyle(color = ink, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-    val subheadlineBold = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-    val footnote = TextStyle(color = ink2, fontSize = 13.sp)
-    val caption = TextStyle(color = ink2, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    val eyebrow = TextStyle(color = ink2, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    val title = TextStyle(color = ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    val headline = TextStyle(color = ink, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+    val subheadlineBold = TextStyle(color = ink, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+    val button = TextStyle(color = ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    val footnote = TextStyle(color = ink2, fontSize = 13.sp, fontWeight = FontWeight.Medium)
 
     val margin: Dp = 16.dp
-    val buttonHeight: Dp = 36.dp
-
-    fun text(style: TextStyle, color: ColorProvider? = null, size: TextUnit? = null): TextStyle =
-        style.copy(color = color ?: style.color, fontSize = size ?: style.fontSize)
+    val buttonHeight: Dp = 40.dp
 
     /** Opens the app on [route] (`notomorrow://…` on iOS), through `MainActivity.handlePushIntent`. */
     fun open(context: Context, route: AppState.Route): Action = actionStartActivity(
@@ -111,8 +107,8 @@ internal fun SetupContent(context: Context) {
 internal fun Eyebrow(text: String, color: ColorProvider = W.ink2, modifier: GlanceModifier = GlanceModifier, icon: Int? = null) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
-            Glyph(icon, 12.dp, color)
-            Spacer(GlanceModifier.width(5.dp))
+            Glyph(icon, 14.dp, color)
+            Spacer(GlanceModifier.width(6.dp))
         }
         Text(
             text = text.uppercase(LocaleProvider.current()),
@@ -128,12 +124,13 @@ internal fun Capsule(
     onClick: Action,
     modifier: GlanceModifier = GlanceModifier,
     primary: Boolean = false,
-    horizontalPadding: Dp = 12.dp,
+    horizontalPadding: Dp = 14.dp,
+    height: Dp = W.buttonHeight,
     content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier = modifier
-            .height(W.buttonHeight)
+            .height(height)
             .background(ImageProvider(if (primary) R.drawable.widget_capsule_primary else R.drawable.widget_capsule))
             .clickable(onClick)
             .padding(horizontal = horizontalPadding),
@@ -145,12 +142,18 @@ internal fun Capsule(
 
 /** A capsule holding one short label (`1:00`, `+15`, Skip). */
 @Composable
-internal fun LabelCapsule(label: String, onClick: Action, modifier: GlanceModifier = GlanceModifier, primary: Boolean = false) {
+internal fun LabelCapsule(
+    label: String,
+    onClick: Action,
+    modifier: GlanceModifier = GlanceModifier,
+    primary: Boolean = false,
+    height: Dp = W.buttonHeight,
+) {
     // The label is centred, so it needs little padding: three of these share a small widget's width.
-    Capsule(onClick, modifier, primary, horizontalPadding = 2.dp) {
+    Capsule(onClick, modifier, primary, horizontalPadding = 2.dp, height = height) {
         Text(
             text = label,
-            style = W.subheadlineBold.copy(color = if (primary) W.ground else W.ink),
+            style = W.button.copy(color = if (primary) W.ground else W.ink),
             maxLines = 1,
         )
     }

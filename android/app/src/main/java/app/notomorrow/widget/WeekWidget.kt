@@ -5,36 +5,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
-import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import app.notomorrow.R
 import app.notomorrow.app.AppState
-import app.notomorrow.service.DayState
 import app.notomorrow.util.Fmt
 import app.notomorrow.util.LocaleProvider
 import app.notomorrow.util.NtStrings
 
 /**
- * Gym week (`nt.widget.week`, `docs/widgets.md`): the next session with the routine the Dashboard
- * suggests, and the Mon…Sun strip (`WeekStripView`). Small: the session block over a 12 dp strip;
- * medium: the session block beside the full strip with who-trained dots and "n of m done".
- * Opens Today.
+ * Gym week (`nt.widget.week`, `docs/widgets.md`): the next session — its day, the routine the
+ * Dashboard suggests and the time, big — and the Mon…Sun strip (`WeekStripView`). Small: the
+ * session over a 16 dp strip; medium: the session on top, the full strip with dates (and, when
+ * paired, who-trained dots) across the width. Opens Today.
  */
 class WeekWidget : GlanceAppWidget() {
 
@@ -62,44 +57,36 @@ internal fun WeekContent(data: WeekData) {
     val letters = data.days.map { context.getString(it.labelRes) }
     WidgetFrame(onClick = W.open(context, AppState.Route.Today)) {
         if (size.width.value >= MEDIUM_MIN_WIDTH_DP) {
-            // Left the next session; right the week on a tile: letters, circles, who-trained dots
-            // and how many of this week's gym days are done.
-            val tileWidth = width * 0.56f
-            val stripWidth = tileWidth - 20f
-            Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                Column(GlanceModifier.defaultWeight().fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
-                    NextSessionBlock(context, data, timeSp = 40f)
-                }
-                Spacer(GlanceModifier.width(12.dp))
-                Column(
-                    GlanceModifier.width(tileWidth.dp).fillMaxHeight()
-                        .background(ImageProvider(R.drawable.widget_tile)).padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    BitmapImage(
-                        WidgetCharts.weekStrip(
-                            context, stripWidth, 26f, data.days, data.isPaired,
-                            numbers = true, dots = data.hasSchedule, locale = locale, labels = letters,
-                        ),
-                    )
-                    if (data.hasSchedule) {
-                        Spacer(GlanceModifier.height(10.dp))
-                        val gymDays = data.days.count { it.isGymDay }
-                        val attended = data.days.count { it.myState is DayState.Attended }
-                        val total = maxOf(gymDays, attended)
-                        BitmapImage(WidgetBitmaps.bar(context, stripWidth, 4f, if (total > 0) attended / total.toFloat() else 0f))
-                        Spacer(GlanceModifier.height(5.dp))
-                        Text(context.getString(R.string.widget_week_done_n_n, attended, total), style = W.caption, maxLines = 1)
+            // Top the next session (day and routine left, the time big on the right); under it the
+            // whole week across the width.
+            Column(GlanceModifier.fillMaxSize()) {
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(GlanceModifier.defaultWeight()) { SessionLabel(context, data, maxLines = 2) }
+                    data.next?.takeIf { data.hasSchedule }?.let { next ->
+                        Spacer(GlanceModifier.width(12.dp))
+                        val time = Fmt.time(next.minuteOfDay)
+                        BitmapImage(WidgetBitmaps.displayText(context, time, 50f, maxWidthDp = width * 0.55f), description = time)
                     }
                 }
+                Spacer(GlanceModifier.height(8.dp))
+                BitmapImage(
+                    WidgetCharts.weekStrip(
+                        context, width, 30f, data.days, data.isPaired,
+                        numbers = true, dots = data.hasSchedule && data.isPaired, locale = locale, labels = letters,
+                    ),
+                )
             }
         } else {
             Column(GlanceModifier.fillMaxSize()) {
-                Column(GlanceModifier.fillMaxWidth().defaultWeight()) { NextSessionBlock(context, data, timeSp = 36f) }
-                Spacer(GlanceModifier.height(6.dp))
+                SessionLabel(context, data, maxLines = 3)
+                data.next?.takeIf { data.hasSchedule }?.let { next ->
+                    val time = Fmt.time(next.minuteOfDay)
+                    BitmapImage(WidgetBitmaps.displayText(context, time, 44f, maxWidthDp = width), description = time)
+                }
+                Spacer(GlanceModifier.defaultWeight())
                 BitmapImage(
                     WidgetCharts.weekStrip(
-                        context, width, 15f, data.days, data.isPaired,
+                        context, width, 16f, data.days, data.isPaired,
                         numbers = false, dots = false, locale = locale, labels = letters,
                     ),
                 )
@@ -109,23 +96,22 @@ internal fun WeekContent(data: WeekData) {
 }
 
 /**
- * Next session (ember eyebrow), the routine, the time in the display face and the day ("Today",
- * "Tomorrow", the weekday). With no gym days: the eyebrow and `widget.week.noSchedule`.
+ * The next session's day as the ember eyebrow ("Today", "Tomorrow", the weekday) over the routine
+ * the Dashboard suggests (or "Next session" without one). With no gym days: the widget's name and
+ * `widget.week.noSchedule`.
  */
 @Composable
-private fun NextSessionBlock(context: Context, data: WeekData, timeSp: Float) {
+private fun SessionLabel(context: Context, data: WeekData, maxLines: Int) {
     val next = data.next
     if (!data.hasSchedule || next == null) {
         Eyebrow(context.getString(R.string.widget_week_name), icon = R.drawable.ic_fitness_center)
         Spacer(GlanceModifier.height(6.dp))
-        Text(context.getString(R.string.widget_week_noSchedule), style = W.subheadlineBold, maxLines = 3)
+        Text(context.getString(R.string.widget_week_noSchedule), style = W.headline, maxLines = maxLines)
         return
     }
-    Eyebrow(context.getString(R.string.dashboard_nextSession), color = W.ember, icon = R.drawable.ic_fitness_center)
-    Spacer(GlanceModifier.height(3.dp))
-    data.routineName?.takeIf { it.isNotEmpty() }?.let { Text(it, style = W.headline, maxLines = 1) }
-    val time = Fmt.time(next.minuteOfDay)
-    BitmapImage(WidgetBitmaps.displayText(context, time, timeSp), description = time)
-    val relative = Fmt.relativeDay(next.day, NtStrings(context.resources), today = data.today)
-    Text(relative, style = W.footnote, maxLines = 1)
+    val day = Fmt.relativeDay(next.day, NtStrings(context.resources), today = data.today)
+    Eyebrow(day, color = W.ember, icon = R.drawable.ic_fitness_center)
+    Spacer(GlanceModifier.height(2.dp))
+    val routine = data.routineName?.takeIf { it.isNotEmpty() } ?: context.getString(R.string.dashboard_nextSession)
+    Text(routine, style = W.title, maxLines = 1)
 }
