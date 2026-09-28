@@ -96,6 +96,9 @@ def build(pattern, rig, view, j2d):
                 scene3d.reach(rig, S, bar + Vector((0, 0, 0.03)), Vector((0, 1, -0.2))); look.hold(rig, S)
         elif t == 'post':
             a, b = world(pr['from']), world(pr['to'])
+            if isinstance(pr['from'], str) and pr['from'].startswith('wrist'):   # a landmine bar held at its end
+                S = sides[pr['from'][-1]]; look.hold(rig, S); a = look.grip(rig, S)[0]
+                cylinder(a + (a - b).normalized() * 0.06, a - (a - b).normalized() * 0.1, 0.022, steel)
             cylinder(a, b, 0.028, frame)
             base_c = Vector((b.x, b.y, 0.012)); box(base_c, (0.36, 0.08, 0.024) if not front else (0.08, 0.36, 0.024), frame, bevel=0.005)
         elif t in ('plate',):
