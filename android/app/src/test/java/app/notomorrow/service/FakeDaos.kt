@@ -128,11 +128,8 @@ class FakeExerciseDao(initial: List<ExerciseEntity> = emptyList()) : ExerciseDao
 
     override suspend fun byIds(ids: List<String>): List<ExerciseEntity> = rows.value.filter { it.id in ids }
 
-    override suspend fun missingPolishNames(limit: Int): List<ExerciseEntity> =
-        rows.value.filter { it.namePL == null && !it.isCustom }.take(limit)
-
-    override suspend fun updatePolishName(id: String, namePL: String) {
-        rows.value = rows.value.map { if (it.id == id) it.copy(namePL = namePL) else it }
+    override suspend fun renameLibraryExercise(id: String, name: String, namePL: String?) {
+        rows.value = rows.value.map { if (it.id == id && !it.isCustom) it.copy(name = name, namePL = namePL) else it }
     }
 
     override suspend fun markUsed(id: String, at: Long) {

@@ -25,8 +25,9 @@ import java.util.UUID
  * Polish names come from `assets/exercises_pl.json` (id → name). The import runs once per
  * bundled library version: [LIBRARY_VERSION] is stamped in `nt.exerciseLibrary.version` after a
  * successful import, and a later launch skips the 1 MB parse unless the stamp differs or the
- * library has no rows (a new or emptied database). A run inserts what is missing and
- * **backfills** Polish names added by a later build. Any parse failure aborts silently — a missing
+ * library has no rows (a new or emptied database). A run inserts what is missing and brings the
+ * English and Polish names of the library rows already there up to date, so a rename reaches
+ * existing installs (ids, history and recent use stay; custom exercises are never touched). Any parse failure aborts silently — a missing
  * library is an empty picker, never a crash — and leaves the stamp alone, so the next launch
  * tries again.
  *
@@ -104,8 +105,14 @@ class ExerciseLibrary(
             val bundled = load() ?: return
             // IGNORE preserves custom rows, history and recent-use ordering on upgrades.
             dao.insertAllIgnoring(bundled.records.map { it.toEntity(bundled.polish[it.id]) })
-            for (row in dao.missingPolishNames(BACKFILL_LIMIT)) {
-                bundled.polish[row.id]?.let { dao.updatePolishName(row.id, it) }
+            val records = bundled.records.associateBy { it.id }
+            for (row in dao.allByName()) {
+                if (row.isCustom) continue
+                val record = records[row.id] ?: continue
+                val namePL = bundled.polish[row.id] ?: row.namePL
+                if (row.name != record.name || row.namePL != namePL) {
+                    dao.renameLibraryExercise(row.id, record.name, namePL)
+                }
             }
             stamp.setVersion(LIBRARY_VERSION)
             didRun = true
@@ -194,14 +201,14 @@ class ExerciseLibrary(
     companion object {
         const val EXERCISES_ASSET = "exercises.json"
         const val EXERCISES_PL_ASSET = "exercises_pl.json"
-        const val BACKFILL_LIMIT = 2000
 
         /**
          * The bundled library's version. **Bump it whenever `exercises.json` or
          * `exercises_pl.json` changes**, or existing installs never see the new rows or names.
          * Kept equal to iOS's `ExerciseLibrary.libraryVersion`.
+         * 3: the Hammer Strength machines name the movement first ("Leg Press (Hammer Strength Iso-Lateral)").
          */
-        const val LIBRARY_VERSION = 2
+        const val LIBRARY_VERSION = 3
 
         /**
          * `needsImport(storedVersion:libraryRows:)` — import when the stamp is not this build's

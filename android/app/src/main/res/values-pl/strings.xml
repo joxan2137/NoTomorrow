@@ -847,6 +847,7 @@
     <string name="workout_beatsBest_s_s">%1$s bije twoją najlepszą serię (%2$s)</string>
     <string name="workout_best">Najlepiej</string>
     <string name="workout_bw">MC</string>
+    <string name="workout_copy">Skopiuj trening</string>
     <string name="workout_defaultName">Trening</string>
     <string name="workout_discard">Odrzuć trening</string>
     <string name="workout_done_editSets">Popraw serie</string>

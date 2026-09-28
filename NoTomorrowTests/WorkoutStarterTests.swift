@@ -148,6 +148,75 @@ final class WorkoutStarterTests: XCTestCase {
         XCTAssertEqual(sets.map(\.reps), [8, 6])
     }
 
+    // MARK: Copy workout
+
+    func testCopyStartsTheLoggedSetsAgainNoneOfThemDone() throws {
+        let squat = exercise("Barbell_Squat")
+        let plank = exercise("Plank")
+        let gone = exercise("Gone")
+        let source = Workout(name: "Legs", startedAt: .now.addingTimeInterval(-86_400))
+        source.endedAt = .now.addingTimeInterval(-82_800)
+        context.insert(source)
+        func add(_ exercise: Exercise, order: Int, rest: Int, group: Int?,
+                 sets: [(SetKind, Double, Int, Int, Bool)]) -> WorkoutExercise {
+            let entry = WorkoutExercise(order: order, exercise: exercise, restSeconds: rest)
+            entry.supersetGroup = group
+            context.insert(entry)
+            entry.workout = source
+            for (index, (kind, kg, reps, seconds, done)) in sets.enumerated() {
+                let set = SetEntry(order: index, kind: kind, weightKg: kg, reps: reps, seconds: seconds)
+                if done { set.completedAt = source.startedAt.addingTimeInterval(Double(index) * 60) }
+                context.insert(set)
+                set.workoutExercise = entry
+            }
+            return entry
+        }
+        let squats = add(squat, order: 0, rest: 150, group: nil,
+                         sets: [(.warmup, 60, 5, 0, true), (.normal, 100, 5, 0, true), (.normal, 100, 4, 0, false)])
+        squats.notes = "Belt on"
+        let goneEntry = add(gone, order: 1, rest: 90, group: 1, sets: [(.normal, 20, 10, 0, true)])
+        _ = add(plank, order: 2, rest: 60, group: 1, sets: [(.normal, 0, 0, 45, true)])
+        goneEntry.exercise = nil   // deleted from the library since
+        try context.save()
+        let session = makeSession()
+
+        XCTAssertTrue(WorkoutStarter.canCopy(source))
+        WorkoutStarter.requestStart(.copy(source), in: context, session: session)
+
+        let copy = try XCTUnwrap(session.activeWorkout(in: context))
+        XCTAssertNotEqual(copy.id, source.id)
+        XCTAssertEqual(copy.name, "Legs")
+        XCTAssertNil(copy.endedAt)
+        XCTAssertEqual(copy.sortedExercises.map { $0.exercise?.id }, ["Barbell_Squat", "Plank"])
+        XCTAssertEqual(copy.sortedExercises.map(\.restSeconds), [150, 60])
+        XCTAssertEqual(copy.sortedExercises.map(\.supersetGroup), [nil, nil], "a superset left alone is no superset")
+        XCTAssertEqual(copy.sortedExercises.first?.notes, "Belt on")
+        let squatSets = copy.sortedExercises.first?.sortedSets ?? []
+        XCTAssertEqual(squatSets.map(\.kind), [.warmup, .normal], "the sets it logged, not the one it skipped")
+        XCTAssertEqual(squatSets.map(\.weightKg), [60, 100])
+        XCTAssertEqual(squatSets.map(\.reps), [5, 5])
+        XCTAssertEqual(copy.sortedExercises.last?.sortedSets.map(\.seconds), [45])
+        XCTAssertTrue(copy.exercises.flatMap(\.sets).allSatisfy { !$0.isCompleted && !$0.isPR })
+        XCTAssertEqual(source.completedSetCount, 4, "the finished workout is left as it was")
+    }
+
+    func testCopyKeepsTheRowsOfAnExerciseWithNothingDone() {
+        let curl = exercise("Barbell_Curl")
+        let source = Workout(name: "Arms")
+        source.endedAt = .now
+        context.insert(source)
+        let entry = WorkoutExercise(order: 0, exercise: curl)
+        context.insert(entry)
+        entry.workout = source
+        XCTAssertEqual(WorkoutStarter.copiedSets(of: entry).count, 1, "an exercise without rows gets one empty row")
+        for index in 0..<2 {
+            let set = SetEntry(order: index, weightKg: 30, reps: 12)
+            context.insert(set)
+            set.workoutExercise = entry
+        }
+        XCTAssertEqual(WorkoutStarter.copiedSets(of: entry).map { $0.reps }, [12, 12])
+    }
+
     // MARK: Gate
 
     func testGateIsClearWithoutWorkout() {

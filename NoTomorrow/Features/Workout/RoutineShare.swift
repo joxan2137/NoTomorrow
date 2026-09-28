@@ -369,7 +369,7 @@ enum RoutineShare {
 
     // MARK: Matching to the library
 
-    /// The user's exercises, looked up by id and by name (English and Polish, `WorkoutImport.matchKeys`).
+    /// The user's exercises, looked up by id and by name (English and Polish, `WorkoutImport.libraryKeys`).
     struct Catalog {
         struct Entry: Equatable {
             var id: String
@@ -384,7 +384,7 @@ enum RoutineShare {
         mutating func add(_ entry: Entry, names: [String]) {
             if byID[entry.id] == nil { byID[entry.id] = entry }
             for name in names {
-                for key in WorkoutImport.matchKeys(name) where byKey[key] == nil { byKey[key] = entry }
+                for key in WorkoutImport.libraryKeys(name) where byKey[key] == nil { byKey[key] = entry }
             }
         }
 

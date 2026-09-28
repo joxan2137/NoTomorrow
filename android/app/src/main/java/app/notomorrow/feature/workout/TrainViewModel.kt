@@ -96,6 +96,9 @@ class TrainViewModel internal constructor(
      */
     fun startEmpty(name: String) = requestStart(WorkoutStarter.Request.Empty(name))
 
+    /** "Copy workout" on a finished workout (its detail sheet, or a long press in the history). */
+    fun copyWorkout(workoutId: String) = requestStart(WorkoutStarter.Request.Copy(workoutId))
+
     /** `requestStart(_:)` — starts right away, or asks when a workout is already in progress. */
     private fun requestStart(request: WorkoutStarter.Request) {
         if (starting) return

@@ -125,6 +125,39 @@ final class ExerciseLibraryTests: XCTestCase {
         XCTAssertEqual(libraryNames(), ["Barbell_Squat": "Przysiad ze sztangą", "Pullups": nil])
     }
 
+    func testANewLibraryVersionRenamesLibraryRowsAndKeepsTheirHistory() async {
+        let used = Date(timeIntervalSince1970: 1_000)
+        let old = Exercise(id: "Barbell_Squat", name: "Hammer Strength Squat", namePL: "Hammer Strength – przysiad",
+                           primaryMuscles: ["quadriceps"])
+        old.lastUsedAt = used
+        context.insert(old)
+        context.insert(Exercise(id: "custom-1", name: "Hammer Strength Mine", primaryMuscles: [], isCustom: true))
+        try? context.save()
+        defaults.set(ExerciseLibrary.libraryVersion - 1, forKey: ExerciseLibrary.versionKey)
+
+        let data = bundled()
+        await ExerciseLibrary.importIfNeeded(into: context, defaults: defaults, load: { data })
+
+        let rows = (try? context.fetch(FetchDescriptor<Exercise>())) ?? []
+        let squat = rows.first { $0.id == "Barbell_Squat" }
+        XCTAssertEqual(squat?.name, "Barbell Squat")
+        XCTAssertEqual(squat?.namePL, "Przysiad ze sztangą")
+        XCTAssertEqual(squat?.lastUsedAt, used, "a renamed exercise keeps its recent use")
+        XCTAssertEqual(rows.first { $0.id == "custom-1" }?.name, "Hammer Strength Mine", "custom exercises stay as named")
+    }
+
+    func testTheHammerStrengthMachinesNameTheMovementFirst() {
+        guard let bundled = ExerciseLibrary.loadBundled() else { return XCTFail("the bundled library did not load") }
+        let machines = bundled.records.filter { $0.id.hasPrefix("nt_hs_") }
+        XCTAssertEqual(machines.count, 89)
+        for record in machines {
+            XCTAssertFalse(record.name.hasPrefix("Hammer Strength"), record.name)
+            XCTAssertTrue(record.name.hasSuffix(")") && record.name.contains("(Hammer Strength"), record.name)
+            let polish = bundled.polish[record.id] ?? ""
+            XCTAssertTrue(polish.hasSuffix(")") && !polish.hasPrefix("Hammer Strength"), polish)
+        }
+    }
+
     func testEmptyStoreImportsEvenWithTheStamp() async {
         defaults.set(ExerciseLibrary.libraryVersion, forKey: ExerciseLibrary.versionKey)
         context.insert(Exercise(id: "custom-1", name: "My press", primaryMuscles: ["chest"], isCustom: true))

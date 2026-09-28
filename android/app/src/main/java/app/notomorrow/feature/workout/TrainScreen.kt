@@ -47,6 +47,7 @@ import app.notomorrow.designsystem.NtAlertAction
 import app.notomorrow.designsystem.NtAlertRole
 import app.notomorrow.designsystem.NtIcon
 import app.notomorrow.designsystem.NtIcons
+import app.notomorrow.designsystem.NtMenuItem
 import app.notomorrow.designsystem.sfIconSize
 import app.notomorrow.designsystem.NtText
 import app.notomorrow.designsystem.PrimaryButton
@@ -184,6 +185,8 @@ fun TrainScreen() {
                             workout = workout,
                             unit = state.unit,
                             onSelect = { selectedWorkoutId = workout.workout.id },
+                            onCopy = { model.copyWorkout(workout.workout.id) },
+                            onSaveAsRoutine = { routineEdit = RoutineEditRequest.FromWorkout(workout.workout.id) },
                         )
                     }
                 }
@@ -196,6 +199,8 @@ fun TrainScreen() {
         unit = state.unit,
         host = "train",
         onDismiss = { selectedWorkoutId = null },
+        // Through the tab's start guard, so a workout in progress asks first.
+        onCopy = model::copyWorkout,
     )
 
     RoutineEditorPresenter(
@@ -495,15 +500,37 @@ private fun HistoryWeekLabel(week: HistoryWeek) {
     Eyebrow(stringResource(title), modifier = Modifier.padding(top = 12.dp))
 }
 
-/** One finished workout plus the hairline iOS draws after every row. */
+/**
+ * One finished workout plus the hairline iOS draws after every row. A long press offers Copy
+ * workout (while an exercise is still in the library) and Save as routine (once a set was done),
+ * as under its detail — `TrainView.historyMenu(_:)`.
+ */
 @Composable
 private fun HistoryEntry(
     workout: WorkoutWithExercises,
     unit: WeightUnit,
     onSelect: () -> Unit,
+    onCopy: () -> Unit,
+    onSaveAsRoutine: () -> Unit,
 ) {
+    val menu = listOfNotNull(
+        if (WorkoutStarter.canCopy(workout)) {
+            NtMenuItem(title = stringResource(S.workout_copy), onClick = onCopy, icon = NtIcons.DocOnDoc)
+        } else {
+            null
+        },
+        if (workout.completedSetCount > 0) {
+            NtMenuItem(
+                title = stringResource(S.routine_saveFromWorkout),
+                onClick = onSaveAsRoutine,
+                icon = NtIcons.SquareAndArrowDown,
+            )
+        } else {
+            null
+        },
+    )
     Column {
-        WorkoutHistoryRow(workout = workout, unit = unit, onClick = onSelect)
+        WorkoutHistoryRow(workout = workout, unit = unit, onClick = onSelect, menu = menu)
         Hairline()
     }
 }
