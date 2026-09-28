@@ -117,7 +117,7 @@ enum WidgetSync {
     private static func calendarGrid(in context: ModelContext, today: Date, now: Date, goal: TrainingGoal,
                                      kcalGoal: Double, pendingTodayKcal: Double) -> WidgetSnapshot.CalendarGrid {
         let cal = Calendar.current
-        let layout = FuelCalendar.layout(today: today)
+        let layout = FuelCalendar.layout(today: today, weeks: WidgetSnapshot.CalendarGrid.weeks)
         var kcalByDay = FuelCalendar.kcalByDay(from: layout.start, in: context)
         if pendingTodayKcal > 0 { kcalByDay[today, default: 0] += pendingTodayKcal }
 

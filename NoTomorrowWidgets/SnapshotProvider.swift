@@ -34,7 +34,7 @@ extension WidgetSnapshot {
         let today = cal.startOfDay(for: now)
         let goal = 2600.0
         var days: [CalendarGrid.Day] = []
-        for offset in stride(from: 181, through: 0, by: -1) {
+        for offset in stride(from: 7 * CalendarGrid.weeks - 1, through: 0, by: -1) {
             guard let date = cal.date(byAdding: .day, value: -offset, to: today) else { continue }
             // Deterministic "noise": most days near the goal, some off, a few not logged.
             let seed = (offset * 7919) % 97

@@ -78,6 +78,9 @@ struct WeekView: View {
                     nextBlock(next, week, timeSize: 44).frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .leading, spacing: 8) {
                         strip(days, circle: 26, letters: true, dots: week.isPaired)
+                            .padding(.horizontal, 6).padding(.vertical, 8)
+                            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.white.opacity(0.05)))
+                            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(W.hairline, lineWidth: 1))
                         let gymDays = days.filter(\.isGymDay).count
                         if gymDays > 0 {
                             Text(verbatim: WidgetText.format("widget.week.done %lld %lld",

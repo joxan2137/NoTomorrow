@@ -147,8 +147,8 @@ object WidgetData {
         val db = container.db
         val profile = db.profileDao().profile()
         val today = Days.date(now, zone)
-        // The Monday of the oldest week the tallest widget shows (`WidgetCharts.calendar`).
-        val start = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusWeeks(WidgetCharts.MAX_ROWS - 1L)
+        // The Monday of the oldest week the widest widget shows (`WidgetCharts.contributions`).
+        val start = today.minusDays((today.dayOfWeek.value - 1).toLong()).minusWeeks(WidgetCharts.MAX_WEEKS - 1L)
         val from = FuelCalendar.storedDayBounds(start, zone).lower
         val kcalByDay = FuelCalendar.kcalByDay(db.mealDao().observeKcalByDaySince(from).first(), zone)
         val starts = db.workoutDao().countedWorkoutStartsSince(Days.millis(start, zone))

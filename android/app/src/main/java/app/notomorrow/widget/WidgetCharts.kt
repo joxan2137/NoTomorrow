@@ -8,125 +8,78 @@ import app.notomorrow.designsystem.NT
 import app.notomorrow.feature.dashboard.WeekStripDot
 import app.notomorrow.feature.dashboard.isUpcomingGymDay
 import app.notomorrow.feature.dashboard.weekStripDots
+import app.notomorrow.feature.fuel.FuelCalendar
 import app.notomorrow.service.DayState
 import app.notomorrow.service.WeekDay
 import app.notomorrow.util.Fmt
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.floor
 
 /**
- * The two grids the widgets draw as bitmaps: the Fuel calendar (the recent weeks in `heat`
- * colours with trained days on top, `docs/widgets.md` "Fuel calendar") and the Mon…Sun strip
- * (`WeekStripView`).
+ * The two grids the widgets draw as bitmaps: the Fuel calendar (a GitHub-style contribution
+ * graph in `heat` colours with a dot on the days you trained, `docs/widgets.md` "Fuel calendar")
+ * and the Mon…Sun strip (`WeekStripView`).
  */
 internal object WidgetCharts {
 
-    /** Gap between calendar cells, their corner radius and the shortest row worth drawing. */
-    private const val CELL_GAP_DP = 4f
-    private const val CELL_RADIUS_DP = 8f
-    private const val MIN_ROW_DP = 24f
+    /** Cell gap as a share of the cell pitch (GitHub: 3 px on 13), and the pitch's bounds. */
+    private const val GAP_RATIO = 0.22f
+    private const val MAX_PITCH_DP = 22f
+    private const val MIN_TWO_BAND_PITCH_DP = 15f
 
-    /** The most weeks any size shows; `WidgetData.calendar` reads this far back. */
-    const val MAX_ROWS = 8
+    /** The gap between two bands of weeks. */
+    private const val BAND_GAP_DP = 12f
 
-    /** The weekday-letter band above the calendar. */
-    private const val WEEKDAY_BAND_DP = 18f
+    /** The most weeks any size shows (a year); `WidgetData.calendar` reads this far back. */
+    const val MAX_WEEKS = 53
 
     /**
-     * The Fuel calendar as a calendar: weekday letters (Monday first, today's in `ink`) over the
-     * weeks up to this one, one row per week, the current week at the bottom. As many weeks as fit
-     * [heightDp] with rows at least [MIN_ROW_DP] tall, and no more than would make the cells taller
-     * than wide. Every cell is a rounded tile in its `heat` colour with the date in the display face
-     * (the 1st shows the month's short name); a trained day adds an `ink` dot, today an `ink` ring,
-     * and days still ahead are just the date in `ink3`.
+     * The Fuel calendar as a GitHub contribution graph, squares only: one column per week, Monday
+     * on top, the current week at the right. Each day is a small rounded square in its `heat`
+     * colour, a day you trained gets an `ink` dot in the middle, today an `ink` ring; days still
+     * ahead are left out. Cells are square and as big as the height allows (at most [MAX_PITCH_DP]
+     * a pitch); when that would leave the grid only a few weeks wide, the weeks wrap into a second
+     * band under the first (the older half on top). The grid is centred in the bitmap.
      */
-    fun calendar(
-        context: Context,
-        widthDp: Float,
-        heightDp: Float,
-        data: CalendarData,
-        weekdayLetters: List<String>,
-        locale: Locale,
-    ): WidgetBitmaps.Sized {
-        val gap = CELL_GAP_DP
-        val cellWidth = (widthDp + gap) / 7f - gap
-        val available = heightDp - WEEKDAY_BAND_DP
-        val bySquare = Math.round((available + gap) / (cellWidth + gap))
-        val byMin = floor((available + gap) / (MIN_ROW_DP + gap)).toInt()
-        val rows = minOf(byMin, maxOf(bySquare, 4)).coerceIn(2, MAX_ROWS)
-        val cellHeight = (available + gap) / rows - gap
-
+    fun contributions(context: Context, widthDp: Float, heightDp: Float, data: CalendarData): WidgetBitmaps.Sized {
         val (bitmap, canvas) = WidgetBitmaps.canvas(widthDp, heightDp, WidgetBitmaps.scale(context))
-        val letterPaint = WidgetBitmaps.textPaint(Typeface.create("sans-serif-medium", Typeface.BOLD), 12f, NT.Colors.ink3, false)
-        val lm = letterPaint.fontMetrics
-        val todayColumn = data.today.dayOfWeek.value - 1
-        for (c in 0 until 7) {
-            letterPaint.color = WidgetBitmaps.paint(if (c == todayColumn) NT.Colors.ink else NT.Colors.ink3).color
-            val cx = c * (cellWidth + gap) + cellWidth / 2f
-            canvas.drawText(weekdayLetters.getOrElse(c) { "" }, cx, (WEEKDAY_BAND_DP - 4f) / 2f - (lm.ascent + lm.descent) / 2f, letterPaint)
-        }
+        fun pitchFor(bands: Int) = (heightDp - (bands - 1) * BAND_GAP_DP) / (bands * 7 - GAP_RATIO)
+        val bands = if (pitchFor(1) > MAX_PITCH_DP && pitchFor(2) >= MIN_TWO_BAND_PITCH_DP) 2 else 1
+        val pitch = minOf(pitchFor(bands), MAX_PITCH_DP).coerceAtLeast(4f)
+        val gap = pitch * GAP_RATIO
+        val cell = pitch - gap
+        val perBand = floor((widthDp + gap) / pitch).toInt().coerceIn(1, MAX_WEEKS / bands)
+        val layout = FuelCalendar.layout(data.today, perBand * bands)
 
-        val thisMonday = data.today.minusDays((data.today.dayOfWeek.value - 1).toLong())
-        val first = thisMonday.minusWeeks((rows - 1).toLong())
+        val bandHeight = 7 * pitch - gap
+        val left = (widthDp - (perBand * pitch - gap)) / 2f
+        val top = (heightDp - (bands * bandHeight + (bands - 1) * BAND_GAP_DP)) / 2f
+
         val cellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         val dotPaint = WidgetBitmaps.paint(NT.Colors.ink)
         val ringPaint = WidgetBitmaps.paint(NT.Colors.ink).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 2f
+            strokeWidth = 1.5f
         }
-        val numberSp = minOf(cellHeight * 0.52f, cellWidth * 0.42f).coerceIn(10f, 22f)
-        val numberPaint = WidgetBitmaps.textPaint(WidgetBitmaps.display(context), numberSp, NT.Colors.ink)
-        val nm = numberPaint.fontMetrics
-        val monthFormat = DateTimeFormatter.ofPattern("LLL", locale)
-        val dot = (minOf(cellWidth, cellHeight) * 0.12f).coerceIn(2.5f, 4f)
-        val radius = minOf(CELL_RADIUS_DP, cellHeight / 3f)
+        val radius = cell * 0.24f
+        val dot = (cell * 0.2f).coerceAtLeast(1.75f)
         val rect = RectF()
-        for (r in 0 until rows) {
-            for (c in 0 until 7) {
-                val date = first.plusDays((r * 7 + c).toLong())
-                val left = c * (cellWidth + gap)
-                val top = WEEKDAY_BAND_DP + r * (cellHeight + gap)
-                rect.set(left, top, left + cellWidth, top + cellHeight)
-                val future = date > data.today
-                val level = if (future) 0 else data.level(date)
-                if (!future) {
-                    cellPaint.color = WidgetBitmaps.paint(NT.Colors.heat[level]).color
+        for (band in 0 until bands) {
+            val bandTop = top + band * (bandHeight + BAND_GAP_DP)
+            for (column in 0 until perBand) {
+                val days = layout.columns.getOrNull(band * perBand + column) ?: continue
+                for (row in 0 until 7) {
+                    val date = days[row] ?: continue
+                    val x = left + column * pitch
+                    val y = bandTop + row * pitch
+                    rect.set(x, y, x + cell, y + cell)
+                    cellPaint.color = WidgetBitmaps.paint(NT.Colors.heat[data.level(date)]).color
                     canvas.drawRoundRect(rect, radius, radius, cellPaint)
-                }
-                val text = if (date.dayOfMonth == 1) {
-                    monthFormat.format(date).trimEnd('.').uppercase(locale)
-                } else {
-                    Fmt.dayOfMonth(date, locale)
-                }
-                val paint = Paint(numberPaint).apply {
-                    color = WidgetBitmaps.paint(
-                        when {
-                            future -> NT.Colors.ink3
-                            level == 0 -> NT.Colors.ink2
-                            else -> NT.Colors.ink
-                        },
-                    ).color
-                    val measured = measureText(text)
-                    if (measured > cellWidth - 6f) textSize = textSize * (cellWidth - 6f) / measured
-                }
-                val trained = !future && date in data.trainedDays
-                // With room, the trained dot sits under the date; in a short row, beside it.
-                val below = cellHeight >= numberSp * 1.25f + 3f * dot + 4f
-                val textWidth = paint.measureText(text)
-                val cx = rect.centerX() - if (trained && !below) dot * 1.5f else 0f
-                val cy = rect.centerY() - if (trained && below) dot * 1.5f else 0f
-                canvas.drawText(text, cx, cy - (nm.ascent + nm.descent) / 2f * paint.textSize / numberSp, paint)
-                if (trained) {
-                    if (below) {
-                        canvas.drawCircle(rect.centerX(), cy + numberSp * 0.5f + dot * 1.4f, dot, dotPaint)
-                    } else {
-                        canvas.drawCircle(cx + textWidth / 2f + dot * 2f, rect.centerY(), dot, dotPaint)
+                    if (date in data.trainedDays) canvas.drawCircle(rect.centerX(), rect.centerY(), dot, dotPaint)
+                    if (date == data.today) {
+                        rect.inset(0.75f, 0.75f)
+                        canvas.drawRoundRect(rect, radius, radius, ringPaint)
                     }
-                }
-                if (date == data.today) {
-                    rect.inset(1f, 1f)
-                    canvas.drawRoundRect(rect, radius - 1f, radius - 1f, ringPaint)
                 }
             }
         }

@@ -31,6 +31,9 @@ struct WidgetSnapshot: Codable, Equatable {
     }
 
     struct CalendarGrid: Codable, Equatable {
+        /// Weeks of days the app publishes: a year, the widest the Fuel calendar widget draws.
+        static let weeks = 53
+
         /// Consecutive local days, oldest first, ending on the snapshot's today.
         var days: [Day]
         /// Heat bands for the current goal (`FuelCalendar.tolerance`), permille.
