@@ -347,6 +347,12 @@ final class AIScanCorrectionTests: XCTestCase {
         XCTAssertEqual(picked.food?.id, "custom:kompot")
         XCTAssertEqual(picked.kcal, 150, accuracy: 1e-9)
         XCTAssertEqual(saved.useCount, 1)
+        // The model's own item is kept in the library too, per 100 g with its portion as the serving.
+        let estimated = try context.fetch(FetchDescriptor<FoodItem>()).filter { $0.source == .aiEstimate }
+        XCTAssertEqual(estimated.map(\.name), ["Pierogi ruskie"])
+        XCTAssertEqual(estimated.first?.kcalPer100 ?? 0, 200, accuracy: 1e-9)
+        XCTAssertEqual(estimated.first?.servingSizeG, 210)
+        XCTAssertNotNil(estimated.first?.lastUsedAt)
     }
 
     // MARK: Label fill

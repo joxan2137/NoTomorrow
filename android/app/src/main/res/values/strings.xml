@@ -325,7 +325,10 @@
     <string name="fuel_proteinShort">P %s</string>
     <string name="fuel_proteinToGo">%s protein to go</string>
     <string name="fuel_quickAdd">Quick add</string>
-    <string name="fuel_quickAdd_hint">Calories are enough; macros are optional.</string>
+    <string name="fuel_quickAdd_hint">Calories are enough; weight and macros are optional.</string>
+    <string name="fuel_quickAdd_save">Save to your foods</string>
+    <string name="fuel_quickAdd_saveHint">Find it in search to add again. Without a weight, one portion counts as 100 g.</string>
+    <string name="fuel_quickAdd_saveOnly">Save for later</string>
     <string name="fuel_recent">Recent</string>
     <string name="fuel_scan_checkDigits">This code doesn\'t look right. Check the digits.</string>
     <string name="fuel_scan_codePlaceholder">Barcode digits</string>

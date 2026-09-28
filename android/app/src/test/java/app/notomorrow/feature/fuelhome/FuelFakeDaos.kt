@@ -7,6 +7,7 @@ import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.data.relation.DayKcal
 import app.notomorrow.data.relation.DayProtein
 import app.notomorrow.data.relation.MealEntryWithFood
+import app.notomorrow.model.FoodSource
 import app.notomorrow.service.BarcodeKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,9 @@ class FakeFoodDao(initial: List<FoodItemEntity> = emptyList()) : FoodDao {
 
     override fun observeLibrary(): Flow<List<FoodItemEntity>> =
         rows.map { list -> list.sortedWith(compareBy<FoodItemEntity> { it.lastUsedAt == null }.thenByDescending { it.lastUsedAt }) }
+
+    override suspend fun customFoods(): List<FoodItemEntity> =
+        rows.value.filter { it.barcode == null && (it.source == FoodSource.QuickAdd || it.source == FoodSource.AiEstimate) }
 
     override suspend fun upsert(food: FoodItemEntity) {
         rows.value = rows.value.filterNot { it.id == food.id } + food

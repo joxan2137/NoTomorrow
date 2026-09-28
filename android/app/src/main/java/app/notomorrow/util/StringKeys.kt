@@ -341,6 +341,9 @@ object S {
     val fuel_proteinToGo = R.string.fuel_proteinToGo
     val fuel_quickAdd = R.string.fuel_quickAdd
     val fuel_quickAdd_hint = R.string.fuel_quickAdd_hint
+    val fuel_quickAdd_save = R.string.fuel_quickAdd_save
+    val fuel_quickAdd_saveHint = R.string.fuel_quickAdd_saveHint
+    val fuel_quickAdd_saveOnly = R.string.fuel_quickAdd_saveOnly
     val fuel_recent = R.string.fuel_recent
     val fuel_scan_checkDigits = R.string.fuel_scan_checkDigits
     val fuel_scan_codePlaceholder = R.string.fuel_scan_codePlaceholder

@@ -14,6 +14,7 @@ import app.notomorrow.data.dao.MealDao
 import app.notomorrow.data.entity.FoodItemEntity
 import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.data.prefs.AppPrefs
+import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
 import app.notomorrow.net.dto.AIDatabaseFood
 import app.notomorrow.net.dto.AIEstimate
@@ -170,9 +171,10 @@ object AIScanDerive {
 }
 
 /**
- * `AIScanModel.log(into:day:)`: one `MealEntry` per food. Model items log as AI estimates; items
- * the user took from the food database log as ordinary food entries, and the product is saved to
- * the library (or its usage bumped) the way the portion sheet does it.
+ * `AIScanModel.log(into:day:)`: one `MealEntry` per food. Model items log as AI estimates and are
+ * kept in the library too ([CustomFoodLibrary]), so they can be found in search and added again
+ * later; items the user took from the food database log as ordinary food entries, and the product
+ * is saved to the library (or its usage bumped) the way the portion sheet does it.
  */
 object AIScanLog {
 
@@ -199,6 +201,18 @@ object AIScanLog {
                 fatG = item.fatPer100 * factor,
             )
         } else {
+            // A database pick deleted meanwhile stays deleted; only the model's own items are saved.
+            if (food.databaseFood == null) CustomFoodLibrary.save(
+                name = food.name,
+                grams = food.grams,
+                kcal = food.kcal,
+                protein = food.protein,
+                carbs = food.carbs,
+                fat = food.fat,
+                source = FoodSource.AiEstimate,
+                foodDao = foodDao,
+                now = now,
+            )
             MealEntryEntity(
                 id = UUID.randomUUID().toString(),
                 day = day,
