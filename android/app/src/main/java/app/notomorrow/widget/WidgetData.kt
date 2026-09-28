@@ -40,10 +40,6 @@ data class CalendarData(
     val kcalGoal: Double,
     val goal: TrainingGoal,
 ) {
-    /** Days among the 30 before today that reached level 4 (`FuelCalendar.stats`). */
-    val onTarget30: Int
-        get() = FuelCalendar.stats(kcalByDay, today, kcalGoal, goal).onTarget30
-
     /** `FuelCalendar.level` for [day] — 0 for a day with nothing logged. */
     fun level(day: LocalDate): Int {
         val kcal = kcalByDay[day]

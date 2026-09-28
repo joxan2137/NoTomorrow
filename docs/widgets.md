@@ -34,9 +34,8 @@ the controls say what they do.
   eaten in the display face; "/ 180 g" under it), then as many quick-food capsules (`+`, name, kcal)
   as fit under them (1 at 4×2, up to 3). With no quick foods the macros sit centred. Over the goal the
   ring shows "+250" and `widget.fuel.over` in `bad`.
-- **Fuel calendar**: the GitHub contribution graph described under "Fuel calendar" below, drawn as one
-  bitmap (`WidgetCharts.contributions`) under a Glance header row. At the 4×2 minimum (content under
-  110 dp tall) the header makes way for the weeks.
+- **Fuel calendar**: the squares described under "Fuel calendar" below, drawn as one bitmap
+  (`WidgetCharts.contributions`) centred in the widget.
 - **Gym week**: the eyebrow is the next session's day in ember (`day.today`, `day.tomorrow` or the
   weekday), then the routine the app suggests in the title style (`dashboard.nextSession` without one),
   then the time in the display face. **Small**: those three stacked over the 16 dp strip. **Medium**:
@@ -83,28 +82,19 @@ No app launch, no sheet: one tap is one entry. The widgets then refresh.
 ### Fuel calendar
 
 The Fuel history heat as a GitHub contribution graph (`FuelCalendar`: levels, colours `heat[0…4]`), with training
-on top of it. Same metrics on both platforms (iOS `ContributionGrid`, Android `WidgetCharts.contributions`).
+on top of it, and nothing else: no header, month or weekday names, or legend. Same metrics on both platforms (iOS
+`ContributionGrid`, Android `WidgetCharts.contributions`).
 
-- **Header**: a `flame.fill` / `ic_flame_fill` glyph in ember, the eyebrow `widget.history.name`; trailing
-  `widget.history.onTarget %lld` (`caption` / `footnote`, `ink2`).
-- **Grid**: one column per week, Monday on top, the current week at the right edge; days still ahead this week are
-  left out. Cells are square with a gap of 0.22 of the pitch and a radius of 0.24 of the side, as big as the height
+- **Grid**: one column per week, Monday on top, the current week at the right; days still ahead this week are left
+  out. Cells are square with a gap of 0.22 of the pitch and a radius of 0.24 of the side, as big as the height
   allows but no more than a 22 pt pitch. When one band at that cap would leave height over and two bands still get
   a pitch of at least 15 pt, the weeks wrap into two bands (older half on top, 12 pt apart). As many weeks as fit
   the width (at most `WidgetSnapshot.CalendarGrid.weeks` = 53, which is also how far back the app publishes and
-  Android reads).
-- **Labels** (`10` / `11 pt medium`, `ink3`): `weekday.mon.short`, `.wed.short`, `.fri.short` (trailing period
-  dropped) beside rows 1, 3 and 5 on the left, the grid keeping to the right edge; short month names in a 16 pt band
-  over each band of weeks, over the week that holds the 1st, the current month in `ink2`. A band's first week gets
-  its own month when the next name is at least two weeks away; a name that would run into the previous one is left
-  out.
+  Android reads). The grid is centred in the widget.
 - **Trained days** (any finished workout with ≥ 1 completed set that started that day): a centred `ink` dot, 40 % of
   the cell side, on top of the heat colour (a trained day with nothing logged still gets its dot, on `heat[0]`).
   Today's cell has a 1.5 pt `ink` ring.
-- **Legend** (iOS large; Android from a 160 dp grid height, 4×3 and up): a 24 pt row under the grid, a `heat[0]`
-  swatch with the dot and `widget.history.trained` on the left, `fuel.calendar.legend.off`, the `heat[1…4]` swatches
-  and `fuel.calendar.onTarget` on the right ("Off target" is dropped first when the row is too narrow).
-- Medium ≈ 20 weeks in one band, large ≈ 30 weeks in two.
+- Medium ≈ 16 weeks in one band, large ≈ 30 weeks in two.
 
 ### Gym week
 
