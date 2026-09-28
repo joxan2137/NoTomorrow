@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -34,11 +35,12 @@ import app.notomorrow.designsystem.NT
 import app.notomorrow.util.Fmt
 
 /**
- * Break timer (`nt.widget.rest`, `docs/widgets.md`). Idle: the default rest and three lengths that
- * start a rest with no app launch (`RestTimerController.start`, so the ongoing notification, the
- * end alert and the chime all follow). Running: the ember ring with a live, system-rendered
- * countdown (a `Chronometer`), `+15` / Skip (and `−15` on medium). For two minutes after a rest
- * runs out, the idle layout says "Rest is over". Anywhere else opens the workout (and its rest).
+ * Break timer (`nt.widget.rest`, `docs/widgets.md`). Idle: the default rest, big, and three lengths
+ * that start a rest with no app launch (`RestTimerController.start`, so the ongoing notification,
+ * the end alert and the chime all follow). Running: the ember ring as big as the widget allows with
+ * a live, system-rendered countdown (a `Chronometer`), `+15` / Skip (and `−15` on medium). For two
+ * minutes after a rest runs out, the widget glows and says "Rest is over. Go." Anywhere else opens
+ * the workout (and its rest).
  */
 class BreakTimerWidget : GlanceAppWidget() {
 
@@ -65,58 +67,56 @@ internal fun BreakTimerContent(data: RestData) {
     val end = data.state.endAt?.takeIf { it > now }
     val justEnded = end == null && data.endedAt != null && now - data.endedAt in 0 until WidgetUpdater.JUST_ENDED_MS
     val medium = size.width.value >= MEDIUM_MIN_WIDTH_DP
+    val width = size.width.value - 2 * W.margin.value
     val height = size.height.value - 2 * W.margin.value
     val background = if (justEnded) R.drawable.widget_background_go else R.drawable.widget_background
     WidgetFrame(onClick = W.open(context, AppState.Route.RestTimer), background = background) {
         when {
             medium -> Medium(context, data, end, justEnded, height)
-            end != null -> SmallRunning(context, data, end, height)
-            else -> SmallIdle(context, data, justEnded)
+            end != null -> SmallRunning(context, data, end, width, height)
+            else -> SmallIdle(context, data, justEnded, width)
         }
     }
 }
 
-private fun caption(context: Context, justEnded: Boolean): String =
-    context.getString(if (justEnded) R.string.timer_notification_title else R.string.widget_rest_start)
-
-/** The caption under the length: quiet while idle, bold `ink` once the rest just ended. */
-private fun captionStyle(justEnded: Boolean) = if (justEnded) W.subheadlineBold else W.footnote
-
 /** The idle ring: a faint ember track waiting to be filled; full ember once the rest just ended. */
 private fun idleRing(context: Context, sizeDp: Float, text: String, justEnded: Boolean) =
     WidgetBitmaps.progressRing(
-        context, sizeDp, 6f,
+        context, sizeDp, RING_LINE_DP,
         fraction = if (justEnded) 1f else 0f,
         track = NT.Colors.ember.copy(alpha = 0.22f),
-        center = text, centerSp = 34f * sizeDp / 110f,
+        center = text, centerSp = 0.32f * sizeDp,
     )
 
 private fun exerciseName(context: Context, data: RestData): String =
     data.state.exerciseName.ifEmpty { context.getString(R.string.timer_rest) }
 
 @Composable
-private fun SmallIdle(context: Context, data: RestData, justEnded: Boolean) {
+private fun SmallIdle(context: Context, data: RestData, justEnded: Boolean, widthDp: Float) {
     Column(GlanceModifier.fillMaxSize()) {
         Eyebrow(context.getString(R.string.timer_rest), color = if (justEnded) W.ember else W.ink2, icon = R.drawable.ic_clock)
-        val text = Fmt.clock(data.defaultRestSeconds)
-        BitmapImage(WidgetBitmaps.displayText(context, text, 44f), description = text)
-        Text(caption(context, justEnded), style = captionStyle(justEnded), maxLines = 2)
-        Spacer(GlanceModifier.defaultWeight())
-        PresetRow(data.defaultRestSeconds)
+        Box(GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.CenterStart) {
+            if (justEnded) {
+                Text(context.getString(R.string.timer_notification_title), style = W.title, maxLines = 2)
+            } else {
+                // The default length, big; the white capsule under it starts it.
+                val text = Fmt.clock(data.defaultRestSeconds)
+                BitmapImage(WidgetBitmaps.displayText(context, text, 60f, maxWidthDp = widthDp), description = text)
+            }
+        }
+        PresetRow(data.defaultRestSeconds, W.buttonHeight)
     }
 }
 
 @Composable
-private fun SmallRunning(context: Context, data: RestData, end: Long, heightDp: Float) {
-    // Exercise line 16, buttons 36, two 6 dp gaps: the ring gets the rest, up to 84 dp.
-    val ring = (heightDp - 16f - W.buttonHeight.value - 12f).coerceIn(56f, 84f)
+private fun SmallRunning(context: Context, data: RestData, end: Long, widthDp: Float, heightDp: Float) {
+    // The ring gets everything above the buttons.
+    val ring = minOf(widthDp, heightDp - W.buttonHeight.value - 8f).coerceIn(56f, 150f)
     Column(GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.Center) {
-            Countdown(context, data, end, ring, 6f, 26f * ring / 84f)
+            Countdown(context, data, end, ring, RING_LINE_DP, 0.3f * ring)
         }
-        Spacer(GlanceModifier.height(6.dp))
-        Text(exerciseName(context, data), style = W.footnote.copy(color = W.ink), maxLines = 1)
-        Spacer(GlanceModifier.height(6.dp))
+        Spacer(GlanceModifier.height(8.dp))
         Row(GlanceModifier.fillMaxWidth()) {
             LabelCapsule(PLUS_15, adjust(15), GlanceModifier.defaultWeight())
             Spacer(GlanceModifier.width(6.dp))
@@ -127,47 +127,55 @@ private fun SmallRunning(context: Context, data: RestData, end: Long, heightDp: 
 
 @Composable
 private fun Medium(context: Context, data: RestData, end: Long?, justEnded: Boolean, heightDp: Float) {
-    val ring = heightDp.coerceIn(64f, 110f)
+    val ring = heightDp.coerceIn(64f, 160f)
+    // Taller buttons when the right column has the room (the idle and "Go" states say little else).
+    val buttons = if (end == null) 48.dp else 44.dp
     Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         Box(GlanceModifier.size(ring.dp), contentAlignment = Alignment.Center) {
             if (end != null) {
-                Countdown(context, data, end, ring, 6f, 34f * ring / 110f)
+                Countdown(context, data, end, ring, RING_LINE_DP, 0.3f * ring)
             } else {
                 val text = Fmt.clock(data.defaultRestSeconds)
                 BitmapImage(idleRing(context, ring, text, justEnded), description = text)
             }
         }
-        Spacer(GlanceModifier.width(14.dp))
+        Spacer(GlanceModifier.width(16.dp))
         Column(GlanceModifier.defaultWeight().fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
             Eyebrow(context.getString(R.string.timer_rest), color = if (end != null || justEnded) W.ember else W.ink2, icon = R.drawable.ic_clock)
-            Spacer(GlanceModifier.height(2.dp))
-            if (end != null) {
-                Text(exerciseName(context, data), style = W.headline, maxLines = 1)
-                if (data.state.nextSetLabel.isNotEmpty()) {
-                    Text(data.state.nextSetLabel, style = W.footnote, maxLines = 1)
+            when {
+                end != null -> {
+                    Spacer(GlanceModifier.height(4.dp))
+                    Text(exerciseName(context, data), style = W.title, maxLines = 1)
+                    if (data.state.nextSetLabel.isNotEmpty()) {
+                        Text(data.state.nextSetLabel, style = W.footnote, maxLines = 1)
+                    }
                 }
-            } else {
-                Text(caption(context, justEnded), style = captionStyle(justEnded), maxLines = 2)
+                justEnded -> {
+                    Spacer(GlanceModifier.height(4.dp))
+                    Text(context.getString(R.string.timer_notification_title), style = W.title, maxLines = 1)
+                }
             }
-            Spacer(GlanceModifier.height(8.dp))
+            Spacer(GlanceModifier.height(12.dp))
             if (end != null) {
                 Row(GlanceModifier.fillMaxWidth()) {
-                    LabelCapsule(MINUS_15, adjust(-15), GlanceModifier.defaultWeight())
-                    Spacer(GlanceModifier.width(6.dp))
-                    LabelCapsule(PLUS_15, adjust(15), GlanceModifier.defaultWeight())
-                    Spacer(GlanceModifier.width(6.dp))
-                    LabelCapsule(context.getString(R.string.common_skip), skip(), GlanceModifier.defaultWeight())
+                    LabelCapsule(MINUS_15, adjust(-15), GlanceModifier.defaultWeight(), height = buttons)
+                    Spacer(GlanceModifier.width(8.dp))
+                    LabelCapsule(PLUS_15, adjust(15), GlanceModifier.defaultWeight(), height = buttons)
+                    Spacer(GlanceModifier.width(8.dp))
+                    LabelCapsule(context.getString(R.string.common_skip), skip(), GlanceModifier.defaultWeight(), height = buttons)
                 }
             } else {
-                PresetRow(data.defaultRestSeconds)
+                PresetRow(data.defaultRestSeconds, buttons)
             }
         }
     }
 }
 
+private const val RING_LINE_DP = 9f
+
 /** `1:00`, the default (white) and `2:00` — `1:00 · 1:30 · 2:00` when the default is one of the ends. */
 @Composable
-private fun PresetRow(defaultSeconds: Int) {
+private fun PresetRow(defaultSeconds: Int, height: Dp) {
     val presets = RestPresets.of(defaultSeconds)
     Row(GlanceModifier.fillMaxWidth()) {
         presets.seconds.forEachIndexed { index, seconds ->
@@ -177,6 +185,7 @@ private fun PresetRow(defaultSeconds: Int) {
                 onClick = actionRunCallback<StartRestAction>(actionParametersOf(StartRestAction.SECONDS to seconds)),
                 modifier = GlanceModifier.defaultWeight(),
                 primary = seconds == presets.primary,
+                height = height,
             )
         }
     }

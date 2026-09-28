@@ -15,7 +15,6 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.compose
 import androidx.glance.appwidget.provideContent
 import org.robolectric.RuntimeEnvironment
-import app.notomorrow.feature.fuel.FuelCalendar
 import app.notomorrow.feature.fuel.FuelGoals
 import app.notomorrow.model.TrainingGoal
 import app.notomorrow.rest.RestTimerState
@@ -50,6 +49,7 @@ class WidgetScreenshots {
 
     private val small = DpSize(170.dp, 170.dp)
     private val medium = DpSize(360.dp, 170.dp)
+    private val tall = DpSize(360.dp, 270.dp)
     private val large = DpSize(360.dp, 380.dp)
 
     @Test
@@ -67,6 +67,9 @@ class WidgetScreenshots {
         shoot("quicklog-medium-empty", medium) { QuickLogContent(empty) }
         val over = data.copy(kcal = 2650.0, protein = 170.0, carbs = 280.0, fat = 85.0)
         shoot("quicklog-medium-over", medium) { QuickLogContent(over) }
+        shoot("quicklog-medium-tall", DpSize(360.dp, 250.dp)) { QuickLogContent(data) }
+        val one = data.copy(foods = foods.take(1))
+        shoot("quicklog-medium-onefood", medium) { QuickLogContent(one) }
     }
 
     @Test
@@ -79,10 +82,9 @@ class WidgetScreenshots {
             trainedDays = trained,
             kcalGoal = 2400.0,
             goal = TrainingGoal.Maintain,
-            stats = FuelCalendar.Stats(avg7 = 2210.0, avg30 = 2150.0, onTarget30 = 11),
-            sessions30 = 10,
         )
         shoot("calendar-medium", medium) { CalendarContent(data) }
+        shoot("calendar-tall", tall) { CalendarContent(data) }
         shoot("calendar-large", large) { CalendarContent(data) }
     }
 

@@ -2,41 +2,25 @@ package app.notomorrow.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
-import androidx.glance.layout.Column
-import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.height
-import androidx.glance.layout.padding
-import androidx.glance.layout.size
-import androidx.glance.layout.width
-import androidx.glance.text.Text
 import app.notomorrow.R
 import app.notomorrow.app.AppState
-import app.notomorrow.designsystem.NT
-import app.notomorrow.util.Fmt
 import app.notomorrow.util.LocaleProvider
+import app.notomorrow.util.NtKeys
 
 /**
- * Fuel calendar (`nt.widget.history`, `docs/widgets.md`): the Fuel history heat grid with the days
- * you trained on top. Medium: header and grid; large adds month labels, the legend and three stat
- * columns. The whole widget opens Fuel on today.
+ * Fuel calendar (`nt.widget.history`, `docs/widgets.md`): just the calendar — the weeks up to this
+ * one, each day a tile in its Fuel `heat` colour with the date on it and a dot on the days you
+ * trained. The widget's size decides how many weeks show. The whole widget opens Fuel on today.
  */
 class FuelCalendarWidget : GlanceAppWidget() {
 
@@ -55,113 +39,19 @@ class FuelCalendarWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = FuelCalendarWidget()
 }
 
-/** From this height (dp, margins included) the large layout: months, legend, stats. */
-private const val LARGE_MIN_HEIGHT_DP = 220f
-
-private const val HEADER_DP = 18f
-private const val LEGEND_DP = 16f
-private const val STATS_DP = 58f
-private const val GAP_DP = 10f
-
 @Composable
 internal fun CalendarContent(data: CalendarData) {
     val context = LocalContext.current
     val size = LocalSize.current
-    val large = size.height.value >= LARGE_MIN_HEIGHT_DP
     val width = size.width.value - 2 * W.margin.value
     val height = size.height.value - 2 * W.margin.value
-    val gridHeight = height - HEADER_DP - GAP_DP - if (large) LEGEND_DP + STATS_DP + 2 * GAP_DP else 0f
-    val locale = LocaleProvider.current()
+    val letters = (1..7).map { context.getString(NtKeys.weekday(it)) }
     WidgetFrame(onClick = W.open(context, AppState.Route.Fuel)) {
-        Column(GlanceModifier.fillMaxSize()) {
-            Row(GlanceModifier.fillMaxWidth().height(HEADER_DP.dp), verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow(context.getString(R.string.widget_history_name), modifier = GlanceModifier.defaultWeight(), icon = R.drawable.ic_calendar)
-                if (large) {
-                    Text(
-                        context.getString(R.string.widget_history_onTarget_n, data.stats.onTarget30),
-                        style = W.footnote,
-                        maxLines = 1,
-                    )
-                }
-            }
-            Spacer(GlanceModifier.height(GAP_DP.dp))
-            if (large) {
-                BitmapImage(
-                    WidgetCharts.heatGrid(context, width, gridHeight.coerceAtLeast(24f), data, months = true, locale = locale),
-                    description = context.getString(R.string.widget_history_description),
-                )
-                Spacer(GlanceModifier.height(GAP_DP.dp))
-                Legend(context)
-                Spacer(GlanceModifier.height(GAP_DP.dp))
-                Stats(context, data)
-            } else {
-                // The grid, and beside it the two numbers that matter: days on target, 7-day average.
-                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-                    BitmapImage(
-                        WidgetCharts.heatGrid(context, width - SIDE_DP - 14f, gridHeight.coerceAtLeast(24f), data, months = false, locale = locale),
-                        description = context.getString(R.string.widget_history_description),
-                    )
-                    Spacer(GlanceModifier.width(14.dp))
-                    Column(GlanceModifier.width(SIDE_DP.dp).fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
-                        SideStat(context, "${data.stats.onTarget30}/30", R.string.fuel_calendar_onTarget)
-                        Spacer(GlanceModifier.height(8.dp))
-                        Box(GlanceModifier.fillMaxWidth().height(1.dp).background(W.hairline)) {}
-                        Spacer(GlanceModifier.height(8.dp))
-                        SideStat(context, data.stats.avg7?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg7)
-                    }
-                }
-            }
+        Box(GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            BitmapImage(
+                WidgetCharts.calendar(context, width, height.coerceAtLeast(60f), data, letters, LocaleProvider.current()),
+                description = context.getString(R.string.widget_history_description),
+            )
         }
-    }
-}
-
-private const val SIDE_DP = 74f
-
-@Composable
-private fun SideStat(context: Context, value: String, label: Int) {
-    BitmapImage(WidgetBitmaps.displayText(context, value, 26f), description = value)
-    Text(context.getString(label), style = W.caption, maxLines = 1)
-}
-
-/** The five `heat` swatches, then On target; an `ink` dot, then Trained. */
-@Composable
-private fun Legend(context: Context) {
-    Row(GlanceModifier.fillMaxWidth().height(LEGEND_DP.dp), verticalAlignment = Alignment.CenterVertically) {
-        // The swatches get their own row: Glance drops the children of a Row past its 10th.
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            NT.Colors.heat.forEachIndexed { index, color ->
-                if (index > 0) Spacer(GlanceModifier.width(3.dp))
-                Box(GlanceModifier.size(10.dp).background(W.color(color)).cornerRadius(2.5.dp)) {}
-            }
-        }
-        Spacer(GlanceModifier.width(6.dp))
-        Text(context.getString(R.string.fuel_calendar_onTarget), style = W.caption, maxLines = 1)
-        Spacer(GlanceModifier.width(14.dp))
-        Box(GlanceModifier.size(6.dp).background(ImageProvider(R.drawable.widget_dot))) {}
-        Spacer(GlanceModifier.width(6.dp))
-        Text(context.getString(R.string.widget_history_trained), style = W.caption, maxLines = 1)
-    }
-}
-
-/** 7-day avg, 30-day avg (kcal, "–" with no logged day) and sessions in the last 30 days, as tiles. */
-@Composable
-private fun Stats(context: Context, data: CalendarData) {
-    Row(GlanceModifier.fillMaxWidth().height(STATS_DP.dp), verticalAlignment = Alignment.Top) {
-        StatTile(context, data.stats.avg7?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg7)
-        Spacer(GlanceModifier.width(8.dp))
-        StatTile(context, data.stats.avg30?.let { Fmt.kcal(it, withUnit = false) } ?: "–", R.string.fuel_calendar_avg30)
-        Spacer(GlanceModifier.width(8.dp))
-        StatTile(context, Fmt.count(data.sessions30), R.string.widget_history_sessions30)
-    }
-}
-
-@Composable
-private fun androidx.glance.layout.RowScope.StatTile(context: Context, value: String, label: Int) {
-    Column(
-        GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.widget_tile)).padding(horizontal = 8.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BitmapImage(WidgetBitmaps.displayText(context, value, 24f), description = value)
-        Text(context.getString(label), style = W.text(W.caption, size = 10.5.sp), maxLines = 1)
     }
 }

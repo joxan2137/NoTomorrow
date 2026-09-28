@@ -20,24 +20,39 @@ ExtraBold) and are tabular. Macro hues only for food, ember only for progress / 
 Buttons inside widgets are `surface2` capsules with `ink` text (`subheadlineBold`), the primary one white on
 `ground`; minimum 36 pt tall (the widget is the hit target on small sizes).
 
-**Android look (v2).** On Android the widgets go further than the iOS baseline below:
+**Android look (v3, bolder).** On Android the widgets go further than the iOS baseline below: fewer
+things per widget, each one bigger. Eyebrows are `12 pt bold` with a 14 dp glyph, titles `20 pt bold`,
+buttons 40 dp tall (up to 48 on the medium Break timer) with `16 pt bold` labels. No explanatory captions:
+the controls say what they do.
 - The surface is a `#1A1A1D` → `ground` vertical gradient with a faint ember glow in the top-right corner
-  and a 1 dp white-10 % hairline edge (`widget_background.xml`). Capsules and the Quick log circles get the
-  same hairline over a `surface3` → `surface2` gradient.
-- Eyebrows carry a 12 dp glyph in their colour: Quick log flame, Fuel calendar calendar, Gym week dumbbell,
-  Break timer clock.
-- **Quick log small**: the ring (up to 76 dp) with, beside it, protein / carbs / fat as "96 / 180 g" over a
-  4 dp bar in the macro hue, full at the goal. **Medium**: the ring fills the height (up to 116 dp) over a
-  one-line "1,240 / 2,400 kcal". Over the goal the ring shows "+250" and `widget.fuel.over` in `bad`.
-- **Fuel calendar medium**: the grid, and a 74 dp side column with days on target ("11/30") and the 7-day
-  average in the display face. **Large**: the three stats sit on rounded `surface` tiles.
-- **Gym week**: weekday letters over the strip on both sizes (today's in `ink`); on medium the strip sits on
-  a tile with a 4 dp ember progress bar over `widget.week.done`. The day under the time is "Today",
-  "Tomorrow" or the full weekday. With no gym days: the `widget.week.name` eyebrow and
-  `widget.week.noSchedule` in `subheadlineBold`, no done line.
-- **Break timer**: the idle ring is a faint ember track (ember at 22 %). For 2 min after a rest ends the
-  widget glows ember from the bottom (`widget_background_go.xml`), the ring is full, the eyebrow is ember and
-  `timer.notification.title` is `subheadlineBold` in `ink`.
+  and a 1 dp white-10 % hairline edge (`widget_background.xml`). Capsules get the same hairline over a
+  `surface3` → `surface2` gradient.
+- **Quick log small**: just the ring, as big as the widget allows, with kcal left + `dashboard.left`
+  inside, and one full-width capsule for the first quick food (`+` and the name). With no quick foods
+  the ring fills the widget. **Medium**: the ring at full height on the left; on the right protein /
+  carbs / fat as three columns (a 5 dp bar in the macro hue, full at the goal; the macro's name; grams
+  eaten in the display face; "/ 180 g" under it), then as many quick-food capsules (`+`, name, kcal)
+  as fit under them (1 at 4×2, up to 3). With no quick foods the macros sit centred. Over the goal the
+  ring shows "+250" and `widget.fuel.over` in `bad`.
+- **Fuel calendar**: just the calendar, on every size. Weekday letters (today's in `ink`) over one row
+  per week, Monday first, the current week at the bottom; as many weeks as fit (rows at least 24 dp,
+  no taller than wide: 4 at 4×2, 5 at 4×3, 7 at 4×4, at most 8). Each day is a rounded tile in its
+  `heat` colour with the date in the display face (`ink2` on `heat[0]`), the 1st shows the month's
+  short name, today gets a 2 dp `ink` ring, a trained day an `ink` dot (under the date, or beside it in
+  a short row). Days still ahead this week are the date in `ink3` with no tile. No header, legend or
+  stats.
+- **Gym week**: the eyebrow is the next session's day in ember (`day.today`, `day.tomorrow` or the
+  weekday), then the routine the app suggests in the title style (`dashboard.nextSession` without one),
+  then the time in the display face. **Small**: those three stacked over the 16 dp strip. **Medium**:
+  day and routine on the left, the time (50 pt) on the right, and under them the full strip across
+  the width: weekday letters (today's in `ink`), 30 dp circles with dates, who-trained dots only when
+  paired. With no gym days: the `widget.week.name` eyebrow and `widget.week.noSchedule`, then the strip.
+- **Break timer**: the ring uses a 9 dp line and fills the height. **Small idle**: eyebrow, the default
+  length in the display face (60 pt), the three length capsules. **Small running**: the ring over
+  `+15` / Skip. **Medium**: the ring, and beside it the eyebrow and the buttons (idle), or the eyebrow,
+  the exercise (title style), the next set and `−15` / `+15` / Skip (running). For 2 min after a rest
+  ends the widget glows ember from the bottom (`widget_background_go.xml`), the ring is full, the
+  eyebrow is ember and `timer.notification.title` takes the default length's place in the title style.
 
 Check Android layouts without a device: `./gradlew :app:testDebugUnitTest --tests '*WidgetScreenshots*'
 -PwidgetShots=<dir>` renders every size and state through Glance's RemoteViews.
