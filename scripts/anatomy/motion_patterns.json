@@ -336,23 +336,23 @@
    {
     "type": "pad",
     "from": [
-     20,
-     132
+     14,
+     166
     ],
     "to": [
-     58,
-     132
+     50,
+     166
     ],
     "width": 8
    },
    {
     "type": "post",
     "from": [
-     40,
-     136
+     32,
+     170
     ],
     "to": [
-     40,
+     32,
      200
     ]
    },
@@ -364,7 +364,8 @@
      -10
     ],
     "layer": "front",
-    "r": 14
+    "r": 14,
+    "hold": true
    }
   ],
   "frames": [
@@ -591,6 +592,13 @@
      86,
      200
     ]
+   },
+   {
+    "type": "handles",
+    "pivot": [
+     58,
+     72
+    ]
    }
   ],
   "frames": [
@@ -709,6 +717,13 @@
      86,
      200
     ]
+   },
+   {
+    "type": "handles",
+    "pivot": [
+     58,
+     120
+    ]
    }
   ],
   "frames": [
@@ -783,8 +798,8 @@
     "torso": 70,
     "thigh": 28,
     "shin": -12,
-    "upper": -112,
-    "fore": -8
+    "upper": -80,
+    "fore": 0
    }
   ]
  },
@@ -856,8 +871,8 @@
      4,
      6
     ],
-    "upper": -100,
-    "fore": -10
+    "upper": -72,
+    "fore": 0
    }
   ]
  },
@@ -973,7 +988,8 @@
     "to": [
      90,
      4
-    ]
+    ],
+    "grip": "overhand"
    }
   ],
   "frames": [
@@ -1018,16 +1034,12 @@
  "pull_up": {
   "props": [
    {
-    "type": "pad",
-    "from": [
-     40,
-     6
-    ],
-    "to": [
-     160,
-     6
-    ],
-    "width": 5
+    "type": "floor"
+   },
+   {
+    "type": "bar",
+    "half": 0.45,
+    "uprights": true
    }
   ],
   "frames": [
@@ -1035,7 +1047,7 @@
     "anchor": "hand",
     "at": [
      100,
-     6
+     -30
     ],
     "torso": -4,
     "thigh": [
@@ -1053,7 +1065,7 @@
     "anchor": "hand",
     "at": [
      100,
-     6
+     -30
     ],
     "torso": -12,
     "thigh": [
@@ -1105,7 +1117,8 @@
     "upper": 10,
     "fore": 150
    }
-  ]
+  ],
+  "supinate": true
  },
  "pushdown": {
   "props": [
@@ -1118,7 +1131,8 @@
     "to": [
      125,
      4
-    ]
+    ],
+    "grip": "overhand"
    }
   ],
   "frames": [
@@ -1720,6 +1734,11 @@
      60,
      196
     ]
+   },
+   {
+    "type": "bar",
+    "half": 0.3,
+    "uprights": true
    }
   ],
   "frames": [
@@ -2245,7 +2264,7 @@
      110,
      128
     ],
-    "torso": 165,
+    "torso": 140,
     "neck": -15,
     "thigh": -76,
     "shin": -76,

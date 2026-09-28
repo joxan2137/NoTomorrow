@@ -39,6 +39,12 @@ the app's own.
 - `muscles3d.py` describes each muscle as soft volumes on the rest-pose body (ellipsoids on the trunk,
   bands of limb capsules limited to skin that moves with that limb), written to a `hot` vertex
   attribute the shader turns ember.
-- Clips are 31 eased frames played forward then back (60 frames at 24 fps), H.264 with no audio track.
+- `look.py` is the clip look: a clothed athlete (shorts, top and shoes painted from smooth fields on the
+  body, so hems are clean lines), a bright studio sweep with no horizon that turns with the camera, and
+  an arm twist so the biceps faces the elbow bend (patterns with `"supinate": true` also turn the palm up).
+- Back-of-body exercises are filmed from behind at 3/4 so the glowing muscles are in view (`CAM` in
+  `render_demos.py`).
+- Clips are 840×560: 24 eased frames to the end pose, a short hold, back down and a short hold (60 frames at
+  24 fps), H.264 with no audio track.
 - The muscle view's label maps store muscle `i` as grey `(i + 1) × labelStep` so the apps can round
   away any colour conversion when they read a tapped pixel.

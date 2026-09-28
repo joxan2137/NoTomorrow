@@ -17,6 +17,7 @@ Pose fields (angles in degrees; limbs 0 = hanging down, +90 = pointing forward, 
   torso, neck, lift (shoulders raised, units), thigh, shin, foot, upper, fore: a number, or [near, far]
   farFoot  [x, y]: the far foot stays planted there (two-bone IK) instead of following `thigh`/`shin`
 A pattern may set "view": "front", where limb angles open away from the midline and the far side mirrors the near.
+A pattern may set "supinate": true (curls) so the 3D render turns the palms up toward the shoulders.
 """
 import argparse
 import json

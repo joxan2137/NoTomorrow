@@ -6,8 +6,8 @@ photos. Needs Blender as a Python module (`pip install bpy`, 5.x) and ffmpeg (`p
   python3 render_demos.py [--only name,...]    # render clips into both apps (MP4 + poster JPEG) and demos.json
 
 The body is posed from the movement keyframes (../motion_patterns.json via solver.py; ../motions.py says which
-exercise uses which), then the primary muscles glow on it (muscles3d.py). Clips play forward then back with a cosine
-ease, so the body lingers at each end.
+exercise uses which), then the primary muscles glow on it (muscles3d.py). Clips ease from the start pose to the end pose,
+hold, ease back and hold, in the studio look from look.py.
 """
 import argparse, json, math, os, pathlib, shutil, subprocess, sys, tempfile
 HERE = pathlib.Path(__file__).resolve().parent
@@ -16,17 +16,22 @@ ROOT = HERE.parents[2]
 import bpy
 from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
-import rig as R, scene3d, solver, muscles3d, props3d
+import rig as R, scene3d, solver, muscles3d, props3d, look
 sys.path.insert(0, str(HERE.parent))
 from motions import build as build_motions
 
 TARGETS = [ROOT / 'NoTomorrow/Resources/Demos', ROOT / 'android/app/src/main/assets/demos']
-WIDTH, HEIGHT = 600, 400          # 3:2, the demo card's aspect
-HALF_FRAMES = 31                  # 1.3 s at 24 fps from the start pose to the end pose; the clip mirrors it
-# Camera (yaw, pitch) per pattern; yaw 0 looks at the left side, 90 at the front.
-CAM = {'bench_press': (30, 22), 'incline_press': (32, 18), 'hip_thrust': (30, 16), 'push_up': (28, 14),
-       'leg_curl_lying': (34, 22), 'crunch': (34, 18), 'back_extension': (36, 14), 'reverse_hyper': (36, 14),
-       'nordic': (30, 10), 'reverse_nordic': (30, 10), 'pull_up': (36, 4), 'pulldown': (36, 6)}
+WIDTH, HEIGHT = 840, 560          # 3:2, the demo card's aspect
+HALF_FRAMES = 24                  # 1 s at 24 fps from the start pose to the end pose
+HOLD = 6                          # frames held at each end; the clip goes there, holds, comes back and holds
+# Camera (yaw, pitch) per pattern; yaw 0 looks at the left side, 90 at the front, 270 at the back.
+CAM = {'bench_press': (44, 22), 'incline_press': (46, 18), 'hip_thrust': (44, 16), 'push_up': (42, 14),
+       'leg_curl_lying': (48, 22), 'crunch': (48, 18), 'reverse_hyper': (50, 14),
+       'reverse_nordic': (44, 10),
+       # back-of-body work, seen from behind at 3/4
+       'nordic': (318, 10), 'pull_up': (310, 4), 'pulldown': (310, 6), 'shrug': (300, 8), 'deadlift': (320, 9),
+       'rdl': (320, 9), 'glute_kickback': (320, 8), 'supported_row': (310, 12), 'bent_row': (40, 9),
+       'seated_row': (320, 10), 'back_extension': (320, 14)}
 
 
 def clips():
@@ -41,25 +46,14 @@ def clips():
     return by_clip, exercise_clip
 
 
-def glow_material(body):
-    nt = body.data.materials[0].node_tree; bsdf = nt.nodes['Principled BSDF']
-    attr = nt.nodes.new('ShaderNodeAttribute'); attr.attribute_name = 'hot'
-    mix = nt.nodes.new('ShaderNodeMix'); mix.data_type = 'RGBA'
-    mix.inputs[6].default_value = (0.34, 0.34, 0.36, 1); mix.inputs[7].default_value = (1.0, 0.2, 0.03, 1)
-    nt.links.new(attr.outputs['Fac'], mix.inputs[0]); nt.links.new(mix.outputs[2], bsdf.inputs['Base Color'])
-    nt.links.new(mix.outputs[2], bsdf.inputs['Emission Color'])
-    mul = nt.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = 0.35
-    nt.links.new(attr.outputs['Fac'], mul.inputs[0]); nt.links.new(mul.outputs[0], bsdf.inputs['Emission Strength'])
-
-
 def place(pattern, rig, view):
     pose_at(pattern, rig, view, 0.0)
 
 
 def pose_at(pattern, rig, view, t):
     j = scene3d.pose(rig, solver.mix(pattern['frames'][0], pattern['frames'][1], t), view)
+    look.fix_arms(rig, pattern.get('supinate', False))
     props3d.build(pattern, rig, view, j)
-    for S in 'LR': scene3d.curl(rig, S, 100)
 
 
 def fit_camera(cam, pattern, name, rig, body, view):
@@ -71,7 +65,7 @@ def fit_camera(cam, pattern, name, rig, body, view):
         for o in [body] + [o for o in bpy.data.objects if o.get('prop')]:
             e = o.evaluated_get(dg); me = e.to_mesh()
             pts += [e.matrix_world @ v.co for v in list(me.vertices)[::9]]; e.to_mesh_clear()
-    yaw, pitch = CAM.get(name.split('.')[0], (36, 9) if view != 'front' else (72, 6))
+    yaw, pitch = CAM.get(name.split('.')[0], (50, 9) if view != 'front' else (72, 6))
     lo = Vector((min(p.x for p in pts), min(p.y for p in pts), max(0, min(p.z for p in pts))))
     hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
     c, dist = (lo + hi) / 2, 3.0
@@ -83,7 +77,8 @@ def fit_camera(cam, pattern, name, rig, body, view):
         right = cam.matrix_world.to_3x3() @ Vector((1, 0, 0)); upv = cam.matrix_world.to_3x3() @ Vector((0, 1, 0))
         span = 2 * dist * math.tan(math.atan(18 / cam.data.lens))
         c = c + right * ((u0 + u1) / 2 - 0.5) * span + upv * ((v0 + v1) / 2 - 0.5) * span / aspect
-        dist *= max((u1 - u0) / 0.86, (v1 - v0) / 0.84)
+        dist *= max((u1 - u0) / 0.9, (v1 - v0) / 0.88)
+    look.face(yaw)
 
 
 def ffmpeg():
@@ -98,7 +93,11 @@ def main():
     names = sorted(by_clip) if not args.only else args.only.split(',')
     body, rig = R.load()
     cam = scene3d.setup(int(WIDTH * args.scale), int(HEIGHT * args.scale)); cam.data.sensor_fit = 'HORIZONTAL'
-    glow_material(body)
+    scn = bpy.context.scene
+    # the denoiser hides the difference from 40 samples and 4 bounces at about half the time per frame
+    scn.cycles.samples = 20; scn.cycles.adaptive_threshold = 0.04; scn.cycles.max_bounces = 3
+    scn.render.use_persistent_data = True
+    look.cloth_attr(body); look.studio(scn, body); look.backdrop(scn)
     vals = muscles3d.values(body)
     scn = bpy.context.scene
     tmp = pathlib.Path(tempfile.mkdtemp())
@@ -120,7 +119,7 @@ def main():
             t = (1 - math.cos(math.pi * i / (HALF_FRAMES - 1))) / 2
             pose_at(pattern, rig, view, t)
             scn.render.filepath = str(frames / f'{i:03d}.png'); bpy.ops.render.render(write_still=True)
-        seq = list(range(HALF_FRAMES)) + list(range(HALF_FRAMES - 2, 0, -1))
+        seq = list(range(HALF_FRAMES)) + [HALF_FRAMES - 1] * HOLD + list(range(HALF_FRAMES - 2, -1, -1)) + [0] * (HOLD + 1)
         for k, i in enumerate(seq): shutil.copy(frames / f'{i:03d}.png', frames / f'loop_{k:03d}.png')
         for target in TARGETS: target.mkdir(parents=True, exist_ok=True)
         out = TARGETS[0] / f'{name}.mp4'
