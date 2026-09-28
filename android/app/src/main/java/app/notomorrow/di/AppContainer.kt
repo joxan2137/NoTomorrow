@@ -32,6 +32,7 @@ import app.notomorrow.service.PrefsMockPairingStore
 import app.notomorrow.service.RecordService
 import app.notomorrow.service.RoutineSeeder
 import app.notomorrow.service.TargetCalculator
+import app.notomorrow.service.UpdateChecker
 import app.notomorrow.service.WorkoutSessionController
 import app.notomorrow.util.LocaleProvider
 import kotlinx.coroutines.CoroutineScope
@@ -222,6 +223,19 @@ class AppContainer(val app: Application) {
     // MARK: - Shell state
 
     val appState: AppState by lazy { AppState(appPrefs, scope) }
+
+    /** The launch-time "a new version is out" check behind the update banner. */
+    val updateChecker: UpdateChecker by lazy {
+        UpdateChecker(
+            fetch = UpdateChecker::fetchLatestRelease,
+            currentVersion = UpdateChecker::appVersion,
+            dismissedTag = object : UpdateChecker.DismissedTagStore {
+                override suspend fun get() = appPrefs.updateDismissedTagOnce()
+                override suspend fun set(tag: String) = appPrefs.setUpdateDismissedTag(tag)
+            },
+            scope = scope,
+        )
+    }
 
     // MARK: - Lifecycle
 

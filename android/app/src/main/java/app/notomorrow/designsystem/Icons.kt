@@ -105,6 +105,9 @@ enum class NtIcons(
     /** SF `arrow.down`. */
     ArrowDown(R.drawable.ic_arrow_down),
 
+    /** SF `arrow.down.circle.fill`. */
+    ArrowDownCircleFill(R.drawable.ic_arrow_down_circle_fill),
+
     /** SF `plus`. */
     Plus(R.drawable.ic_plus),
 

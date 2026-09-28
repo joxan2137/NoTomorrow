@@ -14,6 +14,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import app.notomorrow.app.MainTabScaffold
+import app.notomorrow.app.UpdateBannerInset
 import app.notomorrow.designsystem.NT
 import app.notomorrow.feature.fuel.CameraCaptureScreen
 import app.notomorrow.feature.onboarding.OnboardingFlow
@@ -45,7 +46,7 @@ fun NtNavHost(
         popEnterTransition = { fadeIn(FADE) },
         popExitTransition = { fadeOut(FADE) },
     ) {
-        composable(NtRoute.Onboarding.route) { OnboardingFlow() }
+        composable(NtRoute.Onboarding.route) { UpdateBannerInset { OnboardingFlow() } }
 
         composable(NtRoute.Main.route) { MainTabScaffold() }
 
