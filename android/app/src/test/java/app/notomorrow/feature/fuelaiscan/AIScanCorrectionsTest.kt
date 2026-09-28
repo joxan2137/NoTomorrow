@@ -400,6 +400,13 @@ class AIScanCorrectionsTest {
         assertNull("a saved food deleted meanwhile logs as a custom row", gone.foodId)
         assertEquals("Kompot", gone.customName)
         assertEquals(30.0, gone.kcal, 1e-9)
+        // The model's own item is kept in the library too, per 100 g with its portion as the serving;
+        // the deleted pick is not brought back.
+        val estimated = dao.rows.value.filter { it.source == FoodSource.AiEstimate }
+        assertEquals(listOf("Pierogi ruskie"), estimated.map { it.name })
+        assertEquals(200.0, estimated[0].kcalPer100, 1e-9)
+        assertEquals(210.0, estimated[0].servingSizeG!!, 1e-9)
+        assertEquals(42L, estimated[0].lastUsedAt)
     }
 
     // MARK: - Label fill

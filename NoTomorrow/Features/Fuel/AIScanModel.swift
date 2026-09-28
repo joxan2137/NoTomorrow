@@ -294,7 +294,8 @@ final class AIScanModel {
 
     // MARK: Logging
 
-    /// One `MealEntry` per food. Model items log as AI estimates; items the user took from the food database log as
+    /// One `MealEntry` per food. Model items log as AI estimates and are kept in the library too (`CustomFoodLibrary`),
+    /// so they can be found in search and added again later; items the user took from the food database log as
     /// ordinary food entries (and the product is saved to the library, like the portion sheet does). Returns the
     /// number of rows written.
     @discardableResult
@@ -311,6 +312,11 @@ final class AIScanModel {
                 entry = MealEntry(day: day, slot: meal, customName: food.name, grams: food.grams,
                                   kcal: food.kcal, proteinG: food.protein, carbsG: food.carbs, fatG: food.fat,
                                   isAIEstimate: true, confidence: food.confidence)
+                // A database pick deleted meanwhile stays deleted; only the model's own items are saved.
+                if food.databaseFood == nil {
+                    CustomFoodLibrary.save(name: food.name, grams: food.grams, kcal: food.kcal, protein: food.protein,
+                                           carbs: food.carbs, fat: food.fat, source: .aiEstimate, in: context)
+                }
             }
             context.insert(entry)
             count += 1

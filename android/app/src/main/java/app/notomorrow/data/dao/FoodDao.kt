@@ -8,8 +8,8 @@ import app.notomorrow.data.entity.FoodItemEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The local food cache. Rows arrive from Open Food Facts (`off:<code>`), quick-add and
- * custom entries; `useCount` / `lastUsedAt` drive the "Recent" list in the search sheet
+ * The local food cache. Rows arrive from Open Food Facts (`off:<code>`), quick adds, AI
+ * estimates and custom labels; `useCount` / `lastUsedAt` drive the "Recent" list in the search sheet
  * (`FoodSearchView.swift:18` — last 10 by `lastUsedAt`).
  */
 @Dao
@@ -45,6 +45,13 @@ interface FoodDao {
      */
     @Query("SELECT * FROM food_item ORDER BY lastUsedAt IS NULL, lastUsedAt DESC")
     fun observeLibrary(): Flow<List<FoodItemEntity>>
+
+    /**
+     * The quick adds and AI estimates kept in the library (`CustomFoodLibrary.existing`): no
+     * barcode, so a scanned label or product is never taken for one.
+     */
+    @Query("SELECT * FROM food_item WHERE barcode IS NULL AND source IN ('quickAdd', 'aiEstimate')")
+    suspend fun customFoods(): List<FoodItemEntity>
 
     @Upsert
     suspend fun upsert(food: FoodItemEntity)

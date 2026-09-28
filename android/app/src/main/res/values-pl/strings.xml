@@ -325,7 +325,10 @@
     <string name="fuel_proteinShort">B %s</string>
     <string name="fuel_proteinToGo">jeszcze %s białka</string>
     <string name="fuel_quickAdd">Szybko dodaj</string>
-    <string name="fuel_quickAdd_hint">Wystarczą kalorie, makro są opcjonalne.</string>
+    <string name="fuel_quickAdd_hint">Wystarczą kalorie, waga i makro są opcjonalne.</string>
+    <string name="fuel_quickAdd_save">Zapisz w Twoich produktach</string>
+    <string name="fuel_quickAdd_saveHint">Znajdziesz go w wyszukiwarce, by dodać ponownie. Bez wagi jedna porcja liczy się jako 100 g.</string>
+    <string name="fuel_quickAdd_saveOnly">Zapisz na później</string>
     <string name="fuel_recent">Ostatnie</string>
     <string name="fuel_scan_checkDigits">Ten kod wygląda na błędny. Sprawdź cyfry.</string>
     <string name="fuel_scan_codePlaceholder">Cyfry kodu kreskowego</string>

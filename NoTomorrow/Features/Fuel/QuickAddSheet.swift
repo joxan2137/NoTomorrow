@@ -1,7 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// Manual entry for foods the database does not know: name, kcal and optional P/C/F → a `MealEntry` with `customName`.
+/// Manual entry for foods the database does not know: name, kcal and optional grams and P/C/F → a `MealEntry` with
+/// `customName`. By default the food is also kept in the library (`CustomFoodLibrary`), so it can be found in search and
+/// added again later; "Save for later" keeps it there without logging anything.
 struct QuickAddSheet: View {
     let meal: MealSlot
     var day: Date = .now
@@ -23,6 +25,8 @@ struct QuickAddSheet: View {
     @State private var proteinText = ""
     @State private var carbsText = ""
     @State private var fatText = ""
+    /// Add mode: keep the food in the library as well as logging it.
+    @State private var saveToLibrary = true
     @State private var slot: MealSlot
     /// Edit mode only: the day the entry is listed under, movable with `EntryDayStepper`.
     @State private var entryDay: Date
@@ -69,8 +73,9 @@ struct QuickAddSheet: View {
     }
 
     private var isEditing: Bool { editing != nil }
-    /// AI rows carry a portion; quick-add rows do not, so the grams field only shows when there is something to edit.
-    private var showsGrams: Bool { (editing?.grams ?? 0) > 0 }
+    /// A new quick add can take a weight. When editing, AI rows carry a portion and weightless quick-add rows do not,
+    /// so the grams field only shows when there is something to edit.
+    private var showsGrams: Bool { editing.map { $0.grams > 0 } ?? true }
     private var kcal: Double? { Self.number(kcalText) }
     private var currentTexts: MealEntry.EditTexts {
         MealEntry.EditTexts(grams: gramsText, kcal: kcalText, protein: proteinText, carbs: carbsText, fat: fatText)
@@ -105,14 +110,22 @@ struct QuickAddSheet: View {
                     Text("fuel.quickAdd.hint").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 4)
+                    if !isEditing { saveRow.padding(.top, 6) }
                 }
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.top, 16)
             }
             .scrollDismissesKeyboard(.interactively)
-            PrimaryButton(title: isEditing ? "common.save" : FuelText.verbatim(FuelText.addTo(slot)), isEnabled: canAdd) { add() }
-                .padding(.horizontal, NT.Spacing.screenH)
-                .padding(.bottom, 12)
+            VStack(spacing: 8) {
+                PrimaryButton(title: isEditing ? "common.save" : FuelText.verbatim(FuelText.addTo(slot)), isEnabled: canAdd) { add() }
+                if !isEditing {
+                    SecondaryButton(title: "fuel.quickAdd.saveOnly", height: NT.Size.control) { saveForLater() }
+                        .disabled(!canAdd)
+                        .opacity(canAdd ? 1 : 0.4)
+                }
+            }
+            .padding(.horizontal, NT.Spacing.screenH)
+            .padding(.bottom, 12)
         }
         .ntScreenBackground()
         .onAppear { if !isEditing { focus = name.isEmpty ? .name : .kcal } }
@@ -154,6 +167,22 @@ struct QuickAddSheet: View {
         .frame(height: NT.Size.control)
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.top, 12)
+    }
+
+    /// Add mode: "Save to your foods", on by default.
+    private var saveRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("fuel.quickAdd.save").font(NT.Fonts.body).foregroundStyle(NT.Colors.ink)
+                Text("fuel.quickAdd.saveHint").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Toggle("", isOn: $saveToLibrary).labelsHidden().tint(NT.Colors.ink)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(NT.Colors.surface, in: RoundedRectangle(cornerRadius: NT.Radius.field, style: .continuous))
     }
 
     private func textRow(_ label: LocalizedStringKey, text: Binding<String>, field: Field) -> some View {
@@ -200,15 +229,33 @@ struct QuickAddSheet: View {
                                     figuresUntouched: figuresUntouched, slot: slot, day: entryDay) else { return }
         } else {
             guard let kcal else { return }
-            let trimmedName = name.trimmingCharacters(in: .whitespaces)
+            let grams = Self.number(gramsText) ?? 0
             let protein = Self.number(proteinText) ?? 0
             let carbs = Self.number(carbsText) ?? 0
             let fat = Self.number(fatText) ?? 0
             let entry = MealEntry(day: day, slot: slot, customName: trimmedName,
-                                  grams: 0, kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
+                                  grams: grams, kcal: kcal, proteinG: protein, carbsG: carbs, fatG: fat)
             modelContext.insert(entry)
+            if saveToLibrary { saveFood() }
         }
         try? modelContext.save()
         if let onAdded { onAdded() } else { dismiss() }
+    }
+
+    /// "Save for later": the food goes to the library only; nothing is logged.
+    private func saveForLater() {
+        guard canAdd, !isEditing else { return }
+        saveFood()
+        try? modelContext.save()
+        if let onAdded { onAdded() } else { dismiss() }
+    }
+
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespaces) }
+
+    private func saveFood() {
+        guard let kcal else { return }
+        CustomFoodLibrary.save(name: trimmedName, grams: Self.number(gramsText) ?? 0, kcal: kcal,
+                               protein: Self.number(proteinText) ?? 0, carbs: Self.number(carbsText) ?? 0,
+                               fat: Self.number(fatText) ?? 0, source: .quickAdd, in: modelContext)
     }
 }

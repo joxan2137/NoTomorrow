@@ -6957,13 +6957,61 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Calories are enough; macros are optional."
+            "value": "Calories are enough; weight and macros are optional."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wystarczą kalorie, makro są opcjonalne."
+            "value": "Wystarczą kalorie, waga i makro są opcjonalne."
+          }
+        }
+      }
+    },
+    "fuel.quickAdd.save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to your foods"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w Twoich produktach"
+          }
+        }
+      }
+    },
+    "fuel.quickAdd.saveHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find it in search to add again. Without a weight, one portion counts as 100 g."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdziesz go w wyszukiwarce, by dodać ponownie. Bez wagi jedna porcja liczy się jako 100 g."
+          }
+        }
+      }
+    },
+    "fuel.quickAdd.saveOnly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save for later"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz na później"
           }
         }
       }

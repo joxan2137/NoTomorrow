@@ -152,6 +152,51 @@ enum PortionFood: Identifiable {
     }
 }
 
+/// Quick adds and AI estimates kept in the food library, so they show under Recent / "Your foods" in the search sheet
+/// and can be logged again later like any saved product.
+enum CustomFoodLibrary {
+    /// Saves the food for `name` with one portion's figures and marks it used at `now`. A food saved before from a
+    /// quick add or an estimate under the same name (ignoring case and diacritics) is refreshed instead of duplicated,
+    /// except that an estimate never overwrites figures the user typed. With a weight the figures become per-100 g
+    /// values and the weight its serving; without one the portion itself counts as 100 g.
+    @discardableResult
+    static func save(name: String, grams: Double, kcal: Double, protein: Double, carbs: Double, fat: Double,
+                     source: FoodSource, in context: ModelContext, now: Date = .now) -> FoodItem? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let item: FoodItem
+        if let existing = existing(named: trimmed, in: context) {
+            item = existing
+        } else {
+            item = FoodItem(id: "custom:\(UUID().uuidString)", name: trimmed, source: source,
+                            kcalPer100: 0, proteinPer100: 0, carbsPer100: 0, fatPer100: 0)
+            context.insert(item)
+        }
+        if item.useCount == 0 || source == .quickAdd || item.source == .aiEstimate {
+            let scale = grams > 0 ? 100 / grams : 1
+            item.name = trimmed
+            item.source = source
+            item.kcalPer100 = kcal * scale
+            item.proteinPer100 = protein * scale
+            item.carbsPer100 = carbs * scale
+            item.fatPer100 = fat * scale
+            item.servingSizeG = grams > 0 ? grams : nil
+        }
+        item.useCount += 1
+        item.lastUsedAt = now
+        return item
+    }
+
+    /// The quick-add or estimated food already saved under `name`, if any.
+    static func existing(named name: String, in context: ModelContext) -> FoodItem? {
+        let key = FoodMatch.fold(name.trimmingCharacters(in: .whitespacesAndNewlines))
+        let unlabelled = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.barcode == nil })
+        return ((try? context.fetch(unlabelled)) ?? []).first {
+            ($0.source == .quickAdd || $0.source == .aiEstimate) && FoodMatch.fold($0.name) == key
+        }
+    }
+}
+
 /// Small "N kcal" pair used in rows: number in ink, unit in ink2.
 struct KcalLabel: View {
     var kcal: Double

@@ -35,17 +35,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.dao.MealDao
 import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.designsystem.NT
 import app.notomorrow.designsystem.NtSheet
 import app.notomorrow.designsystem.NtShapes
 import app.notomorrow.designsystem.NtText
+import app.notomorrow.designsystem.NtToggle
 import app.notomorrow.designsystem.PrimaryButton
+import app.notomorrow.designsystem.SecondaryButton
 import app.notomorrow.designsystem.ntDismissKeyboardOnScroll
 import app.notomorrow.designsystem.ntPlainClickable
 import app.notomorrow.designsystem.tabular
 import app.notomorrow.di.ntViewModel
+import app.notomorrow.model.FoodSource
 import app.notomorrow.model.MealSlot
 import app.notomorrow.service.Days
 import app.notomorrow.util.LocaleProvider
@@ -63,8 +67,10 @@ import java.util.UUID
 
 /**
  * Manual entry for foods the database does not know — the port of
- * `Features/Fuel/QuickAddSheet.swift`. Name and kcal are required; P/C/F are optional and
- * default to 0. The result is a `MealEntry` with a `customName` and no food row.
+ * `Features/Fuel/QuickAddSheet.swift`. Name and kcal are required; grams and P/C/F are optional
+ * and default to 0. The result is a `MealEntry` with a `customName` and no food row. By default
+ * the food is also kept in the library ([CustomFoodLibrary]), so it can be found in search and
+ * added again later; "Save for later" keeps it there without logging anything.
  *
  * [QuickAddEditSheet] is the same sheet pointed at a custom row that is already logged.
  */
@@ -77,7 +83,7 @@ fun QuickAddSheet(
     onAdded: () -> Unit = onDismiss,
 ) {
     val model = ntViewModel(key = "quickAdd") { container ->
-        QuickAddViewModel(container.db.mealDao())
+        QuickAddViewModel(container.db.mealDao(), foodDao = container.db.foodDao())
     }
     LaunchedEffect(initialName) { model.start(initialName) }
     DisposableEffect(Unit) { onDispose { model.reset() } }
@@ -90,6 +96,7 @@ fun QuickAddSheet(
         buttonTitle = stringResource(S.fuel_addTo, stringResource(NtKeys.meal(meal))),
         onDismiss = onDismiss,
         onSubmit = { model.add(meal = meal, day = day, onAdded = onAdded) },
+        onSaveOnly = { model.saveForLater(onSaved = onAdded) },
     )
 }
 
@@ -132,6 +139,7 @@ private fun QuickAddSheetBody(
     onDismiss: () -> Unit,
     onSubmit: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    onSaveOnly: (() -> Unit)? = null,
 ) {
     val nameFocus = remember { FocusRequester() }
     val kcalFocus = remember { FocusRequester() }
@@ -222,16 +230,35 @@ private fun QuickAddSheetBody(
                     style = NT.Fonts.footnote,
                     color = NT.Colors.ink2,
                 )
+                if (!state.isEditing) {
+                    QuickAddSaveRow(
+                        checked = state.saveToLibrary,
+                        onCheckedChange = model::setSaveToLibrary,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
             }
 
-            PrimaryButton(
-                title = buttonTitle,
+            Column(
                 modifier = Modifier
                     .padding(horizontal = NT.Spacing.screenH)
                     .padding(bottom = 12.dp),
-                enabled = state.canAdd,
-                onClick = onSubmit,
-            )
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PrimaryButton(
+                    title = buttonTitle,
+                    enabled = state.canAdd,
+                    onClick = onSubmit,
+                )
+                if (onSaveOnly != null && !state.isEditing) {
+                    SecondaryButton(
+                        title = stringResource(S.fuel_quickAdd_saveOnly),
+                        height = NT.Size.control,
+                        enabled = state.canAdd,
+                        onClick = onSaveOnly,
+                    )
+                }
+            }
         }
     }
 }
@@ -286,6 +313,25 @@ private fun QuickAddHeader(title: String, onCancel: () -> Unit, onDelete: (() ->
                 maxLines = 1,
             )
         }
+    }
+}
+
+/** Add mode: "Save to your foods", on by default, with what it does underneath. */
+@Composable
+private fun QuickAddSaveRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(NT.Colors.surface, NtShapes.field)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            NtText(text = stringResource(S.fuel_quickAdd_save), style = NT.Fonts.body, color = NT.Colors.ink)
+            NtText(text = stringResource(S.fuel_quickAdd_saveHint), style = NT.Fonts.footnote, color = NT.Colors.ink2)
+        }
+        NtToggle(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -385,6 +431,8 @@ class QuickAddViewModel(
     private val mealDao: MealDao,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val locale: () -> Locale = { LocaleProvider.current() },
+    /** Where "Save to your foods" writes; the edit sheet never saves, so it can go without. */
+    private val foodDao: FoodDao? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(QuickAddUiState())
@@ -412,7 +460,7 @@ class QuickAddViewModel(
     fun start(initialName: String) {
         if (started) return
         started = true
-        _state.value = QuickAddUiState(name = initialName, autofocus = true)
+        _state.value = QuickAddUiState(name = initialName, autofocus = true, showsGrams = true)
     }
 
     /**
@@ -503,6 +551,10 @@ class QuickAddViewModel(
         _state.value = _state.value.copy(fatText = value)
     }
 
+    fun setSaveToLibrary(value: Boolean) {
+        _state.value = _state.value.copy(saveToLibrary = value)
+    }
+
     fun setSlot(slot: MealSlot) {
         _state.value = _state.value.copy(slot = slot)
     }
@@ -524,15 +576,41 @@ class QuickAddViewModel(
                     day = Days.millis(day, zone),
                     slot = meal,
                     customName = snapshot.name.trim(),
-                    grams = 0.0,
+                    grams = Parsing.nonNegative(snapshot.gramsText) ?: 0.0,
                     kcal = kcal,
                     proteinG = Parsing.nonNegative(snapshot.proteinText) ?: 0.0,
                     carbsG = Parsing.nonNegative(snapshot.carbsText) ?: 0.0,
                     fatG = Parsing.nonNegative(snapshot.fatText) ?: 0.0,
                 ),
             )
+            if (snapshot.saveToLibrary) saveFood(snapshot)
             onAdded()
         }
+    }
+
+    /** "Save for later": the food goes to the library only; nothing is logged. */
+    fun saveForLater(onSaved: () -> Unit) {
+        val snapshot = _state.value
+        if (!snapshot.canAdd || snapshot.isEditing) return
+        viewModelScope.launch {
+            saveFood(snapshot)
+            onSaved()
+        }
+    }
+
+    private suspend fun saveFood(snapshot: QuickAddUiState) {
+        val dao = foodDao ?: return
+        val kcal = snapshot.kcal ?: return
+        CustomFoodLibrary.save(
+            name = snapshot.name,
+            grams = Parsing.nonNegative(snapshot.gramsText) ?: 0.0,
+            kcal = kcal,
+            protein = Parsing.nonNegative(snapshot.proteinText) ?: 0.0,
+            carbs = Parsing.nonNegative(snapshot.carbsText) ?: 0.0,
+            fat = Parsing.nonNegative(snapshot.fatText) ?: 0.0,
+            source = FoodSource.QuickAdd,
+            foodDao = dao,
+        )
     }
 
     /**
@@ -574,8 +652,13 @@ data class QuickAddUiState(
     val day: LocalDate = LocalDate.now(),
     /** The stepper's upper bound, read when the entry was bound. */
     val today: LocalDate = LocalDate.now(),
-    /** A quick-add row has no weight, so it edits without the grams field. */
+    /**
+     * A new quick add can take a weight; in edit mode a weightless quick-add row edits without
+     * the grams field.
+     */
     val showsGrams: Boolean = false,
+    /** Add mode: keep the food in the library as well as logging it. */
+    val saveToLibrary: Boolean = true,
     val isEditing: Boolean = false,
     val autofocus: Boolean = false,
 ) {
