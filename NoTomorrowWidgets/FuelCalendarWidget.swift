@@ -1,7 +1,8 @@
 import SwiftUI
 import WidgetKit
 
-/// Fuel calendar: the Fuel history heat grid, with a dot on every day you trained. `docs/widgets.md`, "Fuel calendar".
+/// Fuel calendar: the Fuel history as a GitHub-style contribution graph, with a dot on every day you trained.
+/// `docs/widgets.md`, "Fuel calendar".
 struct FuelCalendarWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetKind.history, provider: SnapshotProvider()) { entry in
@@ -15,7 +16,7 @@ struct FuelCalendarWidget: Widget {
     }
 }
 
-/// The grid's data for one render: levels and trained flags by day, and the stats under it.
+/// The grid's data for one render: levels and trained flags by day, and the days on target.
 struct FuelCalendarModel {
     let today: Date
     let byDay: [Date: WidgetSnapshot.CalendarGrid.Day]
@@ -43,19 +44,6 @@ struct FuelCalendarModel {
         return cal.date(byAdding: .day, value: -7 * (count - 1 - index), to: thisMonday) ?? thisMonday
     }
 
-    /// The logged days among the `n` before today (today is still in progress).
-    private func loggedBeforeToday(_ n: Int) -> [Double] {
-        let cal = Calendar.current
-        return (1...n).compactMap { offset in
-            cal.date(byAdding: .day, value: -offset, to: today).flatMap { byDay[cal.startOfDay(for: $0)]?.kcal }
-        }
-    }
-
-    func average(_ n: Int) -> Double? {
-        let values = loggedBeforeToday(n)
-        return values.isEmpty ? nil : values.reduce(0, +) / Double(values.count)
-    }
-
     /// Days at level 4 among the 30 before today (`FuelCalendar.stats`).
     var onTarget30: Int {
         let cal = Calendar.current
@@ -77,13 +65,7 @@ struct FuelCalendarView: View {
             let model = FuelCalendarModel(snapshot: snapshot, now: entry.date)
             VStack(alignment: .leading, spacing: 8) {
                 header(model)
-                if family == .systemLarge {
-                    HeatGrid(model: model, minColumns: 10, showsMonths: true)
-                    legend
-                    stats(model)
-                } else {
-                    HeatGrid(model: model, minColumns: 0, showsMonths: false)
-                }
+                ContributionGrid(model: model, showsLegend: family == .systemLarge)
             }
         } else {
             WidgetSetupView()
@@ -91,121 +73,202 @@ struct FuelCalendarView: View {
     }
 
     private func header(_ model: FuelCalendarModel) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(verbatim: WidgetText.string("widget.history.name")).eyebrowStyle()
+        HStack(alignment: .center, spacing: 6) {
+            Image(systemName: "flame.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(W.ember)
+            Text(verbatim: WidgetText.string("widget.history.name")).eyebrowStyle().lineLimit(1)
             Spacer(minLength: 8)
             Text(verbatim: WidgetText.format("widget.history.onTarget %lld", model.onTarget30))
                 .font(W.caption).monospacedDigit().foregroundStyle(W.ink2).lineLimit(1)
         }
-    }
-
-    private var legend: some View {
-        HStack(spacing: 5) {
-            ForEach(0..<5, id: \.self) { level in
-                RoundedRectangle(cornerRadius: 2.5).fill(W.heat[level]).frame(width: 10, height: 10)
-            }
-            Text(verbatim: WidgetText.string("fuel.calendar.onTarget")).font(W.caption).foregroundStyle(W.ink2)
-                .padding(.leading, 2)
-            Spacer(minLength: 8)
-            Circle().fill(W.ink).frame(width: 5, height: 5)
-            Text(verbatim: WidgetText.string("widget.history.trained")).font(W.caption).foregroundStyle(W.ink2)
-        }
-        .lineLimit(1)
-    }
-
-    private func stats(_ model: FuelCalendarModel) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            stat(model.average(7).map(WidgetText.kcal) ?? "–", "fuel.calendar.avg7")
-            stat(model.average(30).map(WidgetText.kcal) ?? "–", "fuel.calendar.avg30")
-            stat("\(model.grid.sessions30)", "widget.history.sessions30")
-        }
-    }
-
-    private func stat(_ value: String, _ labelKey: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: value).font(W.display(28)).monospacedDigit().foregroundStyle(W.ink).lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(verbatim: WidgetText.string(labelKey)).font(W.caption).foregroundStyle(W.ink2).lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 16)
     }
 }
 
-/// Monday-first week columns, oldest left, as many whole weeks as fit (at most 26). Cells are square with a gap of a
-/// fifth of their side; `minColumns` caps the cell side so the large size fills its height with at least that many
-/// weeks instead of leaving a gap above the grid.
-struct HeatGrid: View {
+/// The Fuel calendar as a GitHub contribution graph: one column per week, Monday on top, the current week at the
+/// right edge; short month names over the weeks that start a month and Mon / Wed / Fri down the left. Each day is a
+/// small rounded square in its `heat` colour, a day you trained gets an `ink` dot in the middle, today an `ink` ring;
+/// days still ahead are left out. Cells are square and as big as the height allows (at most `maxPitch`); when that
+/// would leave only a few weeks across, the weeks wrap into a second band under the first (the older half on top).
+/// Same metrics as Android's `WidgetCharts.contributions`.
+struct ContributionGrid: View {
     let model: FuelCalendarModel
-    let minColumns: Int
-    let showsMonths: Bool
+    let showsLegend: Bool
+
+    private static let gapRatio: CGFloat = 0.22
+    private static let maxPitch: CGFloat = 22
+    private static let minTwoBandPitch: CGFloat = 15
+    private static let monthBand: CGFloat = 16
+    private static let bandGap: CGFloat = 12
+    private static let legendBand: CGFloat = 24
+    private static let labelColumn: CGFloat = 30
+
+    private struct Metrics {
+        var width: CGFloat
+        var bands: Int
+        var perBand: Int
+        var pitch: CGFloat
+        var gap: CGFloat { pitch * ContributionGrid.gapRatio }
+        var cell: CGFloat { pitch - gap }
+        var weeks: Int { bands * perBand }
+        /// The grid keeps to the right edge; the weekday names to the left.
+        var gridLeft: CGFloat { width - (CGFloat(perBand) * pitch - gap) }
+    }
+
+    private func metrics(_ size: CGSize) -> Metrics {
+        let gridHeight = size.height - (showsLegend ? Self.legendBand : 0)
+        let gridWidth = size.width - Self.labelColumn
+        func pitch(_ bands: Int) -> CGFloat {
+            let b = CGFloat(bands)
+            return (gridHeight - b * Self.monthBand - (b - 1) * Self.bandGap) / (b * 7 - Self.gapRatio)
+        }
+        let bands = pitch(1) > Self.maxPitch && pitch(2) >= Self.minTwoBandPitch ? 2 : 1
+        let p = max(4, min(pitch(bands), Self.maxPitch))
+        let fit = Int((gridWidth + p * Self.gapRatio) / p)
+        let perBand = min(max(1, fit), WidgetSnapshot.CalendarGrid.weeks / bands)
+        return Metrics(width: size.width, bands: bands, perBand: perBand, pitch: p)
+    }
 
     var body: some View {
         GeometryReader { geo in
-            let labelHeight: CGFloat = showsMonths ? 14 : 0
-            let height = geo.size.height - labelHeight
-            let byHeight = height / (7 * 1.2 - 0.2)
-            let byWidth = minColumns > 0 ? geo.size.width / (CGFloat(minColumns) * 1.2 - 0.2) : .infinity
-            let side = max(4, min(byHeight, byWidth))
-            let gap = side * 0.2
-            let columns = min(26, max(1, Int((geo.size.width + gap) / (side + gap))))
-            let gridWidth = CGFloat(columns) * side + CGFloat(columns - 1) * gap
-
+            let m = metrics(geo.size)
             VStack(alignment: .leading, spacing: 0) {
-                if showsMonths { monthLabels(columns: columns, side: side, gap: gap).frame(height: labelHeight, alignment: .top) }
-                HStack(alignment: .top, spacing: gap) {
-                    ForEach(0..<columns, id: \.self) { column in
-                        let monday = model.monday(column: column, of: columns)
-                        VStack(spacing: gap) {
-                            ForEach(0..<7, id: \.self) { row in
-                                cell(Calendar.current.date(byAdding: .day, value: row, to: monday) ?? monday, side: side)
-                            }
-                        }
+                ForEach(0..<m.bands, id: \.self) { band in
+                    if band > 0 { Color.clear.frame(height: Self.bandGap) }
+                    bandView(band, m)
+                }
+                if showsLegend { legend.frame(height: Self.legendBand) }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+
+    private func bandView(_ band: Int, _ m: Metrics) -> some View {
+        let first = band * m.perBand
+        return VStack(alignment: .leading, spacing: 0) {
+            monthRow(first: first, m)
+                .frame(width: m.width, height: Self.monthBand, alignment: .topLeading)
+            HStack(alignment: .top, spacing: 0) {
+                weekdayNames(m)
+                Spacer(minLength: 0)
+                HStack(alignment: .top, spacing: m.gap) {
+                    ForEach(0..<m.perBand, id: \.self) { column in
+                        weekColumn(model.monday(column: first + column, of: m.weeks), m)
                     }
                 }
             }
-            .frame(width: gridWidth, alignment: .leading)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: showsMonths ? .top : .center)
+            .frame(width: m.width)
+        }
+    }
+
+    private func weekColumn(_ monday: Date, _ m: Metrics) -> some View {
+        VStack(spacing: m.gap) {
+            ForEach(0..<7, id: \.self) { row in
+                cell(Calendar.current.date(byAdding: .day, value: row, to: monday) ?? monday, m)
+            }
         }
     }
 
     @ViewBuilder
-    private func cell(_ date: Date, side: CGFloat) -> some View {
+    private func cell(_ date: Date, _ m: Metrics) -> some View {
         let day = Calendar.current.startOfDay(for: date)
         if day > model.today {
-            Color.clear.frame(width: side, height: side)
+            Color.clear.frame(width: m.cell, height: m.cell)
         } else {
+            let shape = RoundedRectangle(cornerRadius: m.cell * 0.24, style: .continuous)
+            let dot = max(3.5, m.cell * 0.4)
             ZStack {
-                RoundedRectangle(cornerRadius: side / 4, style: .continuous).fill(W.heat[model.level(day)])
+                shape.fill(W.heat[model.level(day)])
                 if model.trained(day) {
-                    Circle().fill(W.ink).frame(width: side * 0.38, height: side * 0.38)
+                    Circle().fill(W.ink).frame(width: dot, height: dot)
                 }
                 if day == model.today {
-                    RoundedRectangle(cornerRadius: side / 4, style: .continuous).strokeBorder(W.ink, lineWidth: 1.5)
+                    shape.strokeBorder(W.ink, lineWidth: 1.5)
                 }
             }
-            .frame(width: side, height: side)
+            .frame(width: m.cell, height: m.cell)
         }
     }
 
-    /// Short month names over the columns that hold a 1st.
-    private func monthLabels(columns: Int, side: CGFloat, gap: CGFloat) -> some View {
-        let cal = Calendar.current
-        let labels: [(Int, Date)] = (0..<columns).compactMap { column in
-            let monday = model.monday(column: column, of: columns)
-            for row in 0..<7 {
-                guard let date = cal.date(byAdding: .day, value: row, to: monday), date <= model.today else { continue }
-                if cal.component(.day, from: date) == 1 { return (column, date) }
+    /// Mon / Wed / Fri beside their rows.
+    private func weekdayNames(_ m: Metrics) -> some View {
+        VStack(alignment: .leading, spacing: m.gap) {
+            ForEach(0..<7, id: \.self) { row in
+                Text(verbatim: Self.weekdayName(row))
+                    .font(.system(size: 10, weight: .medium)).foregroundStyle(W.ink3)
+                    .lineLimit(1).fixedSize()
+                    .frame(height: m.cell)
             }
-            return nil
+        }
+    }
+
+    private static func weekdayName(_ row: Int) -> String {
+        let keys = [0: "weekday.mon.short", 2: "weekday.wed.short", 4: "weekday.fri.short"]
+        guard let key = keys[row] else { return "" }
+        var name = WidgetText.string(key)
+        if name.hasSuffix(".") { name.removeLast() }
+        return name
+    }
+
+    private struct MonthLabel {
+        var column: Int
+        var month: Date
+    }
+
+    /// Short month names over the weeks that hold a 1st; the band's first week gets its own month when the next name
+    /// is at least two weeks away. A name that would run into the one before it, or off the edge, is left out.
+    private func monthRow(first: Int, _ m: Metrics) -> some View {
+        let cal = Calendar.current
+        var labels: [MonthLabel] = []
+        for column in 0..<m.perBand {
+            let monday = model.monday(column: first + column, of: m.weeks)
+            for row in 0..<7 {
+                guard let date = cal.date(byAdding: .day, value: row, to: monday),
+                      cal.startOfDay(for: date) <= model.today,
+                      cal.component(.day, from: date) == 1 else { continue }
+                labels.append(MonthLabel(column: column, month: date))
+            }
+        }
+        if (labels.first?.column ?? .max) >= 2,
+           let month = cal.date(from: cal.dateComponents([.year, .month], from: model.monday(column: first, of: m.weeks))) {
+            labels.insert(MonthLabel(column: 0, month: month), at: 0)
+        }
+        var kept: [MonthLabel] = []
+        for label in labels where label.column <= m.perBand - 2 {
+            if let last = kept.last, CGFloat(label.column - last.column) * m.pitch < 30 { continue }
+            kept.append(label)
         }
         return ZStack(alignment: .topLeading) {
-            ForEach(labels, id: \.0) { column, date in
-                Text(verbatim: WidgetText.monthShort(date))
-                    .font(W.caption).foregroundStyle(W.ink3).fixedSize()
-                    .offset(x: CGFloat(column) * (side + gap))
+            ForEach(kept, id: \.column) { label in
+                Text(verbatim: WidgetText.monthShort(label.month).capitalized(with: WidgetText.locale))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(cal.isDate(label.month, equalTo: model.today, toGranularity: .month) ? W.ink2 : W.ink3)
+                    .fixedSize()
+                    .offset(x: m.gridLeft + CGFloat(label.column) * m.pitch)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    /// The key: a trained cell, then "Off target ▪▪▪▪ On target".
+    private var legend: some View {
+        HStack(spacing: 6) {
+            swatch(level: 0, dot: true)
+            Text(verbatim: WidgetText.string("widget.history.trained"))
+            Spacer(minLength: 12)
+            Text(verbatim: WidgetText.string("fuel.calendar.legend.off"))
+            HStack(spacing: 3) {
+                ForEach(1..<5, id: \.self) { level in swatch(level: level, dot: false) }
+            }
+            Text(verbatim: WidgetText.string("fuel.calendar.onTarget"))
+        }
+        .font(W.caption).foregroundStyle(W.ink2).lineLimit(1)
+        .padding(.top, 8)
+    }
+
+    private func swatch(level: Int, dot: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(W.heat[level])
+            if dot { Circle().fill(W.ink).frame(width: 4.5, height: 4.5) }
+        }
+        .frame(width: 11, height: 11)
     }
 }

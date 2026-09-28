@@ -102,12 +102,21 @@ internal fun SetupContent(context: Context) {
     }
 }
 
-/** An eyebrow: uppercase, `ink2` unless [color] says otherwise (the next session, the countdown). */
+/**
+ * An eyebrow: uppercase, `ink2` unless [color] says otherwise (the next session, the countdown),
+ * after an [icon] in [iconColor] (the text's colour unless given).
+ */
 @Composable
-internal fun Eyebrow(text: String, color: ColorProvider = W.ink2, modifier: GlanceModifier = GlanceModifier, icon: Int? = null) {
+internal fun Eyebrow(
+    text: String,
+    color: ColorProvider = W.ink2,
+    modifier: GlanceModifier = GlanceModifier,
+    icon: Int? = null,
+    iconColor: ColorProvider = color,
+) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
-            Glyph(icon, 14.dp, color)
+            Glyph(icon, 14.dp, iconColor)
             Spacer(GlanceModifier.width(6.dp))
         }
         Text(

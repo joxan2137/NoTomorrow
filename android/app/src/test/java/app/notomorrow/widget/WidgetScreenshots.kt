@@ -74,8 +74,8 @@ class WidgetScreenshots {
 
     @Test
     fun calendar() {
-        val kcal = (1..120L).filter { it % 5 != 0L }.associate { today.minusDays(it) to 1800.0 + (it * 97 % 900) }
-        val trained = (1..120L).filter { it % 3 == 0L }.map { today.minusDays(it) }.toSet()
+        val kcal = (1..300L).filter { it % 5 != 0L }.associate { today.minusDays(it) to 1800.0 + (it * 97 % 900) }
+        val trained = (1..300L).filter { it % 3 == 0L }.map { today.minusDays(it) }.toSet()
         val data = CalendarData(
             today = today,
             kcalByDay = kcal + (today to 900.0),
@@ -84,6 +84,7 @@ class WidgetScreenshots {
             goal = TrainingGoal.Maintain,
         )
         shoot("calendar-medium", medium) { CalendarContent(data) }
+        shoot("calendar-minimum", DpSize(250.dp, 110.dp)) { CalendarContent(data) }
         shoot("calendar-tall", tall) { CalendarContent(data) }
         shoot("calendar-large", large) { CalendarContent(data) }
     }

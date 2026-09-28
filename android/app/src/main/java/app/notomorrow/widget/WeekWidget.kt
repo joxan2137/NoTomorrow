@@ -5,18 +5,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.text.Text
 import app.notomorrow.R
@@ -29,7 +34,7 @@ import app.notomorrow.util.NtStrings
  * Gym week (`nt.widget.week`, `docs/widgets.md`): the next session — its day, the routine the
  * Dashboard suggests and the time, big — and the Mon…Sun strip (`WeekStripView`). Small: the
  * session over a 16 dp strip; medium: the session on top, the full strip with dates (and, when
- * paired, who-trained dots) across the width. Opens Today.
+ * paired, who-trained dots) across the width in a faint tray. Opens Today.
  */
 class WeekWidget : GlanceAppWidget() {
 
@@ -69,12 +74,14 @@ internal fun WeekContent(data: WeekData) {
                     }
                 }
                 Spacer(GlanceModifier.height(8.dp))
-                BitmapImage(
-                    WidgetCharts.weekStrip(
-                        context, width, 30f, data.days, data.isPaired,
-                        numbers = true, dots = data.hasSchedule && data.isPaired, locale = locale, labels = letters,
-                    ),
-                )
+                Tray {
+                    BitmapImage(
+                        WidgetCharts.weekStrip(
+                            context, width - 2 * TRAY_PADDING_DP, 30f, data.days, data.isPaired,
+                            numbers = true, dots = data.hasSchedule && data.isPaired, locale = locale, labels = letters,
+                        ),
+                    )
+                }
             }
         } else {
             Column(GlanceModifier.fillMaxSize()) {
@@ -115,3 +122,19 @@ private fun SessionLabel(context: Context, data: WeekData, maxLines: Int) {
     val routine = data.routineName?.takeIf { it.isNotEmpty() } ?: context.getString(R.string.dashboard_nextSession)
     Text(routine, style = W.title, maxLines = 1)
 }
+
+/** The week strip's tray: a faint rounded well across the width (`widget_tray.xml`). */
+@Composable
+private fun Tray(content: @Composable () -> Unit) {
+    Box(
+        GlanceModifier.fillMaxWidth()
+            .background(ImageProvider(R.drawable.widget_tray))
+            .cornerRadius(16.dp)
+            .padding(horizontal = TRAY_PADDING_DP.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
+    }
+}
+
+private const val TRAY_PADDING_DP = 6f
