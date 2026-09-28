@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * The exercise library: 989 bundled records plus the user's `custom-<uuid>` rows.
- * `ExerciseLibrary.importIfNeeded()` uses [libraryCount], [insertAllIgnoring] and
- * [missingPolishNames] / [updatePolishName]; the picker uses [observeAllByName].
+ * `ExerciseLibrary.importIfNeeded()` uses [libraryCount], [insertAllIgnoring], [allByName] and
+ * [renameLibraryExercise]; the picker uses [observeAllByName].
  */
 @Dao
 interface ExerciseDao {
@@ -36,12 +36,9 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercise WHERE id IN (:ids)")
     suspend fun byIds(ids: List<String>): List<ExerciseEntity>
 
-    /** Bundled rows that have not been back-filled with a Polish name yet. */
-    @Query("SELECT * FROM exercise WHERE namePL IS NULL AND isCustom = 0 LIMIT :limit")
-    suspend fun missingPolishNames(limit: Int = 2000): List<ExerciseEntity>
-
-    @Query("UPDATE exercise SET namePL = :namePL WHERE id = :id")
-    suspend fun updatePolishName(id: String, namePL: String)
+    /** A bundled row takes a newer build's names; custom rows are never touched. */
+    @Query("UPDATE exercise SET name = :name, namePL = :namePL WHERE id = :id AND isCustom = 0")
+    suspend fun renameLibraryExercise(id: String, name: String, namePL: String?)
 
     @Query("UPDATE exercise SET lastUsedAt = :at WHERE id = :id")
     suspend fun markUsed(id: String, at: Long)

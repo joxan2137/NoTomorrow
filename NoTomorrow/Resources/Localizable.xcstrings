@@ -12163,6 +12163,22 @@
         }
       }
     },
+    "workout.copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy workout"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiuj trening"
+          }
+        }
+      }
+    },
     "plates.title": {
       "localizations": {
         "en": {

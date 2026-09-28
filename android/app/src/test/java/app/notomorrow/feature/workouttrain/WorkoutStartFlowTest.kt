@@ -3,8 +3,12 @@ package app.notomorrow.feature.workouttrain
 import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.RoutineEntity
 import app.notomorrow.data.entity.RoutineItemEntity
+import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.UserProfileEntity
+import app.notomorrow.data.entity.WorkoutEntity
+import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.feature.workout.WorkoutStarter
+import app.notomorrow.model.SetKind
 import app.notomorrow.service.FakeExerciseDao
 import app.notomorrow.service.FakeProfileDao
 import app.notomorrow.service.FakeRoutineDao
@@ -42,7 +46,7 @@ class WorkoutStartFlowTest {
     private val profile = FakeProfileDao(UserProfileEntity(name = "Jan", defaultRestSeconds = 150))
     private val stores = WorkoutStarter.Stores(routines, workouts, exercises, profile)
 
-    private suspend fun TestScope.newSession() =
+    private suspend fun TestScope.newSession(dao: FakeWorkoutDao = workouts) =
         WorkoutSessionController(
             object : WorkoutSessionController.Store {
                 override suspend fun activeWorkoutId(): String? = null
@@ -50,7 +54,7 @@ class WorkoutStartFlowTest {
                 override suspend fun discarding(): Set<String> = emptySet()
                 override suspend fun setDiscarding(ids: Set<String>) = Unit
             },
-            workouts,
+            dao,
             backgroundScope,
         ).also { it.awaitRestored() }
 
@@ -94,6 +98,70 @@ class WorkoutStartFlowTest {
         val benchRow = workouts.workoutExercises(id).first { it.exerciseId == bench }
         assertEquals(listOf(82.5, 82.5, 82.5), workouts.sets(benchRow.id).map { it.weightKg })
         assertEquals(listOf(6, 6, 6), workouts.sets(benchRow.id).map { it.reps })
+    }
+
+    @Test
+    fun `copy workout starts the logged sets again, none of them done`() = runTest {
+        val dao = FakeWorkoutDao { id -> if (id == "gone") null else ExerciseEntity(id = id, name = id) }
+        val copyStores = WorkoutStarter.Stores(routines, dao, exercises, profile)
+        dao.insertWorkout(WorkoutEntity(id = "legs", name = "Legs", startedAt = 1_000, endedAt = 5_000))
+        dao.insertWorkoutExerciseWithSets(
+            WorkoutExerciseEntity(workoutId = "legs", exerciseId = bench, order = 0, restSeconds = 150, notes = "Belt on"),
+            listOf(
+                SetEntryEntity(workoutExerciseId = 0, order = 0, kind = SetKind.Warmup, weightKg = 60.0, reps = 5, completedAt = 1_100),
+                SetEntryEntity(workoutExerciseId = 0, order = 1, weightKg = 100.0, reps = 5, completedAt = 1_200, isPR = true),
+                SetEntryEntity(workoutExerciseId = 0, order = 2, weightKg = 100.0, reps = 4),
+            ),
+        )
+        dao.insertWorkoutExerciseWithSets(
+            WorkoutExerciseEntity(workoutId = "legs", exerciseId = "gone", order = 1, supersetGroup = 1),
+            listOf(SetEntryEntity(workoutExerciseId = 0, order = 0, weightKg = 20.0, reps = 10, completedAt = 1_300)),
+        )
+        dao.insertWorkoutExerciseWithSets(
+            WorkoutExerciseEntity(workoutId = "legs", exerciseId = curl, order = 2, restSeconds = 60, supersetGroup = 1),
+            listOf(SetEntryEntity(workoutExerciseId = 0, order = 0, weightKg = 30.0, reps = 12)),
+        )
+        val session = newSession(dao)
+
+        assertTrue(WorkoutStarter.canCopy(dao.workoutWithExercises("legs")!!))
+        val id = WorkoutStarter.start(WorkoutStarter.Request.Copy("legs"), copyStores, session, now = 10_000)!!
+
+        assertNotEquals("legs", id)
+        assertEquals(id, session.activeWorkoutId.value)
+        val copy = dao.workoutWithExercises(id)!!
+        assertEquals("Legs", copy.workout.name)
+        assertNull(copy.workout.endedAt)
+        val rows = dao.workoutExercises(id)
+        assertEquals(listOf(bench, curl), rows.map { it.exerciseId }, "an exercise gone from the library is left out")
+        assertEquals(listOf(150, 60), rows.map { it.restSeconds })
+        assertEquals(listOf<Int?>(null, null), rows.map { it.supersetGroup }, "a superset left alone is no superset")
+        assertEquals("Belt on", rows[0].notes)
+        val benchSets = dao.sets(rows[0].id)
+        assertEquals(listOf(SetKind.Warmup, SetKind.Normal), benchSets.map { it.kind }, "the sets it logged")
+        assertEquals(listOf(60.0, 100.0), benchSets.map { it.weightKg })
+        assertEquals(listOf(5, 5), benchSets.map { it.reps })
+        assertEquals(listOf(12), dao.sets(rows[1].id).map { it.reps }, "nothing done: the rows it had")
+        assertTrue((benchSets + dao.sets(rows[1].id)).none { it.isCompleted || it.isPR })
+        assertEquals(10_000L, exercises.byId(bench)?.lastUsedAt)
+        val sourceRows = dao.workoutExercises("legs").map { it.id }
+        assertEquals(3, dao.sets.value.count { it.isCompleted && it.workoutExerciseId in sourceRows }, "the source is left as it was")
+    }
+
+    @Test
+    fun `copying a workout that is gone starts nothing`() = runTest {
+        val session = newSession()
+        assertNull(WorkoutStarter.start(WorkoutStarter.Request.Copy("nope"), stores, session))
+        assertNull(session.activeWorkoutId.value)
+    }
+
+    @Test
+    fun `copied rows fall back to every row, then to one empty row`() {
+        val open = listOf(SetEntryEntity(workoutExerciseId = 7, order = 0, weightKg = 30.0, reps = 12))
+        assertEquals(listOf(12), WorkoutStarter.copiedSets(open).map { it.reps })
+        val empty = WorkoutStarter.copiedSets(emptyList())
+        assertEquals(1, empty.size)
+        assertEquals(SetKind.Normal, empty.single().kind)
+        assertEquals(0L, empty.single().workoutExerciseId)
     }
 
     @Test

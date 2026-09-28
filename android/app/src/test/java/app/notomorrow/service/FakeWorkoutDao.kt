@@ -1,6 +1,7 @@
 package app.notomorrow.service
 
 import app.notomorrow.data.dao.WorkoutDao
+import app.notomorrow.data.entity.ExerciseEntity
 import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
@@ -18,9 +19,12 @@ import kotlinx.coroutines.flow.map
  * for the session and the start path. Only the abstract members are implemented; the
  * `@Transaction` helper `insertWorkoutExerciseWithSets` is inherited, so tests exercise the real one.
  *
- * [routineNames] stands in for the `routine` table the one cross-table query reads.
+ * [routineNames] stands in for the `routine` table the one cross-table query reads, and [exercise]
+ * resolves a row's exercise for the graph reads (none by default).
  */
-class FakeWorkoutDao : WorkoutDao {
+class FakeWorkoutDao(
+    private val exercise: (String) -> ExerciseEntity? = { null },
+) : WorkoutDao {
 
     val workouts = MutableStateFlow<List<WorkoutEntity>>(emptyList())
     val exercises = MutableStateFlow<List<WorkoutExerciseEntity>>(emptyList())
@@ -37,7 +41,11 @@ class FakeWorkoutDao : WorkoutDao {
     private fun graph(workout: WorkoutEntity): WorkoutWithExercises = WorkoutWithExercises(
         workout,
         exercises.value.filter { it.workoutId == workout.id }.map { we ->
-            WorkoutExerciseWithSets(we, exercise = null, sets = sets.value.filter { it.workoutExerciseId == we.id })
+            WorkoutExerciseWithSets(
+                we,
+                exercise = we.exerciseId?.let(exercise),
+                sets = sets.value.filter { it.workoutExerciseId == we.id },
+            )
         },
     )
 

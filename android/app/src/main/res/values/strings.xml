@@ -847,6 +847,7 @@
     <string name="workout_beatsBest_s_s">%1$s beats your best set (%2$s)</string>
     <string name="workout_best">Best</string>
     <string name="workout_bw">BW</string>
+    <string name="workout_copy">Copy workout</string>
     <string name="workout_defaultName">Workout</string>
     <string name="workout_discard">Discard workout</string>
     <string name="workout_done_editSets">Edit sets</string>

@@ -41,7 +41,7 @@ class MachineScanScreenshots {
 
     private val matches = listOf(
         ExerciseEntity("Seated_Leg_Curl", "Seated Leg Curl", "Uginanie nóg siedząc na maszynie", listOf("hamstrings"), equipment = "machine"),
-        ExerciseEntity("nt_hs_seated_leg_curl", "Hammer Strength Seated Leg Curl", null, listOf("hamstrings"), listOf("calves"), equipment = "machine"),
+        ExerciseEntity("nt_hs_seated_leg_curl", "Seated Leg Curl (Hammer Strength)", null, listOf("hamstrings"), listOf("calves"), equipment = "machine"),
         ExerciseEntity("Standing_Leg_Curl", "Standing Leg Curl", null, listOf("hamstrings"), equipment = "machine"),
     )
 

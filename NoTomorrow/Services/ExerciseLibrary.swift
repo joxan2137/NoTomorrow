@@ -3,13 +3,16 @@ import SwiftData
 
 /// Loads the bundled free-exercise-db (The Unlicense) plus the app's own `nt_` additions (989 exercises) into SwiftData.
 /// Polish names come from `exercises_pl.json` (id → name) when present.
+/// A library exercise already in the store takes the bundled names, so a rename reaches existing installs; its id,
+/// history and recent use stay.
 /// Runs once per `libraryVersion`: the JSON is decoded off the main thread, the rows are written on the main actor
 /// with the environment's (main) context, never from another thread.
 enum ExerciseLibrary {
 
     /// Bump whenever `exercises.json` or `exercises_pl.json` changes, so the next launch imports again
-    /// (new exercises inserted, missing Polish names filled in).
-    static let libraryVersion = 2
+    /// (new exercises inserted, renamed ones renamed, Polish names filled in).
+    /// 3: the Hammer Strength machines name the movement first ("Leg Press (Hammer Strength Iso-Lateral)").
+    static let libraryVersion = 3
     static let versionKey = "nt.exerciseLibrary.version"
 
     struct Record: Decodable, Sendable {
@@ -54,7 +57,8 @@ enum ExerciseLibrary {
         storedVersion != libraryVersion || libraryRows == 0
     }
 
-    /// Inserts the records that are not in the store yet and fills in missing Polish names. True once saved.
+    /// Inserts the records that are not in the store yet and brings the names of the ones that are up to date.
+    /// Custom exercises are never touched. True once saved.
     @MainActor
     @discardableResult
     static func apply(_ bundled: Bundled, into context: ModelContext) -> Bool {
@@ -62,7 +66,9 @@ enum ExerciseLibrary {
         let byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         for r in bundled.records {
             if let row = byID[r.id] {
-                if !row.isCustom && row.namePL == nil { row.namePL = bundled.polish[r.id] }
+                guard !row.isCustom else { continue }
+                if row.name != r.name { row.name = r.name }
+                if let polish = bundled.polish[r.id], row.namePL != polish { row.namePL = polish }
                 continue
             }
             let exercise = Exercise(

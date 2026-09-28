@@ -8,6 +8,7 @@ import app.notomorrow.data.entity.SetEntryEntity
 import app.notomorrow.data.entity.WorkoutEntity
 import app.notomorrow.data.entity.WorkoutExerciseEntity
 import app.notomorrow.data.relation.CompletedSetRow
+import app.notomorrow.data.relation.WorkoutWithExercises
 import app.notomorrow.di.AppContainer
 import app.notomorrow.model.SetKind
 import app.notomorrow.service.RoutineSeeder
@@ -16,8 +17,8 @@ import java.util.UUID
 import kotlin.math.max
 
 /**
- * Builds `Workout` graphs (exercises + set rows) from a routine or from nothing, and hands them to
- * the session — 1:1 port of `NoTomorrow/Features/Workout/WorkoutStarter.swift`. The one start
+ * Builds `Workout` graphs (exercises + set rows) from a routine, from a finished workout ("Copy
+ * workout") or from nothing, and hands them to the session — 1:1 port of `NoTomorrow/Features/Workout/WorkoutStarter.swift`. The one start
  * path for Train and Today, so both build the same workout.
  *
  * SwiftData writes the graph through the object relationships; Room needs the parent row first, so
@@ -50,6 +51,9 @@ object WorkoutStarter {
     /** What a Start tap asks for. [Empty.name] is `workout.defaultName`, resolved by the caller. */
     sealed interface Request {
         data class Routine(val routineId: String) : Request
+
+        /** "Copy workout": the exercises and sets of a finished workout, to do again. */
+        data class Copy(val workoutId: String) : Request
         data class Empty(val name: String) : Request
     }
 
@@ -68,7 +72,10 @@ object WorkoutStarter {
         return Gate.Blocked(active, canDiscard = workoutDao.completedSetCount(active.id) == 0)
     }
 
-    /** Starts [request] and opens it full screen. Returns the new workout id, `null` when the routine is gone. */
+    /**
+     * Starts [request] and opens it full screen. Returns the new workout id, `null` when the routine
+     * or the workout to copy is gone.
+     */
     suspend fun start(
         request: Request,
         stores: Stores,
@@ -76,6 +83,7 @@ object WorkoutStarter {
         now: Long = System.currentTimeMillis(),
     ): String? = when (request) {
         is Request.Routine -> start(stores, session, request.routineId, now)
+        is Request.Copy -> startCopy(stores, session, request.workoutId, now)
         is Request.Empty -> startEmpty(stores.workoutDao, session, request.name, now)
     }
 
@@ -143,6 +151,66 @@ object WorkoutStarter {
         session.begin(workout.id)
         return workout.id
     }
+
+    /**
+     * `start(copyOf:in:session:)` — "Copy workout": a new workout with the name, exercises, order,
+     * rest, supersets and exercise notes of a finished one, and a row for every set it logged (same
+     * kind, weight and reps), none of them done yet ([copiedSets]). An exercise deleted from the
+     * library is left out, which may split a superset: the groups are normalized over the rest.
+     */
+    suspend fun startCopy(
+        stores: Stores,
+        session: WorkoutSessionController,
+        workoutId: String,
+        now: Long = System.currentTimeMillis(),
+    ): String? {
+        val source = stores.workoutDao.workoutWithExercises(workoutId) ?: return null
+        val workout = WorkoutEntity(id = UUID.randomUUID().toString(), name = source.workout.name, startedAt = now)
+        stores.workoutDao.insertWorkout(workout)
+
+        val kept = source.sortedExercises.filter { it.exercise != null }
+        val groups = Superset.normalized(kept.map { it.workoutExercise.supersetGroup })
+        for ((order, entry) in kept.withIndex()) {
+            val exerciseId = entry.exercise?.id ?: continue
+            stores.workoutDao.insertWorkoutExerciseWithSets(
+                WorkoutExerciseEntity(
+                    workoutId = workout.id,
+                    exerciseId = exerciseId,
+                    order = order,
+                    restSeconds = entry.workoutExercise.restSeconds,
+                    notes = entry.workoutExercise.notes,
+                    supersetGroup = groups[order],
+                ),
+                copiedSets(entry.sortedSets),
+            )
+            stores.exerciseDao.markUsed(exerciseId, now)
+        }
+
+        session.begin(workout.id)
+        return workout.id
+    }
+
+    /**
+     * `copiedSets(of:)` — the rows "Copy workout" makes for one exercise from its rows in order: the
+     * completed ones, or every row when none was completed, or one empty row when it had none.
+     * `workoutExerciseId` is filled in by the DAO.
+     */
+    fun copiedSets(sets: List<SetEntryEntity>): List<SetEntryEntity> {
+        val rows = sets.filter { it.isCompleted }.ifEmpty { sets }
+        if (rows.isEmpty()) return listOf(SetEntryEntity(workoutExerciseId = 0L, order = 0))
+        return rows.mapIndexed { index, row ->
+            SetEntryEntity(
+                workoutExerciseId = 0L,
+                order = index,
+                kind = row.kind,
+                weightKg = row.weightKg,
+                reps = row.reps,
+            )
+        }
+    }
+
+    /** `canCopy(_:)` — whether "Copy workout" has anything to copy: an exercise still in the library. */
+    fun canCopy(workout: WorkoutWithExercises): Boolean = workout.exercises.any { it.exercise != null }
 
     /** `startEmpty(in:session:)`. [name] is `workout.defaultName` resolved by the caller. */
     suspend fun startEmpty(

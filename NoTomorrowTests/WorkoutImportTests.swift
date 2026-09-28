@@ -72,6 +72,15 @@ final class WorkoutImportTests: XCTestCase {
         XCTAssertEqual(WorkoutImport.matchKeys("Pull-Ups").first, "pull ups")
     }
 
+    func testLibraryKeysKeepAMachineBrandInBrackets() {
+        let keys = WorkoutImport.libraryKeys("Leg Press (Hammer Strength Iso-Lateral)")
+        XCTAssertEqual(keys, ["leg press hammer strength iso lateral", "hammer strength iso lateral leg press"])
+        XCTAssertFalse(keys.contains("leg press"), "a plain Leg Press from another app is not the machine")
+        XCTAssertTrue(keys.contains(WorkoutImport.matchKeys("Hammer Strength Iso-Lateral Leg Press")[0]),
+                      "the name before the rename still finds it")
+        XCTAssertEqual(WorkoutImport.libraryKeys("Front Squat (Clean Grip)"), WorkoutImport.matchKeys("Front Squat (Clean Grip)"))
+    }
+
     func testImportMatchesLibraryCreatesCustomAndSkipsDuplicates() throws {
         context.insert(Exercise(id: "Barbell_Bench_Press", name: "Barbell Bench Press", primaryMuscles: ["chest"]))
         context.insert(Exercise(id: "Barbell_Squat", name: "Barbell Squat", primaryMuscles: ["quadriceps"]))

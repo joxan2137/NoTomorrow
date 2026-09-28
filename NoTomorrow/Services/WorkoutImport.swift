@@ -197,6 +197,18 @@ enum WorkoutImport {
         return keys.filter { !$0.isEmpty }
     }
 
+    /// Keys a library exercise is found by: `matchKeys`, except that a machine brand in brackets ("Leg Press (Hammer
+    /// Strength Iso-Lateral)") is never dropped, so a plain "Leg Press" from another app does not land on the machine.
+    /// The brand-first form ("Hammer Strength Iso-Lateral Leg Press", the name before library version 3) still finds it.
+    static func libraryKeys(_ name: String) -> [String] {
+        let keys = matchKeys(name)
+        guard keys.count == 3, brandPrefixes.contains(where: keys[1].hasPrefix) else { return keys }
+        return Array(keys.prefix(2))
+    }
+
+    /// Machine brands the library names in brackets after the movement, as `clean` writes them.
+    static let brandPrefixes = ["hammer strength "]
+
     private static func clean(_ text: String) -> String {
         text.lowercased()
             .map { $0.isLetter || $0.isNumber ? $0 : " " }
@@ -360,7 +372,7 @@ enum WorkoutImporter {
         var byKey: [String: Exercise] = [:]
         for exercise in library {
             for name in [exercise.name, exercise.namePL].compactMap({ $0 }) {
-                for key in WorkoutImport.matchKeys(name) where byKey[key] == nil { byKey[key] = exercise }
+                for key in WorkoutImport.libraryKeys(name) where byKey[key] == nil { byKey[key] = exercise }
             }
         }
         let existing = (try? context.fetch(FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt != nil }))) ?? []
