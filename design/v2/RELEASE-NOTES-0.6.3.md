@@ -1,6 +1,11 @@
-Bolder Android widgets: fewer things on each, and each one bigger.
+Copy a past workout in one tap, find Hammer Strength machines by movement, and use bolder Android widgets.
 
 ## What's new
+
+### Workouts
+- **Copy workout.** Start a finished workout again with its exercises, order, rest, supersets, notes and sets, all ready to tick. Find it next to **Save as routine** in a workout's details, or long-press a workout in **Train → History**.
+- **Machine names lead with the movement.** The 89 Hammer Strength machines are renamed in English and Polish so the movement comes first: "Hammer Strength Iso-Lateral Leg Press" is now **"Leg Press (Hammer Strength Iso-Lateral)"**. They sort and search next to the other leg presses. Your history, custom exercises and recent picks stay as they are.
+- Importing from Strong or Hevy no longer matches a plain "Leg Press" to a Hammer Strength machine.
 
 ### Android widgets
 - **Quick log.** The small widget is now just the calorie ring, as big as it fits, and one button for your usual food. The wide widget adds protein, carbs and fat against your goals, with as many quick-log buttons as fit under them. It shows real numbers even before you've logged anything.
@@ -11,7 +16,7 @@ Bolder Android widgets: fewer things on each, and each one bigger.
 ## Good to know
 
 - Everything from 0.6.2 carries over. Your data is kept when you install over it.
-- Nothing changes on iPhone in this release.
+- The widget changes are Android only. Copy workout and the new names are on both.
 
 ## Downloads
 
