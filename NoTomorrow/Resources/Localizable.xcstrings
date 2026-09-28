@@ -11235,6 +11235,22 @@
         }
       }
     },
+    "widget.history.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Tomorrow calendar"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz No Tomorrow"
+          }
+        }
+      }
+    },
     "widget.history.description": {
       "localizations": {
         "en": {

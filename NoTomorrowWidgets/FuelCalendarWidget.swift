@@ -1,7 +1,8 @@
 import SwiftUI
 import WidgetKit
 
-/// Fuel calendar: the Fuel history as a GitHub-style contribution graph, with a dot on every day you trained.
+/// Fuel calendar: the Fuel history as a GitHub-style contribution graph under one label, with a dot on every day you
+/// trained.
 /// `docs/widgets.md`, "Fuel calendar".
 struct FuelCalendarWidget: Widget {
     var body: some WidgetConfiguration {
@@ -50,7 +51,10 @@ struct FuelCalendarView: View {
 
     var body: some View {
         if let snapshot = entry.snapshot, entry.isReady {
-            ContributionGrid(model: FuelCalendarModel(snapshot: snapshot, now: entry.date))
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: WidgetText.string("widget.history.label")).eyebrowStyle().lineLimit(1)
+                ContributionGrid(model: FuelCalendarModel(snapshot: snapshot, now: entry.date))
+            }
         } else {
             WidgetSetupView()
         }
