@@ -68,6 +68,39 @@ final class CustomFoodLibraryTests: XCTestCase {
         XCTAssertEqual(product.kcalPer100, 60)
     }
 
+    func testBackfillSavesPastQuickAddsAndEstimatesOnce() throws {
+        let earlier = Date(timeIntervalSince1970: 1_000)
+        let later = Date(timeIntervalSince1970: 2_000)
+        let old = MealEntry(day: earlier, slot: .lunch, customName: "Kebab", grams: 0, kcal: 600, proteinG: 30,
+                            carbsG: 50, fatG: 30)
+        old.loggedAt = earlier
+        let newer = MealEntry(day: later, slot: .dinner, customName: "kebab ", grams: 0, kcal: 650, proteinG: 30,
+                              carbsG: 60, fatG: 30)
+        newer.loggedAt = later
+        let estimate = MealEntry(day: later, slot: .dinner, customName: "Pierogi", grams: 210, kcal: 420, proteinG: 14,
+                                 carbsG: 63, fatG: 13, isAIEstimate: true, confidence: 0.6)
+        let product = FoodItem(id: "off:590", name: "Skyr", source: .openFoodFacts, barcode: "590",
+                               kcalPer100: 60, proteinPer100: 11, carbsPer100: 4, fatPer100: 0)
+        let logged = MealEntry(day: later, slot: .snack, food: product, grams: 150, kcal: 90, proteinG: 16.5,
+                               carbsG: 6, fatG: 0)
+        [old, newer, estimate, logged].forEach { context.insert($0) }
+        context.insert(product)
+
+        XCTAssertEqual(CustomFoodLibrary.backfill(in: context), 2)
+        let saved = try context.fetch(FetchDescriptor<FoodItem>()).filter { $0.id.hasPrefix("custom:") }
+        let kebab = try XCTUnwrap(saved.first { $0.source == .quickAdd })
+        XCTAssertEqual(kebab.name, "kebab")
+        XCTAssertEqual(kebab.kcalPer100, 650, "the latest row's figures")
+        XCTAssertEqual(kebab.useCount, 2)
+        XCTAssertEqual(kebab.lastUsedAt, later)
+        let pierogi = try XCTUnwrap(saved.first { $0.source == .aiEstimate })
+        XCTAssertEqual(pierogi.kcalPer100, 200, accuracy: 1e-9)
+        XCTAssertEqual(pierogi.servingSizeG, 210)
+
+        XCTAssertEqual(CustomFoodLibrary.backfill(in: context), 0, "a second run adds nothing")
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<FoodItem>()), 3)
+    }
+
     func testBlankNameSavesNothing() throws {
         XCTAssertNil(CustomFoodLibrary.save(name: "  ", grams: 0, kcal: 100, protein: 0, carbs: 0, fat: 0,
                                             source: .quickAdd, in: context))

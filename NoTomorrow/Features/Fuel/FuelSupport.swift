@@ -187,6 +187,42 @@ enum CustomFoodLibrary {
         return item
     }
 
+    /// Puts every quick-add and AI row logged before foods were saved into the library: one food per folded name,
+    /// from its latest row, used as often and as recently as its rows. Names already saved are left alone, so running
+    /// it again adds nothing. Returns the number of foods added.
+    @discardableResult
+    static func backfill(in context: ModelContext) -> Int {
+        let named = FetchDescriptor<MealEntry>(predicate: #Predicate { $0.customName != nil })
+        let entries = ((try? context.fetch(named)) ?? []).filter { $0.food == nil }
+        guard !entries.isEmpty else { return 0 }
+        let unlabelled = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.barcode == nil })
+        let saved = Set(((try? context.fetch(unlabelled)) ?? [])
+            .filter { $0.source == .quickAdd || $0.source == .aiEstimate }
+            .map { FoodMatch.fold($0.name.trimmingCharacters(in: .whitespacesAndNewlines)) })
+        var groups: [String: [MealEntry]] = [:]
+        for entry in entries {
+            let name = (entry.customName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            let key = FoodMatch.fold(name)
+            if !saved.contains(key) { groups[key, default: []].append(entry) }
+        }
+        for rows in groups.values {
+            guard let latest = rows.max(by: { $0.loggedAt < $1.loggedAt }) else { continue }
+            let scale = latest.grams > 0 ? 100 / latest.grams : 1
+            let item = FoodItem(id: "custom:\(UUID().uuidString)",
+                                name: (latest.customName ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+                                source: latest.isAIEstimate ? .aiEstimate : .quickAdd,
+                                kcalPer100: latest.kcal * scale, proteinPer100: latest.proteinG * scale,
+                                carbsPer100: latest.carbsG * scale, fatPer100: latest.fatG * scale,
+                                servingSizeG: latest.grams > 0 ? latest.grams : nil)
+            item.useCount = rows.count
+            item.lastUsedAt = latest.loggedAt
+            context.insert(item)
+        }
+        if !groups.isEmpty { try? context.save() }
+        return groups.count
+    }
+
     /// The quick-add or estimated food already saved under `name`, if any.
     static func existing(named name: String, in context: ModelContext) -> FoodItem? {
         let key = FoodMatch.fold(name.trimmingCharacters(in: .whitespacesAndNewlines))

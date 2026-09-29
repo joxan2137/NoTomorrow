@@ -1,6 +1,7 @@
 package app.notomorrow.feature.fuelhome
 
 import app.notomorrow.data.entity.FoodItemEntity
+import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.feature.fuel.CustomFoodLibrary
 import app.notomorrow.feature.fuel.QuickAddViewModel
 import app.notomorrow.model.FoodSource
@@ -98,6 +99,71 @@ class CustomFoodLibraryTest {
         CustomFoodLibrary.save("Skyr", 150.0, 100.0, 16.0, 6.0, 0.0, FoodSource.AiEstimate, dao)
         assertEquals(2, dao.rows.value.size)
         assertEquals(product, dao.rows.value.first { it.id == "off:590" })
+    }
+
+    @Test
+    fun `backfill saves past quick adds and estimates once`() = runTest {
+        val product = FoodItemEntity(
+            id = "off:590", name = "Skyr", source = FoodSource.OpenFoodFacts, barcode = "590",
+            kcalPer100 = 60.0, proteinPer100 = 11.0, carbsPer100 = 4.0, fatPer100 = 0.0,
+        )
+        val foods = FakeFoodDao(listOf(product))
+        val meals = FakeMealDao(
+            foods,
+            listOf(
+                MealEntryEntity(
+                    id = "a", day = 0L, slot = MealSlot.Lunch, customName = "Kebab", grams = 0.0,
+                    kcal = 600.0, proteinG = 30.0, carbsG = 50.0, fatG = 30.0, loggedAt = 1_000L,
+                ),
+                MealEntryEntity(
+                    id = "b", day = 0L, slot = MealSlot.Dinner, customName = "kebab ", grams = 0.0,
+                    kcal = 650.0, proteinG = 30.0, carbsG = 60.0, fatG = 30.0, loggedAt = 2_000L,
+                ),
+                MealEntryEntity(
+                    id = "c", day = 0L, slot = MealSlot.Dinner, customName = "Pierogi", grams = 210.0,
+                    kcal = 420.0, proteinG = 14.0, carbsG = 63.0, fatG = 13.0, isAIEstimate = true,
+                    loggedAt = 2_000L,
+                ),
+                MealEntryEntity(
+                    id = "d", day = 0L, slot = MealSlot.Snack, foodId = "off:590", grams = 150.0,
+                    kcal = 90.0, proteinG = 16.5, carbsG = 6.0, fatG = 0.0, loggedAt = 2_000L,
+                ),
+            ),
+        )
+
+        assertEquals(2, CustomFoodLibrary.backfill(meals.customEntries(), foods))
+        val kebab = foods.rows.value.single { it.source == FoodSource.QuickAdd }
+        assertEquals("kebab", kebab.name)
+        assertEquals("the latest row's figures", 650.0, kebab.kcalPer100, 0.0)
+        assertEquals(2, kebab.useCount)
+        assertEquals(2_000L, kebab.lastUsedAt)
+        val pierogi = foods.rows.value.single { it.source == FoodSource.AiEstimate }
+        assertEquals(200.0, pierogi.kcalPer100, 1e-9)
+        assertEquals(210.0, pierogi.servingSizeG!!, 0.0)
+
+        assertEquals("a second run adds nothing", 0, CustomFoodLibrary.backfill(meals.customEntries(), foods))
+        assertEquals(3, foods.rows.value.size)
+    }
+
+    @Test
+    fun `saving an edited quick add keeps it in your foods`() = runTest {
+        val foods = FakeFoodDao()
+        val row = MealEntryEntity(
+            id = "q", day = 0L, slot = MealSlot.Lunch, customName = "Zupa", grams = 0.0,
+            kcal = 200.0, proteinG = 5.0, carbsG = 20.0, fatG = 8.0,
+        )
+        val meals = FakeMealDao(foods, listOf(row))
+        val model = QuickAddViewModel(meals, zone = zone, locale = { pl }, foodDao = foods)
+        model.bindEntry(row.id)
+        model.setName("Zupa pomidorowa")
+
+        var saved = false
+        model.save { saved = true }
+        assertTrue(saved)
+        val food = foods.rows.value.single()
+        assertEquals("Zupa pomidorowa", food.name)
+        assertEquals(FoodSource.QuickAdd, food.source)
+        assertEquals(200.0, food.kcalPer100, 0.0)
     }
 
     @Test

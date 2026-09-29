@@ -102,6 +102,8 @@ struct MainTabView: View {
         // Closes a rest that runs out while the workout is collapsed (haptic, Live Activity ended, mini bar updated).
         .restTimerExpiry()
         .task { session.restore(in: modelContext) }
+        // Quick-add and AI meals logged before they were saved to the food library (0.6.5); idempotent.
+        .task { CustomFoodLibrary.backfill(in: modelContext) }
         .onChange(of: appState.pendingRoute, initial: true) { _, route in
             guard let route else { return }
             appState.pendingRoute = nil

@@ -2,6 +2,7 @@ package app.notomorrow.feature.fuel
 
 import app.notomorrow.data.dao.FoodDao
 import app.notomorrow.data.entity.FoodItemEntity
+import app.notomorrow.data.entity.MealEntryEntity
 import app.notomorrow.model.FoodSource
 import app.notomorrow.service.FoodMatch
 import java.util.UUID
@@ -57,6 +58,38 @@ object CustomFoodLibrary {
         val item = figures.copy(useCount = figures.useCount + 1, lastUsedAt = now)
         foodDao.upsert(item)
         return item
+    }
+
+    /**
+     * Puts every quick-add and AI row logged before foods were saved into the library: one food
+     * per folded name, from its latest row, used as often and as recently as its rows. Names
+     * already saved are left alone, so running it again adds nothing. Returns the foods added.
+     */
+    suspend fun backfill(entries: List<MealEntryEntity>, foodDao: FoodDao): Int {
+        val saved = foodDao.customFoods().mapTo(HashSet()) { FoodMatch.fold(it.name.trim()) }
+        val groups = entries
+            .filter { it.foodId == null && !it.customName.isNullOrBlank() }
+            .groupBy { FoodMatch.fold(it.customName!!.trim()) }
+            .filterKeys { it !in saved }
+        for (rows in groups.values) {
+            val latest = rows.maxBy { it.loggedAt }
+            val scale = if (latest.grams > 0) 100.0 / latest.grams else 1.0
+            foodDao.upsert(
+                FoodItemEntity(
+                    id = "custom:${UUID.randomUUID()}",
+                    name = latest.customName!!.trim(),
+                    source = if (latest.isAIEstimate) FoodSource.AiEstimate else FoodSource.QuickAdd,
+                    kcalPer100 = latest.kcal * scale,
+                    proteinPer100 = latest.proteinG * scale,
+                    carbsPer100 = latest.carbsG * scale,
+                    fatPer100 = latest.fatG * scale,
+                    servingSizeG = latest.grams.takeIf { it > 0 },
+                    useCount = rows.size,
+                    lastUsedAt = latest.loggedAt,
+                ),
+            )
+        }
+        return groups.size
     }
 
     /** The quick-add or estimated food already saved under [name], if any. */

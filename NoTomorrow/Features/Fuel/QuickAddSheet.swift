@@ -227,6 +227,10 @@ struct QuickAddSheet: View {
         if let editing, let prefill {
             guard editing.applyEdit(name: name, texts: currentTexts, prefill: prefill,
                                     figuresUntouched: figuresUntouched, slot: slot, day: entryDay) else { return }
+            // The edited food is kept in the library too, like a new quick add or estimate.
+            CustomFoodLibrary.save(name: editing.customName ?? "", grams: editing.grams, kcal: editing.kcal,
+                                   protein: editing.proteinG, carbs: editing.carbsG, fat: editing.fatG,
+                                   source: editing.isAIEstimate ? .aiEstimate : .quickAdd, in: modelContext)
         } else {
             guard let kcal else { return }
             let grams = Self.number(gramsText) ?? 0

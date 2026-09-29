@@ -11,6 +11,7 @@ import app.notomorrow.data.db.DatabaseModule
 import app.notomorrow.data.db.NoTomorrowDatabase
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.data.prefs.SecureStore
+import app.notomorrow.feature.fuel.CustomFoodLibrary
 import app.notomorrow.net.MockStrings
 import app.notomorrow.push.PushRegistrar
 import app.notomorrow.rest.RestTimerController
@@ -280,7 +281,8 @@ class AppContainer(val app: Application) {
      * 15 library ids exist, so the import has to come first; both are idempotent, and the import
      * runs once per library version (`nt.exerciseLibrary.version`). Then, once, the
      * routine items still holding the fixed rest older builds seeded start following the user's
-     * Rest length (`RoutineSeeder.inheritDefaultRestIfNeeded`).
+     * Rest length (`RoutineSeeder.inheritDefaultRestIfNeeded`). Last, quick-add and AI meals
+     * missing from the food library are saved there (`CustomFoodLibrary.backfill`, idempotent).
      */
     suspend fun seed() {
         if (!store.isOpen) return
@@ -292,6 +294,8 @@ class AppContainer(val app: Application) {
                 appPrefs.setRoutinesInheritRest(true)
             }
         }
+        // Quick adds and AI meals logged before they were saved to the food library (0.6.5).
+        runCatching { CustomFoodLibrary.backfill(db.mealDao().customEntries(), db.foodDao()) }
     }
 }
 

@@ -53,6 +53,10 @@ interface MealDao {
     @Query("SELECT * FROM meal_entry ORDER BY day, loggedAt")
     suspend fun allEntriesWithFood(): List<MealEntryWithFood>
 
+    /** Quick-add and AI rows (no food behind them), oldest first: `CustomFoodLibrary.backfill`. */
+    @Query("SELECT * FROM meal_entry WHERE foodId IS NULL AND customName IS NOT NULL ORDER BY loggedAt")
+    suspend fun customEntries(): List<MealEntryEntity>
+
     @Query("SELECT * FROM meal_entry WHERE id = :id")
     suspend fun byId(id: String): MealEntryEntity?
 
