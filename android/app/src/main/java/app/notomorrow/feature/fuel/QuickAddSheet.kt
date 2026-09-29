@@ -108,7 +108,7 @@ fun QuickAddSheet(
 @Composable
 fun QuickAddEditSheet(entryId: String, onDismiss: () -> Unit, onDelete: () -> Unit) {
     val model = ntViewModel(key = "quickAdd-edit") { container ->
-        QuickAddViewModel(container.db.mealDao())
+        QuickAddViewModel(container.db.mealDao(), foodDao = container.db.foodDao())
     }
     LaunchedEffect(entryId) { model.bindEntry(entryId) }
     DisposableEffect(Unit) { onDispose { model.reset() } }
@@ -431,7 +431,7 @@ class QuickAddViewModel(
     private val mealDao: MealDao,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val locale: () -> Locale = { LocaleProvider.current() },
-    /** Where "Save to your foods" writes; the edit sheet never saves, so it can go without. */
+    /** Where "Save to your foods" and an edit's Save write; tests can go without. */
     private val foodDao: FoodDao? = null,
 ) : ViewModel() {
 
@@ -635,6 +635,19 @@ class QuickAddViewModel(
         ) ?: return
         viewModelScope.launch {
             mealDao.update(edited)
+            // The edited food is kept in the library too, like a new quick add or estimate.
+            foodDao?.let { dao ->
+                CustomFoodLibrary.save(
+                    name = edited.customName.orEmpty(),
+                    grams = edited.grams,
+                    kcal = edited.kcal,
+                    protein = edited.proteinG,
+                    carbs = edited.carbsG,
+                    fat = edited.fatG,
+                    source = if (edited.isAIEstimate) FoodSource.AiEstimate else FoodSource.QuickAdd,
+                    foodDao = dao,
+                )
+            }
             onSaved()
         }
     }

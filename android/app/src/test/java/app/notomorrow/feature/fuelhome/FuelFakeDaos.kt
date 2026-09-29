@@ -100,6 +100,9 @@ class FakeMealDao(
     override fun observeKcalByDaySince(from: Long): Flow<List<DayKcal>> =
         rows.map { list -> list.filter { it.day >= from }.groupBy { it.day }.map { (day, l) -> DayKcal(day, l.sumOf { it.kcal }) } }
 
+    override suspend fun customEntries(): List<MealEntryEntity> =
+        rows.value.filter { it.foodId == null && it.customName != null }.sortedBy { it.loggedAt }
+
     override suspend fun entriesSince(from: Long): List<MealEntryEntity> =
         rows.value.filter { it.day >= from }.sortedWith(compareBy({ it.day }, { it.loggedAt }))
 
