@@ -130,6 +130,7 @@ class AIEstimateFinalizerTest {
         val strings = listOf(
             "estimateSystemInstruction" to spec.estimateSystemInstruction(locale),
             "estimateRequestText" to spec.estimateRequestText(meal, notes),
+            "describedRequestText" to spec.describedRequestText(meal, notes),
             "labelSystemInstruction" to spec.labelSystemInstruction(locale),
             "labelRequestText" to spec.labelRequestText,
         )

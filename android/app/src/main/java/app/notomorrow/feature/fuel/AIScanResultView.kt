@@ -1,5 +1,6 @@
 package app.notomorrow.feature.fuel
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,13 +78,19 @@ fun AIScanResultView(
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.Start,
         ) {
-            AIScanPhoto(
-                photo = state.photo,
-                tags = state.foods.map { it.name },
-                modifier = Modifier.padding(top = 12.dp),
-            )
+            // A described meal has no photo: the total block leads, at the photo's top inset.
+            if (!state.isDescribed) {
+                AIScanPhoto(
+                    photo = state.photo,
+                    tags = state.foods.map { it.name },
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+            }
 
-            AIScanTotalBlock(state = state, modifier = Modifier.padding(top = 16.dp))
+            AIScanTotalBlock(
+                state = state,
+                modifier = Modifier.padding(top = if (state.isDescribed) 12.dp else 16.dp),
+            )
 
             Column(Modifier.padding(top = 10.dp)) {
                 state.foods.forEach { food ->
@@ -108,10 +115,23 @@ fun AIScanResultView(
             ) {
                 state.assumptions.forEach { NtText(it, style = NT.Fonts.footnote) }
                 state.questions.forEach { NtText(it, style = NT.Fonts.subheadline) }
-                AIMealNotes(state.notes, onNotes)
+                if (state.isDescribed) {
+                    // The description itself; the photo-accuracy hint does not apply.
+                    AIMealNotes(
+                        state.notes, onNotes,
+                        labelRes = S.fuel_ai_describe_label,
+                        placeholderRes = S.fuel_ai_describe_placeholder,
+                        showsHint = false,
+                    )
+                } else {
+                    AIMealNotes(state.notes, onNotes)
+                }
                 SecondaryButton(title = stringResource(S.fuel_ai_refine), enabled = state.hasItems, onClick = onRefine)
             }
-            AIScanDisclaimer(Modifier.padding(top = 6.dp))
+            AIScanDisclaimer(
+                textRes = if (state.isDescribed) S.fuel_ai_describe_disclaimer else S.fuel_ai_disclaimer,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
 
         AIScanBottomBar(
@@ -242,7 +262,7 @@ private fun AIScanAddMissedRow(onClick: () -> Unit) {
 
 /** `AIScanResultView.disclaimer`. */
 @Composable
-private fun AIScanDisclaimer(modifier: Modifier = Modifier) {
+private fun AIScanDisclaimer(@StringRes textRes: Int, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -255,7 +275,7 @@ private fun AIScanDisclaimer(modifier: Modifier = Modifier) {
             tint = NT.Colors.ink2,
         )
         NtText(
-            text = stringResource(S.fuel_ai_disclaimer),
+            text = stringResource(textRes),
             style = NT.Fonts.footnote,
             color = NT.Colors.ink2,
         )

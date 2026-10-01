@@ -48,7 +48,7 @@ class LabelPhotoReaderTest {
             upload = { upload },
             service = { _ ->
                 object : AIEstimateService {
-                    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate =
+                    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate =
                         throw AIEstimateError.Busy
 
                     override suspend fun readLabel(imageJpeg: ByteArray, locale: String): LabelReading {

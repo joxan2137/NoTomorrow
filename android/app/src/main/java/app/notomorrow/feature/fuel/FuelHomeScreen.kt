@@ -240,6 +240,7 @@ fun FuelHomeScreen() {
             onAIPhoto = { sheet = FuelSheet.AIScan(suggestedMealSlot(), state.day) },
             onBarcode = { sheet = FuelSheet.Barcode(suggestedMealSlot(), state.day) },
             onSearch = { sheet = FuelSheet.Search(suggestedMealSlot(), state.day) },
+            onDescribe = { sheet = FuelSheet.AIScan(suggestedMealSlot(), state.day, AIScanSource.Description) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = tabBarHeight),
@@ -340,7 +341,12 @@ fun FuelHomeScreen() {
  */
 sealed interface FuelSheet {
     data class Search(val meal: MealSlot, val day: LocalDate) : FuelSheet
-    data class AIScan(val meal: MealSlot, val day: LocalDate) : FuelSheet
+    /** [source] picks the photo picker or the description screen ("Describe"). */
+    data class AIScan(
+        val meal: MealSlot,
+        val day: LocalDate,
+        val source: AIScanSource = AIScanSource.Photo,
+    ) : FuelSheet
     data class Barcode(val meal: MealSlot, val day: LocalDate) : FuelSheet
     /** [name] pre-fills the form: the product a partial barcode hit found. */
     data class QuickAdd(val meal: MealSlot, val day: LocalDate, val name: String = "") : FuelSheet
@@ -427,7 +433,7 @@ private fun FuelSheetHost(
             onDismiss = onDismiss,
             containerColor = NT.Colors.ground,
         ) {
-            AIScanScreen(meal = sheet.meal, onDismiss = onDismiss, day = sheet.day)
+            AIScanScreen(meal = sheet.meal, onDismiss = onDismiss, day = sheet.day, source = sheet.source)
         }
 
         // Needs the view model's calendar read, so [FuelHomeScreen] presents it.

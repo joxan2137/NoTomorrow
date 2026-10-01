@@ -245,7 +245,7 @@ class MockBackendClient(
     // MARK: AI
 
     override suspend fun estimate(
-        imageJpeg: ByteArray,
+        imageJpeg: ByteArray?,
         meal: MealSlot,
         locale: String,
         anthropicKey: String?,

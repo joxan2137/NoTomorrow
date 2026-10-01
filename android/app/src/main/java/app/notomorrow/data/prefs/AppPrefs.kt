@@ -80,6 +80,17 @@ class AppPrefs(context: Context) {
 
     suspend fun setAiConsent(target: AiConsentTarget, granted: Boolean) = put(target.key, granted)
 
+    /**
+     * Whether a typed description alone ("Describe", no photo) may go to [target]: either its own
+     * consent or the photo consent, which already covers the typed details sent with a photo
+     * (`AIUpload.needsConsent(photo: false)`).
+     */
+    suspend fun aiDescriptionConsentOnce(target: AiConsentTarget): Boolean =
+        data.map { (it[target.key] ?: false) || (it[target.textKey] ?: false) }.first()
+
+    /** Records only the description consent; it does not cover a photo. */
+    suspend fun setAiDescriptionConsent(target: AiConsentTarget, granted: Boolean) = put(target.textKey, granted)
+
     // MARK: - Backend
 
     /**
@@ -297,8 +308,14 @@ class AppPrefs(context: Context) {
  * Where an AI photo would go. `nt.aiConsent.google` covers the standard (backend →
  * Gemini) path, `nt.aiConsent.anthropic` the BYOK path; the offline mock uploads
  * nothing and asks nothing, so it has no target.
+ *
+ * [textKey] (`<key>.text`, `AIUpload.descriptionConsentKey`) is the consent to send a typed
+ * meal description alone, without a photo.
  */
-enum class AiConsentTarget(internal val key: Preferences.Key<Boolean>) {
-    Google(booleanPreferencesKey("nt.aiConsent.google")),
-    Anthropic(booleanPreferencesKey("nt.aiConsent.anthropic")),
+enum class AiConsentTarget(
+    internal val key: Preferences.Key<Boolean>,
+    internal val textKey: Preferences.Key<Boolean>,
+) {
+    Google(booleanPreferencesKey("nt.aiConsent.google"), booleanPreferencesKey("nt.aiConsent.google.text")),
+    Anthropic(booleanPreferencesKey("nt.aiConsent.anthropic"), booleanPreferencesKey("nt.aiConsent.anthropic.text")),
 }

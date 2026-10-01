@@ -77,8 +77,9 @@ interface BackendClient {
      */
     suspend fun unregisterPushToken(token: String)
 
+    /** A `null` [imageJpeg] sends no `image` part: the notes are then the whole description of the meal. */
     suspend fun estimate(
-        imageJpeg: ByteArray,
+        imageJpeg: ByteArray?,
         meal: MealSlot,
         locale: String,
         anthropicKey: String? = null,

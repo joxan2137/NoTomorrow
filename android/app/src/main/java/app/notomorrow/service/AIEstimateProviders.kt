@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class BackendAIEstimateService(private val client: () -> BackendClient) : AIEstimateService {
 
-    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate =
+    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate =
         try {
             client().estimate(imageJpeg, meal, locale, anthropicKey = null, notes = notes)
         } catch (e: CancellationException) {
@@ -154,6 +154,10 @@ object AIDirectTransport {
 
     /** Base64 without line breaks. */
     fun imageBase64(jpeg: ByteArray): String = Base64.getEncoder().encodeToString(jpeg)
+
+    /** The photo's request text, or the described one when there is no photo (the notes are the whole meal). */
+    fun estimateRequestText(spec: AIEstimateSpec, hasImage: Boolean, meal: MealSlot, notes: String): String =
+        if (hasImage) spec.estimateRequestText(meal.raw, notes) else spec.describedRequestText(meal.raw, notes)
 }
 
 /**
@@ -236,13 +240,13 @@ class DirectAnthropicEstimateService(
     private val grounding: AIBarcodeGrounding? = null,
 ) : AIEstimateService {
 
-    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate {
+    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate {
         val key = key()
         val spec = spec()
         val text = send(
             key, spec,
             system = spec.estimateSystemInstruction(locale),
-            text = spec.estimateRequestText(meal.raw, notes),
+            text = AIDirectTransport.estimateRequestText(spec, imageJpeg != null, meal, notes),
             schema = spec.estimateSchema(),
             maxTokens = spec.claude.estimateMaxTokens,
             imageJpeg = imageJpeg,
@@ -276,10 +280,10 @@ class DirectAnthropicEstimateService(
         text: String,
         schema: JsonElement,
         maxTokens: Int,
-        imageJpeg: ByteArray,
+        imageJpeg: ByteArray?,
         timeoutMillis: Long,
     ): String {
-        val body = body(spec, system, text, schema, maxTokens, AIDirectTransport.imageBase64(imageJpeg))
+        val body = body(spec, system, text, schema, maxTokens, imageJpeg?.let(AIDirectTransport::imageBase64))
         val reply = AIDirectTransport.post(
             client, ENDPOINT,
             headers = mapOf("x-api-key" to key, "anthropic-version" to spec.claude.anthropicVersion),
@@ -298,7 +302,8 @@ class DirectAnthropicEstimateService(
 
         /**
          * `schema` is canonical (with `additionalProperties: false`). No `temperature` / `top_p` /
-         * `top_k` (a non-default value is a 400 on Sonnet 5), no `thinking`, no prefill.
+         * `top_k` (a non-default value is a 400 on Sonnet 5), no `thinking`, no prefill. A `null`
+         * [imageBase64] (a described meal) leaves the content a single text block.
          */
         fun body(
             spec: AIEstimateSpec,
@@ -306,7 +311,7 @@ class DirectAnthropicEstimateService(
             text: String,
             schema: JsonElement,
             maxTokens: Int,
-            imageBase64: String,
+            imageBase64: String?,
         ): JsonObject = buildJsonObject {
             put("model", spec.claude.model)
             put("max_tokens", maxTokens)
@@ -322,12 +327,14 @@ class DirectAnthropicEstimateService(
                 addJsonObject {
                     put("role", "user")
                     putJsonArray("content") {
-                        addJsonObject {
-                            put("type", "image")
-                            putJsonObject("source") {
-                                put("type", "base64")
-                                put("media_type", "image/jpeg")
-                                put("data", imageBase64)
+                        if (imageBase64 != null) {
+                            addJsonObject {
+                                put("type", "image")
+                                putJsonObject("source") {
+                                    put("type", "base64")
+                                    put("media_type", "image/jpeg")
+                                    put("data", imageBase64)
+                                }
                             }
                         }
                         addJsonObject {
@@ -378,13 +385,13 @@ class DirectGeminiEstimateService(
     private val grounding: AIBarcodeGrounding? = null,
 ) : AIEstimateService {
 
-    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate {
+    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate {
         val key = key()
         val spec = spec()
         val text = send(
             key, spec,
             system = spec.estimateSystemInstruction(locale),
-            text = spec.estimateRequestText(meal.raw, notes),
+            text = AIDirectTransport.estimateRequestText(spec, imageJpeg != null, meal, notes),
             schema = spec.estimateSchema(),
             imageJpeg = imageJpeg,
         )
@@ -414,9 +421,9 @@ class DirectGeminiEstimateService(
         system: String,
         text: String,
         schema: JsonElement,
-        imageJpeg: ByteArray,
+        imageJpeg: ByteArray?,
     ): String {
-        val image = AIDirectTransport.imageBase64(imageJpeg)
+        val image = imageJpeg?.let(AIDirectTransport::imageBase64)
         val geminiSchema = AIEstimateSpec.forGemini(schema)
         val headers = mapOf("x-goog-api-key" to key)
         val first = AIDirectTransport.post(
@@ -444,24 +451,29 @@ class DirectGeminiEstimateService(
 
         fun generateContentUrl(model: String): String = "$BASE/models/$model:generateContent"
 
-        /** `schema` is the Gemini variant (no `additionalProperties`). No `temperature`: Gemini 3 runs at its default. */
+        /**
+         * `schema` is the Gemini variant (no `additionalProperties`). No `temperature`: Gemini 3 runs
+         * at its default. A `null` [imageBase64] (a described meal) leaves the input a single text entry.
+         */
         fun interactionsBody(
             spec: AIEstimateSpec,
             system: String,
             text: String,
             schema: JsonElement,
-            imageBase64: String,
+            imageBase64: String?,
         ): JsonObject = buildJsonObject {
             put("model", spec.gemini.model)
             put("store", false)
             put("system_instruction", system)
             putJsonObject("generation_config") { put("thinking_level", spec.gemini.thinkingLevel) }
             putJsonArray("input") {
-                addJsonObject {
-                    put("type", "image")
-                    put("data", imageBase64)
-                    put("mime_type", "image/jpeg")
-                    put("resolution", spec.gemini.imageResolution)
+                if (imageBase64 != null) {
+                    addJsonObject {
+                        put("type", "image")
+                        put("data", imageBase64)
+                        put("mime_type", "image/jpeg")
+                        put("resolution", spec.gemini.imageResolution)
+                    }
                 }
                 addJsonObject {
                     put("type", "text")
@@ -475,12 +487,13 @@ class DirectGeminiEstimateService(
             }
         }
 
+        /** A `null` [imageBase64] (a described meal): text-only parts and no `mediaResolution`. */
         fun generateContentBody(
             spec: AIEstimateSpec,
             system: String,
             text: String,
             schema: JsonElement,
-            imageBase64: String,
+            imageBase64: String?,
         ): JsonObject = buildJsonObject {
             putJsonObject("systemInstruction") {
                 putJsonArray("parts") { addJsonObject { put("text", system) } }
@@ -489,10 +502,12 @@ class DirectGeminiEstimateService(
                 addJsonObject {
                     put("role", "user")
                     putJsonArray("parts") {
-                        addJsonObject {
-                            putJsonObject("inlineData") {
-                                put("mimeType", "image/jpeg")
-                                put("data", imageBase64)
+                        if (imageBase64 != null) {
+                            addJsonObject {
+                                putJsonObject("inlineData") {
+                                    put("mimeType", "image/jpeg")
+                                    put("data", imageBase64)
+                                }
                             }
                         }
                         addJsonObject { put("text", text) }
@@ -503,7 +518,8 @@ class DirectGeminiEstimateService(
                 put("responseMimeType", "application/json")
                 put("responseJsonSchema", schema)
                 putJsonObject("thinkingConfig") { put("thinkingLevel", spec.gemini.thinkingLevel) }
-                put("mediaResolution", spec.gemini.generateContentMediaResolution)
+                // Only meaningful with an image.
+                if (imageBase64 != null) put("mediaResolution", spec.gemini.generateContentMediaResolution)
             }
         }
 

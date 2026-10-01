@@ -109,6 +109,9 @@ class AIEstimateSpec private constructor(root: JsonElement) {
     val genericFoodSeparator: String
     val requestTemplate: String
 
+    /** The request text when there is no photo and the notes are the whole description of the meal. */
+    val describedRequestTemplate: String
+
     /** Canonical schema; `genericKey.enum` is empty in the file and filled by [estimateSchema]. */
     val estimateSchemaTemplate: JsonElement
     val label: Label
@@ -136,6 +139,7 @@ class AIEstimateSpec private constructor(root: JsonElement) {
         genericFoodFormat = estimate.string("genericFoodFormat")
         genericFoodSeparator = estimate.string("genericFoodSeparator")
         requestTemplate = estimate.string("requestTemplate")
+        describedRequestTemplate = estimate.string("describedRequestTemplate")
         estimateSchemaTemplate = estimate.value("schema")
         if (estimateSchemaTemplate["properties"]["foods"]["items"]["properties"]["genericKey"] !is JsonObject) {
             throw LoadException("estimate schema has no foods.items.properties.genericKey")
@@ -287,9 +291,14 @@ class AIEstimateSpec private constructor(root: JsonElement) {
      * The per-request text: the meal slot (`breakfast|lunch|snack|dinner`) and the notes, cut to
      * `maxNotesLength` UTF-16 units like the backend's `slice`, then JSON-quoted.
      */
-    fun estimateRequestText(meal: String, notes: String): String {
+    fun estimateRequestText(meal: String, notes: String): String = requestText(requestTemplate, meal, notes)
+
+    /** The per-request text for an estimate from a typed description alone (no photo): same substitutions. */
+    fun describedRequestText(meal: String, notes: String): String = requestText(describedRequestTemplate, meal, notes)
+
+    private fun requestText(template: String, meal: String, notes: String): String {
         val quoted = AIJson.stringLiteral(notes.take(limits.maxNotesLength))
-        return substitute(substitute(requestTemplate, "{meal}", meal), "{notes}", quoted)
+        return substitute(substitute(template, "{meal}", meal), "{notes}", quoted)
     }
 
     fun labelSystemInstruction(locale: String): String =

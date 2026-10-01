@@ -147,8 +147,9 @@ class RemoteBackendClient(
     // MARK: AI
 
     /**
-     * Multipart `image` + `meal` + `locale` + `notes`. The server answers the finalized v2 estimate
-     * (`per100`, portions, `totals`, `skipped`); an older server's v1 answer (`{foods,
+     * Multipart `image` + `meal` + `locale` + `notes`; no `image` part for a described meal (the
+     * server then needs non-empty notes, else 400 `image_required`). The server answers the
+     * finalized v2 estimate (`per100`, portions, `totals`, `skipped`); an older server's v1 answer (`{foods,
      * overallConfidence}` with `proteinG`-style keys) still decodes, with the v2 fields null. Errors
      * surface as [BackendError.Http] with the server code (`ai_daily_limit`, `ai_busy`,
      * `ai_timeout`, `ai_unparseable`, `ai_upstream_error`, …) for `AIEstimateService` to map.
@@ -157,7 +158,7 @@ class RemoteBackendClient(
      * a 400).
      */
     override suspend fun estimate(
-        imageJpeg: ByteArray,
+        imageJpeg: ByteArray?,
         meal: MealSlot,
         locale: String,
         anthropicKey: String?,
@@ -175,14 +176,17 @@ class RemoteBackendClient(
                     append("meal", meal.raw)
                     append("locale", locale)
                     append("notes", notes.take(MAX_NOTES_LENGTH))
-                    append(
-                        "image",
-                        imageJpeg,
-                        Headers.build {
-                            append(HttpHeaders.ContentType, "image/jpeg")
-                            append(HttpHeaders.ContentDisposition, "filename=\"plate.jpg\"")
-                        },
-                    )
+                    // No photo ("Describe"): the server takes the notes as the whole description.
+                    if (imageJpeg != null) {
+                        append(
+                            "image",
+                            imageJpeg,
+                            Headers.build {
+                                append(HttpHeaders.ContentType, "image/jpeg")
+                                append(HttpHeaders.ContentDisposition, "filename=\"plate.jpg\"")
+                            },
+                        )
+                    }
                 }
             },
             headers = headers,

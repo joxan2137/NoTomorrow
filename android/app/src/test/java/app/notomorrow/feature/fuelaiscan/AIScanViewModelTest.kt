@@ -4,6 +4,7 @@ import android.app.Application
 import app.notomorrow.R
 import app.notomorrow.data.prefs.AppPrefs
 import app.notomorrow.feature.fuel.AIScanPhase
+import app.notomorrow.feature.fuel.AIScanSource
 import app.notomorrow.feature.fuel.AIScanViewModel
 import app.notomorrow.feature.fuelhome.FakeFoodDao
 import app.notomorrow.feature.fuelhome.FakeMealDao
@@ -70,7 +71,17 @@ class AIScanViewModelTest {
 
     /** A model that went through the real intake (photo → first answer) and shows its outcome. */
     private fun analysed(vararg answers: () -> AIEstimate): Pair<AIScanViewModel, StubEstimateService> {
-        val service = StubEstimateService(answers.toList())
+        val (model, service) = model(AIScanSource.Photo, answers.toList())
+        model.capturedPhoto(byteArrayOf(1, 2, 3))
+        return model to service
+    }
+
+    /** A model opened on the description screen; nothing is sent until [AIScanViewModel.submitDescription]. */
+    private fun describing(vararg answers: () -> AIEstimate): Pair<AIScanViewModel, StubEstimateService> =
+        model(AIScanSource.Description, answers.toList())
+
+    private fun model(source: AIScanSource, answers: List<() -> AIEstimate>): Pair<AIScanViewModel, StubEstimateService> {
+        val service = StubEstimateService(answers)
         val foods = FakeFoodDao()
         val model = AIScanViewModel(
             application = Application(),
@@ -81,12 +92,12 @@ class AIScanViewModelTest {
             foodSearch = FoodSearchService(engine = MockEngine { respond("", HttpStatusCode.ServiceUnavailable) }),
             needsSignIn = MutableStateFlow(false),
             initialMeal = MealSlot.Dinner,
+            initialSource = source,
             locale = { Locale.forLanguageTag("pl-PL") },
             io = main,
             cpu = main,
             service = service,
         )
-        model.capturedPhoto(byteArrayOf(1, 2, 3))
         return model to service
     }
 
@@ -210,19 +221,102 @@ class AIScanViewModelTest {
         model.capturedPhoto(byteArrayOf(4))
         assertEquals("a new photo is a first request", "", service.notes[1])
     }
+
+    // MARK: Described meal
+
+    @Test
+    fun `a described meal sends no image and the description`() {
+        val (model, service) = describing(answer(AIEstimate(listOf(pierogi(), oil()), overallConfidence = 0.5)))
+        assertTrue(model.state.value.isDescribed)
+        model.setNotes("  6 pierogów ruskich z okrasą ")
+        model.submitDescription()
+        assertEquals(AIScanPhase.Result, model.state.value.phase)
+        assertEquals(listOf<ByteArray?>(null), service.images)
+        assertEquals(listOf("6 pierogów ruskich z okrasą"), service.notes)
+        assertNull(model.state.value.photo)
+    }
+
+    @Test
+    fun `a blank description sends nothing`() {
+        val (model, service) = describing(answer(AIEstimate(listOf(pierogi()), overallConfidence = 0.5)))
+        model.submitDescription()
+        model.setNotes(" \n\t ")
+        assertFalse(model.state.value.canSubmitDescription)
+        model.submitDescription()
+        assertTrue(service.notes.isEmpty())
+        assertEquals(AIScanPhase.PickSource, model.state.value.phase)
+    }
+
+    @Test
+    fun `a described refine sends the description and the corrections without an image`() {
+        val (model, service) = describing(
+            answer(AIEstimate(listOf(pierogi(), oil()), overallConfidence = 0.5)),
+            answer(AIEstimate(listOf(pierogi()), overallConfidence = 0.5)),
+        )
+        model.setNotes("6 pierogów")
+        model.submitDescription()
+        model.remove(model.state.value.foods[1].id)
+        model.analyze()
+        assertEquals(listOf<ByteArray?>(null, null), service.images)
+        assertEquals("6 pierogów\nUser corrections (authoritative): removed: Olej", service.notes[1])
+        assertEquals(AIScanPhase.Result, model.state.value.phase)
+    }
+
+    @Test
+    fun `retake keeps the description and returns to its screen`() {
+        val (model, service) = describing(
+            answer(AIEstimate(listOf(pierogi()), overallConfidence = 0.5)),
+            answer(AIEstimate(listOf(pierogi()), overallConfidence = 0.5)),
+        )
+        model.setNotes("6 pierogów")
+        model.submitDescription()
+        model.retake()
+        val state = model.state.value
+        assertEquals(AIScanPhase.PickSource, state.phase)
+        assertTrue(state.isDescribed)
+        assertEquals("6 pierogów", state.notes)
+        assertTrue(state.foods.isEmpty())
+        model.submitDescription()
+        assertEquals("a second send is a first request again", "6 pierogów", service.notes[1])
+    }
+
+    @Test
+    fun `an unusable answer to a description says it could not be estimated`() {
+        val (empty, _) = describing(answer(AIEstimate(emptyList(), overallConfidence = 0.0)))
+        empty.setNotes("coś")
+        empty.submitDescription()
+        assertEquals(AIScanPhase.Failed(R.string.fuel_ai_describe_failed), empty.state.value.phase)
+
+        val (unreadable, _) = describing(failure(AIEstimateError.Unreadable))
+        unreadable.setNotes("coś")
+        unreadable.submitDescription()
+        assertEquals(AIScanPhase.Failed(R.string.fuel_ai_describe_failed), unreadable.state.value.phase)
+
+        // Connection, quota and provider errors keep their own words.
+        val (busy, _) = describing(failure(AIEstimateError.Busy))
+        busy.setNotes("coś")
+        busy.submitDescription()
+        assertEquals(AIScanPhase.Failed(R.string.fuel_ai_error_busy), busy.state.value.phase)
+
+        // The photo wording is unchanged.
+        val (photo, _) = analysed(failure(AIEstimateError.Unreadable))
+        assertEquals(AIScanPhase.Failed(R.string.fuel_ai_error_unreadable), photo.state.value.phase)
+    }
 }
 
 private fun answer(estimate: AIEstimate): () -> AIEstimate = { estimate }
 
 private fun failure(error: AIEstimateError): () -> AIEstimate = { throw error }
 
-/** Answers from a queue and records the notes each request sent. */
+/** Answers from a queue and records the image and notes each request sent. */
 private class StubEstimateService(answers: List<() -> AIEstimate>) : AIEstimateService {
     private val queue = ArrayDeque(answers)
     val notes = mutableListOf<String>()
+    val images = mutableListOf<ByteArray?>()
 
-    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate {
+    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate {
         this.notes += notes
+        images += imageJpeg
         return (queue.removeFirstOrNull() ?: throw AIEstimateError.Busy)()
     }
 

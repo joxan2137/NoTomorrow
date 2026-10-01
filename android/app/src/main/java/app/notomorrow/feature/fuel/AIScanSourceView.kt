@@ -2,6 +2,7 @@ package app.notomorrow.feature.fuel
 
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -161,14 +162,26 @@ private fun AIScanPlateIllustration(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The typed details under the photo (and on the result). For a described meal the result shows the
+ * description here instead: its own [labelRes] / [placeholderRes] and no photo-accuracy hint.
+ */
 @Composable
-fun AIMealNotes(notes: String, onNotes: (String) -> Unit) {
+fun AIMealNotes(
+    notes: String,
+    onNotes: (String) -> Unit,
+    @StringRes labelRes: Int = S.fuel_ai_details,
+    @StringRes placeholderRes: Int = S.fuel_ai_detailsPlaceholder,
+    showsHint: Boolean = true,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        NtText(stringResource(app.notomorrow.R.string.fuel_ai_accuracyHint), style = NT.Fonts.footnote, color = NT.Colors.ink2)
+        if (showsHint) {
+            NtText(stringResource(app.notomorrow.R.string.fuel_ai_accuracyHint), style = NT.Fonts.footnote, color = NT.Colors.ink2)
+        }
         androidx.compose.material3.OutlinedTextField(
             value = notes, onValueChange = onNotes, modifier = Modifier.fillMaxWidth(),
-            label = { NtText(stringResource(app.notomorrow.R.string.fuel_ai_details), style = NT.Fonts.footnote) },
-            placeholder = { NtText(stringResource(app.notomorrow.R.string.fuel_ai_detailsPlaceholder), style = NT.Fonts.footnote) },
+            label = { NtText(stringResource(labelRes), style = NT.Fonts.footnote) },
+            placeholder = { NtText(stringResource(placeholderRes), style = NT.Fonts.footnote) },
             minLines = 2, maxLines = 4,
         )
     }

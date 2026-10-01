@@ -19,7 +19,7 @@ import java.util.concurrent.CancellationException
 // (`AIEstimateSpec`, `AIFinalizer`), so the backend and both providers agree on every answer.
 
 /**
- * Who turns a plate photo into macros, or a pack photo into label values — the port of the
+ * Who turns a plate photo (or a typed description of the meal) into macros, or a pack photo into label values — the port of the
  * `AIEstimateService` protocol in `NoTomorrow/Services/AIEstimateService.swift`. Four
  * implementations: [BackendAIEstimateService], [DirectAnthropicEstimateService],
  * [DirectGeminiEstimateService] (all three in `AIEstimateProviders.kt`) and [MockAIEstimateService].
@@ -28,8 +28,12 @@ import java.util.concurrent.CancellationException
  */
 interface AIEstimateService {
 
-    /** [notes] is the full notes string (typed details plus any corrections line), ≤ 1500 UTF-16 units. */
-    suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String = ""): AIEstimate
+    /**
+     * [notes] is the full notes string (typed details plus any corrections line), ≤ 1500 UTF-16 units.
+     * A `null` [imageJpeg] is a meal described in words ("Describe"): the notes are then the whole
+     * description and must not be blank.
+     */
+    suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String = ""): AIEstimate
 
     /**
      * A photo of a pack's nutrition table (≤ 1600 px, [app.notomorrow.util.ImageDownscaler.LABEL_LONG_EDGE])
@@ -156,7 +160,7 @@ object AIEstimateLocalizer {
 // MARK: - Mock
 
 /**
- * Offline stand-in: a plausible plate after 1.2 s, matching the AIScan canvas, in the v2 shape
+ * Offline stand-in (the photo, or its absence, is ignored): a plausible plate after 1.2 s, matching the AIScan canvas, in the v2 shape
  * (per-100 g values and counted portions, totals computed like the finalizer); and a fixed, legible
  * cottage-cheese label.
  */
@@ -165,7 +169,7 @@ class MockAIEstimateService(
     private val delayMillis: Long = MOCK_DELAY_MS,
 ) : AIEstimateService {
 
-    override suspend fun estimate(imageJpeg: ByteArray, meal: MealSlot, locale: String, notes: String): AIEstimate {
+    override suspend fun estimate(imageJpeg: ByteArray?, meal: MealSlot, locale: String, notes: String): AIEstimate {
         delay(delayMillis)
         val t = { id: Int -> strings.string(id, locale) }
         val pl = AIEstimateSpec.languageCode(locale) == "pl"
