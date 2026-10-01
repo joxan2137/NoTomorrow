@@ -3,8 +3,9 @@ import SwiftData
 import BorderBeamKit
 import ThinkingOrbsKit
 
-/// AI photo estimate for one meal slot. Pick a source → analysing → editable result → log.
-/// Presented as a sheet / full-screen cover from the Fuel tab; dismisses itself after `onLogged`.
+/// AI estimate for one meal slot, from a photo or (`.description`, the add bar's "Describe") from the meal typed out
+/// in words. Pick a source → analysing → editable result → log. Presented as a sheet / full-screen cover from the Fuel
+/// tab; dismisses itself after `onLogged`.
 struct AIScanView: View {
     let initialMeal: MealSlot
     /// Day the entries are logged to (start of day is applied by `MealEntry`). Defaults to today.
@@ -15,12 +16,14 @@ struct AIScanView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var model: AIScanModel
 
-    init(meal: MealSlot, day: Date = .now, onLogged: @escaping () -> Void = {}) {
+    init(meal: MealSlot, day: Date = .now, source: AIScanModel.Source = .photo, onLogged: @escaping () -> Void = {}) {
         self.initialMeal = meal
         self.day = day
         self.onLogged = onLogged
-        _model = State(initialValue: AIScanModel(meal: meal))
+        _model = State(initialValue: AIScanModel(meal: meal, source: source))
     }
+
+    private var describing: Bool { model.source == .description }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,13 +33,19 @@ struct AIScanView: View {
         .ntScreenBackground()
         .overlay(alignment: .bottom) { toastOverlay }
         .alert(
-            Text(String(format: String(localized: "fuel.ai.consent.title"), model.providerName)),
+            Text(String(format: describing ? String(localized: "fuel.ai.describe.consent.title")
+                                           : String(localized: "fuel.ai.consent.title"),
+                        model.providerName)),
             isPresented: Bindable(model).showConsent
         ) {
-            Button("fuel.ai.consent.accept") { model.acceptConsent() }
+            Button(describing ? LocalizedStringKey("fuel.ai.describe.consent.accept") : "fuel.ai.consent.accept") {
+                model.acceptConsent()
+            }
             Button("common.cancel", role: .cancel) { model.declineConsent() }
         } message: {
-            Text(String(format: String(localized: "fuel.ai.consent.body"), model.providerName))
+            Text(String(format: describing ? String(localized: "fuel.ai.describe.consent.body")
+                                           : String(localized: "fuel.ai.consent.body"),
+                        model.providerName))
         }
     }
 
@@ -61,7 +70,7 @@ struct AIScanView: View {
 
             if showsRetake {
                 Button { model.retake() } label: {
-                    Text("fuel.ai.retake")
+                    Text(describing ? LocalizedStringKey("common.edit") : "fuel.ai.retake")
                         .font(NT.Fonts.body)
                         .foregroundStyle(NT.Colors.ink2)
                         .frame(height: NT.Size.control)
@@ -89,15 +98,24 @@ struct AIScanView: View {
         case .pickSource:
             if model.upload == .google, !AuthStore.shared.isSignedIn {
                 AIScanSignedOutView(meal: model.meal) {}
+            } else if describing {
+                AIScanDescribeView(notes: $model.notes, meal: model.meal, canSubmit: model.canSubmitDescription) {
+                    model.submitDescription()
+                }
             } else {
                 AIScanSourceView(notes: $model.notes, meal: model.meal) { model.handlePicked($0) }
             }
         case .analyzing:
-            AIScanAnalyzingView(image: model.image)
+            AIScanAnalyzingView(image: model.image, message: describing ? LocalizedStringKey("fuel.ai.describe.analyzing") : "fuel.ai.analyzing")
         case .result:
             AIScanResultView(model: model, onLog: log)
         case .failed(let message):
-            AIScanFailedView(image: model.image, message: message) { model.retake() }
+            if describing {
+                AIScanFailedView(image: nil, message: message, retakeTitle: "fuel.ai.describe.edit",
+                                 retakeSymbol: "pencil") { model.retake() }
+            } else {
+                AIScanFailedView(image: model.image, message: message) { model.retake() }
+            }
         case .notAllowed:
             AIScanNotAllowedView()
         }
@@ -144,10 +162,12 @@ struct AIScanView: View {
 
 // MARK: - Analysing
 
-/// Photo with a thinking orb and the "looking at your plate" line while the estimate is in flight. A sunset
-/// border beam runs round the photo the whole time (`BorderBeamKit`, `ThinkingOrbsKit` — libraries.dev).
+/// Photo with a thinking orb and the "looking at your plate" line while the estimate is in flight (an empty card for
+/// a description). A sunset border beam runs round the card the whole time (`BorderBeamKit`, `ThinkingOrbsKit` —
+/// libraries.dev).
 struct AIScanAnalyzingView: View {
     var image: UIImage?
+    var message: LocalizedStringKey = "fuel.ai.analyzing"
 
     var body: some View {
         VStack(spacing: NT.Spacing.section) {
@@ -163,7 +183,7 @@ struct AIScanAnalyzingView: View {
                 .borderBeam(.md, colorVariant: .sunset, theme: .dark, borderRadius: Double(NT.Radius.card))
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.top, 12)
-            Text("fuel.ai.analyzing")
+            Text(message)
                 .font(NT.Fonts.subheadline)
                 .foregroundStyle(NT.Colors.ink2)
             Spacer()
@@ -180,6 +200,8 @@ struct AIScanAnalyzingView: View {
 struct AIScanFailedView: View {
     var image: UIImage?
     var message: String
+    var retakeTitle: LocalizedStringKey = "fuel.ai.retake"
+    var retakeSymbol: String = "camera"
     var onRetake: () -> Void
 
     var body: some View {
@@ -202,7 +224,7 @@ struct AIScanFailedView: View {
             .padding(.horizontal, NT.Spacing.screenH)
             .padding(.top, image == nil ? 40 : 0)
             Spacer()
-            PrimaryButton(title: "fuel.ai.retake", systemImage: "camera", action: onRetake)
+            PrimaryButton(title: retakeTitle, systemImage: retakeSymbol, action: onRetake)
                 .padding(.horizontal, NT.Spacing.screenH)
                 .padding(.bottom, 12)
         }

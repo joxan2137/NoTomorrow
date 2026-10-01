@@ -224,6 +224,18 @@ object S {
     val fuel_ai_consent_accept = R.string.fuel_ai_consent_accept
     val fuel_ai_consent_body = R.string.fuel_ai_consent_body
     val fuel_ai_consent_title = R.string.fuel_ai_consent_title
+    val fuel_ai_describe_analyzing = R.string.fuel_ai_describe_analyzing
+    val fuel_ai_describe_consent_accept = R.string.fuel_ai_describe_consent_accept
+    val fuel_ai_describe_consent_body = R.string.fuel_ai_describe_consent_body
+    val fuel_ai_describe_consent_title = R.string.fuel_ai_describe_consent_title
+    val fuel_ai_describe_disclaimer = R.string.fuel_ai_describe_disclaimer
+    val fuel_ai_describe_edit = R.string.fuel_ai_describe_edit
+    val fuel_ai_describe_estimate = R.string.fuel_ai_describe_estimate
+    val fuel_ai_describe_failed = R.string.fuel_ai_describe_failed
+    val fuel_ai_describe_label = R.string.fuel_ai_describe_label
+    val fuel_ai_describe_placeholder = R.string.fuel_ai_describe_placeholder
+    val fuel_ai_describe_subtitle = R.string.fuel_ai_describe_subtitle
+    val fuel_ai_describe_title = R.string.fuel_ai_describe_title
     val fuel_ai_details = R.string.fuel_ai_details
     val fuel_ai_detailsPlaceholder = R.string.fuel_ai_detailsPlaceholder
     val fuel_ai_disclaimer = R.string.fuel_ai_disclaimer
@@ -283,6 +295,7 @@ object S {
     val fuel_barcode = R.string.fuel_barcode
     val fuel_barcodeNotFound = R.string.fuel_barcodeNotFound
     val fuel_barcodePartial = R.string.fuel_barcodePartial
+    val fuel_barcode_short = R.string.fuel_barcode_short
     val fuel_calendar_avg30 = R.string.fuel_calendar_avg30
     val fuel_calendar_avg7 = R.string.fuel_calendar_avg7
     val fuel_calendar_cell = R.string.fuel_calendar_cell
@@ -299,6 +312,7 @@ object S {
     val fuel_chooseDay = R.string.fuel_chooseDay
     val fuel_copyToToday = R.string.fuel_copyToToday
     val fuel_day = R.string.fuel_day
+    val fuel_describe = R.string.fuel_describe
     val fuel_eatenGoal = R.string.fuel_eatenGoal
     val fuel_editEntry = R.string.fuel_editEntry
     val fuel_editEntry_action = R.string.fuel_editEntry_action

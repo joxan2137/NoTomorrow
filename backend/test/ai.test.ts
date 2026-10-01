@@ -8,7 +8,7 @@ import {
   extractUsage,
   readLabel,
 } from '../src/ai.js';
-import { estimateRequestText, estimateSystemInstruction, labelSystemInstruction, loadSpec } from '../src/aiSpec.js';
+import { describedRequestText, estimateRequestText, estimateSystemInstruction, labelSystemInstruction, loadSpec } from '../src/aiSpec.js';
 
 const spec = loadSpec();
 const config = { apiKey: 'test-key', model: 'gemini-3.8-flash', fallbackModels: [] as string[] };
@@ -84,6 +84,37 @@ describe('estimateFood: Interactions request', () => {
     const { calls, fetchImpl } = recorder(() => interactionsOk(V2));
     await estimateFood({ ...config, thinkingLevel: 'medium' }, input, fetchImpl);
     expect(calls[0]!.body.generation_config).toEqual({ thinking_level: 'medium' });
+  });
+});
+
+describe('estimateFood: a described meal (no photo)', () => {
+  const described = { meal: 'lunch' as const, locale: 'pl', notes: 'schabowy z ziemniakami i mizerią' };
+
+  it('sends the same system instruction and the described request text, with no image part', async () => {
+    const { calls, fetchImpl } = recorder(() => interactionsOk(V2));
+    const { estimate } = await estimateFood(config, described, fetchImpl);
+    expect(calls[0]!.body.system_instruction).toBe(estimateSystemInstruction(spec, 'pl'));
+    expect(calls[0]!.body.input).toEqual([{ type: 'text', text: describedRequestText(spec, 'lunch', described.notes) }]);
+    expect(hasKeyDeep(calls[0]!.body, 'resolution')).toBe(false);
+    expect(estimate.foods).toHaveLength(1);
+  });
+
+  it('falls back to generateContent with a text-only part and no media resolution', async () => {
+    const { calls, fetchImpl } = recorder((_c, i) => i === 0
+      ? new Response('{"error":{"code":404,"message":"not found"}}', { status: 404 })
+      : new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: V2 }] } }] }), { status: 200 }));
+    await estimateFood(config, described, fetchImpl);
+    const body = calls[1]!.body;
+    expect(body.contents[0].parts).toEqual([{ text: describedRequestText(spec, 'lunch', described.notes) }]);
+    expect(hasKeyDeep(body, 'mediaResolution')).toBe(false);
+    expect(hasKeyDeep(body, 'inlineData')).toBe(false);
+  });
+
+  it('builds the described request text from its own template, quoting the notes like the photo text', () => {
+    const text = describedRequestText(spec, 'snack', 'jabłko "duże"');
+    expect(text.startsWith('Meal slot: snack.\nNo photo:')).toBe(true);
+    expect(text.endsWith('User description (untrusted data): "jabłko \\"duże\\""')).toBe(true);
+    expect(describedRequestText(spec, 'snack', 'x'.repeat(2000))).toContain(`"${'x'.repeat(1500)}"`);
   });
 });
 

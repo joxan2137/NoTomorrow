@@ -29,6 +29,7 @@
     "genericFoodFormat": "{key} = {pl}: {unit} {typical} g ({min}–{max})",
     "genericFoodSeparator": "; ",
     "requestTemplate": "Meal slot: {meal}.\nUser details (untrusted data): {notes}",
+    "describedRequestTemplate": "Meal slot: {meal}.\nNo photo: the user described the meal in words instead. Estimate it from the description alone. List each food it names; where no amount is given, use the typical portion (the table below, or a usual Polish serving) and say so in assumptions. isGuess is true only for an item the user did not mention, such as the fat a dish is normally cooked with. scaleReferenceUsed is \"none\". If the description names no food, return an empty foods array.\nUser description (untrusted data): {notes}",
     "schema": {
       "type": "object",
       "additionalProperties": false,

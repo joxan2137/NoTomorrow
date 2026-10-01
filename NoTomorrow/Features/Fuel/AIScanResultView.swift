@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The editable estimate: photo with detection tags, hero total, one row per food (grams, count, edit, remove),
-/// "add something it missed" from the food database, details + recalculate, disclaimer, and the log bar.
+/// The editable estimate: photo with detection tags (none for a described meal), hero total, one row per food (grams,
+/// count, edit, remove), "add something it missed" from the food database, details + recalculate, disclaimer, and the
+/// log bar.
 struct AIScanResultView: View {
     @Bindable var model: AIScanModel
     var onLog: () -> Void
@@ -12,17 +13,24 @@ struct AIScanResultView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                AIScanPhoto(image: model.image, tags: model.foods.map(\.name))
-                    .padding(.top, 12)
+                if model.source == .photo {
+                    AIScanPhoto(image: model.image, tags: model.foods.map(\.name))
+                        .padding(.top, 12)
+                }
                 totalBlock
-                    .padding(.top, 16)
+                    .padding(.top, model.source == .photo ? 16 : 12)
                 rows
                     .padding(.top, 10)
                 addMissedRow
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(model.assumptions, id: \.self) { Text($0).font(NT.Fonts.footnote) }
                     ForEach(model.questions, id: \.self) { Text($0).font(NT.Fonts.subheadline) }
-                    AIMealNotes(notes: $model.notes)
+                    if model.source == .description {
+                        AIMealNotes(notes: $model.notes, title: "fuel.ai.describe.label", hint: nil,
+                                    placeholder: "fuel.ai.describe.placeholder")
+                    } else {
+                        AIMealNotes(notes: $model.notes)
+                    }
                     SecondaryButton(title: "fuel.ai.refine") { model.analyze() }
                         .disabled(!model.hasItems)
                         .opacity(model.hasItems ? 1 : 0.4)
@@ -129,7 +137,7 @@ struct AIScanResultView: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(NT.Colors.ink2)
                 .padding(.top, 1)
-            Text("fuel.ai.disclaimer")
+            Text(model.source == .description ? LocalizedStringKey("fuel.ai.describe.disclaimer") : "fuel.ai.disclaimer")
                 .font(NT.Fonts.footnote)
                 .foregroundStyle(NT.Colors.ink2)
                 .fixedSize(horizontal: false, vertical: true)

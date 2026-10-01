@@ -2,10 +2,19 @@ import SwiftUI
 import SwiftData
 import Observation
 
-/// State machine for the AI photo flow: pick a source → analyse → correct the estimate → log.
+/// State machine for the AI flow: pick a source → analyse → correct the estimate → log. A photo, or with
+/// `Source.description` the meal typed out in words (the last resort when there is no picture).
 @MainActor
 @Observable
 final class AIScanModel {
+    /// What the estimate is made from, fixed when the flow opens.
+    enum Source: Equatable {
+        /// A meal photo, with the notes as optional details.
+        case photo
+        /// No photo: the notes are the whole description of the meal.
+        case description
+    }
+
     enum Phase: Equatable {
         case pickSource
         case analyzing
@@ -15,6 +24,7 @@ final class AIScanModel {
         case notAllowed
     }
 
+    let source: Source
     var notes = ""
     var assumptions: [String] = []
     var questions: [String] = []
@@ -50,9 +60,10 @@ final class AIScanModel {
     /// Tests inject a service; the app resolves one from the provider settings.
     private let injectedService: (any AIEstimateService)?
 
-    init(meal: MealSlot, config: AppConfig = .shared, defaults: UserDefaults = .standard,
+    init(meal: MealSlot, source: Source = .photo, config: AppConfig = .shared, defaults: UserDefaults = .standard,
          service: (any AIEstimateService)? = nil) {
         self.meal = meal
+        self.source = source
         self.config = config
         self.defaults = defaults
         self.injectedService = service
@@ -99,6 +110,9 @@ final class AIScanModel {
         AIScanCorrections.line(kept: foods.filter { kept[$0.id] != nil }, removed: removedNames)
     }
 
+    /// A description says something (whitespace alone is not sent).
+    var canSubmitDescription: Bool { !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
     /// The full notes string for a request: typed details plus, on a refine, the corrections line.
     func outgoingNotes(refining: Bool) -> String {
         AIScanCorrections.notes(typed: notes, corrections: refining ? correctionsLine : nil)
@@ -131,17 +145,31 @@ final class AIScanModel {
         }
     }
 
+    // MARK: Description intake
+
+    /// "Estimate calories" on the describe screen: first-use consent for the description, then the analysis.
+    func submitDescription() {
+        guard source == .description, phase == .pickSource, canSubmitDescription else { return }
+        if upload.needsConsent(photo: false, defaults) {
+            showConsent = true
+        } else {
+            analyze()
+        }
+    }
+
     func acceptConsent() {
-        upload.recordConsent(defaults)
+        upload.recordConsent(photo: source == .photo, defaults)
         showConsent = false
         analyze()
     }
 
+    /// A declined photo is dropped; a declined description stays on screen to send later or close.
     func declineConsent() {
         showConsent = false
-        retake()
+        if source == .photo { retake() }
     }
 
+    /// Back to the source step with the estimate cleared. The typed notes stay: for a description, to be edited.
     func retake() {
         task?.cancel()
         task = nil
@@ -158,15 +186,19 @@ final class AIScanModel {
         phase = .pickSource
     }
 
-    /// Sends the photo. From the result screen ("Recalculate with details") it also sends the user's corrections and
-    /// merges them back into the answer; if that request fails, the current result stays and a toast says why.
+    /// Sends the photo, or the description alone. From the result screen ("Recalculate with details") it also sends
+    /// the user's corrections and merges them back into the answer; if that request fails, the current result stays
+    /// and a toast says why.
     func analyze() {
-        guard let jpeg else { return }
+        let jpeg = self.jpeg
+        if source == .photo, jpeg == nil { return }
         let refining = phase == .result
         // Everything removed: nothing to recalculate against (the button is disabled too).
         if refining, !hasItems { return }
-        let previous = refining ? Snapshot(of: self) : nil
         let sentNotes = outgoingNotes(refining: refining)
+        // Without a photo the notes are all there is to estimate from.
+        if jpeg == nil, sentNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return }
+        let previous = refining ? Snapshot(of: self) : nil
         let service = injectedService ?? upload.makeService(config: config)
         let meal = meal
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
@@ -210,13 +242,23 @@ final class AIScanModel {
             phase = .notAllowed
             return
         }
-        let message = (error as? AIEstimateError)?.errorDescription ?? String(localized: "fuel.ai.failed")
+        let message = failureMessage(error)
         if let previous {
             previous.restore(into: self)
             withAnimation { toast = message }
         } else {
             phase = .failed(message)
         }
+    }
+
+    /// The error's own message (no connection, busy, daily limit, …). An empty or unusable answer, or anything else,
+    /// says the photo could not be read, or for a description that it could not be estimated.
+    private func failureMessage(_ error: Error?) -> String {
+        let known = error as? AIEstimateError
+        if source == .description, known == nil || known == .unreadable {
+            return String(localized: "fuel.ai.describe.failed")
+        }
+        return known?.errorDescription ?? String(localized: "fuel.ai.failed")
     }
 
     /// The result screen as it was before a refine, restored when the refine fails.

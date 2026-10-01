@@ -667,7 +667,7 @@ private actor SpyBackendClient: BackendClient {
     func partnerState() async throws -> PartnerState { throw BackendError.network }
     func sendHeadsUp(kind: HeadsUpKind, text: String, sessionDay: Date) async throws {}
     func registerPushToken(_ token: Data) async throws {}
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
         throw BackendError.network
     }
     func readLabel(imageJPEG: Data, locale: String) async throws -> LabelReading { throw BackendError.network }

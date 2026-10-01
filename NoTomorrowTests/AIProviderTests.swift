@@ -69,6 +69,24 @@ final class AIProviderTests: XCTestCase {
         XCTAssertEqual(content[1]["text"], "T")
     }
 
+    func testClaudeBodyWithoutAPhotoIsTheTextAlone() throws {
+        let body = DirectAnthropicEstimateService.body(spec: spec, system: "S", text: "T", schema: spec.estimateSchema(),
+                                                       maxTokens: spec.claude.estimateMaxTokens, imageBase64: nil)
+        let content = try XCTUnwrap(body["messages"]?.arrayValue?.first?["content"]?.arrayValue)
+        XCTAssertEqual(content, [["type": "text", "text": "T"]])
+    }
+
+    func testDescribedMealSendsTheDescribedRequestText() async throws {
+        AIStubProtocol.responses = [.status(200, Self.claudeReply(Self.modelAnswer))]
+        let estimate = try await claude().estimate(imageJPEG: nil, meal: .lunch, locale: "pl", notes: "6 pierogów z okrasą")
+        XCTAssertEqual(estimate.foods.count, 1)
+        let sent = try JSONValue.parse(XCTUnwrap(AIStubProtocol.bodies.first))
+        let content = try XCTUnwrap(sent["messages"]?.arrayValue?.first?["content"]?.arrayValue)
+        XCTAssertEqual(content.map { $0["type"] }, ["text"])
+        XCTAssertEqual(content[0]["text"]?.stringValue, spec.describedRequestText(meal: "lunch", notes: "6 pierogów z okrasą"))
+        XCTAssertEqual(sent["system"]?.stringValue, spec.estimateSystemInstruction(locale: "pl"), "one system prompt for both")
+    }
+
     func testClaudeEstimateEndToEnd() async throws {
         AIStubProtocol.responses = [.status(200, Self.claudeReply(Self.modelAnswer))]
         let estimate = try await claude().estimate(imageJPEG: Self.jpeg, meal: .dinner, locale: "pl", notes: "6 pierogów")
@@ -150,6 +168,18 @@ final class AIProviderTests: XCTestCase {
         XCTAssertEqual(body["response_format"]?["mime_type"], "application/json")
         XCTAssertFalse(body.serialized().contains("additionalProperties"))
         XCTAssertFalse(body.serialized().contains("temperature"))
+    }
+
+    func testGeminiBodiesWithoutAPhoto() throws {
+        let schema = AIEstimateSpec.forGemini(spec.estimateSchema())
+        let interactions = DirectGeminiEstimateService.interactionsBody(spec: spec, system: "S", text: "T", schema: schema,
+                                                                        imageBase64: nil)
+        XCTAssertEqual(interactions["input"], [["type": "text", "text": "T"]])
+        let fallback = DirectGeminiEstimateService.generateContentBody(spec: spec, system: "S", text: "T", schema: schema,
+                                                                       imageBase64: nil)
+        XCTAssertEqual(fallback["contents"]?.arrayValue?.first?["parts"], [["text": "T"]])
+        XCTAssertNil(fallback["generationConfig"]?["mediaResolution"], "no image, no media resolution")
+        XCTAssertEqual(fallback["generationConfig"]?["thinkingConfig"], ["thinkingLevel": "low"])
     }
 
     func testGeminiFallsBackToGenerateContentOn404() async throws {

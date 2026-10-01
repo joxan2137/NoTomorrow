@@ -138,13 +138,21 @@ struct CameraPicker: UIViewControllerRepresentable {
     }
 }
 
+/// The details field under the photo choice and on the result. For a described meal it holds the description itself
+/// (`title` "Description", no photo hint).
 struct AIMealNotes: View {
     @Binding var notes: String
+    var title: LocalizedStringKey = "fuel.ai.details"
+    var hint: LocalizedStringKey? = "fuel.ai.accuracyHint"
+    var placeholder: LocalizedStringKey = "fuel.ai.detailsPlaceholder"
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("fuel.ai.details").font(NT.Fonts.headline)
-            Text("fuel.ai.accuracyHint").font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
-            TextField("fuel.ai.detailsPlaceholder", text: $notes, axis: .vertical)
+            Text(title).font(NT.Fonts.headline)
+            if let hint {
+                Text(hint).font(NT.Fonts.footnote).foregroundStyle(NT.Colors.ink2)
+            }
+            TextField(placeholder, text: $notes, axis: .vertical)
                 .lineLimit(2...4).padding(12)
                 .background(NT.Colors.surface2, in: RoundedRectangle(cornerRadius: 12))
                 .onChange(of: notes) { _, value in if value.count > 1500 { notes = String(value.prefix(1500)) } }

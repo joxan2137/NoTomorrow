@@ -7,7 +7,7 @@ weekly schedule, and each of you sees whether the other actually showed up. Arou
 routines and set-by-set workout logging with rest timers (a workout in progress shrinks to a bar
 above the tabs, and finished workouts can be edited), a food log with day-by-day history and a
 calorie heatmap scored against your goal, barcode and text search (Open Food Facts), AI photo
-estimates and nutrition-label reads, and progress charts per exercise. Home-screen widgets on both platforms log a usual food in one tap, show the
+estimates (or, with no photo, an estimate from the meal described in words) and nutrition-label reads, and progress charts per exercise. Home-screen widgets on both platforms log a usual food in one tap, show the
 calorie calendar with your training days, the gym week and a break timer ([`docs/widgets.md`](docs/widgets.md)).
 
 There are two native apps and one small backend:
@@ -51,7 +51,8 @@ at your own deployment, or flip the in-app *demo data* switch to run fully offli
 
 A photo of a plate becomes a list of foods with grams and macros, which you can correct and send
 back for a better answer; a photo of a nutrition table fills in a product the barcode database
-does not know. Three ways to run it:
+does not know. With no photo, *Describe* on the Fuel tab estimates the meal from what you type
+("2 schabowe, ziemniaki z masłem, mizeria") the same way. Three ways to run it:
 
 - **Standard** — the app sends the photo to the backend, which calls Gemini with the server's key.
   The server owner decides who may use it: `AI_ALLOWED_USERS` (comma-separated usernames). Anyone
@@ -62,6 +63,7 @@ does not know. Three ways to run it:
 
 Every path shows a consent step the first time: the photo (without location or other metadata),
 the meal details you typed, the meal slot and your language leave the phone; nothing else does.
+A description sent on its own asks once too, for the text, slot and language.
 Prompts, JSON schemas and the generic food table live in `backend/data/ai/estimate-spec.json`; the
 backend and both apps (which bundle it for the bring-your-own-key paths) finalize answers the same
 way and are checked against the shared fixtures next to it.

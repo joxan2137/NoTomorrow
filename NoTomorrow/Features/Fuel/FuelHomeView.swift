@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import ThinkingOrbsKit
 
-/// Fuel tab: day header, kcal ring + macros, four meal slots, and the add bar (AI photo / Barcode / Search).
+/// Fuel tab: day header, kcal ring + macros, four meal slots, and the add bar (AI photo / Barcode / Search / Describe).
 /// The header's date button opens the History sheet (`FuelCalendarSheet`). Deletes and copies to today show an
 /// undo toast on top of the add bar.
 struct FuelHomeView: View {
@@ -26,6 +26,8 @@ struct FuelHomeView: View {
     enum FuelSheet: Identifiable {
         case search(MealSlot, day: Date)
         case aiScan(MealSlot, day: Date)
+        /// The AI estimate from a typed description (no photo).
+        case aiDescribe(MealSlot, day: Date)
         case barcode(MealSlot, day: Date)
         case quickAdd(MealSlot, name: String, day: Date)
         case edit(MealEntry)
@@ -35,6 +37,7 @@ struct FuelHomeView: View {
             switch self {
             case .search(let m, _): "search-\(m.rawValue)"
             case .aiScan(let m, _): "ai-\(m.rawValue)"
+            case .aiDescribe(let m, _): "ai-describe-\(m.rawValue)"
             case .barcode(let m, _): "barcode-\(m.rawValue)"
             case .quickAdd(let m, _, _): "quick-\(m.rawValue)"
             case .edit(let entry): "edit-\(entry.id.uuidString)"
@@ -45,7 +48,8 @@ struct FuelHomeView: View {
         /// The day a new entry from this sheet is written to, fixed when the sheet opened (nil: not a logging sheet).
         var logDay: Date? {
             switch self {
-            case .search(_, let day), .aiScan(_, let day), .barcode(_, let day), .quickAdd(_, _, let day): day
+            case .search(_, let day), .aiScan(_, let day), .aiDescribe(_, let day), .barcode(_, let day),
+                 .quickAdd(_, _, let day): day
             case .edit, .calendar: nil
             }
         }
@@ -110,7 +114,8 @@ struct FuelHomeView: View {
                 FuelAddBar(
                     onAIPhoto: { sheet = .aiScan(.suggested(), day: model.day) },
                     onBarcode: { sheet = .barcode(.suggested(), day: model.day) },
-                    onSearch: { sheet = .search(.suggested(), day: model.day) }
+                    onSearch: { sheet = .search(.suggested(), day: model.day) },
+                    onDescribe: { sheet = .aiDescribe(.suggested(), day: model.day) }
                 )
             }
         }
@@ -302,6 +307,8 @@ struct FuelHomeView: View {
             FoodSearchView(meal: meal, day: day)
         case .aiScan(let meal, let day):
             AIScanView(meal: meal, day: day)
+        case .aiDescribe(let meal, let day):
+            AIScanView(meal: meal, day: day, source: .description)
         case .barcode(let meal, let day):
             // The lookup starts once this sheet has gone (see the sheet's onDismiss), so its result can present.
             BarcodeScannerView { code in

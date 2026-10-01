@@ -184,18 +184,24 @@ struct FuelEntryRow: View {
     }
 }
 
-// MARK: - Add bar: three 56 pt tiles
+// MARK: - Add bar: four 56 pt tiles
 
+/// AI photo, Barcode, Search and, last, Describe (the AI estimate from a typed description, for a meal with no
+/// picture). Four fit a 375 pt phone without crowding: 8 pt gaps, the short "Barcode" label ("Skaner", not
+/// "Kod kreskowy") and one-line labels that shrink a little before they would truncate.
 struct FuelAddBar: View {
     var onAIPhoto: () -> Void
     var onBarcode: () -> Void
     var onSearch: () -> Void
+    var onDescribe: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             tile("fuel.aiPhoto", symbol: "camera", primary: true, action: onAIPhoto)
-            tile("fuel.barcode", symbol: "barcode.viewfinder", primary: false, action: onBarcode)
+            tile("fuel.barcode.short", symbol: "barcode.viewfinder", primary: false, action: onBarcode)
+                .accessibilityLabel(Text("fuel.barcode"))
             tile("fuel.search", symbol: "magnifyingglass", primary: false, action: onSearch)
+            tile("fuel.describe", symbol: "text.bubble", primary: false, action: onDescribe)
         }
         .padding(.horizontal, NT.Spacing.screenH)
         .padding(.top, 12)
@@ -211,7 +217,10 @@ struct FuelAddBar: View {
             VStack(spacing: 3) {
                 Image(systemName: symbol).font(.system(size: 20, weight: .regular))
                 Text(title).font(NT.Fonts.caption).fontWeight(.semibold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
+            .padding(.horizontal, 4)
             .foregroundStyle(primary ? NT.Colors.onPrimary : NT.Colors.ink)
             .frame(maxWidth: .infinity)
             .frame(height: NT.Size.primaryButton)
