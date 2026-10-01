@@ -100,6 +100,8 @@ struct AIEstimateSpec {
     let genericFoodFormat: String
     let genericFoodSeparator: String
     let requestTemplate: String
+    /// The request text when there is no photo and the notes describe the whole meal.
+    let describedRequestTemplate: String
     /// Canonical schema; `genericKey.enum` is empty in the file and filled by `estimateSchema()`.
     let estimateSchemaTemplate: JSONValue
     let label: Label
@@ -146,6 +148,7 @@ struct AIEstimateSpec {
         genericFoodFormat = try estimate.string("genericFoodFormat")
         genericFoodSeparator = try estimate.string("genericFoodSeparator")
         requestTemplate = try estimate.string("requestTemplate")
+        describedRequestTemplate = try estimate.string("describedRequestTemplate")
         estimateSchemaTemplate = try estimate.value("schema")
         guard estimateSchemaTemplate["properties"]?["foods"]?["items"]?["properties"]?["genericKey"]?.objectValue != nil else {
             throw LoadError(description: "estimate schema has no foods.items.properties.genericKey")
@@ -280,8 +283,22 @@ struct AIEstimateSpec {
     /// The per-request text: meal slot (`breakfast|lunch|snack|dinner`) and the notes, JSON-quoted and capped at
     /// `maxNotesLength` UTF-16 units like the backend.
     func estimateRequestText(meal: String, notes: String) -> String {
+        requestText(requestTemplate, meal: meal, notes: notes)
+    }
+
+    /// The per-request text for a meal described in words alone (no photo): same substitutions, its own template.
+    func describedRequestText(meal: String, notes: String) -> String {
+        requestText(describedRequestTemplate, meal: meal, notes: notes)
+    }
+
+    /// Photo or description: the request text the estimate sends.
+    func estimateRequestText(meal: String, notes: String, hasImage: Bool) -> String {
+        hasImage ? estimateRequestText(meal: meal, notes: notes) : describedRequestText(meal: meal, notes: notes)
+    }
+
+    private func requestText(_ template: String, meal: String, notes: String) -> String {
         let quoted = JSONValue.stringLiteral(Self.prefixUTF16(notes, limits.maxNotesLength))
-        return Self.substitute(Self.substitute(requestTemplate, "{meal}", meal), "{notes}", quoted)
+        return Self.substitute(Self.substitute(template, "{meal}", meal), "{notes}", quoted)
     }
 
     func labelSystemInstruction(locale: String) -> String {

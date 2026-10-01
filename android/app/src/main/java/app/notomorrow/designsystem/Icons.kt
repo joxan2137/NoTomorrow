@@ -159,8 +159,14 @@ enum class NtIcons(
     /** SF `bubble.left`. */
     BubbleLeft(R.drawable.ic_bubble_left),
 
+    /** SF `text.bubble` — custom vector, [BubbleLeft] with two lines: "Describe" on the Fuel add bar. */
+    TextBubble(R.drawable.ic_text_bubble),
+
     /** SF `pencil`. */
     Pencil(R.drawable.ic_pencil),
+
+    /** SF `sparkles` — custom vector, a large and a small four-point star: "Estimate calories". */
+    Sparkles(R.drawable.ic_sparkles),
 
     /** SF `trash`. */
     Trash(R.drawable.ic_trash),

@@ -13,7 +13,7 @@ struct BackendAIEstimateService: AIEstimateService {
         self.client = client
     }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         do {
             return try await client.estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: nil, notes: notes)
         } catch {
@@ -103,7 +103,7 @@ enum AIDirectTransport {
         }
     }
 
-    static func imageBase64(_ jpeg: Data) -> String { jpeg.base64EncodedString() }
+    static func imageBase64(_ jpeg: Data?) -> String? { jpeg?.base64EncodedString() }
 }
 
 /// Barcode grounding for the direct paths, like the backend: an item with a fully readable barcode that Open Food Facts
@@ -202,9 +202,9 @@ struct DirectAnthropicEstimateService: AIEstimateService {
         self.grounding = grounding
     }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         let text = try await send(system: spec.estimateSystemInstruction(locale: locale),
-                                  text: spec.estimateRequestText(meal: meal.rawValue, notes: notes),
+                                  text: spec.estimateRequestText(meal: meal.rawValue, notes: notes, hasImage: imageJPEG != nil),
                                   schema: spec.estimateSchema(), maxTokens: spec.claude.estimateMaxTokens,
                                   imageJPEG: imageJPEG, timeout: Self.estimateTimeout)
         let estimate = try AIDirectTransport.finalizeEstimate(text, spec: spec, notes: notes)
@@ -218,7 +218,7 @@ struct DirectAnthropicEstimateService: AIEstimateService {
         return try AIDirectTransport.finalizeLabel(text, spec: spec)
     }
 
-    private func send(system: String, text: String, schema: JSONValue, maxTokens: Int, imageJPEG: Data,
+    private func send(system: String, text: String, schema: JSONValue, maxTokens: Int, imageJPEG: Data?,
                       timeout: TimeInterval) async throws -> String {
         guard let key = apiKey()?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
             throw AIEstimateError.missingKey
@@ -232,9 +232,15 @@ struct DirectAnthropicEstimateService: AIEstimateService {
     }
 
     /// No `temperature` / `top_p` / `top_k` (a non-default value is a 400 on Sonnet 5), no `thinking`, no prefill.
+    /// Without an image (a described meal) the message is the text block alone.
     static func body(spec: AIEstimateSpec, system: String, text: String, schema: JSONValue, maxTokens: Int,
-                     imageBase64: String) -> JSONValue {
-        [
+                     imageBase64: String?) -> JSONValue {
+        var content: [JSONValue] = []
+        if let imageBase64 {
+            content.append(["type": "image", "source": ["type": "base64", "media_type": "image/jpeg", "data": .string(imageBase64)]])
+        }
+        content.append(["type": "text", "text": .string(text)])
+        return [
             "model": .string(spec.claude.model),
             "max_tokens": .number(Double(maxTokens)),
             "system": .string(system),
@@ -242,13 +248,7 @@ struct DirectAnthropicEstimateService: AIEstimateService {
                 "effort": .string(spec.claude.effort),
                 "format": ["type": "json_schema", "schema": schema],
             ],
-            "messages": [[
-                "role": "user",
-                "content": [
-                    ["type": "image", "source": ["type": "base64", "media_type": "image/jpeg", "data": .string(imageBase64)]],
-                    ["type": "text", "text": .string(text)],
-                ],
-            ]],
+            "messages": [["role": "user", "content": .array(content)]],
         ]
     }
 
@@ -305,9 +305,9 @@ struct DirectGeminiEstimateService: AIEstimateService {
 
     static func generateContentURL(model: String) -> URL { base.appending(path: "models/\(model):generateContent") }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         let text = try await send(system: spec.estimateSystemInstruction(locale: locale),
-                                  text: spec.estimateRequestText(meal: meal.rawValue, notes: notes),
+                                  text: spec.estimateRequestText(meal: meal.rawValue, notes: notes, hasImage: imageJPEG != nil),
                                   schema: spec.estimateSchema(), imageJPEG: imageJPEG)
         let estimate = try AIDirectTransport.finalizeEstimate(text, spec: spec, notes: notes)
         return await grounding?.ground(estimate) ?? estimate
@@ -319,7 +319,7 @@ struct DirectGeminiEstimateService: AIEstimateService {
         return try AIDirectTransport.finalizeLabel(text, spec: spec)
     }
 
-    private func send(system: String, text: String, schema: JSONValue, imageJPEG: Data) async throws -> String {
+    private func send(system: String, text: String, schema: JSONValue, imageJPEG: Data?) async throws -> String {
         guard let key = apiKey()?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
             throw AIEstimateError.missingGeminiKey
         }
@@ -343,39 +343,43 @@ struct DirectGeminiEstimateService: AIEstimateService {
     }
 
     /// `schema` is the Gemini variant (no `additionalProperties`). No `temperature`: Gemini 3 runs at its default.
+    /// Without an image (a described meal) the input is the text alone.
     static func interactionsBody(spec: AIEstimateSpec, system: String, text: String, schema: JSONValue,
-                                 imageBase64: String) -> JSONValue {
-        [
+                                 imageBase64: String?) -> JSONValue {
+        var input: [JSONValue] = []
+        if let imageBase64 {
+            input.append(["type": "image", "data": .string(imageBase64), "mime_type": "image/jpeg",
+                          "resolution": .string(spec.gemini.imageResolution)])
+        }
+        input.append(["type": "text", "text": .string(text)])
+        return [
             "model": .string(spec.gemini.model),
             "store": false,
             "system_instruction": .string(system),
             "generation_config": ["thinking_level": .string(spec.gemini.thinkingLevel)],
-            "input": [
-                ["type": "image", "data": .string(imageBase64), "mime_type": "image/jpeg",
-                 "resolution": .string(spec.gemini.imageResolution)],
-                ["type": "text", "text": .string(text)],
-            ],
+            "input": .array(input),
             "response_format": ["type": "text", "mime_type": "application/json", "schema": schema],
         ]
     }
 
+    /// Without an image: the text part alone and no `mediaResolution`, like the backend.
     static func generateContentBody(spec: AIEstimateSpec, system: String, text: String, schema: JSONValue,
-                                    imageBase64: String) -> JSONValue {
-        [
+                                    imageBase64: String?) -> JSONValue {
+        var parts: [JSONValue] = []
+        if let imageBase64 { parts.append(["inlineData": ["mimeType": "image/jpeg", "data": .string(imageBase64)]]) }
+        parts.append(["text": .string(text)])
+        var generationConfig = JSONObject([
+            "responseMimeType": "application/json",
+            "responseJsonSchema": schema,
+            "thinkingConfig": ["thinkingLevel": .string(spec.gemini.thinkingLevel)],
+        ])
+        if imageBase64 != nil {
+            generationConfig["mediaResolution"] = .string(spec.gemini.generateContentMediaResolution)
+        }
+        return [
             "systemInstruction": ["parts": [["text": .string(system)]]],
-            "contents": [[
-                "role": "user",
-                "parts": [
-                    ["inlineData": ["mimeType": "image/jpeg", "data": .string(imageBase64)]],
-                    ["text": .string(text)],
-                ],
-            ]],
-            "generationConfig": [
-                "responseMimeType": "application/json",
-                "responseJsonSchema": schema,
-                "thinkingConfig": ["thinkingLevel": .string(spec.gemini.thinkingLevel)],
-                "mediaResolution": .string(spec.gemini.generateContentMediaResolution),
-            ],
+            "contents": [["role": "user", "parts": .array(parts)]],
+            "generationConfig": .object(generationConfig),
         ]
     }
 

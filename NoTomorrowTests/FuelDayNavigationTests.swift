@@ -127,7 +127,8 @@ final class FuelDayNavigationTests: XCTestCase {
         model.goPreviousDay()
         let yesterday = model.day
         let sheets: [FuelHomeView.FuelSheet] = [.search(.lunch, day: model.day), .aiScan(.lunch, day: model.day),
-                                                .barcode(.lunch, day: model.day), .quickAdd(.lunch, name: "Zupa", day: model.day)]
+                                                .aiDescribe(.lunch, day: model.day), .barcode(.lunch, day: model.day),
+                                                .quickAdd(.lunch, name: "Zupa", day: model.day)]
 
         // The app sat in the background with the sheet up: Fuel snaps back to today underneath it.
         model.appDidEnterBackground(at: now)

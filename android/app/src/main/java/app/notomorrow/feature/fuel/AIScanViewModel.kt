@@ -62,6 +62,13 @@ sealed interface AIScanPhase {
     data object NotAllowed : AIScanPhase
 }
 
+/**
+ * What the estimate starts from, fixed when the screen opens: a plate photo, or a meal described
+ * in words ("Describe" on the Fuel tab, the last resort when there is no picture). A description
+ * runs the same estimate with no image; the notes are then the whole meal.
+ */
+enum class AIScanSource { Photo, Description }
+
 /** `AIScanModel.ConfidenceLevel` (`AIScanModel.swift:60`). */
 enum class AIScanConfidence(val bars: Int, @StringRes val labelRes: Int) {
     High(3, S.fuel_ai_confidence_high),
@@ -73,6 +80,7 @@ enum class AIScanConfidence(val bars: Int, @StringRes val labelRes: Int) {
 @Immutable
 data class AIScanUiState(
     val meal: MealSlot,
+    val source: AIScanSource = AIScanSource.Photo,
     val phase: AIScanPhase = AIScanPhase.PickSource,
     val photo: ImageBitmap? = null,
     /** The items on screen and the user's corrections to them. */
@@ -95,6 +103,12 @@ data class AIScanUiState(
     @StringRes val toast: Int? = null,
 ) {
     val foods: List<AIFood> get() = edits.foods
+
+    /** A meal described in words: no photo anywhere, the description screen instead of the source picker. */
+    val isDescribed: Boolean get() = source == AIScanSource.Description
+
+    /** "Estimate calories" needs something to read. */
+    val canSubmitDescription: Boolean get() = notes.isNotBlank()
 
     val totalKcal: Double get() = AIScanDerive.total(foods) { it.kcal }
     val totalProtein: Double get() = AIScanDerive.total(foods) { it.protein }
@@ -247,8 +261,8 @@ object AIScanLog {
 }
 
 /**
- * `AIScanModel` (`Features/Fuel/AIScanModel.swift`): pick a source → analyse → correct the
- * estimate → log one `MealEntry` per food.
+ * `AIScanModel` (`Features/Fuel/AIScanModel.swift`): pick a source (or describe the meal) →
+ * analyse → correct the estimate → log one `MealEntry` per food.
  *
  * The photo never leaves this object un-downscaled: [ImageDownscaler] produces the same
  * ≤1024 px JPEG 0.8 iOS uploads, and that is both what the preview shows and what the
@@ -266,6 +280,7 @@ class AIScanViewModel(
     private val foodSearch: FoodSearchService,
     needsSignIn: StateFlow<Boolean>,
     initialMeal: MealSlot,
+    initialSource: AIScanSource = AIScanSource.Photo,
     private val locale: () -> Locale = { LocaleProvider.current() },
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val cpu: CoroutineDispatcher = Dispatchers.Default,
@@ -274,7 +289,7 @@ class AIScanViewModel(
 
     // Seeded from the flow's current value, so the signed-out gate never flashes on the first frame.
     private val _state = MutableStateFlow(
-        AIScanUiState(meal = initialMeal, needsSignIn = needsSignIn.value),
+        AIScanUiState(meal = initialMeal, source = initialSource, needsSignIn = needsSignIn.value),
     )
     val state: StateFlow<AIScanUiState> = _state.asStateFlow()
 
@@ -299,8 +314,9 @@ class AIScanViewModel(
      * every presentation, so each open of the AI scan starts at `.pickSource` for the tapped
      * slot. The Android view model is scoped to the Fuel tab's back-stack entry and therefore
      * outlives the sheet, so the screen calls this on every entry to get the same behaviour.
+     * [source] is fixed for the presentation: the photo picker or the description screen.
      */
-    fun start(meal: MealSlot) {
+    fun start(meal: MealSlot, source: AIScanSource = AIScanSource.Photo) {
         analysis?.cancel()
         analysis = null
         toastJob?.cancel()
@@ -308,7 +324,7 @@ class AIScanViewModel(
         consentFallback?.cancel()
         consentFallback = null
         jpeg = null
-        _state.value = AIScanUiState(meal = meal, needsSignIn = _state.value.needsSignIn)
+        _state.value = AIScanUiState(meal = meal, source = source, needsSignIn = _state.value.needsSignIn)
         viewModelScope.launch { refreshUpload() }
     }
 
@@ -358,6 +374,27 @@ class AIScanViewModel(
     private fun decode(data: ByteArray): ImageBitmap? =
         runCatching { BitmapFactory.decodeByteArray(data, 0, data.size)?.asImageBitmap() }.getOrNull()
 
+    // MARK: - Description intake
+
+    /**
+     * "Estimate calories" on the description screen: the typed text is the whole meal, so a blank
+     * one does nothing. A description has its own consent, which the photo consent also covers
+     * (the typed details already go with a photo).
+     */
+    fun submitDescription() {
+        val current = _state.value
+        if (!current.isDescribed || current.phase != AIScanPhase.PickSource || !current.canSubmitDescription) return
+        viewModelScope.launch {
+            val upload = refreshUpload()
+            val target = upload.consentTarget
+            if (target != null && !prefs.aiDescriptionConsentOnce(target)) {
+                _state.update { it.copy(showConsent = true) }
+            } else {
+                analyze()
+            }
+        }
+    }
+
     // MARK: - Consent
 
     /**
@@ -384,21 +421,29 @@ class AIScanViewModel(
         // Start now, so the analysing view is on screen this frame; the consent record itself is
         // a background write that nothing waits on.
         analyze()
+        val described = _state.value.isDescribed
         _state.value.upload.consentTarget?.let { target ->
-            viewModelScope.launch { prefs.setAiConsent(target, true) }
+            viewModelScope.launch {
+                // A description's consent covers descriptions only; the photo consent stays unasked.
+                if (described) prefs.setAiDescriptionConsent(target, true) else prefs.setAiConsent(target, true)
+            }
         }
     }
 
+    /** A declined photo is dropped; a declined description stays on its screen, to send later or close. */
     fun declineConsent() {
         consentFallback?.cancel()
         consentFallback = null
         _state.update { it.copy(showConsent = false) }
-        retake()
+        if (!_state.value.isDescribed) retake()
     }
 
     // MARK: - Analysis
 
-    /** `AIScanModel.retake()` — cancels the request and drops everything back to the source view. */
+    /**
+     * `AIScanModel.retake()` — cancels the request and drops everything back to the source view.
+     * The typed notes stay: in description mode that is the description, back on its screen to edit.
+     */
     fun retake() {
         analysis?.cancel()
         analysis = null
@@ -422,16 +467,19 @@ class AIScanViewModel(
     }
 
     /**
-     * Sends the photo. From the result screen ("Recalculate with details") it also sends the
-     * user's corrections and merges them back into the answer; if that request fails, the
-     * current result stays and a toast says why.
+     * Sends the photo, or in description mode no image and the description. From the result
+     * screen ("Recalculate with details") it also sends the user's corrections and merges them
+     * back into the answer; if that request fails, the current result stays and a toast says why.
      */
     fun analyze() {
-        val data = jpeg ?: return
         val current = _state.value
+        val data = jpeg
+        if (data == null && !current.isDescribed) return
         val refining = current.phase == AIScanPhase.Result
         val previous = if (refining) Snapshot(current) else null
         val notes = current.edits.outgoingNotes(current.notes, refining)
+        // Without a photo the notes are all there is to read (the server answers 400 to none).
+        if (data == null && notes.isBlank()) return
         val meal = current.meal
         val language = locale().language.ifEmpty { "en" }
         _state.update { it.copy(phase = AIScanPhase.Analyzing) }
@@ -471,13 +519,27 @@ class AIScanViewModel(
             _state.update { it.copy(phase = AIScanPhase.NotAllowed) }
             return
         }
-        val message = (error as? AIEstimateError)?.messageRes ?: S.fuel_ai_failed
+        val message = failureMessage(error, _state.value.isDescribed)
         if (previous != null) {
             _state.update { previous.restore(it) }
             showToast(message)
         } else {
             _state.update { it.copy(phase = AIScanPhase.Failed(message)) }
         }
+    }
+
+    /**
+     * The catalog line for a failure: the error's own, or "couldn't estimate" for an empty answer
+     * or anything unexpected. A description words "couldn't read" its own way (no plate to see);
+     * connection, quota and key errors read the same either way.
+     */
+    @StringRes
+    private fun failureMessage(error: Throwable?, described: Boolean): Int {
+        val estimateError = error as? AIEstimateError
+        if (described && (estimateError == null || estimateError == AIEstimateError.Unreadable)) {
+            return S.fuel_ai_describe_failed
+        }
+        return estimateError?.messageRes ?: S.fuel_ai_failed
     }
 
     /** The result screen as it was before a refine, restored when the refine fails. */

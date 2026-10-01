@@ -103,6 +103,8 @@ final class AIEstimateFinalizerTests: XCTestCase {
                        "\(name): estimate system instruction")
         XCTAssertEqual(spec.estimateRequestText(meal: input?["meal"]?.stringValue ?? "", notes: notes),
                        expected?["estimateRequestText"]?.stringValue, "\(name): estimate request text")
+        XCTAssertEqual(spec.describedRequestText(meal: input?["meal"]?.stringValue ?? "", notes: notes),
+                       expected?["describedRequestText"]?.stringValue, "\(name): described request text")
         XCTAssertEqual(spec.labelSystemInstruction(locale: locale), expected?["labelSystemInstruction"]?.stringValue,
                        "\(name): label system instruction")
         XCTAssertEqual(spec.labelRequestText, expected?["labelRequestText"]?.stringValue, "\(name): label request text")

@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AIOutputError, finalizeEstimate, finalizeLabel, parseModelJson } from '../src/aiFinalize.js';
 import {
+  describedRequestText,
   estimateRequestText,
   estimateSchema,
   estimateSystemInstruction,
@@ -69,6 +70,7 @@ export function promptExpectation(spec: AISpec, input: { locale: string; meal: s
   return {
     estimateSystemInstruction: estimateSystemInstruction(spec, input.locale),
     estimateRequestText: estimateRequestText(spec, input.meal, input.notes),
+    describedRequestText: describedRequestText(spec, input.meal, input.notes),
     labelSystemInstruction: labelSystemInstruction(spec, input.locale),
     labelRequestText: labelRequestText(spec),
     notesContext: notesContext(spec, input.notes),

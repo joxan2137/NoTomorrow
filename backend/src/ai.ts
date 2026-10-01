@@ -1,6 +1,7 @@
 import { lookupNutrition } from './food.js';
 import type { GeminiConfig } from './env.js';
 import {
+  describedRequestText,
   estimateRequestText,
   estimateSchema,
   estimateSystemInstruction,
@@ -122,13 +123,13 @@ export function extractUsage(json: unknown): Omit<AIUsage, 'model' | 'api' | 'ms
   };
 }
 
-/** What one Gemini call needs: a static system instruction, the per-request text, a schema and a JPEG. */
+/** What one Gemini call needs: a static system instruction, the per-request text, a schema and a JPEG (none for a described meal). */
 export interface GeminiPrompt {
   system: string;
   text: string;
   /** Canonical (Claude-compatible) schema; `additionalProperties` is stripped for Gemini here. */
   schema: JsonSchema;
-  imageBase64: string;
+  imageBase64?: string;
 }
 
 export interface GeminiOptions {
@@ -139,34 +140,33 @@ export interface GeminiOptions {
   mediaResolution: string;
 }
 
-/** Interactions body: static system instruction first (implicit caching), image before the request text. */
+/** Interactions body: static system instruction first (implicit caching), image (if any) before the request text. */
 export function interactionsRequest(model: string, prompt: GeminiPrompt, options: GeminiOptions): Record<string, unknown> {
+  const image = prompt.imageBase64
+    ? [{ type: 'image', data: prompt.imageBase64, mime_type: 'image/jpeg', resolution: options.resolution }]
+    : [];
   return {
     model,
     store: false,
     system_instruction: prompt.system,
     generation_config: { thinking_level: options.thinkingLevel },
-    input: [
-      { type: 'image', data: prompt.imageBase64, mime_type: 'image/jpeg', resolution: options.resolution },
-      { type: 'text', text: prompt.text },
-    ],
+    input: [...image, { type: 'text', text: prompt.text }],
     response_format: { type: 'text', mime_type: 'application/json', schema: forGemini(prompt.schema) },
   };
 }
 
 /** generateContent body (fallback). No temperature: Gemini 3 models are meant to run at the default 1.0. */
 export function generateContentRequest(prompt: GeminiPrompt, options: GeminiOptions): Record<string, unknown> {
+  const image = prompt.imageBase64 ? [{ inlineData: { mimeType: 'image/jpeg', data: prompt.imageBase64 } }] : [];
   return {
     systemInstruction: { parts: [{ text: prompt.system }] },
-    contents: [{
-      role: 'user',
-      parts: [{ inlineData: { mimeType: 'image/jpeg', data: prompt.imageBase64 } }, { text: prompt.text }],
-    }],
+    contents: [{ role: 'user', parts: [...image, { text: prompt.text }] }],
     generationConfig: {
       responseMimeType: 'application/json',
       responseJsonSchema: forGemini(prompt.schema),
       thinkingConfig: { thinkingLevel: options.thinkingLevel },
-      mediaResolution: options.mediaResolution,
+      // Only meaningful with an image.
+      ...(prompt.imageBase64 ? { mediaResolution: options.mediaResolution } : {}),
     },
   };
 }
@@ -290,10 +290,11 @@ export async function callGemini(
   throw new GeminiError('no Gemini model configured', 503, 'upstream', billed);
 }
 
-// MARK: - Photo estimate
+// MARK: - Photo (or described meal) estimate
 
 export interface EstimateInput {
-  imageBase64: string;
+  /** Absent for a meal described in words: `notes` is then the whole description. */
+  imageBase64?: string;
   meal: MealSlot;
   locale: string;
   notes?: string;
@@ -308,7 +309,9 @@ export interface EstimateResult {
 export function estimatePrompt(spec: AISpec, input: EstimateInput): GeminiPrompt {
   return {
     system: estimateSystemInstruction(spec, input.locale),
-    text: estimateRequestText(spec, input.meal, input.notes ?? ''),
+    text: input.imageBase64
+      ? estimateRequestText(spec, input.meal, input.notes ?? '')
+      : describedRequestText(spec, input.meal, input.notes ?? ''),
     schema: estimateSchema(spec),
     imageBase64: input.imageBase64,
   };

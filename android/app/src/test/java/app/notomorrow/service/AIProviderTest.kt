@@ -9,6 +9,7 @@ import app.notomorrow.net.dto.AIPer100
 import app.notomorrow.net.dto.Session
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
@@ -164,6 +165,18 @@ class AIProviderTest {
     }
 
     @Test
+    fun `claude described meal sends the description as the only content block`() = runTest {
+        val estimate = claude(claudeReply(modelEstimate)).estimate(null, MealSlot.Dinner, "pl", "6 pierogów z okrasą")
+        val b = body(requests.single())
+        assertEquals(spec.estimateSystemInstruction("pl"), b["system"].stringValue)
+        val content = b["messages"].arrayValue!!.single()["content"].arrayValue!!
+        assertEquals(1, content.size)
+        assertEquals("text", content[0]["type"].stringValue)
+        assertEquals(spec.describedRequestText("dinner", "6 pierogów z okrasą"), content[0]["text"].stringValue)
+        assertEquals(2, estimate.foods.size)
+    }
+
+    @Test
     fun `claude label uses the label prompt, schema and 4096 tokens`() = runTest {
         val reading = claude(claudeReply(modelLabel)).readLabel(jpeg, "en")
         val b = body(requests.single())
@@ -232,6 +245,30 @@ class AIProviderTest {
         assertFalse(schema.contains("additionalProperties"))
         assertNull(b["temperature"])
         assertNull(b["generation_config"]["temperature"])
+        assertEquals(2, estimate.foods.size)
+    }
+
+    @Test
+    fun `gemini described meal sends text only to both APIs`() = runTest {
+        val estimate = gemini(Reply.Status(404, "{}"), generateContentReply(modelEstimate))
+            .estimate(null, MealSlot.Lunch, "pl", "schabowy, ziemniaki")
+        assertEquals(2, requests.size)
+        val text = spec.describedRequestText("lunch", "schabowy, ziemniaki")
+
+        val interactions = body(requests[0])
+        val input = interactions["input"].arrayValue!!
+        assertEquals(1, input.size)
+        assertEquals("text", input[0]["type"].stringValue)
+        assertEquals(text, input[0]["text"].stringValue)
+
+        val generateContent = body(requests[1])
+        val parts = generateContent["contents"].arrayValue!![0]["parts"].arrayValue!!
+        assertEquals(1, parts.size)
+        assertNull(parts[0]["inlineData"])
+        assertEquals(text, parts[0]["text"].stringValue)
+        val config = generateContent["generationConfig"] as JsonObject
+        assertFalse("mediaResolution" in config)
+        assertEquals("low", config["thinkingConfig"]["thinkingLevel"].stringValue)
         assertEquals(2, estimate.foods.size)
     }
 
@@ -480,6 +517,25 @@ class AIProviderTest {
         assertEquals("kj", reading.energyFrom)
         assertEquals(40.0, reading.servingSizeG!!, 0.0)
         assertEquals(3.0, reading.per100!!.fiber!!, 0.0)
+    }
+
+    @Test
+    fun `the backend estimate leaves out the image part for a described meal`() = runTest {
+        val sent = mutableListOf<String>()
+        val engine = MockEngine { request ->
+            sent += request.body.toByteArray().decodeToString()
+            respond("""{"foods":[],"overallConfidence":0}""", HttpStatusCode.OK, jsonHeaders)
+        }
+        val client = remote(engine)
+        BackendAIEstimateService { client }.estimate(null, MealSlot.Lunch, "pl", "schabowy z ziemniakami")
+        BackendAIEstimateService { client }.estimate(jpeg, MealSlot.Lunch, "pl", "")
+        // Ktor quotes a part name only when it has to.
+        fun part(name: String) = Regex("""name="?$name"?[;\r\n]""")
+        assertEquals(2, sent.size)
+        assertFalse(part("image").containsMatchIn(sent[0]))
+        assertTrue(part("meal").containsMatchIn(sent[0]))
+        assertTrue(sent[0].contains("schabowy z ziemniakami"))
+        assertTrue(part("image").containsMatchIn(sent[1]))
     }
 
     @Test

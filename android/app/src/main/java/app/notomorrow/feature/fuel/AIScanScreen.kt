@@ -1,5 +1,6 @@
 package app.notomorrow.feature.fuel
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -54,7 +55,8 @@ import java.time.LocalDate
 
 /**
  * `AIScanView` (`Features/Fuel/AIScanView.swift`) — the AI photo estimate for one meal slot:
- * pick a source → analysing → editable result → log.
+ * pick a source → analysing → editable result → log. With [source] [AIScanSource.Description]
+ * the first step is the description screen and the estimate runs on the typed text alone.
  *
  * Presented by `FuelHomeScreen` inside an `NtSheet`, so the screen paints its own `ground`
  * and owns nothing above it. It dismisses itself after logging.
@@ -65,6 +67,7 @@ fun AIScanScreen(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     day: LocalDate = LocalDate.now(),
+    source: AIScanSource = AIScanSource.Photo,
     onLogged: () -> Unit = {},
 ) {
     val model = ntViewModel(key = "aiScan") { container ->
@@ -77,11 +80,12 @@ fun AIScanScreen(
             foodSearch = container.foodSearchService,
             needsSignIn = container.authStore.needsSignIn,
             initialMeal = meal,
+            initialSource = source,
         )
     }
     // `AIScanView.init` makes a new `AIScanModel(meal:)` per presentation; the Android view model
     // is owned by the Fuel back-stack entry, so every entry into this sheet restarts it.
-    LaunchedEffect(meal) { model.start(meal) }
+    LaunchedEffect(meal, source) { model.start(meal, source) }
     val state by model.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
@@ -95,6 +99,7 @@ fun AIScanScreen(
         Column(Modifier.fillMaxSize()) {
             AIScanHeader(
                 showsRetake = state.showsRetake,
+                retakeRes = if (state.isDescribed) S.common_edit else S.fuel_ai_retake,
                 onBack = onDismiss,
                 onRetake = model::retake,
             )
@@ -122,12 +127,14 @@ fun AIScanScreen(
 
     if (state.showConsent) {
         val provider = stringResource(state.providerNameRes)
+        // A description alone has its own wording: no photo leaves the phone.
+        val described = state.isDescribed
         NtAlert(
-            title = stringResource(S.fuel_ai_consent_title, provider),
-            message = stringResource(S.fuel_ai_consent_body, provider),
+            title = stringResource(if (described) S.fuel_ai_describe_consent_title else S.fuel_ai_consent_title, provider),
+            message = stringResource(if (described) S.fuel_ai_describe_consent_body else S.fuel_ai_consent_body, provider),
             actions = listOf(
                 NtAlertAction(
-                    title = stringResource(S.fuel_ai_consent_accept),
+                    title = stringResource(if (described) S.fuel_ai_describe_consent_accept else S.fuel_ai_consent_accept),
                     onClick = model::acceptConsent,
                 ),
                 NtAlertAction(
@@ -143,10 +150,14 @@ fun AIScanScreen(
     }
 }
 
-/** `AIScanView.header` — 44 dp: back chevron, title, and "Retake" once a photo exists. */
+/**
+ * `AIScanView.header` — 44 dp: back chevron, title, and "Retake" once a photo exists ("Edit"
+ * once a description was sent).
+ */
 @Composable
 private fun AIScanHeader(
     showsRetake: Boolean,
+    @StringRes retakeRes: Int,
     onBack: () -> Unit,
     onRetake: () -> Unit,
 ) {
@@ -189,7 +200,7 @@ private fun AIScanHeader(
                 contentAlignment = Alignment.Center,
             ) {
                 NtText(
-                    text = stringResource(S.fuel_ai_retake),
+                    text = stringResource(retakeRes),
                     style = NT.Fonts.body,
                     color = NT.Colors.ink2,
                     maxLines = 1,
@@ -210,6 +221,13 @@ private fun AIScanContent(
         AIScanPhase.PickSource ->
             if (state.showsSignedOut) {
                 AIScanSignedOutView(meal = state.meal)
+            } else if (state.isDescribed) {
+                AIScanDescribeView(
+                    meal = state.meal,
+                    notes = state.notes,
+                    onNotes = model::setNotes,
+                    onSubmit = model::submitDescription,
+                )
             } else {
                 AIScanSourceView(
                     meal = state.meal,
@@ -220,7 +238,7 @@ private fun AIScanContent(
                 )
             }
 
-        AIScanPhase.Analyzing -> AIScanAnalyzingView(photo = state.photo)
+        AIScanPhase.Analyzing -> AIScanAnalyzingView(photo = state.photo, described = state.isDescribed)
 
         AIScanPhase.Result -> AIScanResultView(
             state = state,
@@ -240,6 +258,7 @@ private fun AIScanContent(
         is AIScanPhase.Failed -> AIScanFailedView(
             photo = state.photo,
             messageRes = phase.messageRes,
+            described = state.isDescribed,
             onRetake = model::retake,
         )
 

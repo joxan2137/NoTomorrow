@@ -143,14 +143,19 @@ export function aiRoutes(deps: AppDeps): Hono<AppEnv> {
     const prep = await prepare(c, 'estimates');
     const fields = estimateFields.safeParse({ meal: prep.form.meal, notes: prep.form.notes, locale: prep.form.locale ?? 'en' });
     if (!fields.success) throw new HttpError(400, 'invalid_body', 'meal must be breakfast|lunch|snack|dinner, locale en|pl, notes ≤ 1500 characters');
-    const imageBase64 = await readImage(prep.form);
+    // No photo: the notes describe the whole meal ("Describe" in the apps), so they must say something.
+    const described = prep.form.image === undefined;
+    if (described && !fields.data.notes) {
+      throw new HttpError(400, 'image_required', 'Attach the photo as the "image" part, or describe the meal in "notes"');
+    }
+    const imageBase64 = described ? undefined : await readImage(prep.form);
 
     const { estimate, usage, warnings } = await withQuota(prep.userId, 'estimate', () => estimateFood(
       prep.gemini,
       { imageBase64, meal: fields.data.meal, locale: normalizeLocale(fields.data.locale), notes: fields.data.notes },
       deps.fetchImpl,
     ));
-    logUsage('estimate', usage, warnings, { foods: estimate.foods.length, skipped: estimate.skipped.length });
+    logUsage('estimate', usage, warnings, { foods: estimate.foods.length, skipped: estimate.skipped.length, described });
     return c.json(estimate);
   });
 

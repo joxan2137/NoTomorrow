@@ -308,6 +308,81 @@ final class AIScanCorrectionTests: XCTestCase {
         XCTAssertEqual(model.phase, .failed(String(localized: "fuel.ai.failed")))
     }
 
+    // MARK: Described meal
+
+    /// A model in the describe flow with the description typed and submitted.
+    private func described(_ text: String, _ answers: [Result<AIEstimate, Error>]) async throws -> (AIScanModel, StubEstimateService) {
+        let service = StubEstimateService(answers: answers)
+        let model = AIScanModel(meal: .lunch, source: .description,
+                                defaults: UserDefaults(suiteName: "AIScanCorrectionTests")!, service: service)
+        model.notes = text
+        model.submitDescription()
+        try await waitUntil { service.notes.count == 1 && model.phase != .analyzing }
+        return (model, service)
+    }
+
+    func testDescriptionIsEstimatedWithoutAPhoto() async throws {
+        let (model, service) = try await described("6 pierogów z okrasą", [.success(AIEstimate(foods: [pierogi()], overallConfidence: 0.5))])
+        XCTAssertEqual(model.phase, .result)
+        XCTAssertNil(model.image)
+        XCTAssertEqual(service.notes, ["6 pierogów z okrasą"])
+        XCTAssertEqual(service.hadImage, [false])
+    }
+
+    func testBlankDescriptionIsNotSent() {
+        let service = StubEstimateService(answers: [])
+        let model = AIScanModel(meal: .lunch, source: .description,
+                                defaults: UserDefaults(suiteName: "AIScanCorrectionTests")!, service: service)
+        model.notes = "  \n "
+        XCTAssertFalse(model.canSubmitDescription)
+        model.submitDescription()
+        XCTAssertEqual(model.phase, .pickSource)
+        XCTAssertTrue(service.notes.isEmpty)
+    }
+
+    func testDescriptionRefineSendsTheTextAndTheCorrections() async throws {
+        let (model, service) = try await described("pierogi", [.success(AIEstimate(foods: [pierogi(), oil()], overallConfidence: 0.5)),
+                                                              .success(AIEstimate(foods: [pierogi()], overallConfidence: 0.5))])
+        model.remove(model.foods[1].id)
+        model.analyze()
+        try await waitUntil { service.notes.count == 2 && model.phase == .result }
+        XCTAssertEqual(service.notes.last, "pierogi\nUser corrections (authoritative): removed: Olej")
+        XCTAssertEqual(service.hadImage, [false, false])
+    }
+
+    func testEditingADescriptionKeepsTheText() async throws {
+        let (model, _) = try await described("pierogi", [.success(AIEstimate(foods: [pierogi()], overallConfidence: 0.5))])
+        model.retake()
+        XCTAssertEqual(model.phase, .pickSource)
+        XCTAssertEqual(model.notes, "pierogi")
+        XCTAssertTrue(model.foods.isEmpty)
+    }
+
+    func testDescriptionFailuresSayItCouldNotBeEstimated() async throws {
+        let describeFailed = String(localized: "fuel.ai.describe.failed")
+        let (empty, _) = try await described("xyz", [.success(AIEstimate(foods: [], overallConfidence: 0))])
+        XCTAssertEqual(empty.phase, .failed(describeFailed))
+        let (unreadable, _) = try await described("xyz", [.failure(AIEstimateError.unreadable)])
+        XCTAssertEqual(unreadable.phase, .failed(describeFailed))
+        let (timeout, _) = try await described("xyz", [.failure(AIEstimateError.timeout)])
+        XCTAssertEqual(timeout.phase, .failed(String(localized: "fuel.ai.error.timeout")), "other errors keep their message")
+    }
+
+    func testPhotoConsentCoversADescriptionButNotTheOtherWayRound() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "AIScanConsentTests"))
+        defaults.removePersistentDomain(forName: "AIScanConsentTests")
+        XCTAssertTrue(AIUpload.google.needsConsent(photo: false, defaults))
+        AIUpload.google.recordConsent(photo: false, defaults)
+        XCTAssertFalse(AIUpload.google.needsConsent(photo: false, defaults))
+        XCTAssertTrue(AIUpload.google.needsConsent(photo: true, defaults), "a description consent does not cover a photo")
+        XCTAssertTrue(AIUpload.anthropic.needsConsent(photo: false, defaults), "consent is per provider")
+
+        defaults.removePersistentDomain(forName: "AIScanConsentTests")
+        AIUpload.gemini.recordConsent(photo: true, defaults)
+        XCTAssertFalse(AIUpload.google.needsConsent(photo: false, defaults), "the photo consent covers typed details")
+        XCTAssertFalse(AIUpload.none.needsConsent(photo: false, defaults))
+    }
+
     // MARK: Database picks
 
     func testReplaceTakesTheProductAndKeepsTheAmount() {
@@ -416,15 +491,17 @@ final class AIScanCorrectionTests: XCTestCase {
     }
 }
 
-/// Answers from a queue and records the notes each request sent.
+/// Answers from a queue and records the notes (and whether a photo went along) each request sent.
 private final class StubEstimateService: AIEstimateService {
     private var answers: [Result<AIEstimate, Error>]
     private(set) var notes: [String] = []
+    private(set) var hadImage: [Bool] = []
 
     init(answers: [Result<AIEstimate, Error>]) { self.answers = answers }
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         self.notes.append(notes)
+        hadImage.append(imageJPEG != nil)
         guard !answers.isEmpty else { throw AIEstimateError.busy }
         return try answers.removeFirst().get()
     }

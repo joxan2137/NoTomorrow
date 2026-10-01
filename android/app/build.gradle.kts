@@ -21,7 +21,7 @@ android {
         // The release workflow stamps these from the release tag and run number
         // (-PappVersionName / -PappVersionCode); local builds keep the defaults.
         versionCode = (project.findProperty("appVersionCode") as String?)?.toInt() ?: 1
-        versionName = (project.findProperty("appVersionName") as String?) ?: "0.6.7"
+        versionName = (project.findProperty("appVersionName") as String?) ?: "0.6.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -33,6 +33,8 @@ import app.notomorrow.util.S
 fun AIScanAnalyzingView(
     photo: ImageBitmap?,
     modifier: Modifier = Modifier,
+    /** A described meal: the card stays empty under the orb and the line says it is reading the text. */
+    described: Boolean = false,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -65,7 +67,7 @@ fun AIScanAnalyzingView(
             }
         }
         NtText(
-            text = stringResource(S.fuel_ai_analyzing),
+            text = stringResource(if (described) S.fuel_ai_describe_analyzing else S.fuel_ai_analyzing),
             style = NT.Fonts.subheadline,
             color = NT.Colors.ink2,
         )

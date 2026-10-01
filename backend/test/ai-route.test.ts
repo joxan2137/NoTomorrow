@@ -35,9 +35,9 @@ function fixture(envOverrides: Record<string, unknown> = {}) {
   app.onError((error, c) => error instanceof HttpError ? c.json(error.body(), error.status as 400, error.headers) : c.json({ error: 'unexpected' }, 500));
   app.route('/', aiRoutes(deps));
   const jpeg = () => new File([new Uint8Array([255, 216, 255, 0])], 'plate.jpg', { type: 'image/jpeg' });
-  const form = (notes: string) => {
+  const form = (notes: string, withImage = true) => {
     const data = new FormData();
-    data.append('image', jpeg());
+    if (withImage) data.append('image', jpeg());
     data.append('meal', 'lunch'); data.append('locale', 'pl'); data.append('notes', notes);
     return data;
   };
@@ -68,6 +68,30 @@ describe('POST /ai/estimate', () => {
     const call = (f.fetchImpl.mock.calls as unknown as [string, RequestInit][])[0];
     expect(String(call?.[1].body)).toContain('150 g ugotowanego ryżu');
     expect(f.log.info).toHaveBeenCalledWith(expect.objectContaining({ ai: 'estimate', model: 'gemini-3.8-flash', api: 'interactions', foods: 1 }), 'ai usage');
+  });
+
+  it('estimates a described meal without a photo: text only, the described request text, one quota unit', async () => {
+    const f = fixture();
+    const response = await f.app.request('/ai/estimate', { method: 'POST', body: f.form('talerz ryżu z kurczakiem', false) });
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as Record<string, any>).foods[0]).toMatchObject({ name: 'Ryż', grams: 150 });
+    expect(f.statements()).toHaveLength(1);
+    const body = JSON.parse(String((f.fetchImpl.mock.calls as unknown as [string, RequestInit][])[0]?.[1].body));
+    expect(body.input).toHaveLength(1);
+    expect(body.input[0]).toMatchObject({ type: 'text' });
+    expect(body.input[0].text).toContain('No photo');
+    expect(body.input[0].text).toContain('"talerz ryżu z kurczakiem"');
+    expect(f.log.info).toHaveBeenCalledWith(expect.objectContaining({ ai: 'estimate', described: true }), 'ai usage');
+  });
+
+  it('answers image_required for no photo and no description, before reserving quota', async () => {
+    const f = fixture();
+    for (const notes of ['', '   ']) {
+      const response = await f.app.request('/ai/estimate', { method: 'POST', body: f.form(notes, false) });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ error: 'image_required' });
+    }
+    expect(f.sql).not.toHaveBeenCalled(); expect(f.fetchImpl).not.toHaveBeenCalled();
   });
 
   it('rejects oversized notes before reserving quota or contacting Gemini', async () => {

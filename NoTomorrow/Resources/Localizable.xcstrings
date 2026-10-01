@@ -2323,6 +2323,22 @@
         }
       }
     },
+    "fuel.describe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opisz"
+          }
+        }
+      }
+    },
     "fuel.barcode": {
       "localizations": {
         "en": {
@@ -2335,6 +2351,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kod kreskowy"
+          }
+        }
+      }
+    },
+    "fuel.barcode.short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barcode"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skaner"
           }
         }
       }
@@ -2559,6 +2591,198 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szacunek AI"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe your meal"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opisz posiłek"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photo? Write what you ate and roughly how much. Weights, counts and cooking fat bring the estimate closer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie masz zdjęcia? Napisz, co było na talerzu i mniej więcej ile. Wagi, liczba sztuk i tłuszcz do smażenia przybliżają wynik."
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 2 pork chops, a plate of potatoes with butter, cucumber salad with sour cream"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "np. 2 schabowe, talerz ziemniaków z masłem, mizeria ze śmietaną"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.estimate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimate calories"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oszacuj kalorie"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opis"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.analyzing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading your description…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam opis…"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit description"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popraw opis"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't estimate that. Name the foods and roughly how much, or add them by search."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się tego oszacować. Wymień produkty i mniej więcej ile albo dodaj je przez wyszukiwarkę."
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.consent.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send this description to %@?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysłać ten opis do %@?"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.consent.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The meal description you typed, the meal slot and your language leave your phone and go to %@ to estimate the food. Nothing else is sent. You can change the provider in Settings."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisany opis posiłku, pora posiłku i język opuszczają telefon i trafiają do %@, żeby oszacować jedzenie. Nic więcej nie jest wysyłane. Dostawcę zmienisz w ustawieniach."
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.consent.accept": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send description"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij opis"
+          }
+        }
+      }
+    },
+    "fuel.ai.describe.disclaimer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimates from a description are rough: amounts you don't give are guessed. Fix the grams if you know better. No Tomorrow is not a medical device and gives no dietary advice."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szacunki z opisu są orientacyjne: ilości, których nie podasz, są zgadywane. Popraw gramy, jeśli wiesz lepiej. No Tomorrow nie jest wyrobem medycznym i nie udziela porad dietetycznych."
           }
         }
       }

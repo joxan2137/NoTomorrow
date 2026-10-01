@@ -209,6 +209,18 @@
     <string name="fuel_ai_consent_accept">Send photo</string>
     <string name="fuel_ai_consent_body">The photo (without location or other metadata), the meal details you typed, the meal slot and your language leave your phone and go to %s to estimate the food. Nothing else is sent. You can change the provider in Settings.</string>
     <string name="fuel_ai_consent_title">Send this photo to %s?</string>
+    <string name="fuel_ai_describe_analyzing">Reading your description…</string>
+    <string name="fuel_ai_describe_consent_accept">Send description</string>
+    <string name="fuel_ai_describe_consent_body">The meal description you typed, the meal slot and your language leave your phone and go to %s to estimate the food. Nothing else is sent. You can change the provider in Settings.</string>
+    <string name="fuel_ai_describe_consent_title">Send this description to %s?</string>
+    <string name="fuel_ai_describe_disclaimer">Estimates from a description are rough: amounts you don\'t give are guessed. Fix the grams if you know better. No Tomorrow is not a medical device and gives no dietary advice.</string>
+    <string name="fuel_ai_describe_edit">Edit description</string>
+    <string name="fuel_ai_describe_estimate">Estimate calories</string>
+    <string name="fuel_ai_describe_failed">Couldn\'t estimate that. Name the foods and roughly how much, or add them by search.</string>
+    <string name="fuel_ai_describe_label">Description</string>
+    <string name="fuel_ai_describe_placeholder">e.g. 2 pork chops, a plate of potatoes with butter, cucumber salad with sour cream</string>
+    <string name="fuel_ai_describe_subtitle">No photo? Write what you ate and roughly how much. Weights, counts and cooking fat bring the estimate closer.</string>
+    <string name="fuel_ai_describe_title">Describe your meal</string>
     <string name="fuel_ai_details">Meal details (optional)</string>
     <string name="fuel_ai_detailsPlaceholder">e.g. 150 g cooked rice, 5 g oil, half the pack eaten</string>
     <string name="fuel_ai_disclaimer">Photo estimates are approximate and tend to run low on big or oily portions. Fix the grams if you know better. No Tomorrow is not a medical device and gives no dietary advice.</string>
@@ -268,6 +280,7 @@
     <string name="fuel_barcode">Barcode</string>
     <string name="fuel_barcodeNotFound">No product for this barcode. Add it by hand.</string>
     <string name="fuel_barcodePartial">This product is in the database but has no nutrition values yet. Add them from the label.</string>
+    <string name="fuel_barcode_short">Barcode</string>
     <string name="fuel_calendar_avg30">30-day avg</string>
     <string name="fuel_calendar_avg7">7-day avg</string>
     <string name="fuel_calendar_cell">%1$s: %2$s, %3$s of goal</string>
@@ -284,6 +297,7 @@
     <string name="fuel_chooseDay">Choose day</string>
     <string name="fuel_copyToToday">Copy to today</string>
     <string name="fuel_day">Day</string>
+    <string name="fuel_describe">Describe</string>
     <string name="fuel_eatenGoal">%1$s eaten · %2$s goal</string>
     <string name="fuel_editEntry">Edit entry</string>
     <string name="fuel_editEntry_action">edit this entry</string>

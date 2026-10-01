@@ -92,16 +92,17 @@ final class RemoteBackendClient: BackendClient, @unchecked Sendable {
 
     // MARK: AI
 
-    /// Multipart `image` + `meal` + `locale` + `notes`. The server answers the v2 estimate (per-100 g values, portions,
-    /// totals); an older server's `{foods, overallConfidence}` still decodes. Errors surface as `BackendError.http` with
-    /// the server code (`ai_daily_limit`, `ai_busy`, `ai_timeout`, …) for the AI service to map.
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
-        let body = MultipartBody()
+    /// Multipart `image` + `meal` + `locale` + `notes`, without `image` for a described meal. The server answers the v2
+    /// estimate (per-100 g values, portions, totals); an older server's `{foods, overallConfidence}` still decodes.
+    /// Errors surface as `BackendError.http` with the server code (`ai_daily_limit`, `ai_busy`, `ai_timeout`, …) for
+    /// the AI service to map.
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate {
+        var body = MultipartBody()
             .field("meal", meal.rawValue)
             .field("locale", locale)
             // The server counts UTF-16 units and refuses more than 1500 with a 400.
             .field("notes", AIEstimateSpec.prefixUTF16(notes, 1500))
-            .file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG)
+        if let imageJPEG { body = body.file("image", filename: "plate.jpg", mimeType: "image/jpeg", data: imageJPEG) }
         var headers: [String: String] = [:]
         if let anthropicKey, !anthropicKey.isEmpty { headers["X-Anthropic-Key"] = anthropicKey }
         let request = RemoteTransport.Request(method: "POST", path: "ai/estimate", auth: .required,

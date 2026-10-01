@@ -209,6 +209,18 @@
     <string name="fuel_ai_consent_accept">Wyślij zdjęcie</string>
     <string name="fuel_ai_consent_body">Zdjęcie (bez lokalizacji i innych metadanych), wpisane szczegóły posiłku, pora posiłku i język opuszczają telefon i trafiają do %s, żeby oszacować jedzenie. Nic więcej nie jest wysyłane. Dostawcę zmienisz w ustawieniach.</string>
     <string name="fuel_ai_consent_title">Wysłać to zdjęcie do %s?</string>
+    <string name="fuel_ai_describe_analyzing">Czytam opis…</string>
+    <string name="fuel_ai_describe_consent_accept">Wyślij opis</string>
+    <string name="fuel_ai_describe_consent_body">Wpisany opis posiłku, pora posiłku i język opuszczają telefon i trafiają do %s, żeby oszacować jedzenie. Nic więcej nie jest wysyłane. Dostawcę zmienisz w ustawieniach.</string>
+    <string name="fuel_ai_describe_consent_title">Wysłać ten opis do %s?</string>
+    <string name="fuel_ai_describe_disclaimer">Szacunki z opisu są orientacyjne: ilości, których nie podasz, są zgadywane. Popraw gramy, jeśli wiesz lepiej. No Tomorrow nie jest wyrobem medycznym i nie udziela porad dietetycznych.</string>
+    <string name="fuel_ai_describe_edit">Popraw opis</string>
+    <string name="fuel_ai_describe_estimate">Oszacuj kalorie</string>
+    <string name="fuel_ai_describe_failed">Nie udało się tego oszacować. Wymień produkty i mniej więcej ile albo dodaj je przez wyszukiwarkę.</string>
+    <string name="fuel_ai_describe_label">Opis</string>
+    <string name="fuel_ai_describe_placeholder">np. 2 schabowe, talerz ziemniaków z masłem, mizeria ze śmietaną</string>
+    <string name="fuel_ai_describe_subtitle">Nie masz zdjęcia? Napisz, co było na talerzu i mniej więcej ile. Wagi, liczba sztuk i tłuszcz do smażenia przybliżają wynik.</string>
+    <string name="fuel_ai_describe_title">Opisz posiłek</string>
     <string name="fuel_ai_details">Szczegóły posiłku (opcjonalnie)</string>
     <string name="fuel_ai_detailsPlaceholder">np. 150 g ugotowanego ryżu, 5 g oliwy, zjedzona połowa opakowania</string>
     <string name="fuel_ai_disclaimer">Szacunki ze zdjęcia są przybliżone i zwykle zaniżają wartości dla dużych lub tłustych porcji. Popraw gramy, jeśli wiesz lepiej. No Tomorrow nie jest wyrobem medycznym i nie udziela porad dietetycznych.</string>
@@ -268,6 +280,7 @@
     <string name="fuel_barcode">Kod kreskowy</string>
     <string name="fuel_barcodeNotFound">Brak produktu dla tego kodu. Dodaj ręcznie.</string>
     <string name="fuel_barcodePartial">Ten produkt jest w bazie, ale nie ma jeszcze wartości odżywczych. Dodaj je z etykiety.</string>
+    <string name="fuel_barcode_short">Skaner</string>
     <string name="fuel_calendar_avg30">Śr. 30 dni</string>
     <string name="fuel_calendar_avg7">Śr. 7 dni</string>
     <string name="fuel_calendar_cell">%1$s: %2$s, %3$s celu</string>
@@ -284,6 +297,7 @@
     <string name="fuel_chooseDay">Wybierz dzień</string>
     <string name="fuel_copyToToday">Skopiuj na dziś</string>
     <string name="fuel_day">Dzień</string>
+    <string name="fuel_describe">Opisz</string>
     <string name="fuel_eatenGoal">%1$s zjedzone · cel %2$s</string>
     <string name="fuel_editEntry">Edytuj wpis</string>
     <string name="fuel_editEntry_action">edytować wpis</string>

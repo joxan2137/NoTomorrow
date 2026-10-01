@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.notomorrow.designsystem.Badge
 import app.notomorrow.designsystem.KcalLabel
 import app.notomorrow.designsystem.MacroBar
@@ -67,6 +69,7 @@ import app.notomorrow.util.NtKeys
 import app.notomorrow.util.S
 import app.notomorrow.util.rememberNtStrings
 import java.time.LocalDate
+import kotlin.math.floor
 
 /*
  * The pieces of `FuelHomeView` / `FuelHomeSubviews.swift`. Geometry is load-bearing:
@@ -712,14 +715,17 @@ fun FuelProteinHint(grams: Double, modifier: Modifier = Modifier) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * `FuelAddBar` (`FuelHomeSubviews.swift:135`): three 56 dp tiles over the app's only other
- * gradient — a `ground` scrim that fades in over the top half of the bar.
+ * `FuelAddBar` (`FuelHomeSubviews.swift:135`): four 56 dp tiles over the app's only other
+ * gradient — a `ground` scrim that fades in over the top half of the bar. "Describe" (an AI
+ * estimate from typed words) comes last: it is the last resort when there is no photo, barcode
+ * or database match.
  */
 @Composable
 fun FuelAddBar(
     onAIPhoto: () -> Unit,
     onBarcode: () -> Unit,
     onSearch: () -> Unit,
+    onDescribe: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -734,7 +740,7 @@ fun FuelAddBar(
             )
             .padding(horizontal = NT.Spacing.screenH)
             .padding(top = 12.dp, bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AddTile(
             title = stringResource(S.fuel_aiPhoto),
@@ -744,7 +750,9 @@ fun FuelAddBar(
             onClick = onAIPhoto,
         )
         AddTile(
-            title = stringResource(S.fuel_barcode),
+            // The short label ("Skaner", not "Kod kreskowy") so four tiles fit; TalkBack says the full one.
+            title = stringResource(S.fuel_barcode_short),
+            accessibilityLabel = stringResource(S.fuel_barcode),
             icon = NtIcons.BarcodeViewfinder,
             primary = false,
             modifier = Modifier.weight(1f),
@@ -757,6 +765,13 @@ fun FuelAddBar(
             modifier = Modifier.weight(1f),
             onClick = onSearch,
         )
+        AddTile(
+            title = stringResource(S.fuel_describe),
+            icon = NtIcons.TextBubble,
+            primary = false,
+            modifier = Modifier.weight(1f),
+            onClick = onDescribe,
+        )
     }
 }
 
@@ -766,10 +781,23 @@ private fun AddTile(
     icon: NtIcons,
     primary: Boolean,
     modifier: Modifier = Modifier,
+    accessibilityLabel: String? = null,
     onClick: () -> Unit,
 ) {
     val shape = NtShapes.rounded(18.dp)
     val tint = if (primary) NT.Colors.onPrimary else NT.Colors.ink
+    val labelStyle = NT.Fonts.caption.copy(fontWeight = FontWeight.SemiBold)
+    // `.lineLimit(1).minimumScaleFactor(0.85)`: a long label shrinks a little instead of wrapping
+    // or cutting off. The floor sits a whole number of 0.25 sp steps below the style size, so a
+    // label that fits is drawn at full size.
+    val labelAutoSize = remember(labelStyle.fontSize) {
+        val max = labelStyle.fontSize.value
+        TextAutoSize.StepBased(
+            minFontSize = (max - floor(max * (1f - ADD_TILE_MIN_SCALE) / 0.25f) * 0.25f).sp,
+            maxFontSize = labelStyle.fontSize,
+            stepSize = 0.25.sp,
+        )
+    }
     Column(
         modifier = modifier
             .height(NT.Size.primaryButton)
@@ -784,10 +812,19 @@ private fun AddTile(
         NtIcon(icon, size = sfIconSize(20f), tint = tint)
         NtText(
             text = title,
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .then(
+                    if (accessibilityLabel != null) Modifier.semantics { contentDescription = accessibilityLabel } else Modifier,
+                ),
             // `.font(NT.Fonts.caption).fontWeight(.semibold)` — caption is Medium by default.
-            style = NT.Fonts.caption.copy(fontWeight = FontWeight.SemiBold),
+            style = labelStyle,
             color = tint,
             maxLines = 1,
+            autoSize = labelAutoSize,
         )
     }
 }
+
+/** The smallest an add-bar tile label shrinks to, as a share of the caption size. */
+private const val ADD_TILE_MIN_SCALE = 0.85f

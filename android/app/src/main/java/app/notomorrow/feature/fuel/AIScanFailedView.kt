@@ -24,7 +24,8 @@ import app.notomorrow.util.S
 
 /**
  * `AIScanFailedView` (`AIScanView.swift:145`) — the half-faded photo (when there is one), the
- * error line, and Retake pinned to the bottom.
+ * error line, and Retake pinned to the bottom ("Edit description" for a described meal, back to
+ * its screen with the text kept).
  */
 @Composable
 fun AIScanFailedView(
@@ -32,6 +33,7 @@ fun AIScanFailedView(
     messageRes: Int,
     onRetake: () -> Unit,
     modifier: Modifier = Modifier,
+    described: Boolean = false,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -69,11 +71,11 @@ fun AIScanFailedView(
         Spacer(Modifier.weight(1f))
 
         PrimaryButton(
-            title = stringResource(S.fuel_ai_retake),
+            title = stringResource(if (described) S.fuel_ai_describe_edit else S.fuel_ai_retake),
             modifier = Modifier
                 .padding(horizontal = NT.Spacing.screenH)
                 .padding(bottom = 12.dp),
-            icon = NtIcons.Camera,
+            icon = if (described) NtIcons.Pencil else NtIcons.Camera,
             onClick = onRetake,
         )
     }

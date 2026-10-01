@@ -28,7 +28,8 @@ protocol BackendClient: Sendable {
     func sendHeadsUp(kind: HeadsUpKind, text: String, sessionDay: Date) async throws
     func registerPushToken(_ token: Data) async throws
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate
+    /// `POST /ai/estimate`. No image: the notes describe the whole meal (the server then needs them non-empty).
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, anthropicKey: String?, notes: String) async throws -> AIEstimate
     /// `POST /ai/label`: a photo of a pack's nutrition table → per-100 g values. Shares the daily AI quota.
     func readLabel(imageJPEG: Data, locale: String) async throws -> LabelReading
     func deleteAccount() async throws
@@ -473,7 +474,7 @@ enum BackendError: Error, Sendable, Equatable, LocalizedError {
 }
 
 extension BackendClient {
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, anthropicKey: String?) async throws -> AIEstimate {
         try await estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, anthropicKey: anthropicKey, notes: "")
     }
 }

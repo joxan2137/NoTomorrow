@@ -35,7 +35,7 @@ list or to add their own Gemini or Claude API key in Settings — those keys nev
 the app then calls Google or Anthropic directly from the phone. Leave the variable empty to let
 every signed-in user through (the boot log warns when Gemini is configured and the list is empty).
 
-Both AI routes (`POST /ai/estimate` for meal photos, `POST /ai/label` for nutrition-table photos)
+Both AI routes (`POST /ai/estimate` for meal photos or descriptions, `POST /ai/label` for nutrition-table photos)
 share `AI_DAILY_LIMIT` per user per UTC day. A unit is refunded only when Gemini certainly did not
 bill the call (rate-limited, overloaded or unreachable); an answer that could not be used, or a
 timeout after the request left, keeps it. Every call logs one `ai usage` line with the model, API
@@ -171,7 +171,7 @@ Every route except the ones marked *public* needs `Authorization: Bearer <access
 | `POST /headsups/:id/read` | marks read |
 | `GET /events` | SSE: `event: attendance\|headsUp\|pairing`, `data: {type, …}`; `: heartbeat` every 25 s |
 | `POST /push/token` / `DELETE /push/token` | `{token (hex), environment?}`; 503 when APNs is not configured |
-| `POST /ai/estimate` | multipart `image` (JPEG ≤ 4 MB), `meal`, `locale` → `{foods, overallConfidence}`; 429 past `AI_DAILY_LIMIT`; 400 `byok_is_device_direct` if `X-Anthropic-Key` is present |
+| `POST /ai/estimate` | multipart `image` (JPEG ≤ 4 MB; omitted for a described meal, then `notes` is required), `meal`, `locale`, `notes` → `{foods, overallConfidence}`; 429 past `AI_DAILY_LIMIT`; 400 `byok_is_device_direct` if `X-Anthropic-Key` is present |
 | `POST /apple/notifications` | public, Apple server-to-server `{payload: <JWS>}` |
 
 Session = `{accessToken (15 min JWT), refreshToken (90 d, rotating), userId, user: Me}`.

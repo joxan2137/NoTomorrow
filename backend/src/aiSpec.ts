@@ -45,6 +45,8 @@ export interface AISpec {
     genericFoodFormat: string;
     genericFoodSeparator: string;
     requestTemplate: string;
+    /** The request text when there is no photo and the notes are the whole description of the meal. */
+    describedRequestTemplate: string;
     schema: JsonSchema;
   };
   label: {
@@ -120,6 +122,7 @@ export function parseSpec(text: string): AISpec {
     const { typical, min, max } = food.unit;
     if (![typical, min, max].every(Number.isInteger) || min > typical || typical > max) throw new SpecError(`bad unit for ${food.key}`);
   }
+  if (typeof spec.estimate.describedRequestTemplate !== 'string') throw new SpecError('estimate has no describedRequestTemplate');
   if (!genericKeyNode(spec.estimate.schema)) throw new SpecError('estimate schema has no foods.items.properties.genericKey');
   for (const pattern of [spec.context.weightPattern, spec.context.referencePattern]) new RegExp(pattern);
   return spec;
@@ -181,8 +184,17 @@ export function jsonStringLiteral(value: string): string {
 
 /** Per-request text: meal slot plus the user's notes (first `maxNotesLength` UTF-16 units, JSON-quoted). */
 export function estimateRequestText(spec: AISpec, meal: string, notes = ''): string {
+  return requestText(spec, spec.estimate.requestTemplate, meal, notes);
+}
+
+/** Per-request text for an estimate from a typed description alone (no photo): same substitutions. */
+export function describedRequestText(spec: AISpec, meal: string, notes = ''): string {
+  return requestText(spec, spec.estimate.describedRequestTemplate, meal, notes);
+}
+
+function requestText(spec: AISpec, template: string, meal: string, notes: string): string {
   const quoted = jsonStringLiteral(notes.slice(0, spec.limits.maxNotesLength));
-  return substitute(substitute(spec.estimate.requestTemplate, '{meal}', meal), '{notes}', quoted);
+  return substitute(substitute(template, '{meal}', meal), '{notes}', quoted);
 }
 
 export function labelSystemInstruction(spec: AISpec, locale: string): string {

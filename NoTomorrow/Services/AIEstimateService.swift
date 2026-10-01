@@ -7,7 +7,8 @@ import Foundation
 // MARK: - Protocol
 
 protocol AIEstimateService {
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate
+    /// A meal photo, or no photo (`nil`) when the notes describe the whole meal ("Describe" on the Fuel tab).
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate
     /// A photo of a pack's nutrition table → per-100 g values for the label form.
     func readLabel(imageJPEG: Data, locale: String) async throws -> LabelReading
 }
@@ -105,6 +106,10 @@ enum AIUpload: Equatable {
 
     var providerName: String { String(localized: String.LocalizationValue(providerNameKey)) }
 
+    /// Consent to send a typed description alone (no photo). The photo consent covers it too, since the photo goes
+    /// with the typed details; this one does not cover a photo.
+    var descriptionConsentKey: String? { consentKey.map { "\($0).text" } }
+
     /// True when this provider still needs the user's one-time consent before a photo leaves the device.
     func needsConsent(_ defaults: UserDefaults = .standard) -> Bool {
         consentKey.map { !defaults.bool(forKey: $0) } ?? false
@@ -112,6 +117,17 @@ enum AIUpload: Equatable {
 
     func recordConsent(_ defaults: UserDefaults = .standard) {
         if let consentKey { defaults.set(true, forKey: consentKey) }
+    }
+
+    /// The consent a photo (`photo`) or a description alone needs before it leaves the device.
+    func needsConsent(photo: Bool, _ defaults: UserDefaults = .standard) -> Bool {
+        guard !photo, let descriptionConsentKey else { return needsConsent(defaults) }
+        return needsConsent(defaults) && !defaults.bool(forKey: descriptionConsentKey)
+    }
+
+    func recordConsent(photo: Bool, _ defaults: UserDefaults = .standard) {
+        guard !photo else { return recordConsent(defaults) }
+        if let descriptionConsentKey { defaults.set(true, forKey: descriptionConsentKey) }
     }
 
     func makeService(config: AppConfig = .shared) -> any AIEstimateService {
@@ -131,7 +147,7 @@ enum AIUpload: Equatable {
 struct MockAIEstimateService: AIEstimateService {
     var delay: Duration = .milliseconds(1200)
 
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String, notes: String) async throws -> AIEstimate {
         try await Task.sleep(for: delay)
         let t = { (key: String) in AIEstimateLocalizer.string(key, locale: locale) }
         let pl = AIEstimateSpec.languageCode(locale) == "pl"
@@ -210,7 +226,7 @@ enum AIEstimateLocalizer {
 
 // Keep existing integrations source-compatible while allowing weighed portions and cooking notes.
 extension AIEstimateService {
-    func estimate(imageJPEG: Data, meal: MealSlot, locale: String) async throws -> AIEstimate {
+    func estimate(imageJPEG: Data?, meal: MealSlot, locale: String) async throws -> AIEstimate {
         try await estimate(imageJPEG: imageJPEG, meal: meal, locale: locale, notes: "")
     }
 }
